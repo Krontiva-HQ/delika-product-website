@@ -1,5 +1,6 @@
 import { SiteHeader } from "@/components/site-header"
 import { HeroSection } from "@/components/hero-section"
+import { FeatureSection } from "@/components/feature-section"
 
 export default function Home() {
   return (
@@ -7,6 +8,7 @@ export default function Home() {
       <SiteHeader />
       <main className="relative">
         <HeroSection />
+        <FeatureSection />
       </main>
     </div>
   )
