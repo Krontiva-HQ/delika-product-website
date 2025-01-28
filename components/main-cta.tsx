@@ -4,7 +4,7 @@ import Image from "next/image"
 export function MainCTA() {
   return (
     <div className="container mx-auto px-4 py-24">
-      <div className="bg-[#1a0b2e] rounded-3xl overflow-hidden max-w-9xl mx-auto">
+      <div className="bg-orange-500 rounded-3xl overflow-hidden max-w-9xl mx-auto">
         <div className="grid md:grid-cols-2 items-center gap-8 p-8 md:p-12">
           {/* Left content */}
           <div className="space-y-6">
@@ -14,9 +14,9 @@ export function MainCTA() {
             </p>
             <a
               href="#"
-              className="inline-flex items-center gap-2 bg-yellow-400 text-black px-6 py-3 rounded-full font-medium hover:bg-yellow-300 transition-colors"
+              className="inline-flex items-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
             >
-              Start your free trial
+              Start your journey now
               <ArrowRight className="h-5 w-5" />
             </a>
           </div>
