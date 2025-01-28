@@ -12,6 +12,17 @@ export default {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(-10px) translateX(0)' },
+          '50%': { transform: 'translateY(10px) translateX(5px)' },
+        }
+      },
+      animation: {
+        float: 'float 6s ease-in-out infinite',
+        'float-delay': 'float 6s ease-in-out 2s infinite',
+        'float-reverse': 'float 6s ease-in-out 4s infinite',
+      },
     },
   },
   plugins: [],
