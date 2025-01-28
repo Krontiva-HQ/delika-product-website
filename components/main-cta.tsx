@@ -9,7 +9,7 @@ export function MainCTA() {
           <div className="space-y-6">
             <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight">Get started with Delika today</h2>
             <p className="text-lg md:text-xl text-white/80">
-              Try Delika forfree and you will have access to every feature.
+              Try Delika for free whether on the web or mobile.
             </p>
             <a
               href="#"
