@@ -3,9 +3,11 @@ import { HeroSection } from "@/components/hero-section"
 
 export default function Home() {
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen overflow-x-hidden">
       <SiteHeader />
-      <HeroSection />
+      <main className="relative">
+        <HeroSection />
+      </main>
     </div>
   )
 }
