@@ -1,17 +1,15 @@
 import { ArrowUp, ArrowDown } from "lucide-react"
-import Image from "next/image"
 
 interface SliderCardProps {
   title: string
   description: string
-  image: string
   currentSlide: number
   totalSlides: number
   onNext: () => void
   onPrev: () => void
 }
 
-export function SliderCard({ title, description, image, currentSlide, totalSlides, onNext, onPrev }: SliderCardProps) {
+export function SliderCard({ title, description, currentSlide, totalSlides, onNext, onPrev }: SliderCardProps) {
   return (
     <div className="relative w-full max-w-md">
       <div className="absolute right-4 bottom-4 bg-white/10 backdrop-blur-lg rounded-xl p-4 w-full max-w-md">

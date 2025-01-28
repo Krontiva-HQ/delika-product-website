@@ -48,25 +48,23 @@ export function MoreFeatures() {
     <section className="min-h-screen">
       <div className="grid lg:grid-cols-2">
         {/* Left content */}
-        <div className="container px-4">
-          <div className="flex items-center py-24">
-            <div className="space-y-8">
-              <h2 className="text-5xl font-light leading-tight">
-                We help restaurants make
-                <br />
-                their business <span className="italic">better</span>
-              </h2>
-              <p className="text-xl text-gray-600 max-w-xl">
-                We're a B Corp Certified digital agency that creates brands, websites and fundraising campaigns to make
-                charities resonate with funders and those they help.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button className="bg-black text-white rounded-none hover:bg-black/90">About us</Button>
-                <Button variant="ghost" className="group">
-                  Book a Call
-                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Button>
-              </div>
+        <div className="flex items-center justify-center">
+          <div className="space-y-8 max-w-xl px-4 py-24">
+            <h2 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
+              We help restaurants make
+              <br />
+              their business <span className="italic">better</span>
+            </h2>
+            <p className="text-xl text-gray-600">
+              We are a B Corp Certified digital agency that creates brands, websites and fundraising campaigns to make
+              charities resonate with funders and those they help.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button className="bg-black text-white rounded-none hover:bg-black/90">About us</Button>
+              <Button variant="ghost" className="group">
+                Book a Call
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </Button>
             </div>
           </div>
         </div>
