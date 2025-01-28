@@ -2,15 +2,13 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { SliderCard } from "./slider-card"
 
 const slides = [
   {
-    title: "What being a B Corp means for our charity partners",
+    title: "Using Delika to improve your restaurant",
     description:
-      "Choosing a digital partner is tough for charities and that's exactly why we spent two years going through the rigorous B Corp certification process.",
+      "Use Delika to improve your restaurant by providing you with the tools you need to succeed. We are a team of experienced developers and designers who are passionate about helping restaurants grow and succeed.",
     image: "/main.jpg",
   },
   {
@@ -51,21 +49,15 @@ export function MoreFeatures() {
         <div className="flex items-center justify-center">
           <div className="space-y-8 max-w-xl px-4 py-24">
             <h2 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
-              We help restaurants make
+              We help <span className="text-orange-500">restaurants</span> make
               <br />
               their business <span className="italic">better</span>
             </h2>
             <p className="text-xl text-gray-600">
-              We are a B Corp Certified digital agency that creates brands, websites and fundraising campaigns to make
-              charities resonate with funders and those they help.
+              We help restaurants make their business <span className="italic text-orange-500">better</span> by providing them
+              with the tools they need to succeed. We are a team of experienced developers and designers who are passionate
+              about helping restaurants grow and succeed.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button className="bg-black text-white rounded-none hover:bg-black/90">About us</Button>
-              <Button variant="ghost" className="group">
-                Book a Call
-                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </div>
           </div>
         </div>
 
