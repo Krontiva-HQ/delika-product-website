@@ -15,7 +15,6 @@ export function SliderCard({ title, description, currentSlide, totalSlides, onNe
       <div className="absolute right-4 bottom-4 bg-white/10 backdrop-blur-lg rounded-xl p-4 w-full max-w-md">
         <div className="flex justify-between items-start gap-4">
           <div className="space-y-3">
-            <div className="text-xs font-medium text-white/70">JOURNAL</div>
             <h3 className="text-lg font-medium text-white">{title}</h3>
             <p className="text-white/80 text-xs leading-relaxed">{description}</p>
           </div>

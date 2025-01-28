@@ -11,7 +11,7 @@ const slides = [
     title: "What being a B Corp means for our charity partners",
     description:
       "Choosing a digital partner is tough for charities and that's exactly why we spent two years going through the rigorous B Corp certification process.",
-    image: "/placeholder.svg?height=400&width=600",
+    image: "/main.jpg",
   },
   {
     title: "Making an impact through digital transformation",
