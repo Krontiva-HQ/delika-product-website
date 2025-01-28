@@ -73,12 +73,12 @@ export function MoreFeatures() {
         <div className="relative min-h-screen lg:h-auto">
           <div className="sticky top-0 h-screen">
             <Image
-              src="/new-feature.jpg"
+              src="/main.jpg"
               alt="Office environment"
               fill
               className="object-cover"
             />
-            <div className="absolute inset-0 flex items-end justify-center pb-12">
+            <div className="absolute inset-0 flex items-end justify-center pb-36">
               <SliderCard
                 {...slides[currentSlide]}
                 currentSlide={currentSlide}
