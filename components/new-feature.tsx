@@ -1,28 +1,37 @@
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
 
 export function NewFeature() {
   return (
-    <div className="w-full bg-white py-24">
-      <div className="container px-4 md:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
-              Healthy food for your customers
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-[600px]">
-              Provide your customers with healthy and delicious meals. Our platform helps you manage your menu, orders, and delivery seamlessly.
-            </p>
-          </div>
-          <div className="relative aspect-square">
-            <Image
-              src="/new-feature.jpg"
-              alt="Healthy food bowl with quinoa and vegetables"
-              fill
-              className="object-cover rounded-2xl"
-            />
-          </div>
+    <div className="relative min-h-screen w-full">
+      {/* Background video with overlay */}
+      <video
+        className="absolute inset-0 z-0 object-cover w-full h-full"
+        autoPlay
+        muted
+        loop
+        playsInline
+      >
+        <source src="/food-delivery.mp4" type="video/mp4" />
+      </video>
+      <div className="absolute inset-0 bg-black/50" />
+
+      {/* Content */}
+      <div className="relative z-10 container flex flex-col justify-center min-h-screen">
+        <div className="max-w-3xl">
+          <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl text-white mb-8">
+            Delivery that works
+          </h1>
+          <p className="text-2xl md:text-2xl text-white/90 mb-12 max-w-2xl">
+            Our delivery is fast, reliable, and easy to use. We deliver to your customers in 30 minutes or less. We also offer a 100% satisfaction guarantee and a 100% refund guarantee.
+          </p>
+          <Link
+            href="/about"
+            className="inline-flex items-center gap-2 bg-orange-500 text-white px-6 py-3 rounded-full hover:bg-orange-400 transition-colors"
+          >
+            Be an early adopter
+            <ArrowRight className="h-5 w-5" />
+          </Link>
         </div>
       </div>
     </div>
