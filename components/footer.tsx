@@ -9,7 +9,7 @@ export function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">About Us</h3>
             <p className="text-sm text-gray-400">
-              We're revolutionizing the restaurant industry with our cutting-edge management and delivery solutions.
+              We are revolutionizing the restaurant industry with our cutting-edge management and delivery solutions.
             </p>
           </div>
           <div>
