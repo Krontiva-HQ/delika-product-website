@@ -8,9 +8,9 @@ export function MainCTA() {
         <div className="grid md:grid-cols-2 items-center gap-8 p-8 md:p-12">
           {/* Left content */}
           <div className="space-y-6">
-            <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight">Get started with Outseta today</h2>
+            <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight">Get started with Delika today</h2>
             <p className="text-lg md:text-xl text-white/80">
-              Try Outseta free for 7 days—you'll have access to every feature. Cancel any time.
+              Try Delika forfree and you will have access to every feature.
             </p>
             <a
               href="#"
