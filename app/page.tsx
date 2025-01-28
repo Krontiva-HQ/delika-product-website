@@ -1,6 +1,9 @@
 import { SiteHeader } from "@/components/site-header"
 import { HeroSection } from "@/components/hero-section"
 import { FeatureSection } from "@/components/feature-section"
+import { BrandBanner } from "@/components/brand-banner"
+import { MainCTA } from "@/components/main-cta"
+import { NewFeature } from "@/components/new-feature"
 
 export default function Home() {
   return (
@@ -8,7 +11,9 @@ export default function Home() {
       <SiteHeader />
       <main className="relative">
         <HeroSection />
-        <FeatureSection />
+        <BrandBanner />
+        <NewFeature />
+        <MainCTA />
       </main>
     </div>
   )
