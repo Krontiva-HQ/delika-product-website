@@ -3,8 +3,8 @@ import Image from "next/image"
 
 export function MainCTA() {
   return (
-    <div className="bg-[#1a0b2e] rounded-3xl overflow-hidden">
-      <div className="container mx-auto">
+    <div className="container mx-auto px-4 py-24">
+      <div className="bg-[#1a0b2e] rounded-3xl overflow-hidden max-w-5xl mx-auto">
         <div className="grid md:grid-cols-2 items-center gap-8 p-8 md:p-12">
           {/* Left content */}
           <div className="space-y-6">
@@ -19,16 +19,6 @@ export function MainCTA() {
               Start your free trial
               <ArrowRight className="h-5 w-5" />
             </a>
-          </div>
-
-          {/* Right image */}
-          <div className="relative h-[400px] md:h-[500px]">
-            <Image
-              src="/main-cta.jpg"
-              alt="Outseta dashboard preview"
-              fill
-              className="object-contain object-center"
-            />
           </div>
         </div>
       </div>
