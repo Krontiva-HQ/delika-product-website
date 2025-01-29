@@ -98,15 +98,15 @@ export function HeroSection() {
         >
           <Link 
             href="/restaurants" 
-            className="rounded-full px-6 md:px-8 py-3 w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none"
+            className="rounded-full px-6 md:px-8 py-3 w-full sm:w-auto bg-black text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 focus:ring-2 focus:ring-black focus:ring-offset-2 focus:outline-none hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 relative overflow-hidden group"
           >
-            Sign up as restaurant
+            <span className="relative z-10 group-hover:text-white">Sign up as restaurant</span>
           </Link>
           <Link 
             href="/couriers" 
-            className="rounded-full px-6 md:px-8 py-3 w-full sm:w-auto bg-gradient-to-r from-pink-600 to-orange-600 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 focus:outline-none"
+            className="rounded-full px-6 md:px-8 py-3 w-full sm:w-auto border-2 border-black text-black font-medium transition-all duration-300 hover:scale-105 focus:ring-2 focus:ring-black focus:ring-offset-2 focus:outline-none hover:border-transparent hover:bg-gradient-to-r hover:from-orange-500 hover:to-pink-500 hover:text-white relative overflow-hidden group"
           >
-            Sign up as courier
+            <span className="relative z-10 group-hover:text-white">Sign up as courier</span>
           </Link>
         </motion.div>
       </div>
