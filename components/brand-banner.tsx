@@ -1,14 +1,14 @@
 import Image from "next/image"
 
 const brands = [
-  { src: "/air-peace.svg", alt: "Air Peace" },
-  { src: "/ariiya.svg", alt: "Ariiya" },
-  { src: "/carbon.svg", alt: "Carbon" },
-  { src: "/corywise.svg", alt: "Corywise" },
+  { src: "/starbites.png", alt: "Starbites" },
+  { src: "/papas-logo.png", alt: "Papas Pizza" },
+  { src: "/eddys-pizza.png", alt: "Eddy's Pizza" },
+  { src: "/wingman-logo.png", alt: "Wingman" },
   { src: "/dominos.svg", alt: "Dominos" },
-  { src: "/iroko.svg", alt: "Iroko" },
-  { src: "/film-house.svg", alt: "Film House" },
-  { src: "/piggyvest.svg", alt: "Piggyvest" }
+  { src: "/pizzaman.png", alt: "Pizza Man" },
+  { src: "/pizarea-logo.png", alt: "Pizarea" },
+  { src: "/cafe-de-boba.png", alt: "Cafe de Boba" },
 ]
 
 export function BrandBanner() {
@@ -27,7 +27,7 @@ export function BrandBanner() {
                   alt={brand.alt}
                   width={300}
                   height={100}
-                  className="w-full h-6 sm:h-8 md:h-10 object-contain opacity-70 hover:opacity-100 transition-opacity"
+                  className="w-full h-6 sm:h-8 md:h-10 object-contain opacity-90 hover:opacity-100 transition-opacity"
                 />
               </div>
             ))}

@@ -44,10 +44,7 @@ export function CourierSignupForm() {
       >
         <h2 className="text-3xl font-bold tracking-tight text-gray-900">Join our delivery network!</h2>
         <p className="mt-2 text-sm text-gray-600">
-          Already a courier?{" "}
-          <a href="/login" className="font-medium text-purple-600 hover:text-purple-500">
-            Log in
-          </a>
+          Start earning by delivering with Delika
         </p>
       </motion.div>
 

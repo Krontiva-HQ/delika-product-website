@@ -44,10 +44,7 @@ export function RestaurantSignupForm() {
       >
         <h2 className="text-3xl font-bold tracking-tight text-gray-900">Let us help your business grow!</h2>
         <p className="mt-2 text-sm text-gray-600">
-          Already a partner?{" "}
-          <a href="/login" className="font-medium text-orange-600 hover:text-orange-500">
-            Log in
-          </a>
+          Partner with Delika to reach more customers
         </p>
       </motion.div>
 
