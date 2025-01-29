@@ -1,6 +1,6 @@
 "use client"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 
@@ -96,15 +96,20 @@ export function HeroSection() {
           transition={{ duration: 0.8, delay: 1.2 }}
           className="flex flex-col sm:flex-row gap-4 px-4"
         >
-          <Button size="lg" className="rounded-full px-6 md:px-8 w-full sm:w-auto">
+          <Link 
+            href="/restaurants" 
+            className="rounded-full px-6 md:px-8 py-3 w-full sm:w-auto bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:outline-none"
+          >
             Sign up as restaurant
-          </Button>
-          <Button size="lg" variant="outline" className="rounded-full px-6 md:px-8 w-full sm:w-auto">
+          </Link>
+          <Link 
+            href="/couriers" 
+            className="rounded-full px-6 md:px-8 py-3 w-full sm:w-auto bg-gradient-to-r from-pink-600 to-orange-600 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 focus:outline-none"
+          >
             Sign up as courier
-          </Button>
+          </Link>
         </motion.div>
       </div>
     </div>
   )
 }
-

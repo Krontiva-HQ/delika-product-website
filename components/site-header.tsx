@@ -47,6 +47,35 @@ export function SiteHeader() {
                   </div>
                 </NavigationMenuContent>
               </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link href="/restaurants" legacyBehavior passHref>
+                  <NavigationMenuLink className="text-sm lg:text-base px-4 py-2">
+                    Restaurants
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link href="/couriers" legacyBehavior passHref>
+                  <NavigationMenuLink className="text-sm lg:text-base px-4 py-2">
+                    Couriers
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="text-sm lg:text-base">Company</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="w-[300px] md:w-[400px] p-4">
+                    <NavigationMenuLink asChild>
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium leading-none">About Us</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Learn about our mission, values, and team.
+                        </p>
+                      </div>
+                    </NavigationMenuLink>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
         </div>
