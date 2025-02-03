@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useToast } from "@/components/ui/use-toast"
+import { Loader2 } from "lucide-react"
+import { useState } from "react"
 
 const formSchema = z.object({
   business_name: z.string().min(2, "Business name must be at least 2 characters"),
@@ -18,6 +21,9 @@ const formSchema = z.object({
 })
 
 export function RestaurantSignupForm() {
+  const { toast } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -31,6 +37,7 @@ export function RestaurantSignupForm() {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true)
     try {
       const response = await fetch('/api/restaurant-signup', {
         method: 'POST',
@@ -40,14 +47,27 @@ export function RestaurantSignupForm() {
         body: JSON.stringify(values),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error('Failed to submit form')
+        throw new Error(data.error || 'Failed to submit form')
       }
 
-      console.log('Form submitted successfully')
+      toast({
+        title: "Success!",
+        description: "Your application has been submitted successfully. We'll be in touch soon!",
+        variant: "default",
+      })
+      
       form.reset()
     } catch (error) {
-      console.error('Error submitting form:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -93,7 +113,7 @@ export function RestaurantSignupForm() {
                       <SelectContent>
                         <SelectItem value="Restaurant">Restaurant</SelectItem>
                         <SelectItem value="Fast Food">Fast Food</SelectItem>
-                        <SelectItem value="Cafe">Catering</SelectItem>
+                        <SelectItem value="Cafe">Cafe</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -114,8 +134,8 @@ export function RestaurantSignupForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Full Service">Delivery</SelectItem>
-                        <SelectItem value="Dilivery Only">Pickup</SelectItem>
+                        <SelectItem value="Full Service">Full Service</SelectItem>
+                        <SelectItem value="Delivery Only">Delivery Only</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -170,9 +190,17 @@ export function RestaurantSignupForm() {
 
             <Button
               type="submit"
+              disabled={isSubmitting}
               className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
             >
-              Sign up as Restaurant Partner
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Sign up as Restaurant Partner"
+              )}
             </Button>
           </form>
         </Form>
