@@ -61,7 +61,7 @@ export default function About() {
               Transforming Food Delivery in Ghana
             </h1>
             <p className="text-xl text-white/90 mb-8">
-              We're building the future of food delivery, one order at a time.
+              We are building the future of food delivery, one order at a time.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {stats.map((stat, index) => (
@@ -93,10 +93,10 @@ export default function About() {
             >
               <h2 className="text-4xl font-bold mb-6">Our Mission</h2>
               <p className="text-xl text-gray-600 mb-8">
-                At Delika, we're on a mission to transform the food delivery industry in Ghana. We believe everyone deserves access to their favorite restaurants, delivered quickly and reliably.
+                At Delika, we are on a mission to transform the food delivery industry in Ghana. We believe everyone deserves access to their favorite restaurants, delivered quickly and reliably.
               </p>
               <p className="text-xl text-gray-600">
-                We're building technology that connects restaurants, delivery partners, and customers in ways that create opportunities and enhance lives.
+                We are building technology that connects restaurants, delivery partners, and customers in ways that create opportunities and enhance lives.
               </p>
             </motion.div>
             <motion.div
@@ -165,7 +165,7 @@ export default function About() {
           >
             <h2 className="text-4xl font-bold mb-6">Join Our Journey</h2>
             <p className="text-xl text-gray-600 mb-12">
-              Whether you're a restaurant owner, delivery partner, or customer, be part of our story in revolutionizing food delivery in Ghana.
+              Whether you are a restaurant owner, delivery partner, or customer, be part of our story in revolutionizing food delivery in Ghana.
             </p>
             <SignupModal 
               trigger={
