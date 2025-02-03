@@ -24,12 +24,12 @@ export function SiteHeader() {
                 <NavigationMenuContent>
                   <div className="w-[300px] md:w-[400px] p-4">
                     <NavigationMenuLink asChild>
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-medium leading-none">Product Features</h4>
+                      <Link href="/about" className="block space-y-3 hover:bg-gray-100 p-3 rounded-lg transition-colors">
+                        <h4 className="text-sm font-medium leading-none">About Us</h4>
                         <p className="text-sm text-muted-foreground">
-                          Learn about our product offerings and capabilities.
+                          Learn about our mission and vision.
                         </p>
-                      </div>
+                      </Link>
                     </NavigationMenuLink>
                   </div>
                 </NavigationMenuContent>
@@ -60,21 +60,6 @@ export function SiteHeader() {
                     Couriers
                   </NavigationMenuLink>
                 </Link>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="text-sm lg:text-base">Company</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="w-[300px] md:w-[400px] p-4">
-                    <NavigationMenuLink asChild>
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-medium leading-none">About Us</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Learn about our mission, values, and team.
-                        </p>
-                      </div>
-                    </NavigationMenuLink>
-                  </div>
-                </NavigationMenuContent>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
