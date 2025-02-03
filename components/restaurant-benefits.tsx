@@ -9,8 +9,8 @@ import {
   Users, 
   ShieldCheck,
   Truck,
-  Wallet,
-  Settings
+  ChefHat,
+  HeartHandshake
 } from "lucide-react"
 
 const benefits = [
@@ -41,8 +41,8 @@ const benefits = [
   },
   {
     icon: ShieldCheck,
-    title: "Secure Payments",
-    description: "Reliable and secure payment processing with instant transfers. Multiple payment options for customers and detailed financial reporting for you."
+    title: "Quality Assurance",
+    description: "We maintain high standards for food quality and service. Our platform helps you track customer feedback and maintain consistent quality across all orders."
   },
   {
     icon: Truck,
@@ -50,14 +50,14 @@ const benefits = [
     description: "Our network of professional delivery partners ensures your food reaches customers quickly and in perfect condition. Real-time delivery tracking included."
   },
   {
-    icon: Wallet,
-    title: "Flexible Pricing",
-    description: "Competitive commission rates and flexible pricing plans tailored to your business size. No hidden fees, transparent pricing structure."
+    icon: ChefHat,
+    title: "Menu Optimization",
+    description: "Get expert guidance on menu design and pricing. Our data-driven insights help you create offerings that maximize profitability and customer satisfaction."
   },
   {
-    icon: Settings,
-    title: "24/7 Support",
-    description: "Dedicated support team available around the clock. Technical assistance, order issues, and general inquiries resolved quickly."
+    icon: HeartHandshake,
+    title: "Partnership Growth",
+    description: "We're committed to your success. Access exclusive promotions, marketing opportunities, and partnership benefits as you grow with us."
   }
 ]
 
@@ -97,24 +97,6 @@ export function RestaurantBenefits() {
             </motion.div>
           ))}
         </div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="mt-16 text-center"
-        >
-          <div className="inline-flex items-center gap-8 bg-orange-500 text-white px-8 py-6 rounded-2xl">
-            <div className="text-left">
-              <h3 className="text-2xl font-bold mb-2">Ready to grow your business?</h3>
-              <p className="text-white/90">Join Delika today and reach more customers</p>
-            </div>
-            <button className="bg-white text-orange-500 px-6 py-3 rounded-xl font-semibold hover:bg-orange-50 transition-colors">
-              Get Started
-            </button>
-          </div>
-        </motion.div>
       </div>
     </section>
   )
