@@ -13,11 +13,12 @@ import { useState } from "react"
 
 const formSchema = z.object({
   business_name: z.string().min(2, "Business name must be at least 2 characters"),
+  full_name: z.string().min(2, "Full name must be at least 2 characters"),
+  business_type: z.string().min(1, "Please select a business type"),
+  type_of_service: z.string().min(1, "Please select a type of service"),
   address: z.string().min(5, "Address must be at least 5 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone_number: z.string().min(10, "Phone number must be at least 10 digits"),
-  business_type: z.string().min(1, "Please select a business type"),
-  type_of_service: z.string().min(1, "Please select a type of service"),
 })
 
 export function RestaurantSignupForm() {
@@ -28,6 +29,7 @@ export function RestaurantSignupForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       business_name: "",
+      full_name: "",
       business_type: "",
       type_of_service: "",
       address: "",
@@ -91,6 +93,20 @@ export function RestaurantSignupForm() {
                   <FormLabel>Business Name</FormLabel>
                   <FormControl>
                     <Input placeholder="Your restaurant name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="full_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your full name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

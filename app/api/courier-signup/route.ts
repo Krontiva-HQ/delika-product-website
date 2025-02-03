@@ -9,7 +9,7 @@ export async function POST(request: Request) {
       approval_status: 'pending'
     }
     
-    const response = await fetch(process.env.RESTAURANT_APPROVAL_API!, {
+    const response = await fetch(process.env.RIDER_APPROVAL_API!, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
