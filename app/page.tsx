@@ -7,6 +7,7 @@ import { MoreFeatures } from "@/components/more-features"
 import { CookieConsentBanner } from "@/components/cookie-consent-banner"
 import { FAQSection } from "@/components/faq-section"
 import { Footer } from "@/components/footer"
+
 export default function Home() {
   return (
     <div className="relative min-h-screen overflow-x-hidden">
@@ -19,7 +20,7 @@ export default function Home() {
         <MainCTA />
         <FAQSection />
         <Footer />
-        <CookieConsentBanner /> 
+        <CookieConsentBanner />
       </main>
     </div>
   )
