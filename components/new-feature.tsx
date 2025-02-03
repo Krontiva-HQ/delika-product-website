@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react"
-import Link from "next/link"
+import { SignupModal } from "@/components/signup-modal"
 
 export function NewFeature() {
   return (
@@ -25,13 +25,14 @@ export function NewFeature() {
           <p className="text-2xl md:text-2xl text-white/90 mb-12 max-w-2xl">
             Our delivery is fast, reliable, and easy to use. We deliver to your customers in 30 minutes or less. We also offer a 100% satisfaction guarantee and a 100% refund guarantee.
           </p>
-          <Link
-            href="/about"
-            className="inline-flex items-center gap-2 bg-orange-500 text-white px-6 py-3 rounded-full hover:bg-orange-400 transition-colors"
-          >
-            Be an early adopter
-            <ArrowRight className="h-5 w-5" />
-          </Link>
+          <SignupModal 
+            trigger={
+              <button className="inline-flex items-center gap-2 bg-orange-500 text-white px-6 py-3 rounded-full hover:bg-orange-400 transition-colors">
+                Be an early adopter
+                <ArrowRight className="h-5 w-5" />
+              </button>
+            }
+          />
         </div>
       </div>
     </div>
