@@ -1,174 +1,139 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
+import { useState } from "react"
+import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
-const formSchema = z.object({
-  businessName: z.string().min(2, "Business name must be at least 2 characters"),
-  businessType: z.string().min(1, "Please select a business type"),
-  address: z.string().min(5, "Address must be at least 5 characters"),
-  postcode: z.string().min(1, "Post code is required"),
-  email: z.string().email("Please enter a valid email address"),
-  phone: z.string().min(10, "Phone number must be at least 10 digits"),
-})
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export function RestaurantSignupForm() {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      businessName: "",
-      businessType: "",
-      address: "",
-      postcode: "",
-      email: "",
-      phone: "",
-    },
+  const [formData, setFormData] = useState({
+    businessName: "",
+    businessType: "",
+    serviceType: "",
+    address: "",
+    postcode: "",
+    email: "",
+    phone: "",
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log(formData)
   }
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">Let us help your business grow!</h2>
-        <p className="mt-2 text-sm text-gray-600">
-          Partner with Delika to reach more customers
-        </p>
-      </motion.div>
+    <div className="flex min-h-screen items-center justify-center p-8">
+      <div className="w-full max-w-lg space-y-8">
+        <div>
+          <h1 className="text-4xl font-bold">Join Delika today</h1>
+        </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-      >
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="businessName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Business name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter business name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="businessType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Business type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="restaurant">Restaurant</SelectItem>
-                        <SelectItem value="cafe">Café</SelectItem>
-                        <SelectItem value="fastfood">Fast Food</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Business name</label>
+              <Input
+                placeholder="Enter business name"
+                value={formData.businessName}
+                onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter venue address" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="postcode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Post code</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter post code" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Business type</label>
+              <Select
+                value={formData.businessType}
+                onValueChange={(value) => setFormData({ ...formData, businessType: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="restaurant">Restaurant</SelectItem>
+                  <SelectItem value="cafe">Café</SelectItem>
+                  <SelectItem value="fastfood">Fast Food</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </div>
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email address</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="Enter email address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone number</FormLabel>
-                  <div className="flex gap-2">
-                    <Select defaultValue="+233" disabled>
-                      <SelectTrigger className="w-[100px]">
-                        <SelectValue placeholder="+233" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="+233">+233</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormControl>
-                      <Input type="tel" placeholder="Enter phone number" {...field} />
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Type of Service</label>
+            <Select
+              value={formData.serviceType}
+              onValueChange={(value) => setFormData({ ...formData, serviceType: value })}
             >
-              Sign up as Restaurant Partner
-            </Button>
-          </form>
-        </Form>
-      </motion.div>
+              <SelectTrigger>
+                <SelectValue placeholder="Select service type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Full Service">Full Service</SelectItem>
+                <SelectItem value="Delivery Only">Delivery Only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Address</label>
+              <Input
+                placeholder="Enter your venue address"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Post code</label>
+              <Input
+                placeholder="Enter post code"
+                value={formData.postcode}
+                onChange={(e) => setFormData({ ...formData, postcode: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Email</label>
+            <Input
+              type="email"
+              placeholder="Enter email address"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Phone number</label>
+            <div className="flex gap-2">
+              <Select defaultValue="+233">
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue placeholder="+233" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="+233">+233</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                type="tel"
+                placeholder="Mobile number"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600">
+            Create Account
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+        </form>
+      </div>
     </div>
   )
 }

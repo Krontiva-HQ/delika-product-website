@@ -12,8 +12,9 @@ export default function RestaurantSignup() {
           className="object-cover"
           priority
         />
+        <div className="absolute inset-0 bg-black/50" />
       </div>
-      <div className="flex-1 bg-white p-8 overflow-y-auto">
+      <div className="flex-1 bg-white overflow-y-auto">
         <RestaurantSignupForm />
       </div>
     </main>

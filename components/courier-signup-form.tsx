@@ -36,23 +36,15 @@ export function CourierSignupForm() {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">Join our delivery network!</h2>
-        <p className="mt-2 text-sm text-gray-600">
-          Start earning by delivering with Delika
-        </p>
-      </motion.div>
+    <div className="flex min-h-screen items-center justify-center p-8">
+      <div className="w-full max-w-lg space-y-8">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Join our delivery network!</h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Start earning by delivering with Delika
+          </p>
+        </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-      >
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
@@ -177,7 +169,7 @@ export function CourierSignupForm() {
             </Button>
           </form>
         </Form>
-      </motion.div>
+      </div>
     </div>
   )
 }
