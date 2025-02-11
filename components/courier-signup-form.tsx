@@ -377,9 +377,9 @@ export function CourierSignupForm() {
                               {...field}
                               className="w-full rounded-md border border-input bg-background px-3 py-2"
                             >
-                              <option value="national_id">National ID</option>
+                              <option value="national">National ID</option>
                               <option value="passport">Passport</option>
-                              <option value="drivers_license">Driver's License</option>
+                              <option value="drivers">Driver&apos;s License</option>
                             </select>
                           </FormControl>
                           <FormMessage />
