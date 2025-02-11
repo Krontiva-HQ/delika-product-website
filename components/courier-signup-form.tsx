@@ -454,7 +454,7 @@ export function CourierSignupForm() {
                 className="flex w-full items-center justify-between p-4 text-left"
                 onClick={() => toggleSection('license')}
               >
-                <h3 className="text-xl font-semibold">Rider's License Details</h3>
+                <h3 className="text-xl font-semibold">Rider&apos;s License Details</h3>
                 {expandedSections.license ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
               </button>
               {expandedSections.license && (
