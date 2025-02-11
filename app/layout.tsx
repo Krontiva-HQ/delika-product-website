@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Delika App",
-  description: "Delika App",
+  title: "Delika - Built for restaurants",
+  description: "Delika - Built for restaurants",
 };
 
 export default function RootLayout({
