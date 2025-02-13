@@ -92,6 +92,7 @@ export function CourierSignupForm() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
+  const [isLoadingStep, setIsLoadingStep] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -131,7 +132,7 @@ export function CourierSignupForm() {
 
   const canProceed = () => {
     const currentFields = {
-      0: ['full_name', 'address', 'date_of_birth', 'nationality', 'residential_address'],
+      0: ['full_name', 'email', 'phone_number', 'address', 'date_of_birth', 'nationality', 'residential_address'],
       1: ['emergency_contact_name', 'emergency_contact_relationship', 'emergency_contact_number'],
       2: ['id_type', 'id_number', 'id_issue_date', 'id_expiry_date', 'id_place_of_issue'],
       3: ['riders_license_number', 'license_class', 'license_issue_date', 'license_expiry_date'],
@@ -147,10 +148,95 @@ export function CourierSignupForm() {
     })
   }
 
-  const nextStep = () => {
+  const getCurrentStepFields = () => {
+    const values = form.getValues()
+    const currentFields = {
+      0: {
+        title: 'Personal Information',
+        fields: {
+          full_name: values.full_name,
+          email: values.email,
+          phone_number: values.phone_number,
+          address: values.address,
+          date_of_birth: values.date_of_birth,
+          nationality: values.nationality,
+          residential_address: values.residential_address,
+        }
+      },
+      1: {
+        title: 'Emergency Contact',
+        fields: {
+          emergency_contact_name: values.emergency_contact_name,
+          emergency_contact_relationship: values.emergency_contact_relationship,
+          emergency_contact_number: values.emergency_contact_number,
+        }
+      },
+      2: {
+        title: 'Identification Documents',
+        fields: {
+          id_type: values.id_type,
+          id_number: values.id_number,
+          id_issue_date: values.id_issue_date,
+          id_expiry_date: values.id_expiry_date,
+          id_place_of_issue: values.id_place_of_issue,
+        }
+      },
+      3: {
+        title: 'Rider\'s License Details',
+        fields: {
+          riders_license_number: values.riders_license_number,
+          license_class: values.license_class,
+          license_issue_date: values.license_issue_date,
+          license_expiry_date: values.license_expiry_date,
+        }
+      },
+      4: {
+        title: 'Employment History',
+        fields: {
+          previous_employer: values.previous_employer,
+          employment_duration: values.employment_duration,
+          position_held: values.position_held,
+          reason_for_leaving: values.reason_for_leaving,
+        }
+      },
+      5: {
+        title: 'Guarantor Information',
+        fields: {
+          guarantor_name: values.guarantor_name,
+          guarantor_relationship: values.guarantor_relationship,
+          guarantor_phone: values.guarantor_phone,
+          guarantor_address: values.guarantor_address,
+          guarantor_occupation: values.guarantor_occupation,
+          guarantor_id: values.guarantor_id,
+        }
+      },
+      6: {
+        title: 'Health Declaration',
+        fields: {
+          medical_conditions: values.medical_conditions,
+        }
+      }
+    }
+    return currentFields[currentStep as keyof typeof currentFields]
+  }
+
+  const nextStep = async () => {
     if (currentStep < FORM_STEPS.length - 1 && canProceed()) {
-      setCurrentStep(currentStep + 1)
+      const currentStepData = getCurrentStepFields()
+      console.log(`Completing Step ${currentStep + 1}: ${currentStepData.title}`)
+      console.log('Step Data:', currentStepData.fields)
+      
+      setIsLoadingStep(true)
+      try {
+        await new Promise(resolve => setTimeout(resolve, 500))
+        setCurrentStep(currentStep + 1)
+        console.log(`Moving to Step ${currentStep + 2}`)
+      } finally {
+        setIsLoadingStep(false)
+      }
     } else if (!canProceed()) {
+      console.log(`Validation failed for Step ${currentStep + 1}`)
+      console.log('Missing Fields:', form.formState.errors)
       toast({
         title: "Required Fields",
         description: "Please fill in all required fields before proceeding.",
@@ -161,62 +247,79 @@ export function CourierSignupForm() {
 
   const prevStep = () => {
     if (currentStep > 0) {
+      const currentStepData = getCurrentStepFields()
+      console.log(`Moving back from Step ${currentStep + 1}: ${currentStepData.title}`)
+      console.log('Current Step Data:', currentStepData.fields)
       setCurrentStep(currentStep - 1)
     }
   }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!canProceed()) {
+      toast({
+        title: "Required Fields",
+        description: "Please fill in all required fields before submitting.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    console.log('Starting form submission...')
     setIsSubmitting(true)
     try {
-      // Transform the form values to match the expected database structure
       const transformedData = {
         full_name: values.full_name,
         email: values.email,
         phone_number: values.phone_number,
-        rider_approval_status: "pending", // Default status for new applications
-        personalInformation: {
+        address: values.address,
+        rider_approval_status: "pending",
+        personal_information: {
           nationality: values.nationality,
-          residentialAddress: values.residential_address,
-          emergencyContact: {
+          residential_address: values.residential_address,
+          emergency_contact: {
             name: values.emergency_contact_name,
             relationship: values.emergency_contact_relationship,
-            phoneNumber: values.emergency_contact_number
+            phone_number: values.emergency_contact_number
           },
-          dateOfBirth: values.date_of_birth ? new Date(values.date_of_birth).toISOString() : null
+          date_of_birth: values.date_of_birth
         },
-        identityDocuments: {
-          primaryID: values.id_type,
-          idNumber: values.id_number,
-          placeOfIssue: values.id_place_of_issue,
-          issueDate: values.id_issue_date ? new Date(values.id_issue_date).toISOString() : null,
-          expiryDate: values.id_expiry_date ? new Date(values.id_expiry_date).toISOString() : null
+        identity_documents: {
+          primary_id: values.id_type,
+          id_number: values.id_number,
+          place_of_issue: values.id_place_of_issue,
+          issue_date: values.id_issue_date,
+          expiry_date: values.id_expiry_date
         },
-        licenseDetails: {
-          licenseNumber: values.riders_license_number,
+        license_details: {
+          license_number: values.riders_license_number,
           class: values.license_class,
-          issueDate: values.license_issue_date ? new Date(values.license_issue_date).toISOString() : null,
-          expiryDate: values.license_expiry_date ? new Date(values.license_expiry_date).toISOString() : null
+          issue_date: values.license_issue_date,
+          expiry_date: values.license_expiry_date
         },
-        employmentHistory: {
-          mostRecentEmployer: values.previous_employer || "",
+        employment_history: {
+          most_recent_employer: values.previous_employer || "",
           duration: values.employment_duration || "",
-          role: values.position_held || ""
+          role: values.position_held || "",
+          reason_for_leaving: values.reason_for_leaving || ""
         },
-        guarantorInformation: {
-          fullName: values.guarantor_name,
+        guarantor_information: {
+          full_name: values.guarantor_name,
           relationship: values.guarantor_relationship,
-          phoneNumber: values.guarantor_phone,
+          phone_number: values.guarantor_phone,
           address: values.guarantor_address,
           occupation: values.guarantor_occupation,
           id: values.guarantor_id
         },
-        healthDeclaration: values.medical_conditions || ""
+        health_declaration: values.medical_conditions || ""
       }
+
+      console.log('Transformed Data:', transformedData)
 
       const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/delika_rider_approval', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify(transformedData),
       })
@@ -224,8 +327,46 @@ export function CourierSignupForm() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit form')
+        throw new Error(data.message || 'Failed to submit form')
       }
+
+      console.log('API Response:', data)
+
+      // Clear form and reset to first step
+      form.reset({
+        full_name: "",
+        email: "",
+        phone_number: "",
+        address: "",
+        date_of_birth: "",
+        nationality: "",
+        residential_address: "",
+        emergency_contact_name: "",
+        emergency_contact_relationship: "",
+        emergency_contact_number: "",
+        id_type: "national",
+        id_number: "",
+        id_issue_date: "",
+        id_expiry_date: "",
+        id_place_of_issue: "",
+        riders_license_number: "",
+        license_class: "",
+        license_issue_date: "",
+        license_expiry_date: "",
+        previous_employer: "",
+        employment_duration: "",
+        position_held: "",
+        reason_for_leaving: "",
+        guarantor_name: "",
+        guarantor_relationship: "",
+        guarantor_phone: "",
+        guarantor_address: "",
+        guarantor_occupation: "",
+        guarantor_id: "",
+        medical_conditions: "",
+      })
+      
+      setCurrentStep(0)
 
       toast({
         title: "Success!",
@@ -233,8 +374,8 @@ export function CourierSignupForm() {
         variant: "default",
       })
       
-      form.reset()
     } catch (error) {
+      console.error('Submission error:', error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
@@ -249,10 +390,14 @@ export function CourierSignupForm() {
     <div className="flex min-h-screen items-center justify-center p-4 md:p-8">
       <div className="w-full max-w-4xl space-y-6">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Join Our Delivery Team!</h2>
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
+              Join Our Delivery Team!
+            </h2>
           <p className="mt-2 text-sm text-gray-600">
             Start earning with flexible hours
           </p>
+        </div>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -270,496 +415,549 @@ export function CourierSignupForm() {
           </div>
         </div>
 
+        <div className="relative">
+          {isSubmitting && (
+            <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-50 rounded-lg">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                <p className="text-sm text-gray-600">Submitting your application...</p>
+              </div>
+            </div>
+          )}
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              {currentStep === 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold mb-4">Personal Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                {currentStep === 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold mb-4">Personal Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="full_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your full name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                              <Input type="email" placeholder="Your email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your phone number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+                      <FormField
+                        control={form.control}
+                        name="address"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Address</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Your address" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="date_of_birth"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Date of Birth</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="nationality"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nationality</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="residential_address"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-2">
+                            <FormLabel>Residential Address</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 1 && (
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold mb-4">Emergency Contact</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="emergency_contact_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="emergency_contact_relationship"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Relationship</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="emergency_contact_number"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Number</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 2 && (
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold mb-4">Identification Documents</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="id_type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>ID Type</FormLabel>
+                            <FormControl>
+                              <select
+                                {...field}
+                                className="w-full rounded-md border border-input bg-background px-3 py-2"
+                              >
+                                <option value="national">National ID</option>
+                                <option value="passport">Passport</option>
+                                <option value="drivers">Driver&apos;s License</option>
+                              </select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="id_number"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>ID Number</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="id_issue_date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Issue Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="id_expiry_date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Expiry Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="id_place_of_issue"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Place of Issue</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 3 && (
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold mb-4">Rider&apos;s License Details</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="riders_license_number"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>License Number</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="license_class"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>License Class</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="license_issue_date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Issue Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="license_expiry_date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Expiry Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 4 && (
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold mb-4">Employment History</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="previous_employer"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Previous Employer</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="employment_duration"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Duration of Employment</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="position_held"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Position Held</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="reason_for_leaving"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Reason for Leaving</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 5 && (
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold mb-4">Guarantor Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="guarantor_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Full Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="guarantor_relationship"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Relationship</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="guarantor_phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="guarantor_address"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Address</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="guarantor_occupation"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Occupation</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="guarantor_id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>ID Number</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {currentStep === 6 && (
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold mb-4">Health Declaration</h3>
                     <FormField
                       control={form.control}
-                      name="full_name"
+                      name="medical_conditions"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Full Name</FormLabel>
+                          <FormLabel>Medical Conditions (if any)</FormLabel>
                           <FormControl>
-                            <Input placeholder="Your full name" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Address</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Your address" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="date_of_birth"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Date of Birth</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="nationality"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nationality</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="residential_address"
-                      render={({ field }) => (
-                        <FormItem className="md:col-span-2">
-                          <FormLabel>Residential Address</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
+                            <Input {...field} placeholder="List any medical conditions here" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-                </div>
-              )}
-
-              {currentStep === 1 && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold mb-4">Emergency Contact</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="emergency_contact_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="emergency_contact_relationship"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Relationship</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="emergency_contact_number"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Number</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 2 && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold mb-4">Identification Documents</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="id_type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>ID Type</FormLabel>
-                          <FormControl>
-                            <select
-                              {...field}
-                              className="w-full rounded-md border border-input bg-background px-3 py-2"
-                            >
-                              <option value="national">National ID</option>
-                              <option value="passport">Passport</option>
-                              <option value="drivers">Driver&apos;s License</option>
-                            </select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="id_number"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>ID Number</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="id_issue_date"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Issue Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="id_expiry_date"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Expiry Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="id_place_of_issue"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Place of Issue</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 3 && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold mb-4">Rider&apos;s License Details</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="riders_license_number"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>License Number</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="license_class"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>License Class</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="license_issue_date"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Issue Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="license_expiry_date"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Expiry Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 4 && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold mb-4">Employment History</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="previous_employer"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Previous Employer</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="employment_duration"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Duration of Employment</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="position_held"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Position Held</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="reason_for_leaving"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Reason for Leaving</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 5 && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold mb-4">Guarantor Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="guarantor_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="guarantor_relationship"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Relationship</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="guarantor_phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="guarantor_address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Address</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="guarantor_occupation"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Occupation</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="guarantor_id"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>ID Number</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 6 && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold mb-4">Health Declaration</h3>
-                  <FormField
-                    control={form.control}
-                    name="medical_conditions"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Medical Conditions (if any)</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="List any medical conditions here" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
+                )}
             </div>
 
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={prevStep}
-                disabled={currentStep === 0}
-                className="flex-1"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-
-              {currentStep === FORM_STEPS.length - 1 ? (
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || !canProceed()}
-                  className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    "Submit"
-                  )}
-                </Button>
-              ) : (
+              <div className="flex gap-3 pt-4">
                 <Button
                   type="button"
-                  onClick={nextStep}
+                  variant="outline"
+                  onClick={prevStep}
+                  disabled={currentStep === 0 || isLoadingStep}
                   className="flex-1"
                 >
-                  Next
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  {isLoadingStep ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                  )}
+                  Back
                 </Button>
+
+                {currentStep === FORM_STEPS.length - 1 ? (
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+                    className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                      "Submit"
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={nextStep}
+                    disabled={isLoadingStep}
+                    className="flex-1"
+                  >
+                    {isLoadingStep ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      <>
+                        Next
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </>
               )}
-            </div>
+            </Button>
+                )}
+              </div>
           </form>
         </Form>
+        </div>
       </div>
     </div>
   )

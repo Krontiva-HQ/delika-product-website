@@ -25,31 +25,52 @@ const formSchema = z.object({
     longitude: z.number(),
     latitude: z.number(),
     name: z.string(),
-    address: z.string()
+    address: z.string(),
+    city: z.string()
   }).optional(),
-  branches: z.array(z.object({
+  branch_name: z.string().min(2, "Branch name must be at least 2 characters"),
+  branch_phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  branch_city: z.string().min(2, "City name is required"),
+  branch_location: z.object({
+    longitude: z.number(),
+    latitude: z.number(),
     name: z.string(),
-    phone_number: z.string().min(10, "Phone number must be at least 10 digits"),
-    city: z.string().min(2, "City name is required"),
-    location: z.object({
-      longitude: z.number(),
-      latitude: z.number(),
-      name: z.string(),
-      address: z.string()
-    })
-  })).optional(),
+    address: z.string(),
+    city: z.string()
+  }).optional(),
 })
+
+const DUMMY_DATA = {
+  business_name: "Test Restaurant",
+  full_name: "John Doe",
+  business_type: "Restaurant",
+  type_of_service: "Full Service",
+  address: "123 Test Street, Accra",
+  email: "test@restaurant.com",
+  phone_number: "0244123456",
+  location: {
+    longitude: -0.1870,
+    latitude: 5.6037,
+    name: "Test Location",
+    address: "123 Test Street, Accra",
+    city: "Accra"
+  },
+  branch_name: "Main Branch",
+  branch_phone: "0244789012",
+  branch_city: "Accra",
+  branch_location: {
+    longitude: -0.1871,
+    latitude: 5.6038,
+    name: "Branch Location",
+    address: "456 Branch Street, Accra",
+    city: "Accra"
+  }
+}
 
 export function RestaurantSignupForm() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [locationData, setLocationData] = useState<LocationData | undefined>(undefined)
-  const [branches, setBranches] = useState<Array<{ 
-    name: string, 
-    phone_number: string,
-    city: string,
-    location: LocationData 
-  }>>([])
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,11 +83,16 @@ export function RestaurantSignupForm() {
       email: "",
       phone_number: "",
       location: undefined,
-      branches: [],
+      branch_name: "",
+      branch_phone: "",
+      branch_city: "",
+      branch_location: undefined,
     },
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (isSubmitting) return; // Prevent multiple submissions
+    
     setIsSubmitting(true)
     try {
       const transformedData = {
@@ -79,21 +105,17 @@ export function RestaurantSignupForm() {
         approval_status: "pending",
         full_name: values.full_name,
         location: locationData,
-        branches: (values.branches ?? []).map(branch => ({
-          name: branch.name,
-          phoneNumber: branch.phone_number,
-          city: branch.city,
-          location: branch.location,
-          longitude: branch.location.longitude,
-          latitude: branch.location.latitude,
-          address: branch.location.address
-        }))
+        branch_name: values.branch_name,
+        branch_phone: values.branch_phone,
+        branch_city: values.branch_city,
+        branch_location: values.branch_location,
       }
 
       const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/delika_restaurant_approvals', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify(transformedData),
       })
@@ -101,7 +123,7 @@ export function RestaurantSignupForm() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit form')
+        throw new Error(data.message || 'Failed to submit form')
       }
 
       toast({
@@ -109,9 +131,11 @@ export function RestaurantSignupForm() {
         description: "Your application has been submitted successfully. We'll be in touch soon!",
         variant: "default",
       })
-      
+
+      // Reset form after successful submission
       form.reset()
     } catch (error) {
+      console.error('Submission error:', error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
@@ -127,59 +151,35 @@ export function RestaurantSignupForm() {
     form.setValue('address', location.address)
   }
 
-  const handleAddBranch = () => {
-    setBranches([...branches, { 
-      name: '', 
-      phone_number: '',
-      city: '',
-      location: { longitude: 0, latitude: 0, name: '', address: '' }
-    }])
-  }
-
-  const handleBranchLocationSelect = (location: LocationData, index: number) => {
-    const newBranches = [...branches]
-    newBranches[index].location = location
-    
-    // Extract city from the address
-    const addressParts = location.address.split(',')
-    const city = addressParts[addressParts.length - 2]?.trim() || ''
-    
-    newBranches[index].city = city
-    setBranches(newBranches)
-    
-    // Update both location and city in the form
-    form.setValue(`branches.${index}.location`, location)
-    form.setValue(`branches.${index}.city`, city)
-  }
-
-  const handleBranchNameChange = (name: string, index: number) => {
-    const newBranches = [...branches]
-    newBranches[index].name = name
-    setBranches(newBranches)
-    form.setValue(`branches.${index}.name`, name)
-  }
-
-  const handleBranchPhoneChange = (phone: string, index: number) => {
-    const newBranches = [...branches]
-    newBranches[index].phone_number = phone
-    setBranches(newBranches)
-    form.setValue(`branches.${index}.phone_number`, phone)
-  }
-
-  const handleRemoveBranch = (index: number) => {
-    const newBranches = branches.filter((_, i) => i !== index)
-    setBranches(newBranches)
-    form.setValue('branches', newBranches)
+  const fillTestData = () => {
+    form.reset(DUMMY_DATA)
+    setLocationData(DUMMY_DATA.location)
+    toast({
+      title: "Test Data Filled",
+      description: "The form has been populated with test data.",
+      variant: "default",
+    })
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center p-8">
       <div className="w-full max-w-lg space-y-8">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Partner with Delika!</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Start growing your business with us
-          </p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900">Partner with Delika!</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Start growing your business with us
+            </p>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={fillTestData}
+            className="bg-gray-100 text-sm"
+          >
+            Fill Test Data
+          </Button>
         </div>
 
         <Form {...form}>
@@ -299,81 +299,70 @@ export function RestaurantSignupForm() {
             </div>
 
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Branch Locations</h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleAddBranch}
-                  className="text-sm"
-                >
-                  Add Branch
-                </Button>
+              <h3 className="text-lg font-semibold">Branch Details</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="branch_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Branch Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Main Branch" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="branch_phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Branch Phone Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Branch contact number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              {branches.map((branch, index) => (
-                <div key={index} className="p-4 border rounded-lg space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-medium">Branch {index + 1}</h4>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => handleRemoveBranch(index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Remove
-                    </Button>
-                  </div>
+              <div className="hidden">
+                <FormField
+                  control={form.control}
+                  name="branch_city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    control={form.control}
-                    name={`branches.${index}.name`}
-                    render={() => (
-                      <FormItem>
-                        <FormLabel>Branch Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter branch name"
-                            value={branch.name}
-                            onChange={(e) => handleBranchNameChange(e.target.value, index)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`branches.${index}.phone_number`}
-                    render={() => (
-                      <FormItem>
-                        <FormLabel>Branch Phone Number</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter branch phone number"
-                            value={branch.phone_number}
-                            onChange={(e) => handleBranchPhoneChange(e.target.value, index)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <LocationInput
-                    label="Branch Location"
-                    onLocationSelect={(location) => handleBranchLocationSelect(location, index)}
-                    prefillData={branch.location}
-                  />
-                </div>
-              ))}
+                <LocationInput
+                  label="Branch Location"
+                  onLocationSelect={(location) => {
+                    form.setValue('branch_location', location);
+                    form.setValue('branch_city', location.city || '');
+                  }}
+                  prefillData={form.getValues('branch_location')}
+                />
+              </div>
             </div>
 
             <Button
               type="submit"
               disabled={isSubmitting}
               className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+              onClick={(e) => {
+                e.preventDefault()
+                form.handleSubmit(onSubmit)()
+              }}
             >
               {isSubmitting ? (
                 <>
