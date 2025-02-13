@@ -163,7 +163,7 @@ export function CourierSignupForm() {
         healthDeclaration: values.medical_conditions || ""
       }
 
-      const response = await fetch('/api/courier-signup', {
+      const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/delika_rider_approval', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
