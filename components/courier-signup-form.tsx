@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, ChevronDown, ChevronUp } from "lucide-react"
+import { Loader2, ChevronDown, ChevronUp, ArrowLeft, ArrowRight } from "lucide-react"
 import { useState } from "react"
 
 const formSchema = z.object({
@@ -57,20 +57,41 @@ const formSchema = z.object({
   medical_conditions: z.string().optional(),
 })
 
+const FORM_STEPS = [
+  {
+    id: 'personal',
+    title: 'Personal Information',
+  },
+  {
+    id: 'emergency',
+    title: 'Emergency Contact',
+  },
+  {
+    id: 'identity',
+    title: 'Identification Documents',
+  },
+  {
+    id: 'license',
+    title: 'Rider\'s License Details',
+  },
+  {
+    id: 'employment',
+    title: 'Employment History',
+  },
+  {
+    id: 'guarantor',
+    title: 'Guarantor Information',
+  },
+  {
+    id: 'health',
+    title: 'Health Declaration',
+  },
+] as const
+
 export function CourierSignupForm() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  // Add state for section expansion
-  const [expandedSections, setExpandedSections] = useState({
-    personal: true,
-    emergency: false,
-    identity: false,
-    license: false,
-    employment: false,
-    guarantor: false,
-    health: false
-  })
+  const [currentStep, setCurrentStep] = useState(0)
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -114,6 +135,42 @@ export function CourierSignupForm() {
       medical_conditions: "",
     },
   })
+
+  const canProceed = () => {
+    const currentFields = {
+      0: ['full_name', 'address', 'date_of_birth', 'nationality', 'residential_address'],
+      1: ['emergency_contact_name', 'emergency_contact_relationship', 'emergency_contact_number'],
+      2: ['id_type', 'id_number', 'id_issue_date', 'id_expiry_date', 'id_place_of_issue'],
+      3: ['riders_license_number', 'license_class', 'license_issue_date', 'license_expiry_date'],
+      4: ['previous_employer'], // Optional step
+      5: ['guarantor_name', 'guarantor_relationship', 'guarantor_phone', 'guarantor_address', 'guarantor_occupation', 'guarantor_id'],
+      6: ['medical_conditions'], // Optional step
+    }
+
+    const fieldsToValidate = currentFields[currentStep as keyof typeof currentFields]
+    return fieldsToValidate.every(field => {
+      const value = form.getValues(field as keyof z.infer<typeof formSchema>)
+      return currentStep === 4 || currentStep === 6 ? true : Boolean(value)
+    })
+  }
+
+  const nextStep = () => {
+    if (currentStep < FORM_STEPS.length - 1 && canProceed()) {
+      setCurrentStep(currentStep + 1)
+    } else if (!canProceed()) {
+      toast({
+        title: "Required Fields",
+        description: "Please fill in all required fields before proceeding.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const prevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1)
+    }
+  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
@@ -196,29 +253,36 @@ export function CourierSignupForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-8">
-      <div className="w-full max-w-4xl space-y-8">
+    <div className="flex min-h-screen items-center justify-center p-4 md:p-8">
+      <div className="w-full max-w-4xl space-y-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Join Our Delivery Team!</h2>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Join Our Delivery Team!</h2>
           <p className="mt-2 text-sm text-gray-600">
             Start earning with flexible hours
           </p>
         </div>
 
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">Step {currentStep + 1} of {FORM_STEPS.length}</span>
+            <span className="text-sm font-medium text-purple-600">
+              {FORM_STEPS[currentStep].title}
+            </span>
+          </div>
+          <div className="h-2 bg-gray-200 rounded-full">
+            <div 
+              className="h-full bg-purple-600 rounded-full transition-all duration-300"
+              style={{ width: `${((currentStep + 1) / FORM_STEPS.length) * 100}%` }}
+            />
+          </div>
+        </div>
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            {/* Personal Information Section */}
-            <div className="rounded-lg border border-gray-200">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between p-4 text-left"
-                onClick={() => toggleSection('personal')}
-              >
-                <h3 className="text-xl font-semibold">Personal Information</h3>
-                {expandedSections.personal ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-              </button>
-              {expandedSections.personal && (
-                <div className="p-4 pt-0">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              {currentStep === 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold mb-4">Personal Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
@@ -292,20 +356,10 @@ export function CourierSignupForm() {
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Emergency Contact Section */}
-            <div className="rounded-lg border border-gray-200">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between p-4 text-left"
-                onClick={() => toggleSection('emergency')}
-              >
-                <h3 className="text-xl font-semibold">Emergency Contact</h3>
-                {expandedSections.emergency ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-              </button>
-              {expandedSections.emergency && (
-                <div className="p-4 pt-0">
+              {currentStep === 1 && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold mb-4">Emergency Contact</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
@@ -351,20 +405,10 @@ export function CourierSignupForm() {
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* ID Documents Section */}
-            <div className="rounded-lg border border-gray-200">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between p-4 text-left"
-                onClick={() => toggleSection('identity')}
-              >
-                <h3 className="text-xl font-semibold">Identification Documents</h3>
-                {expandedSections.identity ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-              </button>
-              {expandedSections.identity && (
-                <div className="p-4 pt-0">
+              {currentStep === 2 && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold mb-4">Identification Documents</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
@@ -445,20 +489,10 @@ export function CourierSignupForm() {
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Rider's License Section */}
-            <div className="rounded-lg border border-gray-200">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between p-4 text-left"
-                onClick={() => toggleSection('license')}
-              >
-                <h3 className="text-xl font-semibold">Rider&apos;s License Details</h3>
-                {expandedSections.license ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-              </button>
-              {expandedSections.license && (
-                <div className="p-4 pt-0">
+              {currentStep === 3 && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold mb-4">Rider&apos;s License Details</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
@@ -518,20 +552,10 @@ export function CourierSignupForm() {
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Employment History Section */}
-            <div className="rounded-lg border border-gray-200">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between p-4 text-left"
-                onClick={() => toggleSection('employment')}
-              >
-                <h3 className="text-xl font-semibold">Employment History</h3>
-                {expandedSections.employment ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-              </button>
-              {expandedSections.employment && (
-                <div className="p-4 pt-0">
+              {currentStep === 4 && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold mb-4">Employment History</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
@@ -591,20 +615,10 @@ export function CourierSignupForm() {
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Guarantor Information Section */}
-            <div className="rounded-lg border border-gray-200">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between p-4 text-left"
-                onClick={() => toggleSection('guarantor')}
-              >
-                <h3 className="text-xl font-semibold">Guarantor Information</h3>
-                {expandedSections.guarantor ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-              </button>
-              {expandedSections.guarantor && (
-                <div className="p-4 pt-0">
+              {currentStep === 5 && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold mb-4">Guarantor Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
@@ -692,20 +706,10 @@ export function CourierSignupForm() {
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Health Declaration Section */}
-            <div className="rounded-lg border border-gray-200">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between p-4 text-left"
-                onClick={() => toggleSection('health')}
-              >
-                <h3 className="text-xl font-semibold">Health Declaration</h3>
-                {expandedSections.health ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-              </button>
-              {expandedSections.health && (
-                <div className="p-4 pt-0">
+              {currentStep === 6 && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold mb-4">Health Declaration</h3>
                   <FormField
                     control={form.control}
                     name="medical_conditions"
@@ -723,20 +727,44 @@ export function CourierSignupForm() {
               )}
             </div>
 
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
-                </>
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={prevStep}
+                disabled={currentStep === 0}
+                className="flex-1"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+
+              {currentStep === FORM_STEPS.length - 1 ? (
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !canProceed()}
+                  className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit"
+                  )}
+                </Button>
               ) : (
-                "Sign up as Delivery Partner"
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  className="flex-1"
+                >
+                  Next
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
               )}
-            </Button>
+            </div>
           </form>
         </Form>
       </div>

@@ -70,8 +70,18 @@ const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, 
 
     useEffect(() => {
         loadGoogleMapsScript().then(() => {
+            if (!mapRef.current) {
+                console.error('Map div not found');
+                return;
+            }
+
             setAutocompleteService(new google.maps.places.AutocompleteService());
-            const map = new google.maps.Map(mapRef.current as HTMLElement);
+            const mapDiv = mapRef.current;
+            const map = new google.maps.Map(mapDiv, {
+                center: { lat: 5.6037, lng: -0.1870 }, // Accra coordinates
+                zoom: 13,
+                disableDefaultUI: true
+            });
             setPlacesService(new google.maps.places.PlacesService(map));
         }).catch(error => {
             console.error('Error loading Google Maps:', error);
