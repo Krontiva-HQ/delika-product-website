@@ -40,33 +40,6 @@ const formSchema = z.object({
   }).optional(),
 })
 
-const DUMMY_DATA = {
-  business_name: "Test Restaurant",
-  full_name: "John Doe",
-  business_type: "Restaurant",
-  type_of_service: "Full Service",
-  address: "123 Test Street, Accra",
-  email: "test@restaurant.com",
-  phone_number: "0244123456",
-  location: {
-    longitude: -0.1870,
-    latitude: 5.6037,
-    name: "Test Location",
-    address: "123 Test Street, Accra",
-    city: "Accra"
-  },
-  branch_name: "Main Branch",
-  branch_phone: "0244789012",
-  branch_city: "Accra",
-  branch_location: {
-    longitude: -0.1871,
-    latitude: 5.6038,
-    name: "Branch Location",
-    address: "456 Branch Street, Accra",
-    city: "Accra"
-  }
-}
-
 export function RestaurantSignupForm() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -151,35 +124,16 @@ export function RestaurantSignupForm() {
     form.setValue('address', location.address)
   }
 
-  const fillTestData = () => {
-    form.reset(DUMMY_DATA)
-    setLocationData(DUMMY_DATA.location)
-    toast({
-      title: "Test Data Filled",
-      description: "The form has been populated with test data.",
-      variant: "default",
-    })
-  }
-
   return (
     <div className="flex min-h-screen items-center justify-center p-8">
       <div className="w-full max-w-lg space-y-8">
-        <div className="flex justify-between items-center">
+        <div>
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-gray-900">Partner with Delika!</h2>
             <p className="mt-2 text-sm text-gray-600">
               Start growing your business with us
             </p>
           </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={fillTestData}
-            className="bg-gray-100 text-sm"
-          >
-            Fill Test Data
-          </Button>
         </div>
 
         <Form {...form}>
