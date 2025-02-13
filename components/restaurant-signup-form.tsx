@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
+import LocationInput from './location-input'
+import { LocationData } from './location'
 
 const formSchema = z.object({
   business_name: z.string().min(2, "Business name must be at least 2 characters"),
@@ -19,11 +21,35 @@ const formSchema = z.object({
   address: z.string().min(5, "Address must be at least 5 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone_number: z.string().min(10, "Phone number must be at least 10 digits"),
+  location: z.object({
+    longitude: z.number(),
+    latitude: z.number(),
+    name: z.string(),
+    address: z.string()
+  }).optional(),
+  branches: z.array(z.object({
+    name: z.string(),
+    phone_number: z.string().min(10, "Phone number must be at least 10 digits"),
+    city: z.string().min(2, "City name is required"),
+    location: z.object({
+      longitude: z.number(),
+      latitude: z.number(),
+      name: z.string(),
+      address: z.string()
+    })
+  })).optional(),
 })
 
 export function RestaurantSignupForm() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [locationData, setLocationData] = useState<LocationData | undefined>(undefined)
+  const [branches, setBranches] = useState<Array<{ 
+    name: string, 
+    phone_number: string,
+    city: string,
+    location: LocationData 
+  }>>([])
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -35,13 +61,14 @@ export function RestaurantSignupForm() {
       address: "",
       email: "",
       phone_number: "",
+      location: undefined,
+      branches: [],
     },
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
     try {
-      // Transform the form values to match the API endpoint structure
       const transformedData = {
         business_name: values.business_name,
         address: values.address,
@@ -49,8 +76,18 @@ export function RestaurantSignupForm() {
         phone_number: values.phone_number,
         business_type: values.business_type,
         type_of_service: values.type_of_service,
-        approval_status: "pending", // Default status for new applications
-        full_name: values.full_name
+        approval_status: "pending",
+        full_name: values.full_name,
+        location: locationData,
+        branches: (values.branches ?? []).map(branch => ({
+          name: branch.name,
+          phoneNumber: branch.phone_number,
+          city: branch.city,
+          location: branch.location,
+          longitude: branch.location.longitude,
+          latitude: branch.location.latitude,
+          address: branch.location.address
+        }))
       }
 
       const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/delika_restaurant_approvals', {
@@ -83,6 +120,63 @@ export function RestaurantSignupForm() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleLocationSelect = (location: LocationData) => {
+    setLocationData(location)
+    form.setValue('address', location.address)
+  }
+
+  const handleAddBranch = () => {
+    setBranches([...branches, { 
+      name: '', 
+      phone_number: '',
+      city: '',
+      location: { longitude: 0, latitude: 0, name: '', address: '' }
+    }])
+  }
+
+  const handleBranchLocationSelect = (location: LocationData, index: number) => {
+    const newBranches = [...branches]
+    newBranches[index].location = location
+    
+    // Extract city from the address
+    const addressParts = location.address.split(',')
+    const city = addressParts[addressParts.length - 2]?.trim() || ''
+    
+    newBranches[index].city = city
+    setBranches(newBranches)
+    
+    // Update both location and city in the form
+    form.setValue(`branches.${index}.location`, location)
+    form.setValue(`branches.${index}.city`, city)
+  }
+
+  const handleBranchNameChange = (name: string, index: number) => {
+    const newBranches = [...branches]
+    newBranches[index].name = name
+    setBranches(newBranches)
+    form.setValue(`branches.${index}.name`, name)
+  }
+
+  const handleBranchPhoneChange = (phone: string, index: number) => {
+    const newBranches = [...branches]
+    newBranches[index].phone_number = phone
+    setBranches(newBranches)
+    form.setValue(`branches.${index}.phone_number`, phone)
+  }
+
+  const handleBranchCityChange = (city: string, index: number) => {
+    const newBranches = [...branches]
+    newBranches[index].city = city
+    setBranches(newBranches)
+    form.setValue(`branches.${index}.city`, city)
+  }
+
+  const handleRemoveBranch = (index: number) => {
+    const newBranches = branches.filter((_, i) => i !== index)
+    setBranches(newBranches)
+    form.setValue('branches', newBranches)
   }
 
   return (
@@ -172,19 +266,14 @@ export function RestaurantSignupForm() {
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Business Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Full address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-2">
+              <LocationInput
+                label="Business Location"
+                onLocationSelect={handleLocationSelect}
+                prefillData={locationData}
+              />
+            </div>
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
@@ -214,6 +303,78 @@ export function RestaurantSignupForm() {
                   </FormItem>
                 )}
               />
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Branch Locations</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddBranch}
+                  className="text-sm"
+                >
+                  Add Branch
+                </Button>
+              </div>
+
+              {branches.map((branch, index) => (
+                <div key={index} className="p-4 border rounded-lg space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-medium">Branch {index + 1}</h4>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => handleRemoveBranch(index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name={`branches.${index}.name`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Branch Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter branch name"
+                            value={branch.name}
+                            onChange={(e) => handleBranchNameChange(e.target.value, index)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`branches.${index}.phone_number`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Branch Phone Number</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter branch phone number"
+                            value={branch.phone_number}
+                            onChange={(e) => handleBranchPhoneChange(e.target.value, index)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <LocationInput
+                    label="Branch Location"
+                    onLocationSelect={(location) => handleBranchLocationSelect(location, index)}
+                    prefillData={branch.location}
+                  />
+                </div>
+              ))}
             </div>
 
             <Button
