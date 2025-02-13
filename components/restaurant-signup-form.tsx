@@ -41,12 +41,24 @@ export function RestaurantSignupForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
     try {
-      const response = await fetch('/api/restaurant-signup', {
+      // Transform the form values to match the API endpoint structure
+      const transformedData = {
+        business_name: values.business_name,
+        address: values.address,
+        email: values.email,
+        phone_number: values.phone_number,
+        business_type: values.business_type,
+        type_of_service: values.type_of_service,
+        approval_status: "pending", // Default status for new applications
+        full_name: values.full_name
+      }
+
+      const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/delika_restaurant_approvals', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(transformedData),
       })
 
       const data = await response.json()
