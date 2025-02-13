@@ -13,6 +13,34 @@ interface GooglePlace {
     place_id: string;
 }
 
+let isScriptLoaded = false;
+let scriptPromise: Promise<void> | null = null;
+
+const loadGoogleMapsScript = () => {
+    if (isScriptLoaded) return Promise.resolve();
+    if (scriptPromise) return scriptPromise;
+
+    scriptPromise = new Promise((resolve, reject) => {
+        if (window.google?.maps) {
+            isScriptLoaded = true;
+            resolve();
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAdv28EbwKXqvlKo2henxsKMD-4EKB20l8&libraries=places`;
+        script.async = true;
+        script.onload = () => {
+            isScriptLoaded = true;
+            resolve();
+        };
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+
+    return scriptPromise;
+};
+
 const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, prefillData, disabled }) => {
     const [address, setAddress] = useState(prefillData?.address || '');
     const [suggestions, setSuggestions] = useState<GooglePlace[]>([]);
@@ -41,21 +69,13 @@ const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, 
     }, [prefillData, onLocationSelect]);
 
     useEffect(() => {
-        // Initialize Google Places services
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAdv28EbwKXqvlKo2henxsKMD-4EKB20l8&libraries=places`;
-        script.async = true;
-        script.onload = () => {
+        loadGoogleMapsScript().then(() => {
             setAutocompleteService(new google.maps.places.AutocompleteService());
-            // We need a map div (hidden) for PlacesService
             const map = new google.maps.Map(mapRef.current as HTMLElement);
             setPlacesService(new google.maps.places.PlacesService(map));
-        };
-        document.head.appendChild(script);
-
-        return () => {
-            document.head.removeChild(script);
-        };
+        }).catch(error => {
+            console.error('Error loading Google Maps:', error);
+        });
     }, []);
 
     const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
