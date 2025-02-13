@@ -166,13 +166,6 @@ export function RestaurantSignupForm() {
     form.setValue(`branches.${index}.phone_number`, phone)
   }
 
-  const handleBranchCityChange = (city: string, index: number) => {
-    const newBranches = [...branches]
-    newBranches[index].city = city
-    setBranches(newBranches)
-    form.setValue(`branches.${index}.city`, city)
-  }
-
   const handleRemoveBranch = (index: number) => {
     const newBranches = branches.filter((_, i) => i !== index)
     setBranches(newBranches)
@@ -335,7 +328,7 @@ export function RestaurantSignupForm() {
                   <FormField
                     control={form.control}
                     name={`branches.${index}.name`}
-                    render={({ field }) => (
+                    render={() => (
                       <FormItem>
                         <FormLabel>Branch Name</FormLabel>
                         <FormControl>
@@ -353,7 +346,7 @@ export function RestaurantSignupForm() {
                   <FormField
                     control={form.control}
                     name={`branches.${index}.phone_number`}
-                    render={({ field }) => (
+                    render={() => (
                       <FormItem>
                         <FormLabel>Branch Phone Number</FormLabel>
                         <FormControl>

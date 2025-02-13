@@ -38,7 +38,7 @@ const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, 
             setAddress(prefillData.address);
             onLocationSelect(prefillData);
         }
-    }, [prefillData]);
+    }, [prefillData, onLocationSelect]);
 
     useEffect(() => {
         // Initialize Google Places services
