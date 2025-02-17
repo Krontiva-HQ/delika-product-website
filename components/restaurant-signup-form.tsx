@@ -26,17 +26,15 @@ const formSchema = z.object({
     latitude: z.number(),
     name: z.string(),
     address: z.string(),
-    city: z.string()
+    city: z.string(),
   }).optional(),
-  branch_name: z.string().min(2, "Branch name must be at least 2 characters"),
-  branch_phone: z.string().min(10, "Phone number must be at least 10 digits"),
-  branch_city: z.string().min(2, "City name is required"),
-  branch_location: z.object({
+  branches: z.object({
+    name: z.string(),
+    phone_number: z.string().min(10, "Phone number must be at least 10 digits"),
+    address: z.string(),
+    city: z.string(),
     longitude: z.number(),
     latitude: z.number(),
-    name: z.string(),
-    address: z.string(),
-    city: z.string()
   }).optional(),
 })
 
@@ -44,6 +42,10 @@ export function RestaurantSignupForm() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [locationData, setLocationData] = useState<LocationData | undefined>(undefined)
+  const [branchData, setBranchData] = useState<{ 
+    name: string, 
+    phone_number: string,
+  }>({ name: '', phone_number: '' })
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -56,16 +58,18 @@ export function RestaurantSignupForm() {
       email: "",
       phone_number: "",
       location: undefined,
-      branch_name: "",
-      branch_phone: "",
-      branch_city: "",
-      branch_location: undefined,
+      branches: {
+        name: "",
+        phone_number: "",
+        address: "",
+        city: "",
+        longitude: 0,
+        latitude: 0,
+      },
     },
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (isSubmitting) return; // Prevent multiple submissions
-    
     setIsSubmitting(true)
     try {
       const transformedData = {
@@ -78,17 +82,20 @@ export function RestaurantSignupForm() {
         approval_status: "pending",
         full_name: values.full_name,
         location: locationData,
-        branch_name: values.branch_name,
-        branch_phone: values.branch_phone,
-        branch_city: values.branch_city,
-        branch_location: values.branch_location,
+        branches: values.branches ? {
+          name: values.branches.name,
+          phoneNumber: values.branches.phone_number,
+          address: values.location?.address,
+          city: values.location?.city,
+          longitude: values.location?.longitude,
+          latitude: values.location?.latitude,
+        } : undefined
       }
 
       const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/delika_restaurant_approvals', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
         body: JSON.stringify(transformedData),
       })
@@ -96,7 +103,7 @@ export function RestaurantSignupForm() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to submit form')
+        throw new Error(data.error || 'Failed to submit form')
       }
 
       toast({
@@ -104,11 +111,9 @@ export function RestaurantSignupForm() {
         description: "Your application has been submitted successfully. We'll be in touch soon!",
         variant: "default",
       })
-
-      // Reset form after successful submission
+      
       form.reset()
     } catch (error) {
-      console.error('Submission error:', error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
@@ -124,16 +129,24 @@ export function RestaurantSignupForm() {
     form.setValue('address', location.address)
   }
 
+  const handleBranchNameChange = (name: string) => {
+    setBranchData(prev => ({ ...prev, name }))
+    form.setValue('branches.name', name)
+  }
+
+  const handleBranchPhoneChange = (phone: string) => {
+    setBranchData(prev => ({ ...prev, phone_number: phone }))
+    form.setValue('branches.phone_number', phone)
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center p-8">
       <div className="w-full max-w-lg space-y-8">
         <div>
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900">Partner with Delika!</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Start growing your business with us
-            </p>
-          </div>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Partner with Delika!</h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Start growing your business with us
+          </p>
         </div>
 
         <Form {...form}>
@@ -253,17 +266,20 @@ export function RestaurantSignupForm() {
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Branch Details</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <h3 className="text-lg font-semibold">Branch Information</h3>
+              <div className="p-4 border rounded-lg space-y-4">
                 <FormField
                   control={form.control}
-                  name="branch_name"
-                  render={({ field }) => (
+                  name="branches.name"
+                  render={() => (
                     <FormItem>
                       <FormLabel>Branch Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. Main Branch" {...field} />
+                        <Input
+                          placeholder="Enter branch name"
+                          value={branchData.name}
+                          onChange={(e) => handleBranchNameChange(e.target.value)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -272,39 +288,20 @@ export function RestaurantSignupForm() {
 
                 <FormField
                   control={form.control}
-                  name="branch_phone"
-                  render={({ field }) => (
+                  name="branches.phone_number"
+                  render={() => (
                     <FormItem>
                       <FormLabel>Branch Phone Number</FormLabel>
                       <FormControl>
-                        <Input placeholder="Branch contact number" {...field} />
+                        <Input
+                          placeholder="Enter branch phone number"
+                          value={branchData.phone_number}
+                          onChange={(e) => handleBranchPhoneChange(e.target.value)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
-                />
-              </div>
-
-              <div className="hidden">
-                <FormField
-                  control={form.control}
-                  name="branch_city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <LocationInput
-                  label="Branch Location"
-                  onLocationSelect={(location) => {
-                    form.setValue('branch_location', location);
-                    form.setValue('branch_city', location.city || '');
-                  }}
-                  prefillData={form.getValues('branch_location')}
                 />
               </div>
             </div>
@@ -313,10 +310,6 @@ export function RestaurantSignupForm() {
               type="submit"
               disabled={isSubmitting}
               className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
-              onClick={(e) => {
-                e.preventDefault()
-                form.handleSubmit(onSubmit)()
-              }}
             >
               {isSubmitting ? (
                 <>

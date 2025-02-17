@@ -9,52 +9,52 @@ import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, ArrowLeft, ArrowRight } from "lucide-react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 const formSchema = z.object({
   full_name: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone_number: z.string().min(10, "Phone number must be at least 10 digits"),
   address: z.string().min(5, "Address must be at least 5 characters"),
-  date_of_birth: z.string().min(1, "Date of birth is required"),
+  dateOfBirth: z.string().min(1, "Date of birth is required"),
   nationality: z.string().min(1, "Nationality is required"),
-  residential_address: z.string().min(5, "Residential address must be at least 5 characters"),
+  residentialAddress: z.string().min(5, "Residential address must be at least 5 characters"),
   
   // Emergency Contact
   emergency_contact_name: z.string().min(2, "Emergency contact name must be at least 2 characters"),
   emergency_contact_relationship: z.string().min(2, "Relationship must be at least 2 characters"),
-  emergency_contact_number: z.string().min(10, "Contact number must be at least 10 digits"),
+  emergency_contact_phoneNumber: z.string().min(10, "Contact number must be at least 10 digits"),
   
   // ID Documents
-  id_type: z.enum(["national", "passport", "drivers"], {
+  primaryID: z.enum(["national", "passport", "drivers"], {
     required_error: "Please select an ID type",
   }),
-  id_number: z.string().min(1, "ID number is required"),
-  id_issue_date: z.string().min(1, "Issue date is required"),
-  id_expiry_date: z.string().min(1, "Expiry date is required"),
-  id_place_of_issue: z.string().min(1, "Place of issue is required"),
+  idNumber: z.string().min(1, "ID number is required"),
+  issueDate: z.string().min(1, "Issue date is required"),
+  expiryDate: z.string().min(1, "Expiry date is required"),
+  placeOfIssue: z.string().min(1, "Place of issue is required"),
   
   // Rider's License
-  riders_license_number: z.string().min(1, "License number is required"),
-  license_class: z.string().min(1, "License class is required"),
-  license_issue_date: z.string().min(1, "License issue date is required"),
-  license_expiry_date: z.string().min(1, "License expiry date is required"),
+  licenseNumber: z.string().min(1, "License number is required"),
+  licenseClass: z.string().min(1, "License class is required"),
+  licenseIssueDate: z.string().min(1, "License issue date is required"),
+  licenseExpiryDate: z.string().min(1, "License expiry date is required"),
   
   // Employment History
-  previous_employer: z.string().optional(),
-  employment_duration: z.string().optional(),
-  position_held: z.string().optional(),
-  reason_for_leaving: z.string().optional(),
+  mostRecentEmployer: z.string().optional(),
+  duration: z.string().optional(),
+  role: z.string().optional(),
   
   // Guarantor Information
-  guarantor_name: z.string().min(2, "Guarantor name must be at least 2 characters"),
-  guarantor_relationship: z.string().min(2, "Relationship must be at least 2 characters"),
-  guarantor_phone: z.string().min(10, "Phone number must be at least 10 digits"),
-  guarantor_address: z.string().min(5, "Address must be at least 5 characters"),
-  guarantor_occupation: z.string().min(2, "Occupation must be at least 2 characters"),
-  guarantor_id: z.string().min(1, "Guarantor ID is required"),
+  guarantorName: z.string().min(2, "Guarantor name must be at least 2 characters"),
+  guarantorRelationship: z.string().min(2, "Relationship must be at least 2 characters"),
+  guarantorPhoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
+  guarantorAddress: z.string().min(5, "Address must be at least 5 characters"),
+  guarantorOccupation: z.string().min(2, "Occupation must be at least 2 characters"),
+  guarantorId: z.string().min(1, "Guarantor ID is required"),
   
   // Health Declaration
-  medical_conditions: z.string().optional(),
+  healthDeclaration: z.string().optional(),
 })
 
 const FORM_STEPS = [
@@ -93,6 +93,7 @@ export function CourierSignupForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [isLoadingStep, setIsLoadingStep] = useState(false)
+  const router = useRouter()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -101,44 +102,43 @@ export function CourierSignupForm() {
       email: "",
       phone_number: "",
       address: "",
-      date_of_birth: "",
+      dateOfBirth: "",
       nationality: "",
-      residential_address: "",
+      residentialAddress: "",
       emergency_contact_name: "",
       emergency_contact_relationship: "",
-      emergency_contact_number: "",
-      id_type: "national",
-      id_number: "",
-      id_issue_date: "",
-      id_expiry_date: "",
-      id_place_of_issue: "",
-      riders_license_number: "",
-      license_class: "",
-      license_issue_date: "",
-      license_expiry_date: "",
-      previous_employer: "",
-      employment_duration: "",
-      position_held: "",
-      reason_for_leaving: "",
-      guarantor_name: "",
-      guarantor_relationship: "",
-      guarantor_phone: "",
-      guarantor_address: "",
-      guarantor_occupation: "",
-      guarantor_id: "",
-      medical_conditions: "",
+      emergency_contact_phoneNumber: "",
+      primaryID: "national",
+      idNumber: "",
+      issueDate: "",
+      expiryDate: "",
+      placeOfIssue: "",
+      licenseNumber: "",
+      licenseClass: "",
+      licenseIssueDate: "",
+      licenseExpiryDate: "",
+      mostRecentEmployer: "",
+      duration: "",
+      role: "",
+      guarantorName: "",
+      guarantorRelationship: "",
+      guarantorPhoneNumber: "",
+      guarantorAddress: "",
+      guarantorOccupation: "",
+      guarantorId: "",
+      healthDeclaration: "",
     },
   })
 
   const canProceed = () => {
     const currentFields = {
-      0: ['full_name', 'email', 'phone_number', 'address', 'date_of_birth', 'nationality', 'residential_address'],
-      1: ['emergency_contact_name', 'emergency_contact_relationship', 'emergency_contact_number'],
-      2: ['id_type', 'id_number', 'id_issue_date', 'id_expiry_date', 'id_place_of_issue'],
-      3: ['riders_license_number', 'license_class', 'license_issue_date', 'license_expiry_date'],
-      4: ['previous_employer'], // Optional step
-      5: ['guarantor_name', 'guarantor_relationship', 'guarantor_phone', 'guarantor_address', 'guarantor_occupation', 'guarantor_id'],
-      6: ['medical_conditions'], // Optional step
+      0: ['full_name', 'email', 'phone_number', 'address', 'dateOfBirth', 'nationality', 'residentialAddress'],
+      1: ['emergency_contact_name', 'emergency_contact_relationship', 'emergency_contact_phoneNumber'],
+      2: ['primaryID', 'idNumber', 'issueDate', 'expiryDate', 'placeOfIssue'],
+      3: ['licenseNumber', 'licenseClass', 'licenseIssueDate', 'licenseExpiryDate'],
+      4: ['mostRecentEmployer'], // Optional step
+      5: ['guarantorName', 'guarantorRelationship', 'guarantorPhoneNumber', 'guarantorAddress', 'guarantorOccupation', 'guarantorId'],
+      6: ['healthDeclaration'], // Optional step
     }
 
     const fieldsToValidate = currentFields[currentStep as keyof typeof currentFields]
@@ -158,9 +158,9 @@ export function CourierSignupForm() {
           email: values.email,
           phone_number: values.phone_number,
           address: values.address,
-          date_of_birth: values.date_of_birth,
+          dateOfBirth: values.dateOfBirth,
           nationality: values.nationality,
-          residential_address: values.residential_address,
+          residentialAddress: values.residentialAddress,
         }
       },
       1: {
@@ -168,52 +168,51 @@ export function CourierSignupForm() {
         fields: {
           emergency_contact_name: values.emergency_contact_name,
           emergency_contact_relationship: values.emergency_contact_relationship,
-          emergency_contact_number: values.emergency_contact_number,
+          emergency_contact_phoneNumber: values.emergency_contact_phoneNumber,
         }
       },
       2: {
         title: 'Identification Documents',
         fields: {
-          id_type: values.id_type,
-          id_number: values.id_number,
-          id_issue_date: values.id_issue_date,
-          id_expiry_date: values.id_expiry_date,
-          id_place_of_issue: values.id_place_of_issue,
+          primaryID: values.primaryID,
+          idNumber: values.idNumber,
+          issueDate: values.issueDate,
+          expiryDate: values.expiryDate,
+          placeOfIssue: values.placeOfIssue,
         }
       },
       3: {
         title: 'Rider\'s License Details',
         fields: {
-          riders_license_number: values.riders_license_number,
-          license_class: values.license_class,
-          license_issue_date: values.license_issue_date,
-          license_expiry_date: values.license_expiry_date,
+          licenseNumber: values.licenseNumber,
+          licenseClass: values.licenseClass,
+          licenseIssueDate: values.licenseIssueDate,
+          licenseExpiryDate: values.licenseExpiryDate,
         }
       },
       4: {
         title: 'Employment History',
         fields: {
-          previous_employer: values.previous_employer,
-          employment_duration: values.employment_duration,
-          position_held: values.position_held,
-          reason_for_leaving: values.reason_for_leaving,
+          mostRecentEmployer: values.mostRecentEmployer,
+          duration: values.duration,
+          role: values.role,
         }
       },
       5: {
         title: 'Guarantor Information',
         fields: {
-          guarantor_name: values.guarantor_name,
-          guarantor_relationship: values.guarantor_relationship,
-          guarantor_phone: values.guarantor_phone,
-          guarantor_address: values.guarantor_address,
-          guarantor_occupation: values.guarantor_occupation,
-          guarantor_id: values.guarantor_id,
+          guarantorName: values.guarantorName,
+          guarantorRelationship: values.guarantorRelationship,
+          guarantorPhoneNumber: values.guarantorPhoneNumber,
+          guarantorAddress: values.guarantorAddress,
+          guarantorOccupation: values.guarantorOccupation,
+          guarantorId: values.guarantorId,
         }
       },
       6: {
         title: 'Health Declaration',
         fields: {
-          medical_conditions: values.medical_conditions,
+          healthDeclaration: values.healthDeclaration,
         }
       }
     }
@@ -271,46 +270,44 @@ export function CourierSignupForm() {
         full_name: values.full_name,
         email: values.email,
         phone_number: values.phone_number,
-        address: values.address,
         rider_approval_status: "pending",
-        personal_information: {
+        personalInformation: {
           nationality: values.nationality,
-          residential_address: values.residential_address,
-          emergency_contact: {
+          residentialAddress: values.residentialAddress,
+          emergencyContact: {
             name: values.emergency_contact_name,
             relationship: values.emergency_contact_relationship,
-            phone_number: values.emergency_contact_number
+            phoneNumber: values.emergency_contact_phoneNumber
           },
-          date_of_birth: values.date_of_birth
+          dateOfBirth: values.dateOfBirth || null
         },
-        identity_documents: {
-          primary_id: values.id_type,
-          id_number: values.id_number,
-          place_of_issue: values.id_place_of_issue,
-          issue_date: values.id_issue_date,
-          expiry_date: values.id_expiry_date
+        identityDocuments: {
+          primaryID: values.primaryID,
+          idNumber: values.idNumber,
+          placeOfIssue: values.placeOfIssue,
+          issueDate: values.issueDate || null,
+          expiryDate: values.expiryDate || null
         },
-        license_details: {
-          license_number: values.riders_license_number,
-          class: values.license_class,
-          issue_date: values.license_issue_date,
-          expiry_date: values.license_expiry_date
+        licenseDetails: {
+          licenseNumber: values.licenseNumber,
+          class: values.licenseClass,
+          issueDate: values.licenseIssueDate || null,
+          expiryDate: values.licenseExpiryDate || null
         },
-        employment_history: {
-          most_recent_employer: values.previous_employer || "",
-          duration: values.employment_duration || "",
-          role: values.position_held || "",
-          reason_for_leaving: values.reason_for_leaving || ""
+        employmentHistory: {
+          mostRecentEmployer: values.mostRecentEmployer || "",
+          duration: values.duration || "",
+          role: values.role || ""
         },
-        guarantor_information: {
-          full_name: values.guarantor_name,
-          relationship: values.guarantor_relationship,
-          phone_number: values.guarantor_phone,
-          address: values.guarantor_address,
-          occupation: values.guarantor_occupation,
-          id: values.guarantor_id
+        guarantorInformation: {
+          fullName: values.guarantorName,
+          relationship: values.guarantorRelationship,
+          phoneNumber: values.guarantorPhoneNumber,
+          address: values.guarantorAddress,
+          occupation: values.guarantorOccupation,
+          id: values.guarantorId
         },
-        health_declaration: values.medical_conditions || ""
+        healthDeclaration: values.healthDeclaration || ""
       }
 
       console.log('Transformed Data:', transformedData)
@@ -332,48 +329,19 @@ export function CourierSignupForm() {
 
       console.log('API Response:', data)
 
-      // Clear form and reset to first step
-      form.reset({
-        full_name: "",
-        email: "",
-        phone_number: "",
-        address: "",
-        date_of_birth: "",
-        nationality: "",
-        residential_address: "",
-        emergency_contact_name: "",
-        emergency_contact_relationship: "",
-        emergency_contact_number: "",
-        id_type: "national",
-        id_number: "",
-        id_issue_date: "",
-        id_expiry_date: "",
-        id_place_of_issue: "",
-        riders_license_number: "",
-        license_class: "",
-        license_issue_date: "",
-        license_expiry_date: "",
-        previous_employer: "",
-        employment_duration: "",
-        position_held: "",
-        reason_for_leaving: "",
-        guarantor_name: "",
-        guarantor_relationship: "",
-        guarantor_phone: "",
-        guarantor_address: "",
-        guarantor_occupation: "",
-        guarantor_id: "",
-        medical_conditions: "",
-      })
-      
-      setCurrentStep(0)
-
       toast({
         title: "Success!",
         description: "Your application has been submitted successfully. We'll be in touch soon!",
         variant: "default",
       })
       
+      form.reset()
+      setCurrentStep(0)
+      
+      setTimeout(() => {
+        router.push('/')
+      }, 2000)
+
     } catch (error) {
       console.error('Submission error:', error)
       toast({
@@ -390,14 +358,10 @@ export function CourierSignupForm() {
     <div className="flex min-h-screen items-center justify-center p-4 md:p-8">
       <div className="w-full max-w-4xl space-y-6">
         <div>
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
-              Join Our Delivery Team!
-            </h2>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Join Our Delivery Team!</h2>
           <p className="mt-2 text-sm text-gray-600">
             Start earning with flexible hours
           </p>
-        </div>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -490,7 +454,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="date_of_birth"
+                        name="dateOfBirth"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Date of Birth</FormLabel>
@@ -518,7 +482,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="residential_address"
+                        name="residentialAddress"
                         render={({ field }) => (
                           <FormItem className="md:col-span-2">
                             <FormLabel>Residential Address</FormLabel>
@@ -567,7 +531,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="emergency_contact_number"
+                        name="emergency_contact_phoneNumber"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Contact Number</FormLabel>
@@ -588,7 +552,7 @@ export function CourierSignupForm() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
                         control={form.control}
-                        name="id_type"
+                        name="primaryID"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>ID Type</FormLabel>
@@ -609,7 +573,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="id_number"
+                        name="idNumber"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>ID Number</FormLabel>
@@ -623,7 +587,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="id_issue_date"
+                        name="issueDate"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Issue Date</FormLabel>
@@ -637,7 +601,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="id_expiry_date"
+                        name="expiryDate"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Expiry Date</FormLabel>
@@ -651,7 +615,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="id_place_of_issue"
+                        name="placeOfIssue"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Place of Issue</FormLabel>
@@ -672,7 +636,7 @@ export function CourierSignupForm() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
                         control={form.control}
-                        name="riders_license_number"
+                        name="licenseNumber"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>License Number</FormLabel>
@@ -686,7 +650,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="license_class"
+                        name="licenseClass"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>License Class</FormLabel>
@@ -700,7 +664,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="license_issue_date"
+                        name="licenseIssueDate"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Issue Date</FormLabel>
@@ -714,7 +678,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="license_expiry_date"
+                        name="licenseExpiryDate"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Expiry Date</FormLabel>
@@ -735,7 +699,7 @@ export function CourierSignupForm() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
                         control={form.control}
-                        name="previous_employer"
+                        name="mostRecentEmployer"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Previous Employer</FormLabel>
@@ -749,7 +713,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="employment_duration"
+                        name="duration"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Duration of Employment</FormLabel>
@@ -763,24 +727,10 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="position_held"
+                        name="role"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Position Held</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="reason_for_leaving"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Reason for Leaving</FormLabel>
                             <FormControl>
                               <Input {...field} />
                             </FormControl>
@@ -798,7 +748,7 @@ export function CourierSignupForm() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
                         control={form.control}
-                        name="guarantor_name"
+                        name="guarantorName"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Full Name</FormLabel>
@@ -812,7 +762,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="guarantor_relationship"
+                        name="guarantorRelationship"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Relationship</FormLabel>
@@ -826,7 +776,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="guarantor_phone"
+                        name="guarantorPhoneNumber"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Phone Number</FormLabel>
@@ -840,7 +790,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="guarantor_address"
+                        name="guarantorAddress"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Address</FormLabel>
@@ -854,7 +804,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="guarantor_occupation"
+                        name="guarantorOccupation"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Occupation</FormLabel>
@@ -868,7 +818,7 @@ export function CourierSignupForm() {
 
                       <FormField
                         control={form.control}
-                        name="guarantor_id"
+                        name="guarantorId"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>ID Number</FormLabel>
@@ -888,7 +838,7 @@ export function CourierSignupForm() {
                     <h3 className="text-xl font-semibold mb-4">Health Declaration</h3>
                     <FormField
                       control={form.control}
-                      name="medical_conditions"
+                      name="healthDeclaration"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Medical Conditions (if any)</FormLabel>
