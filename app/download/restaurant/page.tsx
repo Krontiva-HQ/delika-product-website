@@ -45,7 +45,7 @@ export default function RestaurantDownloadPage() {
             </div>
           </div>
         </section>
-        <Footer className="bg-transparent border-t border-gray-800" />
+        <Footer />
       </div>
     </div>
   )

@@ -39,7 +39,7 @@ export default function DownloadPage() {
             </div>
           </div>
         </section>
-        <Footer className="bg-transparent border-t border-gray-800" />
+        <Footer />
       </div>
     </div>
   )
