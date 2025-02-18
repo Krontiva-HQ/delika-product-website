@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { ChefHat, Bike } from "lucide-react"
 import { ParticleBackground } from "@/components/particle-background"
 import { Footer } from "@/components/footer"
