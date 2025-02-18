@@ -82,14 +82,14 @@ export function RestaurantSignupForm() {
         approval_status: "pending",
         full_name: values.full_name,
         location: locationData,
-        branches: values.branches ? {
-          name: values.branches.name,
-          phoneNumber: values.branches.phone_number,
-          address: values.location?.address,
-          city: values.location?.city,
-          longitude: values.location?.longitude,
-          latitude: values.location?.latitude,
-        } : undefined
+        branches: [{
+          name: branchData.name,
+          phoneNumber: branchData.phone_number,
+          address: locationData?.address,
+          city: locationData?.city,
+          longitude: locationData?.longitude,
+          latitude: locationData?.latitude
+        }]
       }
 
       const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/delika_restaurant_approvals', {
