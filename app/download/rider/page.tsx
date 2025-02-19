@@ -36,7 +36,7 @@ export default function RiderDownloadPage() {
                     className="w-full bg-gradient-to-r from-purple-500 to-purple-600"
                     asChild
                   >
-                    <Link href="/delikarider.apk" download>
+                    <Link href="/application-6e2eb29f-da76-40e0-b62c-8ad21d79aab4.apk" download>
                       <Download className="mr-2 h-4 w-4" />
                       Download Riders App
                     </Link>
