@@ -359,7 +359,7 @@ export function CourierSignupForm() {
       <div className="w-full max-w-4xl space-y-6">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Join Our Delivery Team!</h2>
-          <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-gray-600">
             Start earning with flexible hours
           </p>
         </div>
@@ -494,7 +494,7 @@ export function CourierSignupForm() {
                         )}
                       />
                     </div>
-                  </div>
+            </div>
                 )}
 
                 {currentStep === 1 && (
@@ -515,29 +515,29 @@ export function CourierSignupForm() {
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
+            <FormField
+              control={form.control}
                         name="emergency_contact_relationship"
-                        render={({ field }) => (
-                          <FormItem>
+              render={({ field }) => (
+                <FormItem>
                             <FormLabel>Relationship</FormLabel>
-                            <FormControl>
+                  <FormControl>
                               <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                      <FormField
-                        control={form.control}
+            <FormField
+              control={form.control}
                         name="emergency_contact_phoneNumber"
-                        render={({ field }) => (
-                          <FormItem>
+              render={({ field }) => (
+                <FormItem>
                             <FormLabel>Contact Number</FormLabel>
-                            <FormControl>
+                    <FormControl>
                               <Input {...field} />
-                            </FormControl>
+                    </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -594,39 +594,39 @@ export function CourierSignupForm() {
                             <FormControl>
                               <Input type="date" {...field} />
                             </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                      <FormField
-                        control={form.control}
+              <FormField
+                control={form.control}
                         name="expiryDate"
-                        render={({ field }) => (
-                          <FormItem>
+                render={({ field }) => (
+                  <FormItem>
                             <FormLabel>Expiry Date</FormLabel>
-                            <FormControl>
+                      <FormControl>
                               <Input type="date" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                      <FormField
-                        control={form.control}
+              <FormField
+                control={form.control}
                         name="placeOfIssue"
-                        render={({ field }) => (
-                          <FormItem>
+                render={({ field }) => (
+                  <FormItem>
                             <FormLabel>Place of Issue</FormLabel>
-                            <FormControl>
+                      <FormControl>
                               <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                      </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
                   </div>
                 )}
 

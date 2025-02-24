@@ -6,36 +6,34 @@ import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-interface SignupModalProps {
+interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
-  onSwitchToLogin: () => void
+  onSwitchToSignup: () => void
 }
 
-export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) {
-  const [name, setName] = useState("")
+export function LoginModal({ isOpen, onClose, onSwitchToSignup }: LoginModalProps) {
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Add signup logic here
+    // Add login logic here
     const formData = {
-      name,
       password,
       ...(e.currentTarget.getAttribute('data-mode') === 'email' 
         ? { email } 
         : { phone })
     }
-    console.log("Signup:", formData)
+    console.log("Login:", formData)
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>Create an account</DialogTitle>
+          <DialogTitle>Login to your account</DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="email" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -44,16 +42,6 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
           </TabsList>
           <TabsContent value="email">
             <form onSubmit={handleSubmit} data-mode="email" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Full Name</label>
-                <Input
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email</label>
                 <Input
@@ -68,29 +56,19 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
                 <label className="text-sm font-medium">Password</label>
                 <Input
                   type="password"
-                  placeholder="Create a password"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
               <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600">
-                Sign up with Email
+                Login with Email
               </Button>
             </form>
           </TabsContent>
           <TabsContent value="phone">
             <form onSubmit={handleSubmit} data-mode="phone" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Full Name</label>
-                <Input
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Phone Number</label>
                 <Input
@@ -105,26 +83,26 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
                 <label className="text-sm font-medium">Password</label>
                 <Input
                   type="password"
-                  placeholder="Create a password"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
               <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600">
-                Sign up with Phone
+                Login with Phone
               </Button>
             </form>
           </TabsContent>
         </Tabs>
         <div className="text-center text-sm text-gray-500 mt-4">
-          Already have an account?{" "}
+          Don't have an account?{" "}
           <button
             type="button"
-            onClick={onSwitchToLogin}
+            onClick={onSwitchToSignup}
             className="text-orange-500 hover:text-orange-600"
           >
-            Login
+            Sign up
           </button>
         </div>
       </DialogContent>
