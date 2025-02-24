@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, Search, SlidersHorizontal, Star, ChevronDown } from "lucide-react"
+import { MapPin, Search, SlidersHorizontal, Star, ChevronDown, ChevronRight } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -13,36 +13,55 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
+import { BranchDetailsModal } from "@/components/branch-details-modal"
 
 interface Restaurant {
-  id: string
   restaurantName: string
+  restaurantPhoneNumber: string
   restaurantLogo: {
     url: string
   }
-  restaurantAddress: string
-  restaurantEmail: string
-  restaurantPhoneNumber: string
+}
+
+interface Branch {
+  id: string
+  branchName: string
+  branchLocation: string
+  branchPhoneNumber: string
+  branchCity: string
+  branchLatitude: string
+  branchLongitude: string
+  _restaurantTable: Restaurant[]
   created_at: number
 }
 
 export function StoreHeader() {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([])
+  const [branches, setBranches] = useState<Branch[]>([])
   const [activeTab, setActiveTab] = useState<'restaurants' | 'menus'>('restaurants')
+  const [selectedCity, setSelectedCity] = useState<string>('all')
+  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
 
   useEffect(() => {
-    async function fetchRestaurants() {
+    async function fetchBranches() {
       try {
-        const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_restaurants_table')
+        const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_branches_table')
         const data = await response.json()
-        setRestaurants(data)
+        setBranches(data)
       } catch (error) {
-        console.error('Error fetching restaurants:', error)
+        console.error('Error fetching branches:', error)
       }
     }
 
-    fetchRestaurants()
+    fetchBranches()
   }, [])
+
+  // Get unique cities for filter
+  const cities = Array.from(new Set(branches.map(branch => branch.branchCity)))
+
+  // Filter branches by selected city
+  const filteredBranches = selectedCity === 'all' 
+    ? branches 
+    : branches.filter(branch => branch.branchCity === selectedCity)
 
   return (
     <div className="bg-white">
@@ -74,18 +93,14 @@ export function StoreHeader() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Branches</DropdownMenuLabel>
-                <DropdownMenuItem>East Legon</DropdownMenuItem>
-                <DropdownMenuItem>Osu</DropdownMenuItem>
-                <DropdownMenuItem>Accra Mall</DropdownMenuItem>
-                <DropdownMenuItem>Tema</DropdownMenuItem>
-                
-                <DropdownMenuSeparator />
-                
-                <DropdownMenuLabel>Price Range</DropdownMenuLabel>
-                <DropdownMenuItem>GH₵ Under 20</DropdownMenuItem>
-                <DropdownMenuItem>GH₵ 20 - 50</DropdownMenuItem>
-                <DropdownMenuItem>GH₵ 50 - 100</DropdownMenuItem>
-                <DropdownMenuItem>GH₵ 100+</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSelectedCity('all')}>
+                  All Locations
+                </DropdownMenuItem>
+                {cities.map((city) => (
+                  <DropdownMenuItem key={city} onClick={() => setSelectedCity(city)}>
+                    {city}
+                  </DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -130,35 +145,47 @@ export function StoreHeader() {
         {/* Content */}
         {activeTab === 'restaurants' && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {restaurants.map((restaurant) => (
-              <Link 
-                key={restaurant.id}
-                href={`/restaurant/${restaurant.id}`}
-                className="bg-white rounded-lg overflow-hidden hover:shadow-lg transition-shadow border border-gray-100"
-              >
+            {filteredBranches.map((branch) => (
+              <div key={branch.id} className="bg-white rounded-lg overflow-hidden hover:shadow-lg transition-shadow border border-gray-100">
                 <div className="relative aspect-[4/3] rounded-t-lg overflow-hidden">
                   <Image
-                    src={restaurant.restaurantLogo.url}
-                    alt={restaurant.restaurantName}
+                    src={branch._restaurantTable[0].restaurantLogo.url}
+                    alt={branch._restaurantTable[0].restaurantName}
                     fill
                     className="object-cover"
                   />
                   <div className="absolute bottom-2 left-2 bg-white px-2 py-1 rounded-md text-sm font-medium flex items-center gap-1">
-                    <Star className="w-3 h-3 fill-yellow-400 stroke-yellow-400" />
+                    <Star className="w-3 h-3 text-gray-900" />
                     4.7
                   </div>
                 </div>
                 <div className="p-3 border-t border-gray-100">
-                  <h3 className="font-medium text-gray-900 text-sm mb-1 truncate">{restaurant.restaurantName}</h3>
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
-                    <span>GH₵6.00</span>
-                    <span>•</span>
-                    <span>25-30 min</span>
+                  <h3 className="font-bold text-gray-900 text-sm mb-1 truncate">
+                    {branch.branchName}
+                  </h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-600 truncate">
+                      {branch._restaurantTable[0].restaurantName}
+                    </span>
+                    <button 
+                      onClick={() => setSelectedBranch(branch)}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
+        )}
+
+        {selectedBranch && (
+          <BranchDetailsModal
+            isOpen={!!selectedBranch}
+            onClose={() => setSelectedBranch(null)}
+            branch={selectedBranch}
+          />
         )}
 
         {activeTab === 'menus' && (
