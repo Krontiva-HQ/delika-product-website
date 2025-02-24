@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
+import LocationInput from './location-input'
+import { LocationData } from './location'
 
 const formSchema = z.object({
   business_name: z.string().min(2, "Business name must be at least 2 characters"),
@@ -19,11 +21,31 @@ const formSchema = z.object({
   address: z.string().min(5, "Address must be at least 5 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone_number: z.string().min(10, "Phone number must be at least 10 digits"),
+  location: z.object({
+    longitude: z.number(),
+    latitude: z.number(),
+    name: z.string(),
+    address: z.string(),
+    city: z.string(),
+  }).optional(),
+  branches: z.object({
+    name: z.string(),
+    phone_number: z.string().min(10, "Phone number must be at least 10 digits"),
+    address: z.string(),
+    city: z.string(),
+    longitude: z.number(),
+    latitude: z.number(),
+  }).optional(),
 })
 
 export function RestaurantSignupForm() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [locationData, setLocationData] = useState<LocationData | undefined>(undefined)
+  const [branchData, setBranchData] = useState<{ 
+    name: string, 
+    phone_number: string,
+  }>({ name: '', phone_number: '' })
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -35,18 +57,47 @@ export function RestaurantSignupForm() {
       address: "",
       email: "",
       phone_number: "",
+      location: undefined,
+      branches: {
+        name: "",
+        phone_number: "",
+        address: "",
+        city: "",
+        longitude: 0,
+        latitude: 0,
+      },
     },
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
     try {
-      const response = await fetch('/api/restaurant-signup', {
+      const transformedData = {
+        business_name: values.business_name,
+        address: values.address,
+        email: values.email,
+        phone_number: values.phone_number,
+        business_type: values.business_type,
+        type_of_service: values.type_of_service,
+        approval_status: "pending",
+        full_name: values.full_name,
+        location: locationData,
+        branches: [{
+          name: branchData.name,
+          phoneNumber: branchData.phone_number,
+          address: locationData?.address,
+          city: locationData?.city,
+          longitude: locationData?.longitude,
+          latitude: locationData?.latitude
+        }]
+      }
+
+      const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/delika_restaurant_approvals', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(transformedData),
       })
 
       const data = await response.json()
@@ -71,6 +122,21 @@ export function RestaurantSignupForm() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleLocationSelect = (location: LocationData) => {
+    setLocationData(location)
+    form.setValue('address', location.address)
+  }
+
+  const handleBranchNameChange = (name: string) => {
+    setBranchData(prev => ({ ...prev, name }))
+    form.setValue('branches.name', name)
+  }
+
+  const handleBranchPhoneChange = (phone: string) => {
+    setBranchData(prev => ({ ...prev, phone_number: phone }))
+    form.setValue('branches.phone_number', phone)
   }
 
   return (
@@ -160,19 +226,14 @@ export function RestaurantSignupForm() {
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Business Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Full address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-2">
+              <LocationInput
+                label="Business Location"
+                onLocationSelect={handleLocationSelect}
+                prefillData={locationData}
+              />
+            </div>
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
@@ -202,6 +263,47 @@ export function RestaurantSignupForm() {
                   </FormItem>
                 )}
               />
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Branch Information</h3>
+              <div className="p-4 border rounded-lg space-y-4">
+                <FormField
+                  control={form.control}
+                  name="branches.name"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>Branch Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter branch name"
+                          value={branchData.name}
+                          onChange={(e) => handleBranchNameChange(e.target.value)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="branches.phone_number"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>Branch Phone Number</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter branch phone number"
+                          value={branchData.phone_number}
+                          onChange={(e) => handleBranchPhoneChange(e.target.value)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
             <Button
