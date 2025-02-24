@@ -35,6 +35,13 @@ export function SiteHeader() {
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
+                <Link href="/shop" legacyBehavior passHref>
+                  <NavigationMenuLink className="text-sm lg:text-base px-4 py-2">
+                    Shop
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
                 <NavigationMenuTrigger className="text-sm lg:text-base">Solutions</NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[300px] md:w-[400px] p-4">
