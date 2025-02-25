@@ -345,11 +345,14 @@ export function StoreHeader() {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        onSignupClick={() => {
+        onSwitchToSignup={() => {
           setIsLoginModalOpen(false)
           setIsSignupModalOpen(true)
         }}
-        onLoginSuccess={handleLoginSuccess}
+        onLoginSuccess={(userData) => {
+          setUser(userData)
+          setIsLoginModalOpen(false)
+        }}
       />
 
       <SignupModal

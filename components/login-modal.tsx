@@ -5,28 +5,141 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { OTPInputModal } from "@/components/otp-input-modal"
 
 interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
   onSwitchToSignup: () => void
+  onLoginSuccess: (userData: { name: string, email: string }) => void
 }
 
-export function LoginModal({ isOpen, onClose, onSwitchToSignup }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }: LoginModalProps) {
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
+  const [showOTP, setShowOTP] = useState(false)
+  const [authToken, setAuthToken] = useState("")
+  const [userData, setUserData] = useState<any>(null)
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Add login logic here
-    const formData = {
-      password,
-      ...(e.currentTarget.getAttribute('data-mode') === 'email' 
-        ? { email } 
-        : { phone })
+    try {
+      const isEmailMode = e.currentTarget.getAttribute('data-mode') === 'email'
+      setLoginMethod(isEmailMode ? 'email' : 'phone')
+
+      const endpoint = isEmailMode
+        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/login'
+        : 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/login/phoneNumber/customer'
+
+      const payload = isEmailMode
+        ? {
+            email,
+            password,
+          }
+        : {
+            phoneNumber: phone,
+            password,
+          }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      })
+
+      const data = await response.json()
+      
+      if (data.authToken) {
+        setAuthToken(data.authToken)
+        // Fetch user details
+        const userResponse = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${data.authToken}`,
+            'Content-Type': 'application/json',
+          }
+        })
+        const userData = await userResponse.json()
+        setUserData(userData)
+        setShowOTP(true)
+      } else {
+        console.error('Login failed')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
     }
-    console.log("Login:", formData)
+  }
+
+  const handleOTPVerification = async (otp: string) => {
+    try {
+      const endpoint = loginMethod === 'email'
+        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code'
+        : 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code/phoneNumber'
+
+      const payload = loginMethod === 'email'
+        ? {
+            OTP: parseInt(otp),
+            type: true,
+            contact: email
+          }
+        : {
+            OTP: parseInt(otp),
+            contact: phone
+          }
+
+      const otpResponse = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const otpData = await otpResponse.json();
+
+      if (otpData.otpValidate === 'otpFound') {
+        // Store auth token in localStorage
+        localStorage.setItem('authToken', authToken);
+
+        // Get user details from stored userData
+        if (userData) {
+          const userDetails = {
+            name: userData.fullName,
+            email: loginMethod === 'email' ? email : phone // Use phone number if that was the login method
+          };
+          
+          // Store user data in localStorage
+          localStorage.setItem('userData', JSON.stringify(userDetails));
+          
+          // Call the success handler
+          onLoginSuccess(userDetails);
+          
+          // Close the modal
+          setShowOTP(false);
+          onClose();
+        }
+      } else {
+        console.error('OTP verification failed');
+      }
+    } catch (error) {
+      console.error('OTP verification error:', error);
+    }
+  };
+
+  if (showOTP) {
+    return (
+      <OTPInputModal
+        isOpen={true}
+        onClose={() => setShowOTP(false)}
+        onVerify={handleOTPVerification}
+        email={email}
+        phone={phone}
+        signupMethod={loginMethod}
+      />
+    )
   }
 
   return (
