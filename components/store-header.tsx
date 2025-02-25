@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, Search, SlidersHorizontal, Star, ChevronDown, ChevronRight } from "lucide-react"
+import { MapPin, Search, SlidersHorizontal, Star, ChevronDown, ChevronRight, ChevronLeft } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -19,6 +19,8 @@ import { LocationSearchModal } from "@/components/location-search-modal"
 import { LoginModal } from "@/components/login-modal"
 import { SignupModal } from "@/components/signup-modal"
 import { EmptyState } from "@/components/empty-state"
+import { AuthNav } from "@/components/auth-nav"
+import { BranchPage } from "@/components/branch-page"
 
 interface Restaurant {
   restaurantName: string
@@ -55,6 +57,8 @@ export function StoreHeader() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [currentView, setCurrentView] = useState<'stores' | 'orders' | 'favorites' | 'profile' | 'settings' | 'branch'>('stores')
+  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null)
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -122,6 +126,16 @@ export function StoreHeader() {
     }
   }, [])
 
+  useEffect(() => {
+    // Check localStorage for selected branch on mount
+    const savedBranchId = localStorage.getItem('selectedBranchId')
+    const savedView = localStorage.getItem('currentView')
+    if (savedBranchId && savedView) {
+      setSelectedBranchId(savedBranchId)
+      setCurrentView(savedView as any)
+    }
+  }, [])
+
   // Get unique cities for filter
   const cities = Array.from(new Set(branches.map(branch => branch.branchCity)))
 
@@ -144,189 +158,160 @@ export function StoreHeader() {
     setCoordinates({ lat, lng })
   }
 
-  return (
-    <div className="bg-white">
-      {/* Search Section */}
-      <div className="border-b">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-center">
-          <div className="flex items-center gap-4 max-w-3xl w-full">
-            <button 
-              onClick={() => setIsLocationModalOpen(true)} 
-              className="flex items-center gap-2 hover:text-gray-600 max-w-[200px]"
-            >
-              <MapPin className="w-5 h-5 flex-shrink-0" />
-              <span className="font-medium truncate">
-                {userLocation}
-              </span>
-            </button>
+  // Save to localStorage when branch is selected
+  const handleBranchSelect = (branch: Branch) => {
+    setSelectedBranchId(branch.id)
+    setCurrentView('branch')
+    localStorage.setItem('selectedBranchId', branch.id)
+    localStorage.setItem('currentView', 'branch')
+  }
 
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search restaurants and stores"
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-gray-200"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+  // Clear localStorage when going back to stores
+  const handleBackToStores = () => {
+    setCurrentView('stores')
+    setSelectedBranchId(null)
+    localStorage.removeItem('selectedBranchId')
+    localStorage.removeItem('currentView')
+  }
+
+  const renderContent = () => {
+    switch (currentView) {
+      case 'branch':
+        return (
+          <div className="container mx-auto px-4 py-8">
+            <button 
+              onClick={handleBackToStores}
+              className="mb-4 text-orange-500 hover:text-orange-600 flex items-center gap-1"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Back to Stores
+            </button>
+            <BranchPage params={{ id: selectedBranchId! }} />
+          </div>
+        )
+      case 'orders':
+        return <div>Orders content here</div>
+      case 'favorites':
+        return <div>Favorites content here</div>
+      case 'profile':
+        return <div>Profile content here</div>
+      case 'settings':
+        return <div>Settings content here</div>
+      default:
+        return (
+          <div>
+            {/* Search and Store Content */}
+            <div className="border-b">
+              <div className="container mx-auto px-4 h-16 flex items-center justify-center">
+                <div className="flex items-center gap-4 max-w-3xl w-full">
+                  <button 
+                    onClick={() => setIsLocationModalOpen(true)} 
+                    className="flex items-center gap-2 hover:text-gray-600 max-w-[200px]"
+                  >
+                    <MapPin className="w-5 h-5 flex-shrink-0" />
+                    <span className="font-medium truncate">{userLocation}</span>
+                  </button>
+
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search restaurants and stores"
+                      className="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-gray-200"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-2 hover:bg-gray-100 rounded-full flex items-center gap-2">
+                        <SlidersHorizontal className="w-5 h-5" />
+                        <span className="text-sm">Filter</span>
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel>Filter by</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => setSelectedCity('all')}>
+                        All Locations
+                      </DropdownMenuItem>
+                      {cities.map((city) => (
+                        <DropdownMenuItem key={city} onClick={() => setSelectedCity(city)}>
+                          {city}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-2 hover:bg-gray-100 rounded-full flex items-center gap-2">
-                  <SlidersHorizontal className="w-5 h-5" />
-                  <span className="text-sm">Filter</span>
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Branches</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => setSelectedCity('all')}>
-                  All Locations
-                </DropdownMenuItem>
-                {cities.map((city) => (
-                  <DropdownMenuItem key={city} onClick={() => setSelectedCity(city)}>
-                    {city}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                className="text-sm"
-                onClick={() => setIsLoginModalOpen(true)}
-              >
-                Login
-              </Button>
-              <Button 
-                className="text-sm bg-orange-500 hover:bg-orange-600"
-                onClick={() => setIsSignupModalOpen(true)}
-              >
-                Register
-              </Button>
+            {/* Store Listings */}
+            <div className="container mx-auto px-4 py-6">
+              {searchResults.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {searchResults.map((branch) => (
+                    <button
+                      key={branch.id}
+                      onClick={() => handleBranchSelect(branch)}
+                      className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left"
+                    >
+                      <div className="relative h-36">
+                        <Image
+                          src={branch._restaurantTable[0].restaurantLogo.url}
+                          alt={branch._restaurantTable[0].restaurantName}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-medium text-gray-900 truncate">
+                          {branch.branchName}
+                        </h3>
+                        <span className="text-xs text-gray-600 truncate block">
+                          {branch._restaurantTable[0].restaurantName}
+                        </span>
+                        <div className="flex items-center gap-1 mt-2 text-sm text-gray-600">
+                          <MapPin className="w-4 h-4" />
+                          <span className="truncate">{branch.branchLocation}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-1 text-sm">
+                          <Star className="w-4 h-4 text-yellow-400" />
+                          <span>4.5</span>
+                          <span className="text-gray-600">(500+)</span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  title="No restaurants found"
+                  description={searchQuery ? `We couldn't find any restaurants matching "${searchQuery}"` : "No restaurants available"}
+                  icon="search"
+                />
+              )}
             </div>
           </div>
-        </div>
-      </div>
+        )
+    }
+  }
 
+  return (
+    <div>
+      <AuthNav 
+        userName="John Doe" 
+        onViewChange={setCurrentView}
+        currentView={currentView}
+      />
+      {renderContent()}
+      
       <LocationSearchModal
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
         onLocationSelect={handleLocationSelect}
       />
-
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onSwitchToSignup={() => {
-          setIsLoginModalOpen(false)
-          setIsSignupModalOpen(true)
-        }}
-      />
-
-      <SignupModal
-        isOpen={isSignupModalOpen}
-        onClose={() => setIsSignupModalOpen(false)}
-        onSwitchToLogin={() => {
-          setIsSignupModalOpen(false)
-          setIsLoginModalOpen(true)
-        }}
-      />
-
-      {/* Tabs and Content */}
-      <div className="container mx-auto px-4 py-6">
-        {/* Tabs */}
-        <div className="flex gap-8 border-b mb-6">
-          <button
-            onClick={() => setActiveTab('restaurants')}
-            className={`pb-4 px-2 text-sm font-medium transition-colors relative ${
-              activeTab === 'restaurants'
-                ? 'text-orange-500 border-b-2 border-orange-500'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Restaurants
-          </button>
-          <button
-            onClick={() => setActiveTab('menus')}
-            className={`pb-4 px-2 text-sm font-medium transition-colors relative ${
-              activeTab === 'menus'
-                ? 'text-orange-500 border-b-2 border-orange-500'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Menus
-          </button>
-        </div>
-
-        {/* Content */}
-        {activeTab === 'restaurants' && (
-          <>
-            {searchResults.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {searchResults.map((branch) => (
-                  <Link 
-                    href={`/branch/${branch.id}`}
-                    key={branch.id} 
-                    className="bg-white rounded-lg overflow-hidden hover:shadow-lg transition-shadow border border-gray-100"
-                  >
-                    <div className="relative aspect-[4/3] rounded-t-lg overflow-hidden">
-                      <Image
-                        src={branch._restaurantTable[0].restaurantLogo.url}
-                        alt={branch._restaurantTable[0].restaurantName}
-                        fill
-                        className="object-cover"
-                      />
-                      <div className="absolute bottom-2 left-2 bg-white px-2 py-1 rounded-md text-sm font-medium flex items-center gap-1">
-                        <Star className="w-3 h-3 text-gray-900" />
-                        4.7
-                      </div>
-                    </div>
-                    <div className="p-3 border-t border-gray-100">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1 truncate">
-                        {branch.branchName}
-                      </h3>
-                      <span className="text-xs text-gray-600 truncate block">
-                        {branch._restaurantTable[0].restaurantName}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="col-span-full">
-                <EmptyState
-                  title="No restaurants found"
-                  description={
-                    searchQuery
-                      ? `We couldn't find any restaurants matching "${searchQuery}"`
-                      : "There are no restaurants available in this location yet"
-                  }
-                  icon="search"
-                />
-              </div>
-            )}
-          </>
-        )}
-
-        {selectedBranch && (
-          <BranchDetailsModal
-            isOpen={!!selectedBranch}
-            onClose={() => setSelectedBranch(null)}
-            branch={selectedBranch}
-          />
-        )}
-
-        {activeTab === 'menus' && (
-          <EmptyState
-            title="Coming Soon"
-            description="We're working hard to bring you an amazing menu experience. Stay tuned!"
-            icon="store"
-          />
-        )}
-      </div>
     </div>
   )
 }

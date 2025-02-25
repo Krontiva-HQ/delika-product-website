@@ -1,13 +1,11 @@
 "use client"
 
-import { use } from "react"
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import { Star, MapPin, Phone, Clock, Info, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BranchDetailsModal } from "@/components/branch-details-modal"
 import { EmptyState } from "@/components/empty-state"
-import { AuthNav } from "@/components/auth-nav"
 
 interface BranchDetails {
   _menutable?: Array<{
@@ -29,9 +27,6 @@ interface BranchDetails {
   branchPhoneNumber: string
   branchName?: string
   branchCity?: string
-  branchLatitude?: string
-  branchLongitude?: string
-  restaurantID?: string
 }
 
 interface BranchPageProps {
@@ -40,9 +35,8 @@ interface BranchPageProps {
   }
 }
 
-export default function BranchPage({ params }: BranchPageProps) {
+export function BranchPage({ params }: BranchPageProps) {
   const [branch, setBranch] = useState<BranchDetails | null>(null)
-  const [activeTab, setActiveTab] = useState<'menu' | 'info'>('menu')
   const [isLoading, setIsLoading] = useState(true)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>('')
@@ -88,26 +82,11 @@ export default function BranchPage({ params }: BranchPageProps) {
   }, [params.id])
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading branch details...</p>
-        </div>
-      </div>
-    )
+    return <div>Loading...</div>
   }
 
   if (error || !branch) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <EmptyState
-          title={error || "Branch not found"}
-          description="We couldn't find the branch you're looking for. Please try again."
-          icon="store"
-        />
-      </div>
-    )
+    return <EmptyState title={error || "Branch not found"} description="We couldn't find the branch you're looking for." icon="store" />
   }
 
   const currentCategory = branch._menutable?.find((cat: { foodType: string }) => cat.foodType === selectedCategory)
