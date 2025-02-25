@@ -171,45 +171,15 @@ export default function BranchPage({ params: paramsPromise }: { params: Promise<
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header Image */}
-      <div className="relative h-[300px]">
-        <Image
-          src={logoUrl}
-          alt={restaurantName}
-          fill
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <div className="absolute bottom-4 left-4 text-white">
-          <h1 className="text-3xl font-bold mb-2">{branch.branchName}</h1>
-          <div className="flex items-center gap-2 text-sm">
-            <div className="flex items-center">
-              <Star className="w-4 h-4 fill-current text-yellow-400" />
-              <span className="ml-1">4.4</span>
-              <span className="text-gray-300 ml-1">(500+)</span>
-            </div>
-            <span>•</span>
-            <span>Delivery</span>
-          </div>
-        </div>
-        <Button 
-          className="absolute bottom-4 right-4 bg-white text-gray-900 hover:bg-gray-100"
-          onClick={() => setIsDetailsModalOpen(true)}
-        >
-          More Info
-        </Button>
-      </div>
-
-      {/* Three Column Layout */}
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-12 gap-6">
-          {/* Menu Categories */}
+          {/* Menu Categories - Left Sidebar */}
           <div className="col-span-3 bg-white rounded-lg p-4 h-fit">
             <h2 className="font-semibold mb-4">Menu Categories</h2>
             <div className="space-y-2">
               {branch._menutable?.map((category) => (
                 <button 
-                  key={category.id}
+                  key={category.foodType}
                   onClick={() => setSelectedCategory(category.foodType)}
                   className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 text-sm ${
                     selectedCategory === category.foodType ? 'bg-gray-100' : ''
@@ -221,8 +191,35 @@ export default function BranchPage({ params: paramsPromise }: { params: Promise<
             </div>
           </div>
 
-          {/* Main Content */}
+          {/* Main Content Column */}
           <div className="col-span-6">
+            {/* Restaurant Header */}
+            <div className="relative h-[200px] rounded-t-xl overflow-hidden mb-6">
+              <Image
+                src={logoUrl}
+                alt={restaurantName}
+                fill
+                priority
+                className="object-cover"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent h-24" />
+              <div className="absolute bottom-4 left-4">
+                <h1 className="text-xl font-bold text-white mb-2">{branch.branchName}</h1>
+                <div className="flex items-center gap-2 text-sm text-white">
+                  <div className="flex items-center">
+                    <Star className="w-4 h-4 fill-current text-yellow-400" />
+                    <span className="ml-1">4.4</span>
+                    <span className="ml-1">(500+)</span>
+                  </div>
+                  <span>•</span>
+                  <span>Delivery</span>
+                  <span>•</span>
+                  <span>{branch.branchCity}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Menu Items */}
             <div className="bg-white rounded-lg p-6">
               <h2 className="font-semibold mb-6">{selectedCategory}</h2>
               <div className="space-y-6">
@@ -246,7 +243,7 @@ export default function BranchPage({ params: paramsPromise }: { params: Promise<
                           className="bg-orange-500 hover:bg-orange-600"
                           disabled={!item.available}
                         >
-                          Add to Cart
+                          {item.available ? 'Add to Cart' : 'Out of Stock'}
                         </Button>
                       </div>
                     </div>
@@ -262,7 +259,10 @@ export default function BranchPage({ params: paramsPromise }: { params: Promise<
             </div>
           </div>
 
-          {/* Cart - same as before */}
+          {/* Cart - Right Sidebar */}
+          <div className="col-span-3 bg-white rounded-lg p-4 h-fit">
+            {/* ... existing cart code ... */}
+          </div>
         </div>
       </div>
 

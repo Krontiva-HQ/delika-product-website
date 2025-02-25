@@ -117,39 +117,9 @@ export default function BranchPage({ params: paramsPromise }: { params: Promise<
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header Image */}
-      <div className="relative h-[300px]">
-        <Image
-          src={logoUrl}
-          alt={restaurantName}
-          fill
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <div className="absolute bottom-4 left-4 text-white">
-          <h1 className="text-3xl font-bold mb-2">{restaurantName}</h1>
-          <div className="flex items-center gap-2 text-sm">
-            <div className="flex items-center">
-              <Star className="w-4 h-4 fill-current text-yellow-400" />
-              <span className="ml-1">4.4</span>
-              <span className="text-gray-300 ml-1">(500+)</span>
-            </div>
-            <span>•</span>
-            <span>Delivery</span>
-          </div>
-        </div>
-        <Button 
-          className="absolute bottom-4 right-4 bg-white text-gray-900 hover:bg-gray-100"
-          onClick={() => setActiveTab('info')}
-        >
-          More Info
-        </Button>
-      </div>
-
-      {/* Three Column Layout */}
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-12 gap-6">
-          {/* Menu Categories */}
+          {/* Menu Categories - Left Sidebar */}
           <div className="col-span-3 bg-white rounded-lg p-4 h-fit">
             <h2 className="font-semibold mb-4">Menu Categories</h2>
             <div className="space-y-2">
@@ -167,8 +137,57 @@ export default function BranchPage({ params: paramsPromise }: { params: Promise<
             </div>
           </div>
 
-          {/* Main Content */}
+          {/* Main Content Column */}
           <div className="col-span-6">
+            {/* Restaurant Header */}
+            <div className="bg-white rounded-xl overflow-hidden mb-6">
+              <div className="relative h-[200px]">
+                <Image
+                  src={logoUrl}
+                  alt={restaurantName}
+                  fill
+                  priority
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-4 left-4">
+                  <h1 className="text-xl font-bold text-white mb-2">{branch.branchName}</h1>
+                  <div className="flex items-center gap-2 text-sm text-white">
+                    <div className="flex items-center">
+                      <Star className="w-4 h-4 fill-current text-yellow-400" />
+                      <span className="ml-1">4.4</span>
+                      <span className="ml-1">(500+)</span>
+                    </div>
+                    <span>•</span>
+                    <span>Delivery</span>
+                    <span>•</span>
+                    <span>{branch.branchCity}</span>
+                  </div>
+                </div>
+                <Button 
+                  className="absolute bottom-4 right-4 bg-white text-gray-900 hover:bg-gray-100"
+                  onClick={() => setIsDetailsModalOpen(true)}
+                >
+                  More Info
+                </Button>
+              </div>
+              
+              {/* Restaurant Quick Info */}
+              <div className="p-4 border-t border-gray-100">
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    <span>{branch.branchLocation}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    <span>Open 8:00 AM - 10:00 PM</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Menu Items */}
             <div className="bg-white rounded-lg p-6">
               <h2 className="font-semibold mb-6">{selectedCategory}</h2>
               <div className="space-y-6">
@@ -208,7 +227,7 @@ export default function BranchPage({ params: paramsPromise }: { params: Promise<
             </div>
           </div>
 
-          {/* Cart */}
+          {/* Cart - Right Sidebar */}
           <div className="col-span-3 bg-white rounded-lg p-4 h-fit">
             <div className="flex items-center gap-2 mb-4">
               <ShoppingCart className="w-5 h-5" />
@@ -223,6 +242,21 @@ export default function BranchPage({ params: paramsPromise }: { params: Promise<
           </div>
         </div>
       </div>
+
+      {/* Branch Details Modal */}
+      {branch && (
+        <BranchDetailsModal
+          isOpen={isDetailsModalOpen}
+          onClose={() => setIsDetailsModalOpen(false)}
+          branch={{
+            branchName: branch.branchName,
+            branchLocation: branch.branchLocation,
+            branchPhoneNumber: branch.branchPhoneNumber,
+            branchCity: branch.branchCity,
+            _restaurantTable: branch._restaurantTable
+          }}
+        />
+      )}
     </div>
   )
 } 
