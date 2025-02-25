@@ -1,6 +1,6 @@
 "use client"
 
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Plus, Minus, X, Trash2 } from "lucide-react"
 import Image from "next/image"
@@ -40,7 +40,7 @@ export function CartModal({
         <div className="p-6 border-b">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Your Cart</h2>
+              <DialogTitle className="text-2xl font-semibold">Your Cart</DialogTitle>
               <p className="text-gray-500 text-sm mt-1">
                 {cart.length} {cart.length === 1 ? 'item' : 'items'}
               </p>
