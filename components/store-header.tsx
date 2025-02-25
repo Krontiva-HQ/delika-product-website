@@ -59,6 +59,7 @@ export function StoreHeader() {
   const [searchQuery, setSearchQuery] = useState("")
   const [currentView, setCurrentView] = useState<'stores' | 'orders' | 'favorites' | 'profile' | 'settings' | 'branch'>('stores')
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null)
+  const [user, setUser] = useState<{ name: string, email: string } | null>(null)
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -136,6 +137,19 @@ export function StoreHeader() {
     }
   }, [])
 
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('authToken')
+    if (token) {
+      // Fetch user data or decode token
+      // For now, we'll just check if token exists
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+      if (userData.name) {
+        setUser(userData)
+      }
+    }
+  }, [])
+
   // Get unique cities for filter
   const cities = Array.from(new Set(branches.map(branch => branch.branchCity)))
 
@@ -172,6 +186,18 @@ export function StoreHeader() {
     setSelectedBranchId(null)
     localStorage.removeItem('selectedBranchId')
     localStorage.removeItem('currentView')
+  }
+
+  const handleLoginSuccess = (userData: { name: string, email: string }) => {
+    setUser(userData)
+    localStorage.setItem('userData', JSON.stringify(userData))
+  }
+
+  const handleLogout = () => {
+    setUser(null)
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('userData')
+    setCurrentView('stores')
   }
 
   const renderContent = () => {
@@ -301,9 +327,12 @@ export function StoreHeader() {
   return (
     <div>
       <AuthNav 
-        userName="John Doe" 
+        userName={user?.name}
         onViewChange={setCurrentView}
         currentView={currentView}
+        onLoginClick={() => setIsLoginModalOpen(true)}
+        onSignupClick={() => setIsSignupModalOpen(true)}
+        onLogout={handleLogout}
       />
       {renderContent()}
       
@@ -311,6 +340,26 @@ export function StoreHeader() {
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
         onLocationSelect={handleLocationSelect}
+      />
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSignupClick={() => {
+          setIsLoginModalOpen(false)
+          setIsSignupModalOpen(true)
+        }}
+        onLoginSuccess={handleLoginSuccess}
+      />
+
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
+        onLoginClick={() => {
+          setIsSignupModalOpen(false)
+          setIsLoginModalOpen(true)
+        }}
+        onSignupSuccess={handleLoginSuccess}
       />
     </div>
   )
