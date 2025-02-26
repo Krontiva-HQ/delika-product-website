@@ -10,20 +10,22 @@ import { OTPInputModal } from "@/components/otp-input-modal"
 interface SignupModalProps {
   isOpen: boolean
   onClose: () => void
-  onSwitchToLogin: () => void
+  onLoginClick: () => void
   onSignupSuccess?: (user: { name: string; email: string }) => void
 }
 
-export function SignupModal({ isOpen, onClose, onSwitchToLogin, onSignupSuccess }: SignupModalProps) {
+export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: SignupModalProps) {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
   const [showOTPModal, setShowOTPModal] = useState(false)
   const [signupMethod, setSignupMethod] = useState<'email' | 'phone'>('email')
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsLoading(true)
     try {
       const isEmailMode = e.currentTarget.getAttribute('data-mode') === 'email'
       setSignupMethod(isEmailMode ? 'email' : 'phone')
@@ -53,7 +55,6 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, onSignupSuccess 
           },
           body: JSON.stringify({
             phoneNumber: phone,
-            password,
             role: "Customer",
             fullName: name,
           }),
@@ -68,6 +69,8 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, onSignupSuccess 
       
     } catch (error) {
       console.error("Signup error:", error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -160,8 +163,19 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, onSignupSuccess 
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600">
-                  Sign up with Email
+                <Button 
+                  type="submit" 
+                  className="w-full bg-orange-500 hover:bg-orange-600"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      Signing up...
+                    </>
+                  ) : (
+                    'Sign up with Email'
+                  )}
                 </Button>
               </form>
             </TabsContent>
@@ -187,18 +201,19 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, onSignupSuccess 
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Password</label>
-                  <Input
-                    type="password"
-                    placeholder="Create a password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600">
-                  Sign up with Phone
+                <Button 
+                  type="submit" 
+                  className="w-full bg-orange-500 hover:bg-orange-600"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      Signing up...
+                    </>
+                  ) : (
+                    'Sign up with Phone'
+                  )}
                 </Button>
               </form>
             </TabsContent>
@@ -207,7 +222,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, onSignupSuccess 
             Already have an account?{" "}
             <button
               type="button"
-              onClick={onSwitchToLogin}
+              onClick={onLoginClick}
               className="text-orange-500 hover:text-orange-600"
             >
               Login

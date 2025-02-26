@@ -1,7 +1,7 @@
 "use client"
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { Star, MapPin, Phone, Clock, Info } from "lucide-react"
+import { MapPin, Phone, Clock } from "lucide-react"
 
 interface BranchDetailsModalProps {
   isOpen: boolean
@@ -11,6 +11,8 @@ interface BranchDetailsModalProps {
     branchLocation?: string
     branchPhoneNumber?: string
     branchCity?: string
+    openTime?: string
+    closeTime?: string
     _restaurantTable?: Array<{
       restaurantName?: string
       restaurantLogo?: {
@@ -21,6 +23,8 @@ interface BranchDetailsModalProps {
 }
 
 export function BranchDetailsModal({ isOpen, onClose, branch }: BranchDetailsModalProps) {
+  console.log('Branch details:', branch);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px] p-6">
@@ -47,14 +51,11 @@ export function BranchDetailsModal({ isOpen, onClose, branch }: BranchDetailsMod
             <Clock className="w-5 h-5 text-gray-400 mt-0.5" />
             <div>
               <h4 className="font-medium text-gray-900">Hours</h4>
-              <p className="text-gray-600">Open 8:00 AM - 10:00 PM</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-gray-400 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-gray-900">Additional Info</h4>
-              <p className="text-gray-600">Delivery available • Dine-in • Takeaway</p>
+              <p className="text-gray-600">
+                {branch.openTime && branch.closeTime 
+                  ? `Open ${branch.openTime} - ${branch.closeTime}`
+                  : 'Hours not available'}
+              </p>
             </div>
           </div>
         </div>

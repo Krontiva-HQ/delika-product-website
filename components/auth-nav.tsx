@@ -18,6 +18,7 @@ interface AuthNavProps {
   onLoginClick: () => void
   onSignupClick: () => void
   onLogout: () => void
+  onHomeClick: () => void
 }
 
 export function AuthNav({ 
@@ -26,16 +27,20 @@ export function AuthNav({
   currentView,
   onLoginClick,
   onSignupClick,
-  onLogout
+  onLogout,
+  onHomeClick
 }: AuthNavProps) {
   return (
     <div className="bg-white border-b">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
-            <Link href="/shop" className="font-semibold text-orange-500">
+            <button 
+              onClick={onHomeClick}
+              className="font-semibold text-orange-500 hover:text-orange-600"
+            >
               Home
-            </Link>
+            </button>
             {userName && (
               <>
                 <button 

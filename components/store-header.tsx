@@ -200,6 +200,13 @@ export function StoreHeader() {
     setCurrentView('stores')
   }
 
+  const handleHomeClick = () => {
+    setCurrentView('stores')
+    setSelectedBranchId(null)
+    localStorage.removeItem('selectedBranchId')
+    localStorage.removeItem('currentView')
+  }
+
   const renderContent = () => {
     switch (currentView) {
       case 'branch':
@@ -333,6 +340,7 @@ export function StoreHeader() {
         onLoginClick={() => setIsLoginModalOpen(true)}
         onSignupClick={() => setIsSignupModalOpen(true)}
         onLogout={handleLogout}
+        onHomeClick={handleHomeClick}
       />
       {renderContent()}
       

@@ -10,11 +10,11 @@ import { OTPInputModal } from "@/components/otp-input-modal"
 interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
-  onSwitchToSignup: () => void
+  onSignupClick: () => void
   onLoginSuccess: (userData: { name: string, email: string }) => void
 }
 
-export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, onSignupClick, onLoginSuccess }: LoginModalProps) {
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
@@ -22,9 +22,11 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
   const [authToken, setAuthToken] = useState("")
   const [userData, setUserData] = useState<any>(null)
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email')
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsLoading(true)
     try {
       const isEmailMode = e.currentTarget.getAttribute('data-mode') === 'email'
       setLoginMethod(isEmailMode ? 'email' : 'phone')
@@ -34,14 +36,8 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         : 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/login/phoneNumber/customer'
 
       const payload = isEmailMode
-        ? {
-            email,
-            password,
-          }
-        : {
-            phoneNumber: phone,
-            password,
-          }
+        ? { email, password }
+        : { phoneNumber: phone }
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -55,7 +51,6 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
       
       if (data.authToken) {
         setAuthToken(data.authToken)
-        // Fetch user details
         const userResponse = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/auth/me', {
           headers: {
             'Authorization': `Bearer ${data.authToken}`,
@@ -70,6 +65,8 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
       }
     } catch (error) {
       console.error('Login error:', error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -175,8 +172,19 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
                   required
                 />
               </div>
-              <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600">
-                Login with Email
+              <Button 
+                type="submit" 
+                className="w-full bg-orange-500 hover:bg-orange-600"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Logging in...
+                  </>
+                ) : (
+                  'Login with Email'
+                )}
               </Button>
             </form>
           </TabsContent>
@@ -192,18 +200,19 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Password</label>
-                <Input
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600">
-                Login with Phone
+              <Button 
+                type="submit" 
+                className="w-full bg-orange-500 hover:bg-orange-600"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Logging in...
+                  </>
+                ) : (
+                  'Login with Phone'
+                )}
               </Button>
             </form>
           </TabsContent>
@@ -212,7 +221,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
           Don't have an account?{" "}
           <button
             type="button"
-            onClick={onSwitchToSignup}
+            onClick={onSignupClick}
             className="text-orange-500 hover:text-orange-600"
           >
             Sign up

@@ -21,7 +21,7 @@ interface BranchDetails {
     }>
     foodTypeImage?: { url: string }
   }>
-  _restaurantTable?: Array<{
+  restaurant?: Array<{
     restaurantLogo?: { url: string }
     restaurantName?: string
   }>
@@ -29,6 +29,8 @@ interface BranchDetails {
   branchPhoneNumber: string
   branchName?: string
   branchCity?: string
+  openTime?: string
+  closeTime?: string
 }
 
 interface BranchPageProps {
@@ -143,7 +145,7 @@ export function BranchPage({ params }: BranchPageProps) {
   }
 
   const currentCategory = branch._menutable?.find((cat: { foodType: string }) => cat.foodType === selectedCategory)
-  const restaurantInfo = branch._restaurantTable?.[0]
+  const restaurantInfo = branch.restaurant?.[0]
   const logoUrl = restaurantInfo?.restaurantLogo?.url || '/placeholder-image.jpg'
   const restaurantName = restaurantInfo?.restaurantName || branch.branchName || 'Restaurant'
 
@@ -175,8 +177,8 @@ export function BranchPage({ params }: BranchPageProps) {
             <div className="bg-white rounded-xl overflow-hidden mb-6">
               <div className="relative h-[200px]">
                 <Image
-                  src={logoUrl}
-                  alt={restaurantName}
+                  src={branch.restaurant?.[0]?.restaurantLogo?.url || '/placeholder-image.jpg'}
+                  alt={branch.restaurant?.[0]?.restaurantName || 'Restaurant'}
                   fill
                   priority
                   className="object-cover"
@@ -334,7 +336,9 @@ export function BranchPage({ params }: BranchPageProps) {
             branchLocation: branch.branchLocation,
             branchPhoneNumber: branch.branchPhoneNumber,
             branchCity: branch.branchCity,
-            _restaurantTable: branch._restaurantTable
+            openTime: branch.openTime,
+            closeTime: branch.closeTime,
+            _restaurantTable: branch.restaurant
           }}
         />
       )}
