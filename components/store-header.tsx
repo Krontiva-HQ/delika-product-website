@@ -21,6 +21,7 @@ import { SignupModal } from "@/components/signup-modal"
 import { EmptyState } from "@/components/empty-state"
 import { AuthNav } from "@/components/auth-nav"
 import { BranchPage } from "@/components/branch-page"
+import { calculateDistance } from "@/utils/distance"
 
 interface Restaurant {
   restaurantName: string
@@ -60,6 +61,7 @@ export function StoreHeader() {
   const [currentView, setCurrentView] = useState<'stores' | 'orders' | 'favorites' | 'profile' | 'settings' | 'branch'>('stores')
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null)
   const [user, setUser] = useState<{ name: string, email: string } | null>(null)
+  const [userCoordinates, setUserCoordinates] = useState<{lat: number, lng: number} | null>(null)
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -81,49 +83,58 @@ export function StoreHeader() {
   }, [])
 
   useEffect(() => {
-    // Get user's current location
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords
-          setCoordinates({ lat: latitude, lng: longitude })
-
-          // Convert coordinates to address using Google Geocoding
-          try {
-            const response = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
-            )
-            const data = await response.json()
-            if (data.results[0]) {
-              // Get city and area from address components
-              const addressComponents = data.results[0].address_components
-              const city = addressComponents.find(
-                (component: any) => 
-                  component.types.includes("locality") || 
-                  component.types.includes("administrative_area_level_2")
-              )
-              const area = addressComponents.find(
-                (component: any) => component.types.includes("sublocality")
-              )
-              
-              setUserLocation(
-                area 
-                  ? `${area.short_name}, ${city?.short_name || ''}`
-                  : city?.short_name || 'Location not found'
-              )
-            }
-          } catch (error) {
-            console.error("Error fetching address:", error)
-            setUserLocation("Location not found")
-          }
-        },
-        (error) => {
-          console.error("Error getting location:", error)
-          setUserLocation("Location access denied")
-        }
-      )
+    // Load saved location on mount
+    const savedLocationData = localStorage.getItem('userLocationData')
+    if (savedLocationData) {
+      const { address, lat, lng } = JSON.parse(savedLocationData)
+      setUserLocation(address)
+      setUserCoordinates({ lat, lng })
+      setCoordinates({ lat, lng })
     } else {
-      setUserLocation("Geolocation not supported")
+      // Fall back to geolocation if no saved location
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords
+            setCoordinates({ lat: latitude, lng: longitude })
+
+            // Convert coordinates to address using Google Geocoding
+            try {
+              const response = await fetch(
+                `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+              )
+              const data = await response.json()
+              if (data.results[0]) {
+                // Get city and area from address components
+                const addressComponents = data.results[0].address_components
+                const city = addressComponents.find(
+                  (component: any) => 
+                    component.types.includes("locality") || 
+                    component.types.includes("administrative_area_level_2")
+                )
+                const area = addressComponents.find(
+                  (component: any) => component.types.includes("sublocality")
+                )
+                
+                setUserLocation(
+                  area 
+                    ? `${area.short_name}, ${city?.short_name || ''}`
+                    : city?.short_name || 'Location not found'
+                )
+              }
+            } catch (error) {
+              console.error("Error fetching address:", error)
+              setUserLocation("Location not found")
+            }
+          },
+          (error) => {
+            console.error("Error getting location:", error)
+            setUserLocation("Location access denied")
+          }
+        )
+      } else {
+        setUserLocation("Geolocation not supported")
+      }
     }
   }, [])
 
@@ -158,18 +169,44 @@ export function StoreHeader() {
     ? branches 
     : branches.filter(branch => branch.branchCity === selectedCity)
 
+  // Filter branches by distance
+  const filterBranchesByDistance = (branches: Branch[], userLat?: number, userLng?: number) => {
+    if (!userLat || !userLng) return branches;
+
+    return branches.filter(branch => {
+      const distance = calculateDistance(
+        userLat,
+        userLng,
+        parseFloat(branch.branchLatitude),
+        parseFloat(branch.branchLongitude)
+      );
+      return distance <= 8; // Only show branches within 8km
+    });
+  };
+
   // Further filter by search query
   const searchResults = searchQuery
-    ? filteredBranches.filter(branch => 
-        branch.branchName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        branch._restaurantTable[0].restaurantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        branch.branchLocation.toLowerCase().includes(searchQuery.toLowerCase())
+    ? filterBranchesByDistance(
+        filteredBranches.filter(branch => 
+          branch.branchName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          branch._restaurantTable[0].restaurantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          branch.branchLocation.toLowerCase().includes(searchQuery.toLowerCase())
+        ),
+        userCoordinates?.lat,
+        userCoordinates?.lng
       )
-    : filteredBranches
+    : filterBranchesByDistance(
+        filteredBranches,
+        userCoordinates?.lat,
+        userCoordinates?.lng
+      )
 
   const handleLocationSelect = ({ address, lat, lng }: { address: string; lat: number; lng: number }) => {
     setUserLocation(address)
+    setUserCoordinates({ lat, lng })
     setCoordinates({ lat, lng })
+    // Save to localStorage
+    localStorage.setItem('userLocationData', JSON.stringify({ address, lat, lng }))
   }
 
   // Save to localStorage when branch is selected

@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { LocationSearchModal } from "@/components/location-search-modal"
 
 interface SearchSectionProps {
@@ -17,11 +17,35 @@ interface SearchSectionProps {
   onCitySelect?: (city: string) => void
   cities?: string[]
   userLocation?: string
+  onLocationSelect?: (location: { address: string; lat: number; lng: number }) => void
 }
 
-export function SearchSection({ onSearch, onCitySelect, cities = [], userLocation = "Loading..." }: SearchSectionProps) {
+export function SearchSection({ 
+  onSearch, 
+  onCitySelect, 
+  cities = [], 
+  userLocation = "Loading...",
+  onLocationSelect 
+}: SearchSectionProps) {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [savedLocation, setSavedLocation] = useState(userLocation)
+
+  useEffect(() => {
+    // Load saved location on mount
+    const savedLocationData = localStorage.getItem('userLocationData')
+    if (savedLocationData) {
+      const { address } = JSON.parse(savedLocationData)
+      setSavedLocation(address)
+    }
+  }, [])
+
+  const handleLocationSelect = (location: { address: string; lat: number; lng: number }) => {
+    // Save to localStorage
+    localStorage.setItem('userLocationData', JSON.stringify(location))
+    setSavedLocation(location.address)
+    onLocationSelect?.(location)
+  }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value)
@@ -37,7 +61,7 @@ export function SearchSection({ onSearch, onCitySelect, cities = [], userLocatio
             className="flex items-center gap-2 hover:text-gray-600 max-w-[200px]"
           >
             <MapPin className="w-5 h-5 flex-shrink-0" />
-            <span className="font-medium truncate">{userLocation}</span>
+            <span className="font-medium truncate">{savedLocation}</span>
           </button>
 
           <div className="flex-1 relative">
@@ -77,7 +101,7 @@ export function SearchSection({ onSearch, onCitySelect, cities = [], userLocatio
       <LocationSearchModal
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
-        onLocationSelect={() => {}}
+        onLocationSelect={handleLocationSelect}
       />
     </div>
   )
