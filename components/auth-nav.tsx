@@ -46,14 +46,12 @@ export function AuthNav({
                 <button 
                   onClick={() => onViewChange('orders')}
                   className={`text-gray-600 hover:text-gray-900 ${currentView === 'orders' ? 'text-orange-500' : ''}`}
-                  title="View your order history"
                 >
                   Orders
                 </button>
                 <button 
                   onClick={() => onViewChange('favorites')}
                   className={`text-gray-600 hover:text-gray-900 ${currentView === 'favorites' ? 'text-orange-500' : ''}`}
-                  title="View your favorite restaurants and items"
                 >
                   Favorites
                 </button>
@@ -65,12 +63,14 @@ export function AuthNav({
             {userName ? (
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                  <div className="hidden md:flex w-8 h-8 rounded-full bg-orange-100 items-center justify-center">
                     <span className="text-sm font-medium text-orange-600">
                       {userName[0].toUpperCase()}
                     </span>
                   </div>
-                  <span className="text-sm font-medium">{userName}</span>
+                  <span className="text-sm font-medium max-w-[100px] md:max-w-none truncate">
+                    {userName}
+                  </span>
                   <ChevronDown className="w-4 h-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

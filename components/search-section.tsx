@@ -54,14 +54,14 @@ export function SearchSection({
 
   return (
     <div className="border-b">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-center">
-        <div className="flex items-center gap-4 max-w-3xl w-full">
+      <div className="container mx-auto px-4 h-auto md:h-16 flex items-center justify-center py-3 md:py-0">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 w-full max-w-3xl">
           <button 
             onClick={() => setIsLocationModalOpen(true)} 
-            className="flex items-center gap-2 hover:text-gray-600 max-w-[200px]"
+            className="flex items-center gap-2 hover:text-gray-600 w-full md:w-auto md:max-w-[200px]"
           >
             <MapPin className="w-5 h-5 flex-shrink-0" />
-            <span className="font-medium truncate">{savedLocation}</span>
+            <span className="hidden md:inline font-medium truncate">{savedLocation}</span>
           </button>
 
           <div className="flex-1 relative">
@@ -77,7 +77,7 @@ export function SearchSection({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="p-2 hover:bg-gray-100 rounded-full flex items-center gap-2">
+              <button className="p-2 hover:bg-gray-100 rounded-full flex items-center justify-center gap-2 w-full md:w-auto">
                 <SlidersHorizontal className="w-5 h-5" />
                 <span className="text-sm">Filter</span>
                 <ChevronDown className="w-4 h-4" />
