@@ -152,16 +152,16 @@ export function BranchPage({ params }: BranchPageProps) {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
           {/* Menu Categories - Left Sidebar */}
-          <div className="col-span-3 bg-white rounded-lg p-4 h-fit">
+          <div className="lg:col-span-3 bg-white rounded-lg p-4 h-fit">
             <h2 className="font-semibold mb-4">Menu Categories</h2>
-            <div className="space-y-2">
+            <div className="flex lg:block overflow-x-auto whitespace-nowrap lg:whitespace-normal pb-2 lg:pb-0 gap-2 lg:gap-0 lg:space-y-2">
               {branch._menutable?.map((category) => (
                 <button 
                   key={category.foodType}
                   onClick={() => setSelectedCategory(category.foodType)}
-                  className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-100 text-sm ${
+                  className={`px-3 py-2 rounded-md hover:bg-gray-100 text-sm flex-shrink-0 lg:w-full text-left ${
                     selectedCategory === category.foodType ? 'bg-gray-100' : ''
                   }`}
                 >
@@ -172,10 +172,10 @@ export function BranchPage({ params }: BranchPageProps) {
           </div>
 
           {/* Main Content Column */}
-          <div className="col-span-6">
+          <div className="lg:col-span-9">
             {/* Restaurant Header */}
             <div className="bg-white rounded-xl overflow-hidden mb-6">
-              <div className="relative h-[200px]">
+              <div className="relative h-[150px] sm:h-[200px]">
                 <Image
                   src={branch.restaurant?.[0]?.restaurantLogo?.url || '/placeholder-image.jpg'}
                   alt={branch.restaurant?.[0]?.restaurantName || 'Restaurant'}
@@ -184,9 +184,9 @@ export function BranchPage({ params }: BranchPageProps) {
                   className="object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-4 left-4">
-                  <h1 className="text-xl font-bold text-white mb-2">{branch.branchName}</h1>
-                  <div className="flex items-center gap-2 text-sm text-white">
+                <div className="absolute bottom-4 left-4 right-4">
+                  <h1 className="text-lg sm:text-xl font-bold text-white mb-2">{branch.branchName}</h1>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-white">
                     <div className="flex items-center">
                       <Star className="w-4 h-4 fill-current text-yellow-400" />
                       <span className="ml-1">4.4</span>
@@ -208,125 +208,97 @@ export function BranchPage({ params }: BranchPageProps) {
               
               {/* Restaurant Quick Info */}
               <div className="p-4 border-t border-gray-100">
-                <div className="flex items-center gap-4 text-sm text-gray-600">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-gray-600">
                   <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />
-                    <span>{branch.branchLocation}</span>
+                    <MapPin className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{branch.branchLocation}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    <span>Open 8:00 AM - 10:00 PM</span>
+                    <Clock className="w-4 h-4 flex-shrink-0" />
+                    <span>
+                      {branch.openTime && branch.closeTime 
+                        ? `Open ${branch.openTime} - ${branch.closeTime}`
+                        : 'Hours not available'}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Menu Items */}
-            <div className="bg-white rounded-lg p-6">
-              <h2 className="font-semibold mb-6">{selectedCategory}</h2>
-              <div className="space-y-6">
-                {currentCategory?.foods?.map((item) => {
-                  const quantity = getItemQuantity(item.name)
-                  return (
-                    <div key={item.name} className="flex gap-4 p-4 border rounded-lg">
-                      <div className="relative w-24 h-24 flex-shrink-0">
-                        <Image
-                          src={item.foodImage?.url || '/placeholder-image.jpg'}
-                          alt={item.name}
-                          fill
-                          className="object-cover rounded-lg"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">{item.name}</h3>
-                        <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="font-medium text-gray-900">GH₵ {item.price}</span>
-                          <div className="flex items-center gap-2">
-                            {quantity > 0 ? (
-                              <div className="flex items-center gap-3">
-                                <Button
-                                  size="icon"
-                                  variant="outline"
-                                  onClick={() => removeFromCart(item.name)}
-                                  className="h-8 w-8"
-                                >
-                                  <Minus className="h-4 w-4" />
-                                </Button>
-                                <span className="font-medium w-4 text-center">{quantity}</span>
-                                <Button
-                                  size="icon"
-                                  variant="outline"
-                                  onClick={() => addToCart({
-                                    id: item.name,
-                                    name: item.name,
-                                    price: item.price,
-                                    quantity: 1,
-                                    image: item.foodImage?.url
-                                  })}
-                                  className="h-8 w-8"
-                                  disabled={!item.available}
-                                >
-                                  <Plus className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <Button 
-                                size="icon"
-                                className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full"
-                                onClick={() => addToCart({
-                                  id: item.name,
-                                  name: item.name,
-                                  price: item.price,
-                                  quantity: 1,
-                                  image: item.foodImage?.url
-                                })}
-                                disabled={!item.available}
-                              >
-                                {item.available ? <Plus className="h-4 w-4" /> : 'Out of Stock'}
-                              </Button>
-                            )}
-                          </div>
+            <div className="bg-white rounded-lg p-4 sm:p-6">
+              <h2 className="font-semibold mb-4 sm:mb-6">{selectedCategory}</h2>
+              <div className="space-y-4 sm:space-y-6">
+                {currentCategory?.foods?.map((item) => (
+                  <div key={item.name} className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg">
+                    <div className="relative w-full sm:w-24 h-48 sm:h-24 flex-shrink-0">
+                      <Image
+                        src={item.foodImage?.url || '/placeholder-image.jpg'}
+                        alt={item.name}
+                        fill
+                        className={`object-cover rounded-lg ${!item.available ? 'grayscale' : ''}`}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900">{item.name}</h3>
+                      <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="font-medium text-gray-900">GH₵ {item.price}</span>
+                        <div className="flex items-center gap-2">
+                          {item.available && (
+                            <Button 
+                              size="icon"
+                              className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full"
+                              onClick={() => addToCart({
+                                id: item.name,
+                                name: item.name,
+                                price: item.price,
+                                quantity: 1,
+                                image: item.foodImage?.url
+                              })}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
-                  )
-                })}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-
-          {/* Add the new cart components */}
-          <FloatingCart
-            total={cartTotal}
-            itemCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
-            onClick={() => setIsCartModalOpen(true)}
-          />
-
-          <CartModal
-            isOpen={isCartModalOpen}
-            onClose={() => setIsCartModalOpen(false)}
-            cart={cart}
-            onAddItem={(itemId) => {
-              const item = cart.find(i => i.id === itemId)
-              if (item) {
-                addToCart({
-                  id: item.id,
-                  name: item.name,
-                  price: item.price,
-                  quantity: 1,
-                  image: item.image
-                })
-              }
-            }}
-            onRemoveItem={removeFromCart}
-            onDeleteItem={deleteFromCart}
-            cartTotal={cartTotal}
-          />
         </div>
       </div>
 
-      {/* Branch Details Modal */}
+      {/* Modals */}
+      <FloatingCart
+        total={cartTotal}
+        itemCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
+        onClick={() => setIsCartModalOpen(true)}
+      />
+
+      <CartModal
+        isOpen={isCartModalOpen}
+        onClose={() => setIsCartModalOpen(false)}
+        cart={cart}
+        onAddItem={(itemId) => {
+          const item = cart.find(i => i.id === itemId)
+          if (item) {
+            addToCart({
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              quantity: 1,
+              image: item.image
+            })
+          }
+        }}
+        onRemoveItem={removeFromCart}
+        onDeleteItem={deleteFromCart}
+        cartTotal={cartTotal}
+      />
+
       {branch && (
         <BranchDetailsModal
           isOpen={isDetailsModalOpen}
