@@ -34,23 +34,15 @@ export function CartModal({
   cartTotal
 }: CartModalProps) {
   return (
-    <Dialog open={isOpen}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[550px] h-[85vh] flex flex-col p-0 gap-0">
         {/* Header */}
         <div className="p-6 border-b">
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-2xl font-semibold">Your Cart</DialogTitle>
-              <p className="text-gray-500 text-sm mt-1">
-                {cart.length} {cart.length === 1 ? 'item' : 'items'}
-              </p>
-            </div>
-            <button 
-              onClick={onClose} 
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="h-6 w-6" />
-            </button>
+          <div>
+            <DialogTitle className="text-2xl font-semibold">Your Cart</DialogTitle>
+            <p className="text-gray-500 text-sm mt-1">
+              {cart.length} {cart.length === 1 ? 'item' : 'items'}
+            </p>
           </div>
         </div>
         
