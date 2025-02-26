@@ -337,10 +337,10 @@ export function StoreHeader() {
                       </div>
                       <div className="p-4">
                         <h3 className="font-medium text-gray-900 truncate">
-                          {branch.branchName}
+                          {branch._restaurantTable[0].restaurantName}
                         </h3>
                         <span className="text-xs text-gray-600 truncate block">
-                          {branch._restaurantTable[0].restaurantName}
+                          {branch.branchName}
                         </span>
                         <div className="flex items-center gap-1 mt-2 text-sm text-gray-600">
                           <MapPin className="w-4 h-4" />
