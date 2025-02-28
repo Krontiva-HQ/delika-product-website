@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Star, MapPin, Phone, Clock, Info, ShoppingCart, Plus, Minus } from "lucide-react"
+import { Star, MapPin, Clock, Plus, Minus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BranchDetailsModal } from "@/components/branch-details-modal"
 import { EmptyState } from "@/components/empty-state"
@@ -51,10 +51,9 @@ export function BranchPage({ params }: BranchPageProps) {
   const [branch, setBranch] = useState<BranchDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [cart, setCart] = useState<CartItem[]>([])
-  const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({})
   const [isCartModalOpen, setIsCartModalOpen] = useState(false)
 
   // Load cart from localStorage on initial render
@@ -145,10 +144,6 @@ export function BranchPage({ params }: BranchPageProps) {
     })
   }
 
-  const getItemQuantity = (itemId: string) => {
-    return cart.find(item => item.id === itemId)?.quantity || 0
-  }
-
   const cartTotal = cart.reduce((total, item) => {
     return total + (parseFloat(item.price) * item.quantity)
   }, 0)
@@ -165,11 +160,7 @@ export function BranchPage({ params }: BranchPageProps) {
     return <EmptyState title={error || "Branch not found"} description="We couldn't find the branch you're looking for." icon="store" />
   }
 
-
   const currentCategory = branch._menutable?.find((cat: { foodType: string }) => cat.foodType === selectedCategory)
-  const restaurantInfo = branch.restaurant?.[0]
-  const logoUrl = restaurantInfo?.restaurantLogo?.url || '/placeholder-image.jpg'
-  const restaurantName = restaurantInfo?.restaurantName || branch.branchName || 'Restaurant'
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">

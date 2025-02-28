@@ -23,6 +23,15 @@ interface CartModalProps {
   onDeleteItem: (itemId: string) => void
   cartTotal: number
   branchId: string
+  branchName: string
+  menuCategories: Array<{
+    foodType: string
+    foods: Array<{
+      name: string
+      price: string
+      available: boolean
+    }>
+  }>
 }
 
 export function CartModal({
@@ -33,7 +42,9 @@ export function CartModal({
   onRemoveItem,
   onDeleteItem,
   cartTotal,
-  branchId
+  branchId,
+  branchName,
+  menuCategories
 }: CartModalProps) {
   const router = useRouter()
 
