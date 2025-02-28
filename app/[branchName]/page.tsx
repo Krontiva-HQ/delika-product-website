@@ -9,14 +9,17 @@ import { BranchDetailsModal } from "@/components/branch-details-modal"
 import { EmptyState } from "@/components/empty-state"
 
 interface MenuItem {
+  id: string
   name: string
   price: number
   description: string
-  quantity: number
-  available: boolean
-  foodImage: {
-    url: string
-  }
+  category: string
+}
+
+interface Category {
+  id: string
+  name: string
+  items: MenuItem[]
 }
 
 interface MenuCategory {
@@ -101,14 +104,11 @@ export default function BranchPage({ params: paramsPromise }: { params: Promise<
               id: menu.id,
               foodType: menu.foodType,
               foods: menu.foods.map((food: any) => ({
+                id: food.id,
                 name: food.name,
                 price: food.price,
                 description: food.description,
-                quantity: food.quantity,
-                available: food.available,
-                foodImage: {
-                  url: food.foodImage.url
-                }
+                category: food.category,
               })),
               foodTypeImage: {
                 url: menu.foodTypeImage.url

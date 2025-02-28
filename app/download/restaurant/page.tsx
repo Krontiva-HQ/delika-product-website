@@ -35,7 +35,7 @@ export default function RestaurantDownloadPage() {
                     className="w-full bg-gradient-to-r from-orange-500 to-orange-600"
                     asChild
                   >
-                    <Link href="/delikarestaurant.apk" download>
+                    <Link href="/application-101eabc1-1a16-4270-9ea2-cf8d059dfea0.apk" download>
                       <Download className="mr-2 h-4 w-4" />
                       Download Restaurant App
                     </Link>

@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server'
 
+interface PlaceResult {
+  description: string
+  place_id: string
+  structured_formatting: {
+    main_text: string
+    secondary_text: string
+  }
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const query = searchParams.get('query')
@@ -12,7 +21,7 @@ export async function GET(request: Request) {
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&region=gh&key=${process.env.GOOGLE_MAPS_API_KEY}`
     )
-    const data = await response.json()
+    const data = await response.json() as { predictions: PlaceResult[] }
     
     return NextResponse.json({
       predictions: data.results.map((result: any) => ({
