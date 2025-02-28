@@ -70,7 +70,7 @@ export function CartModal({
 
                 return (
                   <div key={item.id} className="flex gap-4 items-center">
-                    {item.image && (
+                    {item.image && menuItem?.available && (
                       <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
                         <Image
                           src={item.image}

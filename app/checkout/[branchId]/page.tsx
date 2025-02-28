@@ -81,7 +81,7 @@ export default function CheckoutRoute({ params }: { params: Promise<{ branchId: 
     fetchBranch()
   }, [resolvedParams.branchId])
   
-  const addToCart = (item: any) => {
+  const addToCart = (item: CartItem) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(cartItem => cartItem.id === item.id)
       if (existingItem) {

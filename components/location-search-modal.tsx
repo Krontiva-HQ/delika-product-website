@@ -86,13 +86,6 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
       const data = await response.json()
       
       if (data.result) {
-        const addressComponents = data.result.address_components as AddressComponent[]
-        const city = addressComponents.find(
-          (component: AddressComponent) => 
-            component.types.includes("locality") || 
-            component.types.includes("administrative_area_level_2")
-        )
-        
         const address = data.result.formatted_address
         onLocationSelect({
           address,

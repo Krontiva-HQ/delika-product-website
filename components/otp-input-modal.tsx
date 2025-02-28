@@ -21,7 +21,7 @@ export function OTPInputModal({
   onVerify, 
   email, 
   phone,
-  signupMethod, 
+  signupMethod,
   authToken 
 }: OTPInputModalProps) {
   const [otp, setOtp] = useState("")
