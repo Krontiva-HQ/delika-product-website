@@ -3,15 +3,7 @@
 import { useEffect, useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { CheckoutPage } from "@/components/checkout-page"
-
-interface CartItem {
-  id: string
-  name: string
-  price: string
-  quantity: number
-  image?: string
-  available: boolean
-}
+import { CartItem } from "@/types/cart"
 
 interface CustomerInfo {
   name: string

@@ -5,14 +5,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { ShoppingCart, Minus, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
-
-interface CartItem {
-  id: string
-  name: string
-  price: string
-  quantity: number
-  image?: string
-}
+import { CartItem } from "@/types/cart"
 
 interface CartModalProps {
   isOpen: boolean
@@ -26,11 +19,7 @@ interface CartModalProps {
   branchName: string
   menuCategories: Array<{
     foodType: string
-    foods: Array<{
-      name: string
-      price: string
-      available: boolean
-    }>
+    foods: Array<CartItem>
   }>
 }
 

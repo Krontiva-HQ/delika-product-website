@@ -53,7 +53,7 @@ export function BranchPage({ params }: BranchPageProps) {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [cart, setCart] = useState<CartItem[]>([])
+  const [cart, setCart] = useState<(CartItem & { available: boolean })[]>([])
   const [isCartModalOpen, setIsCartModalOpen] = useState(false)
 
   // Load cart from localStorage on initial render
@@ -116,7 +116,7 @@ export function BranchPage({ params }: BranchPageProps) {
     fetchBranch()
   }, [params.id])
 
-  const addToCart = (item: CartItem) => {
+  const addToCart = (item: CartItem & { available: boolean }) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(cartItem => cartItem.id === item.id)
       if (existingItem) {
@@ -126,7 +126,7 @@ export function BranchPage({ params }: BranchPageProps) {
             : cartItem
         )
       }
-      return [...prevCart, { ...item, quantity: 1 }]
+      return [...prevCart, { ...item, quantity: 1, available: item.available }]
     })
   }
 
@@ -281,7 +281,8 @@ export function BranchPage({ params }: BranchPageProps) {
                                       name: item.name,
                                       price: item.price,
                                       quantity: 1,
-                                      image: item.foodImage?.url
+                                      image: item.foodImage?.url,
+                                      available: item.available
                                     })}
                                   >
                                     <Plus className="h-4 w-4" />
@@ -296,7 +297,8 @@ export function BranchPage({ params }: BranchPageProps) {
                                     name: item.name,
                                     price: item.price,
                                     quantity: 1,
-                                    image: item.foodImage?.url
+                                    image: item.foodImage?.url,
+                                    available: item.available
                                   })}
                                 >
                                   <Plus className="h-4 w-4" />
@@ -336,7 +338,8 @@ export function BranchPage({ params }: BranchPageProps) {
               name: item.name,
               price: item.price,
               quantity: 1,
-              image: item.image
+              image: item.image,
+              available: item.available
             })
           }
         }}
@@ -345,7 +348,17 @@ export function BranchPage({ params }: BranchPageProps) {
         cartTotal={cartTotal}
         branchId={params.id}
         branchName={branch.branchName || ''}
-        menuCategories={branch._menutable || []}
+        menuCategories={branch._menutable?.map(category => ({
+          foodType: category.foodType,
+          foods: category.foods.map(food => ({
+            id: food.name,
+            name: food.name,
+            price: food.price,
+            quantity: 0,
+            available: food.available,
+            image: food.foodImage?.url
+          }))
+        })) || []}
       />
 
       {branch && (

@@ -6,14 +6,7 @@ import { Input } from "@/components/ui/input"
 import { ShoppingBag, Check, Plus, Minus, ArrowLeft } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-
-interface CartItem {
-  id: string
-  name: string
-  price: string
-  quantity: number
-  image?: string
-}
+import { CartItem } from "@/types/cart"
 
 interface MenuItem {
   name: string
@@ -34,11 +27,14 @@ interface CheckoutPageProps {
   onSubmitOrder: (customerInfo: CustomerInfo) => void
   onAddItem: (item: CartItem) => void
   onRemoveItem: (itemId: string) => void
-  menuCategories: MenuCategory[]
+  menuCategories: Array<{
+    foodType: string
+    foods: CartItem[]
+  }>
   branchId: string
   branchName: string
-  restaurantName?: string
-  branchCity?: string
+  restaurantName: string
+  branchCity: string
   onBackToCart: () => void
 }
 
