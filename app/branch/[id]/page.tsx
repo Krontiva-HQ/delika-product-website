@@ -45,7 +45,7 @@ export default function BranchPage({ params }: BranchPageProps) {
   const [activeTab, setActiveTab] = useState<'menu' | 'info'>('menu')
   const [isLoading, setIsLoading] = useState(true)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
