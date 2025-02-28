@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, Search, SlidersHorizontal, Star, ChevronDown, ChevronRight, ChevronLeft, Menu } from "lucide-react"
+import { MapPin, Search, SlidersHorizontal, Star, ChevronDown, ChevronLeft } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import {
@@ -51,16 +51,8 @@ type MenuItem = {
   category: string
 }
 
-interface AddressComponent {
-  long_name: string
-  short_name: string
-  types: string[]
-}
-
 export function StoreHeader() {
-  const [isOpen, setIsOpen] = useState(false)
   const [branches, setBranches] = useState<Branch[]>([])
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [activeTab, setActiveTab] = useState<'restaurants' | 'menus'>('restaurants')
   const [selectedCity, setSelectedCity] = useState<string>('all')
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
