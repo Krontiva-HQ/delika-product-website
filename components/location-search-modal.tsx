@@ -69,7 +69,7 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
       
       if (data.predictions) {
         setSuggestions(
-          data.predictions.slice(0, 10).map((prediction: any) => ({
+          data.predictions.slice(0, 10).map((prediction: { description: string; place_id: string }) => ({
             description: prediction.description,
             place_id: prediction.place_id
           }))
@@ -88,7 +88,7 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
       if (data.result) {
         const addressComponents = data.result.address_components as AddressComponent[]
         const city = addressComponents.find(
-          (component) => 
+          (component: AddressComponent) => 
             component.types.includes("locality") || 
             component.types.includes("administrative_area_level_2")
         )

@@ -15,7 +15,15 @@ interface OTPInputModalProps {
   authToken?: string
 }
 
-export function OTPInputModal({ isOpen, onClose, onVerify, email, phone, signupMethod, authToken }: OTPInputModalProps) {
+export function OTPInputModal({ 
+  isOpen, 
+  onClose, 
+  onVerify, 
+  email, 
+  phone,
+  signupMethod, 
+  authToken 
+}: OTPInputModalProps) {
   const [otp, setOtp] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)

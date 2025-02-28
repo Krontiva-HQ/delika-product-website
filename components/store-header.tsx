@@ -57,6 +57,12 @@ type MenuItem = {
   category: string
 }
 
+interface AddressComponent {
+  long_name: string
+  short_name: string
+  types: string[]
+}
+
 export function StoreHeader() {
   const [isOpen, setIsOpen] = useState(false)
   const [branches, setBranches] = useState<Branch[]>([])
