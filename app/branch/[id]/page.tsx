@@ -1,13 +1,11 @@
 "use client"
 
-import { use } from "react"
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Star, MapPin, Phone, Clock, Info, ShoppingCart } from "lucide-react"
+import { Star, MapPin, Clock, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BranchDetailsModal } from "@/components/branch-details-modal"
 import { EmptyState } from "@/components/empty-state"
-import { AuthNav } from "@/components/auth-nav"
 
 interface BranchDetails {
   _menutable?: Array<{
@@ -42,7 +40,6 @@ interface BranchPageProps {
 
 export default function BranchPage({ params }: BranchPageProps) {
   const [branch, setBranch] = useState<BranchDetails | null>(null)
-  const [activeTab, setActiveTab] = useState<'menu' | 'info'>('menu')
   const [isLoading, setIsLoading] = useState(true)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)

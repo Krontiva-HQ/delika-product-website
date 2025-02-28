@@ -9,6 +9,17 @@ interface PlaceResult {
   }
 }
 
+interface GooglePlacesResult {
+  formatted_address: string
+  place_id: string
+  geometry: {
+    location: {
+      lat: number
+      lng: number
+    }
+  }
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const query = searchParams.get('query')
@@ -21,10 +32,10 @@ export async function GET(request: Request) {
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&region=gh&key=${process.env.GOOGLE_MAPS_API_KEY}`
     )
-    const data = await response.json() as { predictions: PlaceResult[] }
+    const data = await response.json()
     
     return NextResponse.json({
-      predictions: data.results.map((result: any) => ({
+      predictions: data.results.map((result: GooglePlacesResult) => ({
         description: result.formatted_address,
         place_id: result.place_id
       }))

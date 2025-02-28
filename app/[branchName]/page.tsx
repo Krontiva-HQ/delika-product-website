@@ -3,7 +3,7 @@
 import { use } from "react"
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Star, MapPin, ShoppingCart } from "lucide-react"
+import { Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BranchDetailsModal } from "@/components/branch-details-modal"
 import { EmptyState } from "@/components/empty-state"
@@ -14,12 +14,10 @@ interface MenuItem {
   price: number
   description: string
   category: string
-}
-
-interface Category {
-  id: string
-  name: string
-  items: MenuItem[]
+  foodImage: {
+    url: string
+  }
+  available: boolean
 }
 
 interface MenuCategory {
@@ -70,14 +68,14 @@ export default function BranchPage({ params: paramsPromise }: { params: Promise<
         const branchesResponse = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_branches_table')
         const branchesData = await branchesResponse.json()
         
-        const foundBranch = branchesData?.find((b: any) => 
+        const foundBranch = branchesData?.find((b: BranchDetails) => 
           b.branchName.toLowerCase().replace(/\s+/g, '-') === params.branchName
         )
 
         if (foundBranch) {
           // Then get branch details with the correct endpoint
           const detailsResponse = await fetch(
-            `https://api-server.krontiva.africa/api:uEBBwbSs/get/branch/details?id=${foundBranch.id}&branchName=${encodeURIComponent(foundBranch.branchName)}&restaurantID=${foundBranch.restaurantID}`, 
+            `https://api-server.krontiva.africa/api:uEBBwbSs/get/branch/details?id=${foundBranch.id}&branchName=${encodeURIComponent(foundBranch.branchName)}&restaurantID=${foundBranch._restaurantTable[0].id}`, 
             {
               method: 'GET',
               headers: {
@@ -100,20 +98,7 @@ export default function BranchPage({ params: paramsPromise }: { params: Promise<
             branchLocation: detailsData.branchLocation,
             branchPhoneNumber: detailsData.branchPhoneNumber,
             branchCity: detailsData.branchCity,
-            _menutable: detailsData._menutable.map((menu: any) => ({
-              id: menu.id,
-              foodType: menu.foodType,
-              foods: menu.foods.map((food: any) => ({
-                id: food.id,
-                name: food.name,
-                price: food.price,
-                description: food.description,
-                category: food.category,
-              })),
-              foodTypeImage: {
-                url: menu.foodTypeImage.url
-              }
-            })),
+            _menutable: detailsData._menutable,
             _restaurantTable: [{
               restaurantName: foundBranch._restaurantTable[0].restaurantName,
               restaurantLogo: {
