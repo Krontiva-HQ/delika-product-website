@@ -7,14 +7,23 @@ import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OTPInputModal } from "@/components/otp-input-modal"
 
+interface LoginResponse {
+  success: boolean
+  data?: {
+    name: string
+    email: string
+  }
+  error?: string
+}
+
 interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
-  onSignupClick: () => void
-  onLoginSuccess: (userData: { name: string, email: string }) => void
+  onSwitchToSignup: () => void
+  onLoginSuccess: (userData: { name: string; email: string }) => void
 }
 
-export function LoginModal({ isOpen, onClose, onSignupClick, onLoginSuccess }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }: LoginModalProps) {
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
@@ -217,16 +226,15 @@ export function LoginModal({ isOpen, onClose, onSignupClick, onLoginSuccess }: L
             </form>
           </TabsContent>
         </Tabs>
-        <div className="text-center text-sm text-gray-500 mt-4">
-          Don't have an account?{" "}
+        <p className="text-center text-sm text-gray-500">
+          Don&apos;t have an account?{" "}
           <button
-            type="button"
-            onClick={onSignupClick}
+            onClick={onSwitchToSignup}
             className="text-orange-500 hover:text-orange-600"
           >
             Sign up
           </button>
-        </div>
+        </p>
       </DialogContent>
     </Dialog>
   )
