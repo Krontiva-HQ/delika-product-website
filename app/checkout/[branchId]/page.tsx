@@ -10,6 +10,7 @@ interface CartItem {
   price: string
   quantity: number
   image?: string
+  available: boolean
 }
 
 interface CustomerInfo {
@@ -19,14 +20,18 @@ interface CustomerInfo {
   notes: string
 }
 
+interface MenuCategory {
+  foodType: string
+  foods: CartItem[]
+}
+
 interface BranchDetails {
   branchName: string
   branchLocation: string
-  _restaurantTable: Array<{
+  branchCity?: string
+  _menutable: MenuCategory[]
+  restaurant?: Array<{
     restaurantName: string
-    restaurantLogo: {
-      url: string
-    }
   }>
 }
 
