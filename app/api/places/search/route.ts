@@ -1,14 +1,5 @@
 import { NextResponse } from 'next/server'
 
-interface PlaceResult {
-  description: string
-  place_id: string
-  structured_formatting: {
-    main_text: string
-    secondary_text: string
-  }
-}
-
 interface GooglePlacesResult {
   formatted_address: string
   place_id: string

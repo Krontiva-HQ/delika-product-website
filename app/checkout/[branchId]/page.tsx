@@ -4,10 +4,36 @@ import { useEffect, useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { CheckoutPage } from "@/components/checkout-page"
 
+interface CartItem {
+  id: string
+  name: string
+  price: string
+  quantity: number
+  image?: string
+}
+
+interface CustomerInfo {
+  name: string
+  phone: string
+  address: string
+  notes: string
+}
+
+interface BranchDetails {
+  branchName: string
+  branchLocation: string
+  _restaurantTable: Array<{
+    restaurantName: string
+    restaurantLogo: {
+      url: string
+    }
+  }>
+}
+
 export default function CheckoutRoute({ params }: { params: Promise<{ branchId: string }> }) {
   const resolvedParams = use(params)
-  const [cart, setCart] = useState<any[]>([])
-  const [branch, setBranch] = useState<any>(null)
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [branch, setBranch] = useState<BranchDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   
@@ -90,7 +116,7 @@ export default function CheckoutRoute({ params }: { params: Promise<{ branchId: 
     return total + (parseFloat(item.price) * item.quantity)
   }, 0)
 
-  const handleSubmitOrder = (customerInfo: any) => {
+  const handleSubmitOrder = (customerInfo: CustomerInfo) => {
     console.log('Order placed:', { cart, customerInfo, total: cartTotal + 10 })
     // Here you would typically send this data to your backend
     

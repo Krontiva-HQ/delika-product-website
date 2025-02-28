@@ -1,6 +1,5 @@
 "use client"
 
-import { use } from "react"
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import { Star } from "lucide-react"
@@ -42,12 +41,6 @@ interface BranchDetails {
       url: string
     }
   }>
-}
-
-interface BranchPageProps {
-  params: {
-    branchName: string
-  }
 }
 
 export default function BranchPage({ params: paramsPromise }: { params: Promise<{ branchName: string }> }) {

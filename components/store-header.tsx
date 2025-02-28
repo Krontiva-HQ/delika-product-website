@@ -2,18 +2,14 @@
 
 import { MapPin, Search, SlidersHorizontal, Star, ChevronDown, ChevronRight, ChevronLeft, Menu } from "lucide-react"
 import Image from "next/image"
-import Link from "next/link"
 import { useEffect, useState } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import { BranchDetailsModal } from "@/components/branch-details-modal"
 import { useLoadScript } from "@react-google-maps/api"
 import { LocationSearchModal } from "@/components/location-search-modal"
 import { LoginModal } from "@/components/login-modal"
@@ -22,8 +18,6 @@ import { EmptyState } from "@/components/empty-state"
 import { AuthNav } from "@/components/auth-nav"
 import { BranchPage } from "@/components/branch-page"
 import { calculateDistance } from "@/utils/distance"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { cn } from "@/lib/utils"
 
 interface Restaurant {
   restaurantName: string
