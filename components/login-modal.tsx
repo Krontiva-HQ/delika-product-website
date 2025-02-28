@@ -7,20 +7,17 @@ import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OTPInputModal } from "@/components/otp-input-modal"
 
-interface LoginResponse {
-  success: boolean
-  data?: {
-    name: string
-    email: string
-  }
-  error?: string
+interface UserData {
+  name: string
+  email: string
+  fullName: string
 }
 
 interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
   onSwitchToSignup: () => void
-  onLoginSuccess: (userData: { name: string; email: string }) => void
+  onLoginSuccess: (userData: UserData) => void
 }
 
 export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }: LoginModalProps) {
@@ -29,7 +26,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
   const [password, setPassword] = useState("")
   const [showOTP, setShowOTP] = useState(false)
   const [authToken, setAuthToken] = useState("")
-  const [userData, setUserData] = useState<any>(null)
+  const [userData, setUserData] = useState<UserData | null>(null)
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -112,9 +109,10 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
 
         // Get user details from stored userData
         if (userData) {
-          const userDetails = {
+          const userDetails: UserData = {
             name: userData.fullName,
-            email: loginMethod === 'email' ? email : phone // Use phone number if that was the login method
+            email: loginMethod === 'email' ? email : phone,
+            fullName: userData.fullName
           };
           
           // Store user data in localStorage

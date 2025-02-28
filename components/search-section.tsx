@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { Search, MapPin } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { LocationSearchModal } from "@/components/location-search-modal"
 
 interface SearchSectionProps {
   onSearch: (query: string) => void
@@ -11,19 +10,8 @@ interface SearchSectionProps {
   onLocationClick: () => void
 }
 
-interface Location {
-  address: string
-  lat: number
-  lng: number
-}
-
 export function SearchSection({ onSearch, userLocation, onLocationClick }: SearchSectionProps) {
   const [searchValue, setSearchValue] = useState("")
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSearch(searchValue)
-  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -35,7 +23,7 @@ export function SearchSection({ onSearch, userLocation, onLocationClick }: Searc
     <div className="bg-white border-b sticky top-0 z-10">
       <div className="container mx-auto px-4">
         <div className="py-4">
-          <form onSubmit={handleSubmit} className="flex gap-4">
+          <div className="flex gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input
@@ -54,7 +42,7 @@ export function SearchSection({ onSearch, userLocation, onLocationClick }: Searc
               <MapPin className="w-5 h-5" />
               <span className="max-w-[200px] truncate">{userLocation}</span>
             </button>
-          </form>
+          </div>
         </div>
       </div>
     </div>

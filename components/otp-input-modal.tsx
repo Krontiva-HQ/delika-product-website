@@ -9,11 +9,13 @@ interface OTPInputModalProps {
   isOpen: boolean
   onClose: () => void
   onVerify: (otp: string) => void
-  phoneNumber?: string
+  email?: string
+  phone?: string
+  signupMethod: 'email' | 'phone'
   authToken?: string
 }
 
-export function OTPInputModal({ isOpen, onClose, onVerify, phoneNumber, authToken }: OTPInputModalProps) {
+export function OTPInputModal({ isOpen, onClose, onVerify, email, phone, signupMethod, authToken }: OTPInputModalProps) {
   const [otp, setOtp] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -25,14 +27,14 @@ export function OTPInputModal({ isOpen, onClose, onVerify, phoneNumber, authToke
 
     try {
       // Verify OTP with phone number
-      if (phoneNumber) {
+      if (phone) {
         const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/auth/verify/phoneNumber/customer', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            phoneNumber,
+            phone,
             otp
           })
         })
@@ -85,7 +87,7 @@ export function OTPInputModal({ isOpen, onClose, onVerify, phoneNumber, authToke
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <p className="text-sm text-gray-600">
-              We&apos;ve sent a verification code to {phoneNumber || 'your email'}
+              We&apos;ve sent a verification code to {phone || email}
             </p>
             <Input
               type="text"
