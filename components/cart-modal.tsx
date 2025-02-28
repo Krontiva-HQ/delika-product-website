@@ -14,15 +14,6 @@ interface CartItem {
   image?: string
 }
 
-interface MenuCategory {
-  foodType: string
-  foods: Array<{
-    name: string
-    price: string
-    available: boolean
-  }>
-}
-
 interface CartModalProps {
   isOpen: boolean
   onClose: () => void

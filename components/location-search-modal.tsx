@@ -12,6 +12,12 @@ interface LocationSearchModalProps {
   onLocationSelect: (location: { address: string; lat: number; lng: number }) => void
 }
 
+interface AddressComponent {
+  long_name: string
+  short_name: string
+  types: string[]
+}
+
 export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: LocationSearchModalProps) {
   const [searchValue, setSearchValue] = useState("")
   const [suggestions, setSuggestions] = useState<Array<{ description: string; place_id: string }>>([])
@@ -74,16 +80,22 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
     }
   }
 
-  const handleSelect = async (address: string) => {
+  const handleSelect = async (description: string) => {
     try {
-      const response = await fetch(
-        `/api/places/geocode?address=${encodeURIComponent(address)}`
-      )
+      const response = await fetch(`/api/places/geocode?address=${encodeURIComponent(description)}`)
       const data = await response.json()
       
       if (data.result) {
+        const addressComponents = data.result.address_components as AddressComponent[]
+        const city = addressComponents.find(
+          (component) => 
+            component.types.includes("locality") || 
+            component.types.includes("administrative_area_level_2")
+        )
+        
+        const address = data.result.formatted_address
         onLocationSelect({
-          address: data.result.formatted_address,
+          address,
           lat: data.result.geometry.location.lat,
           lng: data.result.geometry.location.lng
         })
@@ -91,7 +103,7 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
         onClose()
       }
     } catch (error) {
-      console.error("Error selecting location:", error)
+      console.error("Error getting location details:", error)
     }
   }
 
