@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ShoppingCart, Minus, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
@@ -44,10 +44,12 @@ export function CartModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
-        <div className="flex items-center gap-2 mb-4">
-          <ShoppingCart className="w-5 h-5" />
-          <h2 className="font-semibold">{branchName} - Your Cart</h2>
-        </div>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ShoppingCart className="w-5 h-5" />
+            {branchName} - Your Cart
+          </DialogTitle>
+        </DialogHeader>
 
         {cart.length > 0 ? (
           <>
