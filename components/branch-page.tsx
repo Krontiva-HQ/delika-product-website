@@ -57,6 +57,27 @@ export function BranchPage({ params }: BranchPageProps) {
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({})
   const [isCartModalOpen, setIsCartModalOpen] = useState(false)
 
+  // Load cart from localStorage on initial render
+  useEffect(() => {
+    const savedCart = localStorage.getItem(`cart-${params.id}`)
+    if (savedCart) {
+      try {
+        setCart(JSON.parse(savedCart))
+      } catch (e) {
+        console.error("Error parsing saved cart:", e)
+      }
+    }
+  }, [params.id])
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    if (cart.length > 0) {
+      localStorage.setItem(`cart-${params.id}`, JSON.stringify(cart))
+    } else {
+      localStorage.removeItem(`cart-${params.id}`)
+    }
+  }, [cart, params.id])
+
   useEffect(() => {
     async function fetchBranch() {
       try {
@@ -144,6 +165,7 @@ export function BranchPage({ params }: BranchPageProps) {
     return <EmptyState title={error || "Branch not found"} description="We couldn't find the branch you're looking for." icon="store" />
   }
 
+
   const currentCategory = branch._menutable?.find((cat: { foodType: string }) => cat.foodType === selectedCategory)
   const restaurantInfo = branch.restaurant?.[0]
   const logoUrl = restaurantInfo?.restaurantLogo?.url || '/placeholder-image.jpg'
@@ -154,7 +176,7 @@ export function BranchPage({ params }: BranchPageProps) {
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
           {/* Menu Categories - Left Sidebar */}
-          <div className="lg:col-span-3 bg-white rounded-lg p-4 h-fit">
+          <div className="lg:col-span-3 bg-white rounded-lg p-4 h-fit sticky top-4 z-10">
             <h2 className="font-semibold mb-4">Menu Categories</h2>
             <div className="flex lg:block overflow-x-auto whitespace-nowrap lg:whitespace-normal pb-2 lg:pb-0 gap-2 lg:gap-0 lg:space-y-2">
               {branch._menutable?.map((category) => (
@@ -228,43 +250,76 @@ export function BranchPage({ params }: BranchPageProps) {
             {/* Menu Items */}
             <div className="bg-white rounded-lg p-4 sm:p-6">
               <h2 className="font-semibold mb-4 sm:mb-6">{selectedCategory}</h2>
-              <div className="space-y-4 sm:space-y-6">
-                {currentCategory?.foods?.map((item) => (
-                  <div key={item.name} className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg">
-                    <div className="relative w-full sm:w-24 h-48 sm:h-24 flex-shrink-0">
-                      <Image
-                        src={item.foodImage?.url || '/placeholder-image.jpg'}
-                        alt={item.name}
-                        fill
-                        className={`object-cover rounded-lg ${!item.available ? 'grayscale' : ''}`}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{item.name}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="font-medium text-gray-900">GH₵ {item.price}</span>
-                        <div className="flex items-center gap-2">
-                          {item.available && (
-                            <Button 
-                              size="icon"
-                              className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full"
-                              onClick={() => addToCart({
-                                id: item.name,
-                                name: item.name,
-                                price: item.price,
-                                quantity: 1,
-                                image: item.foodImage?.url
-                              })}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                {currentCategory?.foods?.map((item) => {
+                  const itemInCart = cart.find(cartItem => cartItem.id === item.name);
+                  const quantity = itemInCart?.quantity || 0;
+                  
+                  return (
+                    <div key={item.name} className={`flex flex-col gap-4 p-4 border rounded-lg ${!item.available ? 'opacity-50' : ''}`}>
+                      <div className="relative w-full h-40 flex-shrink-0">
+                        <Image
+                          src={item.foodImage?.url || '/placeholder-image.jpg'}
+                          alt={item.name}
+                          fill
+                          className={`object-cover rounded-lg ${!item.available ? 'grayscale' : ''}`}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">{item.name}</h3>
+                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.description}</p>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="font-medium text-gray-900">GH₵ {item.price}</span>
+                          <div className="flex items-center gap-2">
+                            {item.available ? (
+                              quantity > 0 ? (
+                                <div className="flex items-center gap-2">
+                                  <Button 
+                                    size="icon"
+                                    className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
+                                    onClick={() => removeFromCart(item.name)}
+                                  >
+                                    <Minus className="h-4 w-4" />
+                                  </Button>
+                                  <span className="w-5 text-center font-medium">{quantity}</span>
+                                  <Button 
+                                    size="icon"
+                                    className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
+                                    onClick={() => addToCart({
+                                      id: item.name,
+                                      name: item.name,
+                                      price: item.price,
+                                      quantity: 1,
+                                      image: item.foodImage?.url
+                                    })}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button 
+                                  size="icon"
+                                  className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
+                                  onClick={() => addToCart({
+                                    id: item.name,
+                                    name: item.name,
+                                    price: item.price,
+                                    quantity: 1,
+                                    image: item.foodImage?.url
+                                  })}
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              )
+                            ) : (
+                              <span className="text-sm text-gray-500">Out of Stock</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -297,6 +352,9 @@ export function BranchPage({ params }: BranchPageProps) {
         onRemoveItem={removeFromCart}
         onDeleteItem={deleteFromCart}
         cartTotal={cartTotal}
+        branchId={params.id}
+        branchName={branch.branchName || ''}
+        menuCategories={branch._menutable || []}
       />
 
       {branch && (

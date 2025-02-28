@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { LocationSearchModal } from "@/components/location-search-modal"
+import { LocationModal } from "@/components/location-modal"
 
 interface SearchSectionProps {
   onSearch?: (query: string) => void
@@ -31,20 +32,52 @@ export function SearchSection({
   const [searchQuery, setSearchQuery] = useState("")
   const [savedLocation, setSavedLocation] = useState(userLocation)
 
+  // Load saved location on mount
   useEffect(() => {
-    // Load saved location on mount
-    const savedLocationData = localStorage.getItem('userLocationData')
+    const savedLocationData = localStorage.getItem('userLocation')
     if (savedLocationData) {
-      const { address } = JSON.parse(savedLocationData)
-      setSavedLocation(address)
+      try {
+        const locationData = JSON.parse(savedLocationData)
+        setSavedLocation(locationData.address)
+        console.log('Loaded saved location:', locationData)
+      } catch (e) {
+        console.error("Error loading saved location:", e)
+      }
     }
   }, [])
 
-  const handleLocationSelect = (location: { address: string; lat: number; lng: number }) => {
+  const handleLocationSelect = (location: any) => {
+    console.log('Raw location selected:', location)
+
+    // Extract address from Google Places result
+    const address = location.formatted_address || 
+                   location.description || 
+                   location.name || 
+                   location.address
+
+    const locationData = {
+      address: address,
+      placeId: location.place_id,
+      coordinates: location.geometry?.location
+    }
+
+    console.log('Saving location data:', locationData)
+
     // Save to localStorage
-    localStorage.setItem('userLocationData', JSON.stringify(location))
-    setSavedLocation(location.address)
-    onLocationSelect?.(location)
+    localStorage.setItem('userLocation', JSON.stringify(locationData))
+    
+    // Update UI
+    setSavedLocation(address)
+    setIsLocationModalOpen(false)
+
+    // Notify parent
+    if (onLocationSelect) {
+      onLocationSelect({
+        address: address,
+        lat: location.geometry?.location.lat() || 0,
+        lng: location.geometry?.location.lng() || 0
+      })
+    }
   }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,13 +90,20 @@ export function SearchSection({
       <div className="container mx-auto px-4 h-auto md:h-16 flex items-center justify-center py-3 md:py-0">
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 w-full max-w-3xl">
           <button 
-            onClick={() => setIsLocationModalOpen(true)} 
-            className="flex items-center gap-2 hover:text-gray-600 w-full md:w-auto md:max-w-[200px]"
+            onClick={() => setIsLocationModalOpen(true)}
+            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
           >
-            <MapPin className="w-5 h-5 flex-shrink-0" />
-            <span className="hidden md:inline font-medium truncate">{savedLocation}</span>
+            <MapPin className="h-4 w-4" />
+            <span className="truncate max-w-[200px]">{savedLocation}</span>
+            <ChevronDown className="h-4 w-4" />
           </button>
-
+          
+          <LocationSearchModal
+            isOpen={isLocationModalOpen}
+            onClose={() => setIsLocationModalOpen(false)}
+            onLocationSelect={handleLocationSelect}
+          />
+          
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
@@ -97,12 +137,6 @@ export function SearchSection({
           </DropdownMenu>
         </div>
       </div>
-
-      <LocationSearchModal
-        isOpen={isLocationModalOpen}
-        onClose={() => setIsLocationModalOpen(false)}
-        onLocationSelect={handleLocationSelect}
-      />
     </div>
   )
 } 
