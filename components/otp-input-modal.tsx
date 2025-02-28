@@ -1,203 +1,112 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { useState } from "react"
 
 interface OTPInputModalProps {
   isOpen: boolean
   onClose: () => void
   onVerify: (otp: string) => void
-  email: string
-  phone: string
-  signupMethod: 'email' | 'phone'
+  phoneNumber?: string
+  authToken?: string
 }
 
-export function OTPInputModal({ isOpen, onClose, onVerify, email, phone, signupMethod }: OTPInputModalProps) {
-  const [otp, setOtp] = useState(['', '', '', ''])
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-  const [error, setError] = useState('')
-  const [isResending, setIsResending] = useState(false)
-  const [timer, setTimer] = useState(60)
+export function OTPInputModal({ isOpen, onClose, onVerify, phoneNumber, authToken }: OTPInputModalProps) {
+  const [otp, setOtp] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout
-    if (isOpen && timer > 0) {
-      interval = setInterval(() => {
-        setTimer((prev) => prev - 1)
-      }, 1000)
-    }
-    return () => clearInterval(interval)
-  }, [isOpen, timer])
-
-  const handleChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return
-    if (value.length > 1) value = value[0]
-
-    setOtp(prev => {
-      const newOtp = [...prev]
-      newOtp[index] = value
-      return newOtp
-    })
-
-    if (value && index < 3) {
-      inputRefs.current[index + 1]?.focus()
-    }
-  }
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus()
-    }
-  }
-
-  const handlePaste = (e: React.ClipboardEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const pastedData = e.clipboardData.getData('text')
-    if (!/^\d+$/.test(pastedData)) return
-
-    const pastedArray = pastedData.slice(0, 4).split('')
-    setOtp(prev => {
-      const newOtp = [...prev]
-      pastedArray.forEach((value, index) => {
-        if (index < 4) newOtp[index] = value
-      })
-      return newOtp
-    })
-  }
-
-  const handleVerify = async () => {
-    const otpString = otp.join('')
-    if (otpString.length !== 4) {
-      setError('Please enter all 4 digits')
-      return
-    }
+    setIsLoading(true)
+    setErrorMessage(null)
 
     try {
-      const endpoint = signupMethod === 'email'
-        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code'
-        : 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code/phoneNumber'
+      // Verify OTP with phone number
+      if (phoneNumber) {
+        const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/auth/verify/phoneNumber/customer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            phoneNumber,
+            otp
+          })
+        })
 
-      const payload = signupMethod === 'email'
-        ? {
-            OTP: parseInt(otpString),
-            type: true,
-            contact: email
-          }
-        : {
-            OTP: parseInt(otpString),
-            contact: phone
-          }
+        const data = await response.json()
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      })
-
-      const data = await response.json()
-
-      if (data.otpValidate === 'otpFound') {
-        setError('')
-        onVerify(otpString)
-      } else if (data.otpValidate === 'otpNotExist') {
-        setError('Invalid OTP code')
-      } else {
-        setError('Verification failed')
+        if (data.success) {
+          onVerify(otp)
+          onClose()
+        } else {
+          setErrorMessage(data.message || 'Invalid OTP')
+        }
       }
-    } catch (error) {
-      setError('Verification failed')
-    }
-  }
+      
+      // Verify OTP with auth token
+      if (authToken) {
+        const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/auth/verify/email', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            otp
+          })
+        })
 
-  const handleResendOTP = async () => {
-    try {
-      setIsResending(true)
-      // Add your resend OTP API call here
-      const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/auth/resend-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      })
+        const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error('Failed to resend OTP')
+        if (data.success) {
+          onVerify(otp)
+          onClose()
+        } else {
+          setErrorMessage(data.message || 'Invalid OTP')
+        }
       }
-
-      setTimer(60)
-      setError('')
-    } catch (error) {
-      setError('Failed to resend OTP')
+    } catch {
+      setErrorMessage('Failed to verify OTP')
     } finally {
-      setIsResending(false)
+      setIsLoading(false)
     }
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Enter Verification Code</DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            We've sent a verification code to{' '}
-            {signupMethod === 'email' ? email : phone}
-          </p>
-          
-          <div className="flex justify-center gap-2">
-            {otp.map((digit, index) => (
-              <input
-                key={index}
-                ref={el => inputRefs.current[index] = el}
-                type="text"
-                inputMode="numeric"
-                pattern="\d*"
-                value={digit}
-                onChange={e => handleChange(index, e.target.value)}
-                onKeyDown={e => handleKeyDown(index, e)}
-                onPaste={handlePaste}
-                className="w-12 h-12 text-center text-xl border rounded-lg focus:border-orange-500 focus:ring-1 focus:ring-orange-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                maxLength={1}
-              />
-            ))}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600">
+              We&apos;ve sent a verification code to {phoneNumber || 'your email'}
+            </p>
+            <Input
+              type="text"
+              placeholder="Enter OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              maxLength={6}
+              className="text-center text-2xl tracking-widest"
+            />
+            {errorMessage && (
+              <p className="text-sm text-red-500">{errorMessage}</p>
+            )}
           </div>
-
-          {error && (
-            <p className="text-sm text-red-600 text-center">{error}</p>
-          )}
-
-          <div className="flex flex-col gap-3">
-            <Button 
-              onClick={handleVerify}
-              className="w-full bg-orange-500 hover:bg-orange-600"
-            >
-              Verify
-            </Button>
-
-            <div className="text-center">
-              {timer > 0 ? (
-                <p className="text-sm text-gray-600">
-                  Resend code in {timer}s
-                </p>
-              ) : (
-                <Button
-                  variant="ghost"
-                  onClick={handleResendOTP}
-                  disabled={isResending}
-                  className="text-orange-500 hover:text-orange-600"
-                >
-                  {isResending ? 'Resending...' : 'Resend Code'}
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+          <Button 
+            type="submit" 
+            className="w-full bg-orange-500 hover:bg-orange-600"
+            disabled={isLoading || otp.length !== 6}
+          >
+            {isLoading ? 'Verifying...' : 'Verify'}
+          </Button>
+        </form>
       </DialogContent>
     </Dialog>
   )
