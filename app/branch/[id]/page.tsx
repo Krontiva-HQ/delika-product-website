@@ -6,9 +6,9 @@ export const metadata: Metadata = {
   description: 'View branch details and menu',
 }
 
-type Props = {
+interface PageProps {
   params: { id: string }
-  searchParams: Record<string, string | string[] | undefined>
+  searchParams?: { [key: string]: string | string[] | undefined }
 }
 
 async function getData(id: string) {
@@ -16,7 +16,7 @@ async function getData(id: string) {
   return { id }
 }
 
-export default async function Page({ params }: Props) {
+export default async function Page({ params }: PageProps) {
   await getData(params.id)
   
   return (

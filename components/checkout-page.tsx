@@ -258,12 +258,12 @@ export function CheckoutPage({
         {/* Menu Items */}
         <div className="space-y-4">
           {currentCategory?.foods.map(item => {
-            const itemInCart = cart.find(cartItem => cartItem.id === item.id)
-            const quantity = itemInCart?.quantity || 0
+            const itemInCart = cart.find(cartItem => cartItem.id === item.name);
+            const quantity = itemInCart?.quantity || 0;
 
             return (
               <div
-                key={item.id}
+                key={item.name}
                 className={`flex items-center gap-4 p-3 rounded-lg ${
                   !item.available ? 'opacity-50' : ''
                 }`}
@@ -289,7 +289,7 @@ export function CheckoutPage({
                           <Button
                             size="icon"
                             className="bg-orange-500 hover:bg-orange-600 h-7 w-7 rounded-full text-white"
-                            onClick={() => onRemoveItem(item.id)}
+                            onClick={() => onRemoveItem(item.name)}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
@@ -297,7 +297,14 @@ export function CheckoutPage({
                           <Button
                             size="icon"
                             className="bg-orange-500 hover:bg-orange-600 h-7 w-7 rounded-full text-white"
-                            onClick={() => onAddItem(item)}
+                            onClick={() => onAddItem({
+                              id: item.name,
+                              name: item.name,
+                              price: item.price,
+                              quantity: 1,
+                              image: item.image,
+                              available: item.available
+                            })}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
@@ -306,7 +313,14 @@ export function CheckoutPage({
                         <Button
                           size="icon"
                           className="bg-orange-500 hover:bg-orange-600 h-7 w-7 rounded-full text-white"
-                          onClick={() => onAddItem(item)}
+                          onClick={() => onAddItem({
+                            id: item.name,
+                            name: item.name,
+                            price: item.price,
+                            quantity: 1,
+                            image: item.image,
+                            available: item.available
+                          })}
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
