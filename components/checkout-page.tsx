@@ -16,11 +16,6 @@ interface MenuItem {
   foodImage?: { url: string }
 }
 
-interface MenuCategory {
-  foodType: string
-  foods: MenuItem[]
-}
-
 interface CheckoutPageProps {
   cart: CartItem[]
   cartTotal: number
@@ -251,15 +246,15 @@ export function CheckoutPage({
       <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Add More Items</h2>
         
-        {/* Category Tabs */}
-        <div className="flex overflow-x-auto whitespace-nowrap pb-2 mb-4 gap-2">
-          {menuCategories?.map((category) => (
-            <button 
+        {/* Category Selection */}
+        <div className="flex gap-2 overflow-x-auto pb-4 mb-4">
+          {menuCategories.map(category => (
+            <button
               key={category.foodType}
               onClick={() => setSelectedCategory(category.foodType)}
-              className={`px-4 py-2 rounded-md text-sm flex-shrink-0 ${
-                selectedCategory === category.foodType 
-                  ? 'bg-orange-500 text-white' 
+              className={`px-4 py-2 rounded-full text-sm whitespace-nowrap ${
+                selectedCategory === category.foodType
+                  ? 'bg-orange-500 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -268,79 +263,69 @@ export function CheckoutPage({
           ))}
         </div>
         
-        {/* Menu Items Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {currentCategory?.foods?.map((item) => {
-            const itemInCart = cart.find(cartItem => cartItem.id === item.name);
-            const quantity = itemInCart?.quantity || 0;
-            
+        {/* Menu Items */}
+        <div className="space-y-4">
+          {currentCategory?.foods.map(item => {
+            const itemInCart = cart.find(cartItem => cartItem.id === item.id)
+            const quantity = itemInCart?.quantity || 0
+
             return (
-              <div 
-                key={item.name} 
-                className={`flex gap-3 p-3 border rounded-lg ${!item.available ? 'opacity-50' : ''}`}
+              <div
+                key={item.id}
+                className={`flex items-center gap-4 p-3 rounded-lg ${
+                  !item.available ? 'opacity-50' : ''
+                }`}
               >
                 <div className="relative w-20 h-20 flex-shrink-0">
-                  <Image
-                    src={item.foodImage?.url || '/placeholder-image.jpg'}
-                    alt={item.name}
-                    fill
-                    className={`object-cover rounded-lg ${!item.available ? 'grayscale' : ''}`}
-                  />
+                  {item.image && (
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      width={48}
+                      height={48}
+                      className={`rounded-md ${!item.available ? 'grayscale' : ''}`}
+                    />
+                  )}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-medium text-gray-900">{item.name}</h3>
-                  <p className="text-sm text-gray-600 line-clamp-1">{item.description}</p>
                   <div className="flex items-center justify-between mt-1">
                     <span className="font-medium text-gray-900">GH₵ {item.price}</span>
-                    <div className="flex items-center gap-2">
-                      {item.available ? (
-                        quantity > 0 ? (
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              size="icon"
-                              className="bg-orange-500 hover:bg-orange-600 h-7 w-7 rounded-full text-white"
-                              onClick={() => onRemoveItem(item.name)}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="w-5 text-center font-medium">{quantity}</span>
-                            <Button 
-                              size="icon"
-                              className="bg-orange-500 hover:bg-orange-600 h-7 w-7 rounded-full text-white"
-                              onClick={() => onAddItem({
-                                id: item.name,
-                                name: item.name,
-                                price: item.price,
-                                quantity: 1,
-                                image: item.foodImage?.url
-                              })}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button 
+                    {item.available ? (
+                      quantity > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <Button
                             size="icon"
                             className="bg-orange-500 hover:bg-orange-600 h-7 w-7 rounded-full text-white"
-                            onClick={() => onAddItem({
-                              id: item.name,
-                              name: item.name,
-                              price: item.price,
-                              quantity: 1,
-                              image: item.foodImage?.url
-                            })}
+                            onClick={() => onRemoveItem(item.id)}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-4 text-center">{quantity}</span>
+                          <Button
+                            size="icon"
+                            className="bg-orange-500 hover:bg-orange-600 h-7 w-7 rounded-full text-white"
+                            onClick={() => onAddItem(item)}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
-                        )
+                        </div>
                       ) : (
-                        <span className="text-xs text-gray-500">Out of Stock</span>
-                      )}
-                    </div>
+                        <Button
+                          size="icon"
+                          className="bg-orange-500 hover:bg-orange-600 h-7 w-7 rounded-full text-white"
+                          onClick={() => onAddItem(item)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      )
+                    ) : (
+                      <span className="text-sm text-gray-500">Not Available</span>
+                    )}
                   </div>
                 </div>
               </div>
-            );
+            )
           })}
         </div>
       </div>

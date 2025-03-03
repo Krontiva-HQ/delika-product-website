@@ -12,12 +12,6 @@ interface LocationSearchModalProps {
   onLocationSelect: (location: { address: string; lat: number; lng: number }) => void
 }
 
-interface AddressComponent {
-  long_name: string
-  short_name: string
-  types: string[]
-}
-
 export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: LocationSearchModalProps) {
   const [searchValue, setSearchValue] = useState("")
   const [suggestions, setSuggestions] = useState<Array<{ description: string; place_id: string }>>([])

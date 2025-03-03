@@ -43,21 +43,16 @@ type Libraries = ("places" | "geocoding")[]
 
 const libraries: Libraries = ["places", "geocoding"]
 
-type MenuItem = {
-  id: string
-  name: string
-  price: number
-  description: string
-  category: string
+interface AddressComponent {
+  long_name: string
+  short_name: string
+  types: string[]
 }
 
 export function StoreHeader() {
   const [branches, setBranches] = useState<Branch[]>([])
-  const [activeTab, setActiveTab] = useState<'restaurants' | 'menus'>('restaurants')
   const [selectedCity, setSelectedCity] = useState<string>('all')
-  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
   const [userLocation, setUserLocation] = useState<string>("Loading location...")
-  const [coordinates, setCoordinates] = useState<{lat: number, lng: number} | null>(null)
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
@@ -93,14 +88,13 @@ export function StoreHeader() {
       const { address, lat, lng } = JSON.parse(savedLocationData)
       setUserLocation(address)
       setUserCoordinates({ lat, lng })
-      setCoordinates({ lat, lng })
     } else {
       // Fall back to geolocation if no saved location
       if ("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
             const { latitude, longitude } = position.coords
-            setCoordinates({ lat: latitude, lng: longitude })
+            setUserCoordinates({ lat: latitude, lng: longitude })
 
             // Convert coordinates to address using Google Geocoding
             try {
@@ -110,14 +104,14 @@ export function StoreHeader() {
               const data = await response.json()
               if (data.results[0]) {
                 // Get city and area from address components
-                const addressComponents = data.results[0].address_components
+                const addressComponents = data.results[0].address_components as AddressComponent[]
                 const city = addressComponents.find(
-                  (component: any) => 
+                  (component) => 
                     component.types.includes("locality") || 
                     component.types.includes("administrative_area_level_2")
                 )
                 const area = addressComponents.find(
-                  (component: any) => component.types.includes("sublocality")
+                  (component) => component.types.includes("sublocality")
                 )
                 
                 setUserLocation(
@@ -145,10 +139,10 @@ export function StoreHeader() {
   useEffect(() => {
     // Check localStorage for selected branch on mount
     const savedBranchId = localStorage.getItem('selectedBranchId')
-    const savedView = localStorage.getItem('currentView')
+    const savedView = localStorage.getItem('currentView') as 'stores' | 'orders' | 'favorites' | 'profile' | 'settings' | 'branch' | null
     if (savedBranchId && savedView) {
       setSelectedBranchId(savedBranchId)
-      setCurrentView(savedView as any)
+      setCurrentView(savedView)
     }
   }, [])
 
@@ -208,7 +202,6 @@ export function StoreHeader() {
   const handleLocationSelect = ({ address, lat, lng }: { address: string; lat: number; lng: number }) => {
     setUserLocation(address)
     setUserCoordinates({ lat, lng })
-    setCoordinates({ lat, lng })
     // Save to localStorage
     localStorage.setItem('userLocationData', JSON.stringify({ address, lat, lng }))
   }
