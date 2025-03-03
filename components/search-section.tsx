@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, MapPin } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { loadGoogleMaps } from "@/lib/google-maps"
 
 interface SearchSectionProps {
   onSearch: (query: string) => void
@@ -12,6 +13,10 @@ interface SearchSectionProps {
 
 export function SearchSection({ onSearch, userLocation, onLocationClick }: SearchSectionProps) {
   const [searchValue, setSearchValue] = useState("")
+
+  useEffect(() => {
+    loadGoogleMaps().catch(console.error)
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value

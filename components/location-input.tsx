@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LocationData } from '@/components/location';
+import { loadGoogleMaps } from "@/lib/google-maps"
 
 interface LocationInputProps {
     label: string;
@@ -12,35 +13,6 @@ interface GooglePlace {
     description: string;
     place_id: string;
 }
-
-let isScriptLoaded = false;
-let scriptPromise: Promise<void> | null = null;
-
-const loadGoogleMapsScript = () => {
-    if (isScriptLoaded) return Promise.resolve();
-    if (scriptPromise) return scriptPromise;
-
-    scriptPromise = new Promise((resolve, reject) => {
-        if (window.google?.maps) {
-            isScriptLoaded = true;
-            resolve();
-            return;
-        }
-
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyAdv28EbwKXqvlKo2henxsKMD-4EKB20l8&libraries=places&loading=async`;
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-            isScriptLoaded = true;
-            resolve();
-        };
-        script.onerror = reject;
-        document.head.appendChild(script);
-    });
-
-    return scriptPromise;
-};
 
 const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, prefillData, disabled }) => {
     const [address, setAddress] = useState(prefillData?.address || '');
@@ -70,34 +42,29 @@ const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, 
     }, [prefillData, onLocationSelect]);
 
     useEffect(() => {
-        loadGoogleMapsScript().then(() => {
-            // Wait for google object to be available
-            const initServices = () => {
-                if (!window.google || !window.google.maps || !window.google.maps.places) {
-                    setTimeout(initServices, 100);
-                    return;
-                }
+        loadGoogleMaps().then(() => {
+            if (!window.google || !window.google.maps || !window.google.maps.places) {
+                console.error('Google Maps not loaded properly');
+                return;
+            }
 
-                if (!mapRef.current) {
-                    console.error('Map div not found');
-                    return;
-                }
+            if (!mapRef.current) {
+                console.error('Map div not found');
+                return;
+            }
 
-                try {
-                    setAutocompleteService(new window.google.maps.places.AutocompleteService());
-                    const mapDiv = mapRef.current;
-                    const map = new window.google.maps.Map(mapDiv, {
-                        center: { lat: 5.6037, lng: -0.1870 }, // Accra coordinates
-                        zoom: 13,
-                        disableDefaultUI: true
-                    });
-                    setPlacesService(new window.google.maps.places.PlacesService(map));
-                } catch (error) {
-                    console.error('Error initializing Google Maps services:', error);
-                }
-            };
-
-            initServices();
+            try {
+                setAutocompleteService(new window.google.maps.places.AutocompleteService());
+                const mapDiv = mapRef.current;
+                const map = new window.google.maps.Map(mapDiv, {
+                    center: { lat: 5.6037, lng: -0.1870 },
+                    zoom: 13,
+                    disableDefaultUI: true
+                });
+                setPlacesService(new window.google.maps.places.PlacesService(map));
+            } catch (error) {
+                console.error('Error initializing Google Maps services:', error);
+            }
         }).catch(error => {
             console.error('Error loading Google Maps:', error);
         });

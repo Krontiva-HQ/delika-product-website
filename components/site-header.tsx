@@ -9,7 +9,7 @@ export function SiteHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const menuItems = [
-    { href: "/shop", label: "Shop" },
+    { href: "/shop", label: "Shops" },
     { href: "/restaurants", label: "Restaurants" },
     { href: "/couriers", label: "Couriers" },
     { href: "/about", label: "About" },
