@@ -34,53 +34,48 @@ export function OTPInputModal({
     setErrorMessage(null)
 
     try {
-      // Verify OTP with phone number
-      if (phone) {
-        const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/auth/verify/phoneNumber/customer', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            phone,
-            otp
-          })
-        })
-
-        const data = await response.json()
-
-        if (data.success) {
-          onVerify(otp)
-          onClose()
-        } else {
-          setErrorMessage(data.message || 'Invalid OTP')
-        }
+      let endpoint = ''
+      let payload = {}
+      let headers: Record<string, string> = {
+        'Content-Type': 'application/json',
       }
-      
-      // Verify OTP with auth token
-      if (authToken) {
-        const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/auth/verify/email', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            otp
-          })
-        })
 
-        const data = await response.json()
-
-        if (data.success) {
-          onVerify(otp)
-          onClose()
-        } else {
-          setErrorMessage(data.message || 'Invalid OTP')
+      if (signupMethod === 'phone' || (!signupMethod && phone)) {
+        endpoint = 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/verify/phoneNumber/customer'
+        payload = {
+          phone,
+          otp
         }
+      } else if (signupMethod === 'email' || (!signupMethod && authToken)) {
+        endpoint = 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/verify/email'
+        payload = { otp }
+        if (authToken) {
+          headers = {
+            ...headers,
+            'Authorization': `Bearer ${authToken}`
+          }
+        }
+      } else {
+        throw new Error('Invalid verification method')
       }
-    } catch {
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        onVerify(otp)
+        onClose()
+      } else {
+        setErrorMessage(data.message || 'Invalid OTP')
+      }
+    } catch (error) {
       setErrorMessage('Failed to verify OTP')
+      console.error('Verification error:', error)
     } finally {
       setIsLoading(false)
     }
