@@ -6,11 +6,19 @@ export const metadata: Metadata = {
   description: 'View branch details and menu',
 }
 
-export default function Page({
-  params,
-}: {
+type Props = {
   params: { id: string }
-}) {
+  searchParams: Record<string, string | string[] | undefined>
+}
+
+async function getData(id: string) {
+  // You can add actual data fetching here if needed
+  return { id }
+}
+
+export default async function Page({ params }: Props) {
+  await getData(params.id)
+  
   return (
     <main>
       <BranchPage params={params} />
