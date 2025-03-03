@@ -1,9 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import Image from "next/image"
-import { SliderCard } from "./slider-card"
-
 const slides = [
   {
     title: "Using Delika to improve your restaurant",
@@ -24,25 +21,8 @@ const slides = [
 ]
 
 export function MoreFeatures() {
-  const [currentSlide, setCurrentSlide] = useState(0)
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length)
-    }, 5000)
-
-    return () => clearInterval(timer)
-  }, [])
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length)
-  }
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
-  }
-
   return (
+
     <section className="min-h-screen">
       <div className="grid lg:grid-cols-2">
         {/* Left content */}
@@ -76,4 +56,5 @@ export function MoreFeatures() {
     </section>
   )
 }
+
 
