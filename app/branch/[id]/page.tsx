@@ -1,12 +1,12 @@
 import { BranchPage } from "@/components/branch-page"
 
-interface PageProps {
+interface Props {
   params: {
     id: string
   }
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
-export default function Page({ params }: PageProps) {
+export default async function Page({ params, searchParams }: Props) {
   return <BranchPage params={params} />
 } 
