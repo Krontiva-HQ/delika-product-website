@@ -3,7 +3,6 @@
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { ArrowRight, Building2, Users, Target, Sparkles } from "lucide-react"
-import { SignupModal } from "@/components/signup-modal"
 import { useState } from "react"
 
 const stats = [
@@ -153,37 +152,6 @@ export default function About() {
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Join Section */}
-      <section className="py-24">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="max-w-4xl mx-auto text-center"
-          >
-            <h2 className="text-4xl font-bold mb-6">Join Our Journey</h2>
-            <p className="text-xl text-gray-600 mb-12">
-              Whether you are a restaurant owner, delivery partner, or customer, be part of our story in revolutionizing food delivery in Ghana.
-            </p>
-            <button 
-              onClick={() => setIsSignupModalOpen(true)}
-              className="inline-flex items-center gap-2 bg-orange-500 text-white px-8 py-4 rounded-full hover:bg-orange-600 transition-colors"
-            >
-              Get Started
-              <ArrowRight className="w-5 h-5" />
-            </button>
-            <SignupModal 
-              isOpen={isSignupModalOpen}
-              onClose={() => setIsSignupModalOpen(false)}
-              onLoginClick={() => setIsSignupModalOpen(false)}
-              onSignupSuccess={() => setIsSignupModalOpen(false)}
-            />
-          </motion.div>
         </div>
       </section>
     </main>
