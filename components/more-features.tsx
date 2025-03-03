@@ -70,15 +70,6 @@ export function MoreFeatures() {
               fill
               className="object-cover"
             />
-            <div className="absolute inset-0 flex items-end justify-center pb-36">
-              <SliderCard
-                {...slides[currentSlide]}
-                currentSlide={currentSlide}
-                totalSlides={slides.length}
-                onNext={nextSlide}
-                onPrev={prevSlide}
-              />
-            </div>
           </div>
         </div>
       </div>
