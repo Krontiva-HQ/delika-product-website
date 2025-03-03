@@ -8,14 +8,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { CartItem } from "@/types/cart"
 
-interface MenuItem {
-  name: string
-  price: string
-  available: boolean
-  description?: string
-  foodImage?: { url: string }
-}
-
 interface CheckoutPageProps {
   cart: CartItem[]
   cartTotal: number
