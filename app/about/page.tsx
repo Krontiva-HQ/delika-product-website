@@ -3,7 +3,6 @@
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { Building2, Users, Target, Sparkles } from "lucide-react"
-import { useState } from "react"
 
 const stats = [
   { number: "1M+", label: "Happy Customers" },
