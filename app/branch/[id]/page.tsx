@@ -1,3 +1,6 @@
+"use client"
+
+import { use } from "react"
 import { Metadata } from 'next'
 import { BranchPage } from "@/components/branch-page"
 
@@ -7,8 +10,7 @@ export const metadata: Metadata = {
 }
 
 interface PageProps {
-  params: { id: string }
-  searchParams?: { [key: string]: string | string[] | undefined }
+  params: Promise<{ id: string }>
 }
 
 async function getData(id: string) {
@@ -16,12 +18,12 @@ async function getData(id: string) {
   return { id }
 }
 
-export default async function Page({ params }: PageProps) {
-  await getData(params.id)
+export default function Page({ params }: PageProps) {
+  const resolvedParams = use(params)
   
   return (
     <main>
-      <BranchPage params={params} />
+      <BranchPage params={resolvedParams} />
     </main>
   )
 } 
