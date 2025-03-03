@@ -12,6 +12,7 @@ interface OTPInputModalProps {
   email?: string
   phone?: string
   authToken?: string
+  signupMethod?: 'email' | 'phone'
 }
 
 export function OTPInputModal({ 
@@ -20,7 +21,8 @@ export function OTPInputModal({
   onVerify, 
   email, 
   phone,
-  authToken 
+  authToken,
+  signupMethod 
 }: OTPInputModalProps) {
   const [otp, setOtp] = useState("")
   const [isLoading, setIsLoading] = useState(false)
