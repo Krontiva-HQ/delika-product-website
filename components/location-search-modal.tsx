@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { MapPin, Search, Crosshair } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Button } from "./ui/button"
+import { loadGoogleMaps } from "@/lib/google-maps"
 
 interface LocationSearchModalProps {
   isOpen: boolean
@@ -16,8 +17,29 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
   const [searchValue, setSearchValue] = useState("")
   const [suggestions, setSuggestions] = useState<Array<{ description: string; place_id: string }>>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [mapsLoaded, setMapsLoaded] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (isOpen && !mapsLoaded) {
+      loadGoogleMaps()
+        .then(() => {
+          setMapsLoaded(true)
+          setLoadError(null)
+        })
+        .catch((error) => {
+          console.error('Failed to load Google Maps:', error)
+          setLoadError('Failed to load location services. Please try again later.')
+        })
+    }
+  }, [isOpen, mapsLoaded])
 
   const getCurrentLocation = () => {
+    if (!mapsLoaded) {
+      console.error('Google Maps not loaded yet')
+      return
+    }
+
     setIsLoading(true)
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -39,6 +61,7 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
             }
           } catch (error) {
             console.error("Error fetching address:", error)
+            setLoadError('Failed to get your location. Please try searching instead.')
           } finally {
             setIsLoading(false)
           }
@@ -46,6 +69,7 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
         (error) => {
           console.error("Error getting location:", error)
           setIsLoading(false)
+          setLoadError('Unable to access your location. Please check your browser settings.')
         }
       )
     }
@@ -113,46 +137,52 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
             Enter your address or use your current location to find restaurants near you.
           </DialogDescription>
         </DialogHeader>
-        <div className="mt-4 space-y-4">
-          <Button 
-            variant="outline" 
-            className="w-full flex items-center gap-2 justify-center"
-            onClick={getCurrentLocation}
-            disabled={isLoading}
-          >
-            <Crosshair className="w-4 h-4" />
-            {isLoading ? "Getting location..." : "Use current location"}
-          </Button>
+        
+        {loadError ? (
+          <div className="text-red-500 text-sm mb-4">{loadError}</div>
+        ) : (
+          <div className="mt-4 space-y-4">
+            <Button 
+              variant="outline" 
+              className="w-full flex items-center gap-2 justify-center"
+              onClick={getCurrentLocation}
+              disabled={isLoading || !mapsLoaded}
+            >
+              <Crosshair className="w-4 h-4" />
+              {isLoading ? "Getting location..." : "Use current location"}
+            </Button>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Search for your location"
-              className="pl-10"
-              value={searchValue}
-              onChange={(e) => {
-                setSearchValue(e.target.value)
-                searchLocation(e.target.value)
-              }}
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search for your location"
+                className="pl-10"
+                value={searchValue}
+                onChange={(e) => {
+                  setSearchValue(e.target.value)
+                  searchLocation(e.target.value)
+                }}
+                disabled={!mapsLoaded}
+              />
+            </div>
+
+            {suggestions.length > 0 && (
+              <ul className="mt-4 space-y-2">
+                {suggestions.map((suggestion) => (
+                  <li 
+                    key={suggestion.place_id}
+                    className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md cursor-pointer"
+                    onClick={() => handleSelect(suggestion.description)}
+                  >
+                    <MapPin className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm">{suggestion.description}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-
-          {suggestions.length > 0 && (
-            <ul className="mt-4 space-y-2">
-              {suggestions.map((suggestion) => (
-                <li 
-                  key={suggestion.place_id}
-                  className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md cursor-pointer"
-                  onClick={() => handleSelect(suggestion.description)}
-                >
-                  <MapPin className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm">{suggestion.description}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   )
