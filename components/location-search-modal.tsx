@@ -1,6 +1,6 @@
 "use client"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { MapPin, Search, Crosshair } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -103,9 +103,15 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent 
+        className="sm:max-w-[425px]" 
+        aria-describedby="location-search-description"
+      >
         <DialogHeader>
           <DialogTitle>Select your location</DialogTitle>
+          <DialogDescription id="location-search-description">
+            Enter your address or use your current location to find restaurants near you.
+          </DialogDescription>
         </DialogHeader>
         <div className="mt-4 space-y-4">
           <Button 
