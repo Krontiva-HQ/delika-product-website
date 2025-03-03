@@ -61,18 +61,27 @@ export function CartModal({
 
                 return (
                   <div key={item.id} className="flex gap-4 items-center">
-                    {item.image && menuItem?.available && (
-                      <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                    <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                      {item.image ? (
                         <Image
                           src={item.image}
                           alt={item.name}
                           fill
                           className="object-cover"
                         />
-                      </div>
-                    )}
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                          <ShoppingCart className="w-6 h-6 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
                     <div className="flex-1">
-                      <h3 className="font-medium">{item.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium">{item.name}</h3>
+                        {menuItem?.available === false && (
+                          <span className="text-xs text-red-500">(Unavailable)</span>
+                        )}
+                      </div>
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-sm">GH₵ {item.price}</span>
                         <div className="flex items-center gap-2">
@@ -81,6 +90,7 @@ export function CartModal({
                             variant="outline"
                             className="h-8 w-8"
                             onClick={() => onRemoveItem(item.id)}
+                            disabled={!menuItem?.available}
                           >
                             <Minus className="h-4 w-4" />
                           </Button>
@@ -90,6 +100,7 @@ export function CartModal({
                             variant="outline"
                             className="h-8 w-8"
                             onClick={() => onAddItem(item.id)}
+                            disabled={!menuItem?.available}
                           >
                             <Plus className="h-4 w-4" />
                           </Button>

@@ -32,6 +32,20 @@ interface CustomerInfo {
   notes: string
 }
 
+interface BranchDetails {
+  _menutable?: Array<{
+    foodType: string
+    foods: Array<{
+      name: string
+      price: string
+      available: boolean
+      description?: string
+      foodImage?: { url: string }
+    }>
+    foodTypeImage?: { url: string }
+  }>
+}
+
 export function CheckoutPage({
   cart,
   cartTotal,
@@ -57,6 +71,9 @@ export function CheckoutPage({
   const [selectedCategory, setSelectedCategory] = useState<string>(
     menuCategories?.[0]?.foodType || ""
   )
+  const [branchDetails, setBranchDetails] = useState<BranchDetails | null>(null);
+  const [isLoadingMenu, setIsLoadingMenu] = useState(true);
+  const [menuError, setMenuError] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('Loading customer info and location...');
@@ -101,14 +118,85 @@ export function CheckoutPage({
         console.error('Error parsing saved customer info:', e);
       }
     }
+
+    // Load the saved location from localStorage when component mounts
+    const savedLocationData = localStorage.getItem('userLocationData')
+    if (savedLocationData) {
+      const { address } = JSON.parse(savedLocationData)
+      setCustomerInfo(prev => ({
+        ...prev,
+        address: address
+      }))
+    }
   }, []);
+
+  useEffect(() => {
+    async function fetchBranchDetails() {
+      try {
+        setIsLoadingMenu(true);
+        setMenuError(null);
+        
+        const response = await fetch(
+          `https://api-server.krontiva.africa/api:uEBBwbSs/get/branch/details?branchId=${branchId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            }
+          }
+        );
+        
+        const data = await response.json();
+        
+        if (!data || !data._menutable) {
+          setMenuError("Failed to load menu items");
+          return;
+        }
+
+        setBranchDetails(data);
+        // Update selected category if not already set
+        if (!selectedCategory && data._menutable?.[0]) {
+          setSelectedCategory(data._menutable[0].foodType);
+        }
+      } catch (error) {
+        console.error('Error fetching branch details:', error);
+        setMenuError("Failed to load menu items");
+      } finally {
+        setIsLoadingMenu(false);
+      }
+    }
+
+    fetchBranchDetails();
+  }, [branchId]);
+
+  const validatePhoneNumber = (value: string) => {
+    return /^\d+$/.test(value); // Only allows digits
+  }
+
+  const validateName = (value: string) => {
+    return /^[A-Za-z\s]+$/.test(value); // Only allows letters and spaces
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
+    
+    // Validation for phone numbers - only allow digits
+    if (name === 'phone') {
+      if (!validatePhoneNumber(value) && value !== '') {
+        return; // Don't update if input contains non-digits
+      }
+    }
+    
+    // Validation for name - only allow letters and spaces
+    if (name === 'name') {
+      if (!validateName(value) && value !== '') {
+        return; // Don't update if input contains numbers or special characters
+      }
+    }
+
     const updatedInfo = { ...customerInfo, [name]: value }
     setCustomerInfo(updatedInfo)
-    
-    // Always save to localStorage to persist changes
     localStorage.setItem('customerInfo', JSON.stringify(updatedInfo))
   }
 
@@ -156,7 +244,9 @@ export function CheckoutPage({
     }, 1500)
   }
 
-  const currentCategory = menuCategories?.find(cat => cat.foodType === selectedCategory)
+  const currentCategory = branchDetails?._menutable?.find(
+    cat => cat.foodType === selectedCategory
+  );
 
   if (isSuccess) {
     return (
@@ -238,102 +328,114 @@ export function CheckoutPage({
       <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Add More Items</h2>
         
-        {/* Category Selection */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-4">
-          {menuCategories.map(category => (
-            <button
-              key={category.foodType}
-              onClick={() => setSelectedCategory(category.foodType)}
-              className={`px-4 py-2 rounded-full text-sm whitespace-nowrap ${
-                selectedCategory === category.foodType
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {category.foodType}
-            </button>
-          ))}
-        </div>
-        
-        {/* Menu Items */}
-        <div className="space-y-4">
-          {currentCategory?.foods.map(item => {
-            const itemInCart = cart.find(cartItem => cartItem.id === item.name);
-            const quantity = itemInCart?.quantity || 0;
+        {isLoadingMenu ? (
+          <div className="text-center py-4">Loading menu items...</div>
+        ) : menuError ? (
+          <div className="text-center py-4 text-red-500">{menuError}</div>
+        ) : (
+          <>
+            {/* Category Selection */}
+            <div className="flex gap-2 overflow-x-auto pb-4 mb-4">
+              {branchDetails?._menutable?.map(category => (
+                <button
+                  key={category.foodType}
+                  onClick={() => setSelectedCategory(category.foodType)}
+                  className={`px-4 py-2 rounded-full text-sm whitespace-nowrap ${
+                    selectedCategory === category.foodType
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {category.foodType}
+                </button>
+              ))}
+            </div>
+            
+            {/* Menu Items */}
+            <div className="space-y-4">
+              {currentCategory?.foods.map(item => {
+                const itemInCart = cart.find(cartItem => cartItem.id === item.name);
+                const quantity = itemInCart?.quantity || 0;
 
-            return (
-              <div
-                key={item.name}
-                className={`flex items-center gap-4 p-3 rounded-lg ${
-                  !item.available ? 'opacity-50' : ''
-                }`}
-              >
-                <div className="relative w-20 h-20 flex-shrink-0">
-                  {item.image && (
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      width={48}
-                      height={48}
-                      className={`rounded-md ${!item.available ? 'grayscale' : ''}`}
-                    />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900">{item.name}</h3>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="font-medium text-gray-900">GH₵ {item.price}</span>
-                    {item.available ? (
-                      quantity > 0 ? (
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="icon"
-                            className="bg-orange-500 hover:bg-orange-600 h-7 w-7 rounded-full text-white"
-                            onClick={() => onRemoveItem(item.name)}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-4 text-center">{quantity}</span>
-                          <Button
-                            size="icon"
-                            className="bg-orange-500 hover:bg-orange-600 h-7 w-7 rounded-full text-white"
-                            onClick={() => onAddItem({
-                              id: item.name,
-                              name: item.name,
-                              price: item.price,
-                              quantity: 1,
-                              image: item.image,
-                              available: item.available
-                            })}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
+                return (
+                  <div
+                    key={item.name}
+                    className={`flex items-center gap-4 p-3 rounded-lg ${
+                      !item.available ? 'opacity-50' : ''
+                    }`}
+                  >
+                    <div className="relative w-20 h-20 flex-shrink-0">
+                      {item.foodImage?.url ? (
+                        <Image
+                          src={item.foodImage.url}
+                          alt={item.name}
+                          fill
+                          sizes="80px"
+                          className={`rounded-md object-cover ${!item.available ? 'grayscale' : ''}`}
+                        />
                       ) : (
-                        <Button
-                          size="icon"
-                          className="bg-orange-500 hover:bg-orange-600 h-7 w-7 rounded-full text-white"
-                          onClick={() => onAddItem({
-                            id: item.name,
-                            name: item.name,
-                            price: item.price,
-                            quantity: 1,
-                            image: item.image,
-                            available: item.available
-                          })}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      )
-                    ) : (
-                      <span className="text-sm text-gray-500">Not Available</span>
-                    )}
+                        <div className="w-full h-full bg-gray-100 rounded-md flex items-center justify-center">
+                          <ShoppingBag className="w-6 h-6 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900">{item.name}</h3>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="font-medium text-gray-900">GH₵ {item.price}</span>
+                        {item.available ? (
+                          quantity > 0 ? (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="icon"
+                                className="bg-orange-500 hover:bg-orange-600 h-7 w-7 rounded-full text-white"
+                                onClick={() => onRemoveItem(item.name)}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="w-4 text-center">{quantity}</span>
+                              <Button
+                                size="icon"
+                                className="bg-orange-500 hover:bg-orange-600 h-7 w-7 rounded-full text-white"
+                                onClick={() => onAddItem({
+                                  id: item.name,
+                                  name: item.name,
+                                  price: item.price,
+                                  quantity: 1,
+                                  image: item.foodImage?.url,
+                                  available: item.available
+                                })}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="icon"
+                              className="bg-orange-500 hover:bg-orange-600 h-7 w-7 rounded-full text-white"
+                              onClick={() => onAddItem({
+                                id: item.name,
+                                name: item.name,
+                                price: item.price,
+                                quantity: 1,
+                                image: item.foodImage?.url,
+                                available: item.available
+                              })}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          )
+                        ) : (
+                          <span className="text-sm text-gray-500">Not Available</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+                )
+              })}
+            </div>
+          </>
+        )}
       </div>
       
       {/* 3. Customer Information Form - Third */}
@@ -351,12 +453,15 @@ export function CheckoutPage({
                 onChange={handleChange}
                 placeholder="Enter your full name"
                 required
+                pattern="[A-Za-z\s]+"
+                title="Please enter only letters and spaces"
                 aria-invalid={!!formErrors.name}
                 className={formErrors.name ? "border-red-500" : ""}
               />
               {formErrors.name && (
                 <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>
               )}
+              <p className="text-xs text-gray-500 mt-1">Only letters and spaces are allowed</p>
             </div>
             
             <div>
@@ -369,30 +474,40 @@ export function CheckoutPage({
                 onChange={handleChange}
                 placeholder="Enter your phone number"
                 required
+                type="tel"
+                pattern="[0-9]*"
+                inputMode="numeric"
+                title="Please enter only numbers"
                 aria-invalid={!!formErrors.phone}
                 className={formErrors.phone ? "border-red-500" : ""}
               />
               {formErrors.phone && (
                 <p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>
               )}
+              <p className="text-xs text-gray-500 mt-1">Only numbers are allowed</p>
             </div>
             
             <div>
               <label className="block text-sm font-medium mb-1">
                 Delivery Address <span className="text-red-500">*</span>
               </label>
-              <Input
-                name="address"
-                value={customerInfo.address}
-                onChange={handleChange}
-                placeholder="Enter your delivery address"
-                required
-                aria-invalid={!!formErrors.address}
-                className={formErrors.address ? "border-red-500" : ""}
-              />
+              <div className="relative">
+                <Input
+                  name="address"
+                  value={customerInfo.address}
+                  readOnly
+                  placeholder="Your delivery address will be shown here"
+                  required
+                  aria-invalid={!!formErrors.address}
+                  className={`${formErrors.address ? "border-red-500" : ""} bg-gray-50 cursor-not-allowed`}
+                />
+              </div>
               {formErrors.address && (
                 <p className="text-red-500 text-sm mt-1">{formErrors.address}</p>
               )}
+              <p className="text-sm text-gray-500 mt-1">
+                To change delivery address, please select a different location from the main page
+              </p>
             </div>
             
             <div>
