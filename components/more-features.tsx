@@ -1,24 +1,6 @@
 "use client"
 
 import Image from "next/image"
-const slides = [
-  {
-    title: "Using Delika to improve your restaurant",
-    description:
-      "Use Delika to improve your restaurant by providing you with the tools you need to succeed. We are a team of experienced developers and designers who are passionate about helping restaurants grow and succeed.",
-    image: "/main.jpg",
-  },
-  {
-    title: "Making an impact through digital transformation",
-    description: "We help charities leverage technology to increase their reach and impact in meaningful ways.",
-    image: "/placeholder.svg?height=400&width=600",
-  },
-  {
-    title: "Building sustainable digital solutions",
-    description: "Our approach focuses on creating lasting digital infrastructure that grows with your organization.",
-    image: "/placeholder.svg?height=400&width=600",
-  },
-]
 
 export function MoreFeatures() {
   return (
