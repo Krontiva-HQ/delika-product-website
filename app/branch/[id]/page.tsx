@@ -1,12 +1,19 @@
+import { Metadata } from 'next'
 import { BranchPage } from "@/components/branch-page"
 
-interface Props {
-  params: {
-    id: string
-  }
-  searchParams: { [key: string]: string | string[] | undefined }
+export const metadata: Metadata = {
+  title: 'Branch Details',
+  description: 'View branch details and menu',
 }
 
-export default async function Page({ params }: Props) {
-  return <BranchPage params={params} />
+export default function Page({
+  params,
+}: {
+  params: { id: string }
+}) {
+  return (
+    <main>
+      <BranchPage params={params} />
+    </main>
+  )
 } 
