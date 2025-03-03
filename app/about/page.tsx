@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { motion } from "framer-motion"
-import { ArrowRight, Building2, Users, Target, Sparkles } from "lucide-react"
+import { Building2, Users, Target, Sparkles } from "lucide-react"
 import { useState } from "react"
 
 const stats = [
@@ -36,7 +36,6 @@ const values = [
 ]
 
 export default function About() {
-  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
 
   return (
     <main className="min-h-screen bg-[#FAFAFA]">
