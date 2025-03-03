@@ -4,6 +4,7 @@ import Image from "next/image"
 import { motion } from "framer-motion"
 import { ArrowRight, Building2, Users, Target, Sparkles } from "lucide-react"
 import { SignupModal } from "@/components/signup-modal"
+import { useState } from "react"
 
 const stats = [
   { number: "1M+", label: "Happy Customers" },
@@ -36,6 +37,8 @@ const values = [
 ]
 
 export default function About() {
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
+
   return (
     <main className="min-h-screen bg-[#FAFAFA]">
       {/* Hero Section */}
@@ -167,13 +170,18 @@ export default function About() {
             <p className="text-xl text-gray-600 mb-12">
               Whether you are a restaurant owner, delivery partner, or customer, be part of our story in revolutionizing food delivery in Ghana.
             </p>
+            <button 
+              onClick={() => setIsSignupModalOpen(true)}
+              className="inline-flex items-center gap-2 bg-orange-500 text-white px-8 py-4 rounded-full hover:bg-orange-600 transition-colors"
+            >
+              Get Started
+              <ArrowRight className="w-5 h-5" />
+            </button>
             <SignupModal 
-              trigger={
-                <button className="inline-flex items-center gap-2 bg-orange-500 text-white px-8 py-4 rounded-full hover:bg-orange-600 transition-colors">
-                  Get Started
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              }
+              isOpen={isSignupModalOpen}
+              onClose={() => setIsSignupModalOpen(false)}
+              onLoginClick={() => setIsSignupModalOpen(false)}
+              onSignupSuccess={() => setIsSignupModalOpen(false)}
             />
           </motion.div>
         </div>
