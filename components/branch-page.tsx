@@ -249,12 +249,14 @@ export function BranchPage({ params }: BranchPageProps) {
                   return (
                     <div key={item.name} className={`flex flex-col gap-4 p-4 border rounded-lg ${!item.available ? 'opacity-50' : ''}`}>
                       <div className="relative w-full h-40 flex-shrink-0">
-                        <Image
-                          src={item.foodImage?.url || '/placeholder-image.jpg'}
-                          alt={item.name}
-                          fill
-                          className={`object-cover rounded-lg ${!item.available ? 'grayscale' : ''}`}
-                        />
+                        {item.foodImage && (
+                          <Image
+                            src={item.foodImage.url}
+                            alt={item.name}
+                            fill
+                            className={`object-cover rounded-lg ${!item.available ? 'grayscale' : ''}`}
+                          />
+                        )}
                       </div>
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900">{item.name}</h3>
@@ -305,7 +307,7 @@ export function BranchPage({ params }: BranchPageProps) {
                                 </Button>
                               )
                             ) : (
-                              <span className="text-sm text-gray-500">Out of Stock</span>
+                              <span className="text-sm text-gray-500">Not Available</span>
                             )}
                           </div>
                         </div>
