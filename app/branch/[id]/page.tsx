@@ -7,6 +7,6 @@ interface Props {
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
-export default async function Page({ params, searchParams }: Props) {
+export default async function Page({ params }: Props) {
   return <BranchPage params={params} />
 } 
