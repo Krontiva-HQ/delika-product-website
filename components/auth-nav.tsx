@@ -10,18 +10,67 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 
+interface UserLocation {
+  lat: string;
+  long: string;
+}
+
+interface DeliveryAddress {
+  fromAddress: string;
+  fromLatitude: string;
+  fromLongitude: string;
+}
+
+interface FavoriteRestaurant {
+  branchName: string;
+}
+
+interface CustomerTable {
+  id: string;
+  userId: string;
+  created_at: number;
+  deliveryAddress: DeliveryAddress;
+  favoriteRestaurants: FavoriteRestaurant[];
+}
+
+interface UserData {
+  id: string;
+  OTP: string;
+  city: string;
+  role: string;
+  email: string;
+  image: string | null;
+  Status: boolean;
+  onTrip: boolean;
+  address: string;
+  country: string;
+  Location: UserLocation;
+  branchId: string | null;
+  deviceId: string;
+  fullName: string;
+  userName: string;
+  tripCount: number;
+  created_at: number;
+  postalCode: string;
+  addressFrom: string[];
+  dateOfBirth: string | null;
+  phoneNumber: string;
+  restaurantId: string | null;
+  customerTable: CustomerTable[];
+}
+
 interface AuthNavProps {
-  userName?: string | null
-  onViewChange: (view: 'stores' | 'orders' | 'favorites' | 'profile' | 'settings') => void
-  currentView: string
-  onLoginClick: () => void
-  onSignupClick: () => void
-  onLogout: () => void
-  onHomeClick: () => void
+  userData?: UserData | null;
+  onViewChange: (view: 'stores' | 'orders' | 'favorites' | 'profile' | 'settings') => void;
+  currentView: string;
+  onLoginClick: () => void;
+  onSignupClick: () => void;
+  onLogout: () => void;
+  onHomeClick: () => void;
 }
 
 export function AuthNav({ 
-  userName, 
+  userData, 
   onViewChange, 
   currentView,
   onLoginClick,
@@ -29,6 +78,8 @@ export function AuthNav({
   onLogout,
   onHomeClick
 }: AuthNavProps) {
+  const userName = userData?.fullName || null;
+
   return (
     <div className="bg-white border-b">
       <div className="container mx-auto px-4">
@@ -36,7 +87,7 @@ export function AuthNav({
           <div className="flex items-center gap-8">
             <button 
               onClick={onHomeClick}
-              className="font-semibold text-orange-500 hover:text-orange-600"
+              className={`font-semibold ${currentView === 'stores' ? 'text-orange-500' : 'text-gray-600 hover:text-gray-900'}`}
             >
               Home
             </button>
@@ -44,15 +95,15 @@ export function AuthNav({
               <>
                 <button 
                   onClick={() => onViewChange('orders')}
-                  className={`text-gray-600 hover:text-gray-900 ${currentView === 'orders' ? 'text-orange-500' : ''}`}
+                  className={`${currentView === 'orders' ? 'text-orange-500' : 'text-gray-600 hover:text-gray-900'}`}
                 >
                   Orders
                 </button>
                 <button 
                   onClick={() => onViewChange('favorites')}
-                  className={`text-gray-600 hover:text-gray-900 ${currentView === 'favorites' ? 'text-orange-500' : ''}`}
+                  className={`${currentView === 'favorites' ? 'text-orange-500' : 'text-gray-600 hover:text-gray-900'}`}
                 >
-                  Favorites
+                  Favorites ({userData?.customerTable[0]?.favoriteRestaurants.length || 0})
                 </button>
               </>
             )}
@@ -72,13 +123,32 @@ export function AuthNav({
                   </span>
                   <ChevronDown className="w-4 h-4" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => onViewChange('profile')}>
+                <DropdownMenuContent align="end" className="w-72">
+                  <div className="px-2 py-1.5">
+                    <div className="text-sm font-medium">{userData?.email}</div>
+                    <div className="text-xs text-gray-500">{userData?.phoneNumber}</div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onSelect={() => onViewChange('profile')}
+                    className={currentView === 'profile' ? 'bg-orange-50 text-orange-500' : ''}
+                  >
                     Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => onViewChange('settings')}>
+                  <DropdownMenuItem 
+                    onSelect={() => onViewChange('settings')}
+                    className={currentView === 'settings' ? 'bg-orange-50 text-orange-500' : ''}
+                  >
                     Settings
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <div className="px-2 py-1.5">
+                    <div className="text-xs text-gray-500">
+                      <div>Role: {userData?.role}</div>
+                      <div>Trip Count: {userData?.tripCount}</div>
+                      <div>Member since: {new Date(userData?.created_at || 0).toLocaleDateString()}</div>
+                    </div>
+                  </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-red-600" onSelect={onLogout}>
                     Logout

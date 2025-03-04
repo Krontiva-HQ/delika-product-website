@@ -7,17 +7,60 @@ import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OTPInputModal } from "@/components/otp-input-modal"
 
+interface UserLocation {
+  lat: string;
+  long: string;
+}
+
+interface DeliveryAddress {
+  fromAddress: string;
+  fromLatitude: string;
+  fromLongitude: string;
+}
+
+interface FavoriteRestaurant {
+  branchName: string;
+}
+
+interface CustomerTable {
+  id: string;
+  userId: string;
+  created_at: number;
+  deliveryAddress: DeliveryAddress;
+  favoriteRestaurants: FavoriteRestaurant[];
+}
+
 interface UserData {
-  name: string
-  email: string
-  fullName: string
+  id: string;
+  OTP: string;
+  city: string;
+  role: string;
+  email: string;
+  image: string | null;
+  Status: boolean;
+  onTrip: boolean;
+  address: string;
+  country: string;
+  Location: UserLocation;
+  branchId: string | null;
+  deviceId: string;
+  fullName: string;
+  userName: string;
+  tripCount: number;
+  created_at: number;
+  postalCode: string;
+  addressFrom: string[];
+  dateOfBirth: string | null;
+  phoneNumber: string;
+  restaurantId: string | null;
+  customerTable: CustomerTable[];
 }
 
 interface LoginModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSwitchToSignup: () => void
-  onLoginSuccess: (userData: UserData) => void
+  isOpen: boolean;
+  onClose: () => void;
+  onSwitchToSignup: () => void;
+  onLoginSuccess: (userData: UserData) => void;
 }
 
 export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }: LoginModalProps) {
@@ -103,28 +146,19 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
 
       const otpData = await otpResponse.json();
 
-      if (otpData.otpValidate === 'otpFound') {
+      if (otpData.otpValidate === 'otpFound' && userData) {
         // Store auth token in localStorage
         localStorage.setItem('authToken', authToken);
-
-        // Get user details from stored userData
-        if (userData) {
-          const userDetails: UserData = {
-            name: userData.fullName,
-            email: loginMethod === 'email' ? email : phone,
-            fullName: userData.fullName
-          };
-          
-          // Store user data in localStorage
-          localStorage.setItem('userData', JSON.stringify(userDetails));
-          
-          // Call the success handler
-          onLoginSuccess(userDetails);
-          
-          // Close the modal
-          setShowOTP(false);
-          onClose();
-        }
+        
+        // Store user data in localStorage
+        localStorage.setItem('userData', JSON.stringify(userData));
+        
+        // Call the success handler with full user data
+        onLoginSuccess(userData);
+        
+        // Close the modal
+        setShowOTP(false);
+        onClose();
       } else {
         console.error('OTP verification failed');
       }
@@ -224,15 +258,15 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
             </form>
           </TabsContent>
         </Tabs>
-        <p className="text-center text-sm text-gray-500">
-          Don&apos;t have an account?{" "}
+        <div className="mt-4 text-center">
+          <span className="text-sm text-gray-600">Don't have an account? </span>
           <button
             onClick={onSwitchToSignup}
-            className="text-orange-500 hover:text-orange-600"
+            className="text-sm font-medium text-orange-500 hover:text-orange-600"
           >
             Sign up
           </button>
-        </p>
+        </div>
       </DialogContent>
     </Dialog>
   )

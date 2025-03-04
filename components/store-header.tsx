@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/empty-state"
 import { AuthNav } from "@/components/auth-nav"
 import { BranchPage } from "@/components/branch-page"
 import { calculateDistance } from "@/utils/distance"
+import { FavoritesSection } from "@/components/favorites-section"
 
 interface Restaurant {
   restaurantName: string
@@ -49,6 +50,55 @@ interface AddressComponent {
   types: string[]
 }
 
+interface UserLocation {
+  lat: string;
+  long: string;
+}
+
+interface DeliveryAddress {
+  fromAddress: string;
+  fromLatitude: string;
+  fromLongitude: string;
+}
+
+interface FavoriteRestaurant {
+  branchName: string;
+}
+
+interface CustomerTable {
+  id: string;
+  userId: string;
+  created_at: number;
+  deliveryAddress: DeliveryAddress;
+  favoriteRestaurants: FavoriteRestaurant[];
+}
+
+interface UserData {
+  id: string;
+  OTP: string;
+  city: string;
+  role: string;
+  email: string;
+  image: string | null;
+  Status: boolean;
+  onTrip: boolean;
+  address: string;
+  country: string;
+  Location: UserLocation;
+  branchId: string | null;
+  deviceId: string;
+  fullName: string;
+  userName: string;
+  tripCount: number;
+  created_at: number;
+  postalCode: string;
+  addressFrom: string[];
+  dateOfBirth: string | null;
+  phoneNumber: string;
+  restaurantId: string | null;
+  customerTable: CustomerTable[];
+}
+
 export function StoreHeader() {
   const [branches, setBranches] = useState<Branch[]>([])
   const [selectedCity, setSelectedCity] = useState<string>('all')
@@ -59,7 +109,7 @@ export function StoreHeader() {
   const [searchQuery, setSearchQuery] = useState("")
   const [currentView, setCurrentView] = useState<'stores' | 'orders' | 'favorites' | 'profile' | 'settings' | 'branch'>('stores')
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null)
-  const [user, setUser] = useState<{ name: string, email: string } | null>(null)
+  const [user, setUser] = useState<UserData | null>(null)
   const [userCoordinates, setUserCoordinates] = useState<{lat: number, lng: number} | null>(null)
 
   useLoadScript({
@@ -150,10 +200,8 @@ export function StoreHeader() {
     // Check if user is logged in
     const token = localStorage.getItem('authToken')
     if (token) {
-      // Fetch user data or decode token
-      // For now, we'll just check if token exists
       const userData = JSON.parse(localStorage.getItem('userData') || '{}')
-      if (userData.name) {
+      if (userData.id) {
         setUser(userData)
       }
     }
@@ -222,7 +270,7 @@ export function StoreHeader() {
     localStorage.removeItem('currentView')
   }
 
-  const handleLoginSuccess = (userData: { name: string, email: string }) => {
+  const handleLoginSuccess = (userData: UserData) => {
     setUser(userData)
     localStorage.setItem('userData', JSON.stringify(userData))
   }
@@ -259,7 +307,7 @@ export function StoreHeader() {
       case 'orders':
         return <div>Orders content here</div>
       case 'favorites':
-        return <div>Favorites content here</div>
+        return <FavoritesSection />
       case 'profile':
         return <div>Profile content here</div>
       case 'settings':
@@ -368,7 +416,7 @@ export function StoreHeader() {
   return (
     <div>
       <AuthNav 
-        userName={user?.name}
+        userData={user}
         onViewChange={setCurrentView}
         currentView={currentView}
         onLoginClick={() => setIsLoginModalOpen(true)}
@@ -391,10 +439,7 @@ export function StoreHeader() {
           setIsLoginModalOpen(false)
           setIsSignupModalOpen(true)
         }}
-        onLoginSuccess={(userData) => {
-          setUser(userData)
-          setIsLoginModalOpen(false)
-        }}
+        onLoginSuccess={handleLoginSuccess}
       />
 
       <SignupModal

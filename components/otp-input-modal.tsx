@@ -62,8 +62,6 @@ export function OTPInputModal({
         throw new Error('Invalid verification method')
       }
 
-      console.log('Sending verification request:', { endpoint, payload, headers }) // Debug log
-
       const response = await fetch(endpoint, {
         method: 'POST',
         headers,
@@ -77,9 +75,9 @@ export function OTPInputModal({
       }
 
       const data = await response.json()
-      console.log('API Response:', data) // Debug log
 
       if (data.otpValidate === 'otpFound') {
+        // User data is already saved, just close the modal and notify success
         onVerify(otp)
         onClose()
       } else if (data.otpValidate === 'otpNotExist') {
