@@ -74,10 +74,13 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email')
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string>("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError("") // Clear any previous errors
+    
     try {
       const isEmailMode = e.currentTarget.getAttribute('data-mode') === 'email'
       setLoginMethod(isEmailMode ? 'email' : 'phone')
@@ -112,10 +115,18 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         setUserData(userData)
         setShowOTP(true)
       } else {
-        console.error('Login failed')
+        // Handle specific error messages
+        if (data.message) {
+          setError(data.message)
+        } else if (isEmailMode) {
+          setError("Invalid email or password")
+        } else {
+          setError("Invalid phone number")
+        }
       }
     } catch (error) {
       console.error('Login error:', error)
+      setError("An error occurred. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -199,7 +210,13 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         <DialogHeader>
           <DialogTitle>Login to your account</DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue="email" className="w-full">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-start">
+            <div className="h-5 w-5 text-red-500 mr-2">⚠️</div>
+            {error}
+          </div>
+        )}
+        <Tabs defaultValue="email" className="w-full" onValueChange={() => setError("")}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="email">Email</TabsTrigger>
             <TabsTrigger value="phone">Phone</TabsTrigger>
@@ -212,8 +229,12 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
                   type="email"
                   placeholder="Enter your email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    setError("") // Clear error when user types
+                  }}
                   required
+                  className={error ? "border-red-300 focus:ring-red-500" : ""}
                 />
               </div>
               <div className="space-y-2">
@@ -223,9 +244,12 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      setError("") // Clear error when user types
+                    }}
                     required
-                    className="pr-10"
+                    className={`pr-10 ${error ? "border-red-300 focus:ring-red-500" : ""}`}
                   />
                   <button
                     type="button"
@@ -264,8 +288,12 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
                   type="tel"
                   placeholder="Enter your phone number"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    setPhone(e.target.value)
+                    setError("") // Clear error when user types
+                  }}
                   required
+                  className={error ? "border-red-300 focus:ring-red-500" : ""}
                 />
               </div>
               <Button 
