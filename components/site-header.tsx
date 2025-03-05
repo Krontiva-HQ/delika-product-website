@@ -16,7 +16,7 @@ export function SiteHeader() {
   ]
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-white">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link 
@@ -55,7 +55,7 @@ export function SiteHeader() {
         {/* Mobile Navigation */}
         <div
           className={cn(
-            "fixed inset-0 z-10 bg-background md:hidden transition-transform duration-300",
+            "fixed inset-0 z-10 bg-white md:hidden transition-transform duration-300",
             isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
           )}
         >
