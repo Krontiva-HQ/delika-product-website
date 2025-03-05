@@ -137,12 +137,12 @@ export function AuthNav({
             {userName ? (
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center gap-2">
-                  <div className="hidden md:flex w-8 h-8 rounded-full bg-orange-100 items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-orange-100 items-center justify-center flex">
                     <span className="text-sm font-medium text-orange-600">
                       {userName[0].toUpperCase()}
                     </span>
                   </div>
-                  <span className="text-sm font-medium max-w-[100px] md:max-w-none truncate">
+                  <span className="hidden md:block text-sm font-medium">
                     {userName}
                   </span>
                   <ChevronDown className="w-4 h-4" />

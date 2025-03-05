@@ -318,29 +318,29 @@ export function StoreHeader() {
             {/* Search and Store Content */}
             <div className="border-b">
               <div className="container mx-auto px-4 h-16 flex items-center justify-center">
-                <div className="flex items-center gap-4 max-w-3xl w-full">
-                  <button 
-                    onClick={() => setIsLocationModalOpen(true)} 
-                    className="flex items-center gap-2 hover:text-gray-600 max-w-[200px]"
-                  >
-                    <MapPin className="w-5 h-5 flex-shrink-0" />
-                    <span className="font-medium truncate">{userLocation}</span>
-                  </button>
-
-                  <div className="flex-1 relative">
+                <div className="flex items-center gap-2 md:gap-4 max-w-3xl w-full">
+                  <div className="flex-[3] md:flex-1 relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="text"
                       placeholder="Search restaurants and stores"
-                      className="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-gray-200"
+                      className="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
 
+                  <button 
+                    onClick={() => setIsLocationModalOpen(true)} 
+                    className="flex items-center gap-1.5 hover:text-gray-600 flex-1 md:flex-initial"
+                  >
+                    <MapPin className="w-5 h-5 flex-shrink-0" />
+                    <span className="font-medium truncate max-w-[100px] md:max-w-[200px]">{userLocation}</span>
+                  </button>
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="p-2 hover:bg-gray-100 rounded-full flex items-center gap-2">
+                      <button className="p-2 hover:bg-gray-100 rounded-full flex items-center gap-2 flex-shrink-0">
                         <Filter className="w-5 h-5" />
                         <ChevronDown className="w-4 h-4" />
                       </button>
