@@ -42,7 +42,7 @@ export function OTPInputModal({
       setCanResend(true)
     }
     return () => clearInterval(timer)
-  }, [countdown])
+  }, [countdown, canResend])
 
   const handleResendOTP = async () => {
     setIsLoading(true)
@@ -69,7 +69,7 @@ export function OTPInputModal({
 
       setCountdown(30)
       setCanResend(false)
-    } catch (error) {
+    } catch {
       setErrorMessage('Failed to resend code. Please try again.')
     } finally {
       setIsLoading(false)
@@ -107,7 +107,7 @@ export function OTPInputModal({
     try {
       let endpoint = ''
       let payload = {}
-      let headers: Record<string, string> = {
+      const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       }
 
