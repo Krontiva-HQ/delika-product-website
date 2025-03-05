@@ -7,6 +7,7 @@ import { ShoppingBag, Check, Plus, Minus, ArrowLeft } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { CartItem } from "@/types/cart"
+import { calculateDistance, calculateDeliveryFee } from "@/lib/distance"
 
 interface CheckoutPageProps {
   cart: CartItem[]
@@ -23,6 +24,7 @@ interface CheckoutPageProps {
   restaurantName: string
   branchCity: string
   onBackToCart: () => void
+  branchLocation?: { latitude: number; longitude: number }
 }
 
 interface CustomerInfo {
@@ -57,7 +59,8 @@ export function CheckoutPage({
   branchName,
   restaurantName,
   branchCity,
-  onBackToCart
+  onBackToCart,
+  branchLocation
 }: CheckoutPageProps) {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: "",
@@ -74,6 +77,8 @@ export function CheckoutPage({
   const [branchDetails, setBranchDetails] = useState<BranchDetails | null>(null);
   const [isLoadingMenu, setIsLoadingMenu] = useState(true);
   const [menuError, setMenuError] = useState<string | null>(null);
+  const [deliveryFee, setDeliveryFee] = useState(10) // Default fee
+  const [distance, setDistance] = useState(0)
 
   useEffect(() => {
     console.log('Loading customer info and location...');
@@ -169,6 +174,33 @@ export function CheckoutPage({
 
     fetchBranchDetails();
   }, [branchId]);
+
+  useEffect(() => {
+    const calculateFee = async () => {
+      try {
+        // Get user's location from localStorage
+        const locationData = localStorage.getItem('userLocation')
+        if (!locationData || !branchLocation) {
+          setDeliveryFee(10) // Default fee if no location data
+          return
+        }
+
+        const userLocation = JSON.parse(locationData)
+        const distance = await calculateDistance(
+          { latitude: userLocation.latitude, longitude: userLocation.longitude },
+          { latitude: branchLocation.latitude, longitude: branchLocation.longitude }
+        )
+        
+        setDistance(distance)
+        setDeliveryFee(calculateDeliveryFee(distance))
+      } catch (error) {
+        console.error('Error calculating delivery fee:', error)
+        setDeliveryFee(10) // Default fee on error
+      }
+    }
+
+    calculateFee()
+  }, [branchLocation])
 
   const validatePhoneNumber = (value: string) => {
     return /^\d+$/.test(value); // Only allows digits
@@ -309,17 +341,24 @@ export function CheckoutPage({
         )}
         
         <div className="border-t pt-4 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Subtotal</span>
-            <span className="font-medium">GH₵ {cartTotal.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Delivery Fee</span>
-            <span className="font-medium">GH₵ 10.00</span>
-          </div>
-          <div className="flex justify-between text-base font-semibold pt-2 border-t mt-2">
-            <span>Total</span>
-            <span>GH₵ {(cartTotal + 10).toFixed(2)}</span>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Subtotal</span>
+              <span className="font-medium">GH₵ {cartTotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Delivery Fee</span>
+              <div className="flex items-center">
+                <span className="font-medium">GH₵ {deliveryFee.toFixed(2)}</span>
+                {distance > 0 && (
+                  <span className="text-xs text-gray-500 ml-1">({distance.toFixed(1)}km)</span>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-between text-base font-semibold pt-2 border-t mt-2">
+              <span>Total</span>
+              <span>GH₵ {(cartTotal + deliveryFee).toFixed(2)}</span>
+            </div>
           </div>
         </div>
       </div>

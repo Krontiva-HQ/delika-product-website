@@ -150,8 +150,9 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         // Store auth token in localStorage
         localStorage.setItem('authToken', authToken);
         
-        // Store user data in localStorage
+        // Store user data in localStorage and trigger a custom event
         localStorage.setItem('userData', JSON.stringify(userData));
+        window.dispatchEvent(new Event('userDataUpdated'));
         
         // Call the success handler with full user data
         onLoginSuccess(userData);
@@ -159,6 +160,16 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         // Close the modal
         setShowOTP(false);
         onClose();
+
+        // Check for redirect URL
+        const redirectUrl = localStorage.getItem('loginRedirectUrl');
+        if (redirectUrl) {
+          localStorage.removeItem('loginRedirectUrl');
+          window.location.href = redirectUrl;
+        } else {
+          // If no redirect URL, just reload the page
+          window.location.reload();
+        }
       } else {
         console.error('OTP verification failed');
       }

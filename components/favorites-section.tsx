@@ -5,12 +5,15 @@ import Image from "next/image"
 import { Star, MapPin, Trash2, ChevronLeft } from "lucide-react"
 import { EmptyState } from "@/components/empty-state"
 import { BranchPage } from "@/components/branch-page"
+import { calculateDistance } from "@/utils/distance"
 
 interface Branch {
   id: string
   branchName: string
   branchLocation: string
   branchCity: string
+  branchLatitude: string
+  branchLongitude: string
   _restaurantTable: Array<{
     restaurantName: string
     restaurantLogo: {
@@ -48,26 +51,48 @@ interface UserData {
 }
 
 export function FavoritesSection() {
-  const [branches, setBranches] = useState<Branch[]>([]);
   const [favoriteBranches, setFavoriteBranches] = useState<Branch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<'favorites' | 'branch'>('favorites');
+  const [userCoordinates, setUserCoordinates] = useState<{lat: number, lng: number} | null>(null);
+
+  // Update localStorage with filtered count for AuthNav
+  useEffect(() => {
+    localStorage.setItem('filteredFavoritesCount', favoriteBranches.length.toString());
+  }, [favoriteBranches]);
 
   useEffect(() => {
-    // Check localStorage for selected branch on mount
-    const savedBranchId = localStorage.getItem('selectedBranchId');
-    const savedView = localStorage.getItem('currentView') as 'favorites' | 'branch' | null;
-    if (savedBranchId && savedView === 'branch') {
-      setSelectedBranchId(savedBranchId);
-      setCurrentView('branch');
+    // Load saved location from localStorage
+    const savedLocationData = localStorage.getItem('userLocationData');
+    if (savedLocationData) {
+      const { lat, lng } = JSON.parse(savedLocationData);
+      setUserCoordinates({ lat, lng });
     }
   }, []);
 
+  // Filter branches by distance
+  const filterBranchesByDistance = (branches: Branch[], userLat?: number, userLng?: number) => {
+    if (!userLat || !userLng) return branches;
+
+    return branches.filter(branch => {
+      const distance = calculateDistance(
+        userLat,
+        userLng,
+        parseFloat(branch.branchLatitude),
+        parseFloat(branch.branchLongitude)
+      );
+      return distance <= 8; // Only show branches within 8km
+    });
+  };
+
   useEffect(() => {
+    let isMounted = true; // For cleanup
+
     async function fetchFavorites() {
       try {
+        if (!isMounted) return;
         setIsLoading(true);
         setError(null);
 
@@ -76,8 +101,10 @@ export function FavoritesSection() {
         const favoriteIds = userData.customerTable?.[0]?.favoriteRestaurants.map(fav => fav.branchName) || [];
 
         if (favoriteIds.length === 0) {
-          setFavoriteBranches([]);
-          setIsLoading(false);
+          if (isMounted) {
+            setFavoriteBranches([]);
+            setIsLoading(false);
+          }
           return;
         }
 
@@ -99,21 +126,40 @@ export function FavoritesSection() {
         const allBranches = await response.json();
         
         // Filter branches to only include favorites
-        const userFavorites = allBranches.filter((branch: Branch) => 
+        let userFavorites = allBranches.filter((branch: Branch) => 
           favoriteIds.includes(branch.id)
         );
 
-        setFavoriteBranches(userFavorites);
+        // Further filter by distance if user location is available
+        if (userCoordinates) {
+          userFavorites = filterBranchesByDistance(
+            userFavorites,
+            userCoordinates.lat,
+            userCoordinates.lng
+          );
+        }
+
+        if (isMounted) {
+          setFavoriteBranches(userFavorites);
+        }
       } catch (error) {
         console.error('Error fetching favorites:', error);
-        setError('Failed to load favorite restaurants');
+        if (isMounted) {
+          setError('Failed to load favorite restaurants');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
     fetchFavorites();
-  }, []);
+
+    return () => {
+      isMounted = false; // Cleanup to prevent setting state on unmounted component
+    };
+  }, [userCoordinates]); // Re-run when user coordinates change
 
   // Handle branch selection
   const handleBranchSelect = (branch: Branch) => {
@@ -157,8 +203,10 @@ export function FavoritesSection() {
   if (favoriteBranches.length === 0) {
     return (
       <EmptyState 
-        title="No Favorites Yet" 
-        description="You haven't added any restaurants to your favorites yet." 
+        title="No Nearby Favorites" 
+        description={userCoordinates 
+          ? "None of your favorite restaurants are within 8km of your location." 
+          : "You haven't added any restaurants to your favorites yet."} 
         icon="store"
       />
     );

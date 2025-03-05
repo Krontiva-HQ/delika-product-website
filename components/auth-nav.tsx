@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react"
 
 interface UserLocation {
   lat: string;
@@ -79,6 +80,29 @@ export function AuthNav({
   onHomeClick
 }: AuthNavProps) {
   const userName = userData?.fullName || null;
+  const [filteredFavoritesCount, setFilteredFavoritesCount] = useState(0);
+
+  // Update favorites count when it changes in localStorage
+  useEffect(() => {
+    const updateFavoritesCount = () => {
+      const count = parseInt(localStorage.getItem('filteredFavoritesCount') || '0', 10);
+      setFilteredFavoritesCount(count);
+    };
+
+    // Initial count
+    updateFavoritesCount();
+
+    // Listen for changes in localStorage
+    window.addEventListener('storage', updateFavoritesCount);
+
+    // Check for changes every second (as a fallback)
+    const interval = setInterval(updateFavoritesCount, 1000);
+
+    return () => {
+      window.removeEventListener('storage', updateFavoritesCount);
+      clearInterval(interval);
+    };
+  }, []);
 
   return (
     <div className="bg-white border-b">
@@ -103,7 +127,7 @@ export function AuthNav({
                   onClick={() => onViewChange('favorites')}
                   className={`${currentView === 'favorites' ? 'text-orange-500' : 'text-gray-600 hover:text-gray-900'}`}
                 >
-                  Favorites ({userData?.customerTable[0]?.favoriteRestaurants.length || 0})
+                  Favorites ({filteredFavoritesCount})
                 </button>
               </>
             )}

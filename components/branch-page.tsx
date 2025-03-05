@@ -8,6 +8,8 @@ import { BranchDetailsModal } from "@/components/branch-details-modal"
 import { EmptyState } from "@/components/empty-state"
 import { FloatingCart } from "@/components/floating-cart"
 import { CartModal } from "@/components/cart-modal"
+import { LoginModal } from "@/components/login-modal"
+import { SignupModal } from "@/components/signup-modal"
 
 interface BranchDetails {
   _menutable?: Array<{
@@ -55,6 +57,31 @@ export function BranchPage({ params }: BranchPageProps) {
   const [error, setError] = useState<string | null>(null)
   const [cart, setCart] = useState<(CartItem & { available: boolean })[]>([])
   const [isCartModalOpen, setIsCartModalOpen] = useState(false)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
+
+  // Check authentication status on mount and when localStorage changes
+  useEffect(() => {
+    const checkAuth = () => {
+      const userData = localStorage.getItem('userData')
+      if (userData) {
+        setUser(JSON.parse(userData))
+      }
+    }
+
+    // Initial check
+    checkAuth()
+
+    // Listen for auth state changes
+    window.addEventListener('userDataUpdated', checkAuth)
+    window.addEventListener('storage', checkAuth)
+
+    return () => {
+      window.removeEventListener('userDataUpdated', checkAuth)
+      window.removeEventListener('storage', checkAuth)
+    }
+  }, [])
 
   // Load cart from localStorage on initial render
   useEffect(() => {
@@ -361,6 +388,34 @@ export function BranchPage({ params }: BranchPageProps) {
             image: food.foodImage?.url
           }))
         })) || []}
+        isAuthenticated={!!user}
+        onLoginClick={() => setIsLoginModalOpen(true)}
+      />
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSwitchToSignup={() => {
+          setIsLoginModalOpen(false)
+          setIsSignupModalOpen(true)
+        }}
+        onLoginSuccess={(userData) => {
+          setUser(userData)
+          setIsLoginModalOpen(false)
+        }}
+      />
+
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
+        onLoginClick={() => {
+          setIsSignupModalOpen(false)
+          setIsLoginModalOpen(true)
+        }}
+        onSignupSuccess={(userData) => {
+          setUser(userData)
+          setIsSignupModalOpen(false)
+        }}
       />
 
       {branch && (
