@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, Search, Star, ChevronDown, ChevronLeft, Filter } from "lucide-react"
+import { MapPin, Search, Star, ChevronDown, ChevronLeft, Filter, Heart } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import {
@@ -366,11 +366,20 @@ export function StoreHeader() {
               {searchResults.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {searchResults.map((branch) => (
-                    <button
+                    <div
                       key={branch.id}
                       onClick={() => handleBranchSelect(branch)}
-                      className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left"
+                      className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer"
                     >
+                      <button 
+                        className="absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-400 hover:text-orange-500 hover:bg-white transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent branch selection when clicking like
+                          // TODO: Implement add to favorites functionality
+                        }}
+                      >
+                        <Heart className="w-5 h-5" />
+                      </button>
                       <div className="relative h-36">
                         <Image
                           src={branch._restaurantTable[0].restaurantLogo.url}
@@ -380,7 +389,7 @@ export function StoreHeader() {
                         />
                       </div>
                       <div className="p-4">
-                        <h3 className="font-medium text-gray-900 truncate">
+                        <h3 className="font-bold text-gray-900 truncate">
                           {branch._restaurantTable[0].restaurantName}
                         </h3>
                         <span className="text-xs text-gray-600 truncate block">
@@ -390,13 +399,8 @@ export function StoreHeader() {
                           <MapPin className="w-4 h-4" />
                           <span className="truncate">{branch.branchLocation}</span>
                         </div>
-                        <div className="flex items-center gap-1 mt-1 text-sm">
-                          <Star className="w-4 h-4 text-yellow-400" />
-                          <span>4.5</span>
-                          <span className="text-gray-600">(500+)</span>
-                        </div>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               ) : (

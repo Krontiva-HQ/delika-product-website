@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Star, MapPin, Trash2, ChevronLeft } from "lucide-react"
+import { Star, MapPin, Trash2, ChevronLeft, Heart } from "lucide-react"
 import { EmptyState } from "@/components/empty-state"
 import { BranchPage } from "@/components/branch-page"
 import { calculateDistance } from "@/utils/distance"
@@ -210,13 +210,22 @@ export function FavoritesSection() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Your Favorite Restaurants</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 md:gap-6">
         {favoriteBranches.map((branch) => (
           <div
             key={branch.id}
-            className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+            className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer relative"
             onClick={() => handleBranchSelect(branch)}
           >
+            <button 
+              className="absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full text-orange-500 hover:text-orange-600 hover:bg-white transition-colors"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent branch selection when clicking like
+                // TODO: Implement remove from favorites functionality
+              }}
+            >
+              <Heart className="w-5 h-5 fill-current" />
+            </button>
             <div className="relative h-48">
               <Image
                 src={branch._restaurantTable[0].restaurantLogo.url}
@@ -226,29 +235,13 @@ export function FavoritesSection() {
               />
             </div>
             <div className="p-4">
-              <h3 className="font-medium text-gray-900">
+              <h3 className="font-bold truncate text-gray-900">
                 {branch._restaurantTable[0].restaurantName}
               </h3>
               <p className="text-sm text-gray-500 mt-1">{branch.branchName}</p>
               <div className="flex items-center gap-1 mt-2 text-sm text-gray-600">
                 <MapPin className="w-4 h-4" />
                 <span className="truncate">{branch.branchLocation}</span>
-              </div>
-              <div className="flex items-center justify-between mt-3">
-                <div className="flex items-center gap-1 text-sm">
-                  <Star className="w-4 h-4 text-yellow-400" />
-                  <span>4.5</span>
-                  <span className="text-gray-600">(500+)</span>
-                </div>
-                <button 
-                  className="text-red-500 hover:text-red-600 p-1 rounded-full hover:bg-red-50 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent branch selection when clicking remove
-                    // TODO: Implement remove from favorites functionality
-                  }}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
               </div>
             </div>
           </div>
