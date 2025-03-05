@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Star, MapPin, Trash2, ChevronLeft, Heart } from "lucide-react"
+import { Star, MapPin, Trash2, ChevronLeft, Heart, ThumbsUp } from "lucide-react"
 import { EmptyState } from "@/components/empty-state"
 import { BranchPage } from "@/components/branch-page"
 import { calculateDistance } from "@/utils/distance"
@@ -224,7 +224,7 @@ export function FavoritesSection() {
                 // TODO: Implement remove from favorites functionality
               }}
             >
-              <Heart className="w-5 h-5 fill-current" />
+              <ThumbsUp className="w-5 h-5 fill-current" />
             </button>
             <div className="relative h-48">
               <Image

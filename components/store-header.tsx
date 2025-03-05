@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, Search, Star, ChevronDown, ChevronLeft, Filter, Heart } from "lucide-react"
+import { MapPin, Search, ChevronDown, ChevronLeft, Filter, ThumbsUp } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import {
@@ -378,7 +378,7 @@ export function StoreHeader() {
                           // TODO: Implement add to favorites functionality
                         }}
                       >
-                        <Heart className="w-5 h-5" />
+                        <ThumbsUp className="w-5 h-5" />
                       </button>
                       <div className="relative h-36">
                         <Image
