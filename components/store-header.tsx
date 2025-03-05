@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, Search, SlidersHorizontal, Star, ChevronDown, ChevronLeft } from "lucide-react"
+import { MapPin, Search, SlidersHorizontal, Star, ChevronDown, ChevronLeft, Filter } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import {
@@ -341,8 +341,7 @@ export function StoreHeader() {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="p-2 hover:bg-gray-100 rounded-full flex items-center gap-2">
-                        <SlidersHorizontal className="w-5 h-5" />
-                        <span className="text-sm">Filter</span>
+                        <Filter className="w-5 h-5" />
                         <ChevronDown className="w-4 h-4" />
                       </button>
                     </DropdownMenuTrigger>
