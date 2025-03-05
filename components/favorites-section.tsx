@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Star, MapPin, Trash2, ChevronLeft, Heart, ThumbsUp } from "lucide-react"
+import { MapPin, ChevronLeft, ThumbsUp } from "lucide-react"
 import { EmptyState } from "@/components/empty-state"
 import { BranchPage } from "@/components/branch-page"
 import { calculateDistance } from "@/utils/distance"
