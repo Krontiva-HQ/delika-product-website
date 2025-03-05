@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OTPInputModal } from "@/components/otp-input-modal"
+import { Eye, EyeOff } from "lucide-react"
 
 interface UserLocation {
   lat: string;
@@ -67,6 +68,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [showOTP, setShowOTP] = useState(false)
   const [authToken, setAuthToken] = useState("")
   const [userData, setUserData] = useState<UserData | null>(null)
@@ -216,13 +218,27 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Password</label>
-                <Input
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
               <Button 
                 type="submit" 
