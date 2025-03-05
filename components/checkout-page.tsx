@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ShoppingBag, Check, Plus, Minus, ArrowLeft, MapPin, Phone, User, FileText } from "lucide-react"
+import { ShoppingBag, Check, Plus, Minus, ArrowLeft, MapPin, Phone, User, FileText, ArrowRight } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { CartItem } from "@/types/cart"
@@ -662,15 +662,18 @@ export function CheckoutPage({
                       Processing...
                     </span>
                   ) : (
-                    <>
-                      <span className="flex items-center justify-center gap-2 group-hover:translate-y-[-100%] transition-transform duration-200">
+                    <div className="relative w-full h-full">
+                      <span className="absolute inset-0 flex items-center justify-center gap-2 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] transform group-hover:-translate-y-full">
                         <ShoppingBag className="h-5 w-5" />
                         Place Order • GH₵ {(cartTotal + deliveryFee).toFixed(2)}
                       </span>
-                      <span className="absolute inset-0 flex items-center justify-center gap-2 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
-                        Confirm Order →
+                      <span className="absolute inset-0 flex items-center justify-center gap-2 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] transform translate-y-full group-hover:translate-y-0">
+                        <span className="flex items-center gap-2">
+                          Confirm Order
+                          <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+                        </span>
                       </span>
-                    </>
+                    </div>
                   )}
                 </Button>
               </form>
