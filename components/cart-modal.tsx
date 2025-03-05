@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 import { CartItem } from "@/types/cart"
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"
-import { calculateDistance, calculateDeliveryFee } from "@/lib/distance"
+import { calculateDistance } from "@/lib/distance"
 
 interface CartModalProps {
   isOpen: boolean
@@ -44,32 +44,53 @@ export function CartModal({
   isAuthenticated,
   branchLocation
 }: CartModalProps) {
+  // Add the calculation function at the top of the component
+  const calculateDeliveryFee = (distance: number): number => {
+    if (distance <= 1) {
+      return 15; // Fixed fee for distances up to 1km
+    } else if (distance <= 2) {
+      return 20; // Fixed fee for distances between 1km and 2km
+    } else if (distance <= 10) {
+      // For distances > 2km and <= 10km: 17 cedis base price + 2.5 cedis per km beyond 2km
+      return 17 + ((distance - 2) * 2.5);
+    } else {
+      // For distances above 10km: 3.5 * distance + 20
+      return (3.5 * distance) + 20;
+    }
+  };
+
   const router = useRouter()
   const [isProcessingAuth, setIsProcessingAuth] = useState(false)
-  const [deliveryFee, setDeliveryFee] = useState(10) // Default fee
+  const [deliveryFee, setDeliveryFee] = useState(15) // Default to minimum fee
   const [distance, setDistance] = useState(0)
 
   useEffect(() => {
     const calculateFee = async () => {
       try {
         // Get user's location from localStorage
-        const locationData = localStorage.getItem('userLocation')
+        const locationData = localStorage.getItem('userLocationData')
         if (!locationData || !branchLocation) {
-          setDeliveryFee(10) // Default fee if no location data
+          setDeliveryFee(15) // Default to minimum fee if no location data
           return
         }
 
-        const userLocation = JSON.parse(locationData)
+        const { lat, lng } = JSON.parse(locationData)
+        
+        // Calculate distance between user and branch
         const distance = await calculateDistance(
-          { latitude: userLocation.latitude, longitude: userLocation.longitude },
+          { latitude: lat, longitude: lng },
           { latitude: branchLocation.latitude, longitude: branchLocation.longitude }
         )
         
         setDistance(distance)
-        setDeliveryFee(calculateDeliveryFee(distance))
+        const fee = calculateDeliveryFee(distance)
+        setDeliveryFee(fee)
+        
+        console.log('Distance:', distance, 'km')
+        console.log('Calculated fee:', fee, 'GH₵')
       } catch (error) {
         console.error('Error calculating delivery fee:', error)
-        setDeliveryFee(10) // Default fee on error
+        setDeliveryFee(15) // Default to minimum fee on error
       }
     }
 
@@ -218,11 +239,15 @@ export function CartModal({
                   <span className="font-medium">GH₵ {cartTotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">Delivery Fee</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600">Delivery Fee</span>
+                    {distance > 0 && (
+                      <span className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                        {distance.toFixed(1)}km
+                      </span>
+                    )}
+                  </div>
                   <span className="font-medium">GH₵ {deliveryFee.toFixed(2)}</span>
-                  {distance > 0 && (
-                    <span className="text-xs text-gray-500 ml-1">({distance.toFixed(1)}km)</span>
-                  )}
                 </div>
                 <div className="flex justify-between items-center pt-3 border-t">
                   <span className="font-medium">Total</span>
