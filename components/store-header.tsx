@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, Search, SlidersHorizontal, Star, ChevronDown, ChevronLeft, Filter } from "lucide-react"
+import { MapPin, Search, Star, ChevronDown, ChevronLeft, Filter } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import {
