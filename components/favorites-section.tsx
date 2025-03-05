@@ -22,11 +22,6 @@ interface Branch {
   }>
 }
 
-interface UserLocation {
-  lat: string;
-  long: string;
-}
-
 interface DeliveryAddress {
   fromAddress: string;
   fromLatitude: string;

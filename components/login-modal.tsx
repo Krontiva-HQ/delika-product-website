@@ -235,7 +235,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
                     Logging in...
                   </>
                 ) : (
-                  'Login with Email'
+                  "Login with Email"
                 )}
               </Button>
             </form>
@@ -263,14 +263,14 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
                     Logging in...
                   </>
                 ) : (
-                  'Login with Phone'
+                  "Login with Phone"
                 )}
               </Button>
             </form>
           </TabsContent>
         </Tabs>
         <div className="mt-4 text-center">
-          <span className="text-sm text-gray-600">Don't have an account? </span>
+          <span className="text-sm text-gray-600">Don&apos;t have an account? </span>
           <button
             onClick={onSwitchToSignup}
             className="text-sm font-medium text-orange-500 hover:text-orange-600"

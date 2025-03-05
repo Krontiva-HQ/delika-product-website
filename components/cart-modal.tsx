@@ -87,7 +87,7 @@ export function CartModal({
         router.push(`/checkout/${branchId}`)
       }
     }
-  }, [isOpen, branchId, isProcessingAuth])
+  }, [isOpen, branchId, isProcessingAuth, router])
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
@@ -238,7 +238,7 @@ export function CartModal({
               </Button>
               {!isAuthenticated && (
                 <p className="text-sm text-gray-500 text-center mt-2">
-                  You'll need to log in to complete your order
+                  You&apos;ll need to log in to complete your order
                 </p>
               )}
             </div>

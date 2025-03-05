@@ -35,6 +35,23 @@ interface BranchDetails {
   closeTime?: string
 }
 
+interface UserData {
+  id: string;
+  customerTable?: Array<{
+    id: string;
+    userId: string;
+    created_at: number;
+    deliveryAddress?: {
+      fromAddress: string;
+      fromLatitude: string;
+      fromLongitude: string;
+    };
+    favoriteRestaurants?: Array<{
+      branchName: string;
+    }>;
+  }>;
+}
+
 interface BranchPageProps {
   params: {
     id: string
@@ -59,7 +76,7 @@ export function BranchPage({ params }: BranchPageProps) {
   const [isCartModalOpen, setIsCartModalOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<UserData | null>(null)
 
   // Check authentication status on mount and when localStorage changes
   useEffect(() => {

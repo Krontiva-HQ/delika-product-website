@@ -160,7 +160,7 @@ export function CheckoutPage({
         }
 
         setBranchDetails(data);
-        // Update selected category if not already set
+        // Only set selected category if it's not already set
         if (!selectedCategory && data._menutable?.[0]) {
           setSelectedCategory(data._menutable[0].foodType);
         }
@@ -173,7 +173,7 @@ export function CheckoutPage({
     }
 
     fetchBranchDetails();
-  }, [branchId]);
+  }, [branchId, selectedCategory]);
 
   useEffect(() => {
     const calculateFee = async () => {
