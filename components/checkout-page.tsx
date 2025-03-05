@@ -179,23 +179,29 @@ export function CheckoutPage({
     const calculateFee = async () => {
       try {
         // Get user's location from localStorage
-        const locationData = localStorage.getItem('userLocation')
+        const locationData = localStorage.getItem('userLocationData')
         if (!locationData || !branchLocation) {
-          setDeliveryFee(10) // Default fee if no location data
+          setDeliveryFee(15) // Default to minimum fee if no location data
           return
         }
 
-        const userLocation = JSON.parse(locationData)
+        const { lat, lng } = JSON.parse(locationData)
+        
+        // Calculate distance between user and branch
         const distance = await calculateDistance(
-          { latitude: userLocation.latitude, longitude: userLocation.longitude },
+          { latitude: lat, longitude: lng },
           { latitude: branchLocation.latitude, longitude: branchLocation.longitude }
         )
         
         setDistance(distance)
-        setDeliveryFee(calculateDeliveryFee(distance))
+        const fee = calculateDeliveryFee(distance)
+        setDeliveryFee(fee)
+        
+        console.log('Distance:', distance, 'km')
+        console.log('Calculated fee:', fee, 'GH₵')
       } catch (error) {
         console.error('Error calculating delivery fee:', error)
-        setDeliveryFee(10) // Default fee on error
+        setDeliveryFee(15) // Default to minimum fee on error
       }
     }
 
@@ -302,32 +308,37 @@ export function CheckoutPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
       {/* Simplified Header */}
-      <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
+      <div className="bg-white border-b sticky top-0 z-10 shadow-sm backdrop-blur-lg bg-white/80">
         <div className="container mx-auto px-4 py-4 max-w-6xl">
           <div className="flex items-center justify-between">
             <button 
               onClick={onBackToCart}
-              className="flex items-center text-gray-600 hover:text-orange-500 font-medium transition-colors"
+              className="flex items-center text-gray-600 hover:text-orange-500 font-medium transition-colors group"
             >
-              <ArrowLeft className="mr-2 h-5 w-5" />
+              <ArrowLeft className="mr-2 h-5 w-5 transition-transform group-hover:-translate-x-1" />
               Back to Cart
             </button>
-            <h1 className="text-xl font-semibold text-gray-900">Checkout</h1>
-            <div className="w-24" /> {/* Spacer for balance */}
+            <h1 className="text-xl font-semibold text-gray-900">Complete Your Order</h1>
+            <div className="w-24" />
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Order Details */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-8">
             {/* Order Summary */}
-            <div className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Order Summary</h2>
+            <div className="bg-white rounded-3xl shadow-sm p-6 hover:shadow-md transition-all duration-300 border border-orange-100/50">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                    <ShoppingBag className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-900">Order Summary</h2>
+                </div>
                 <div className="text-right">
                   <h3 className="font-medium text-gray-900">{restaurantName || 'Restaurant'}</h3>
                   <p className="text-sm text-gray-500">
@@ -337,16 +348,17 @@ export function CheckoutPage({
               </div>
               
               {cart.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  Your cart is empty
+                <div className="text-center py-12 bg-gray-50 rounded-2xl">
+                  <ShoppingBag className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-500">Your cart is empty</p>
                 </div>
               ) : (
-                <div className="divide-y">
+                <div className="divide-y divide-gray-100">
                   {cart.map(item => (
-                    <div key={item.id} className="py-4 flex items-center justify-between">
+                    <div key={item.id} className="py-4 flex items-center justify-between group">
                       <div className="flex items-start gap-4">
                         {item.image && (
-                          <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                          <div className="relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 group-hover:shadow-md transition-shadow">
                             <Image
                               src={item.image}
                               alt={item.name}
@@ -356,11 +368,11 @@ export function CheckoutPage({
                           </div>
                         )}
                         <div>
-                          <div className="font-medium">{item.name}</div>
-                          <div className="text-sm text-gray-500">Quantity: {item.quantity}</div>
+                          <div className="font-medium text-gray-900">{item.name}</div>
+                          <div className="text-sm text-gray-500 mt-1">Quantity: {item.quantity}</div>
                         </div>
                       </div>
-                      <div className="font-medium">
+                      <div className="font-medium text-gray-900">
                         GH₵ {(parseFloat(item.price) * item.quantity).toFixed(2)}
                       </div>
                     </div>
@@ -368,40 +380,48 @@ export function CheckoutPage({
                 </div>
               )}
               
-              <div className="mt-6 pt-6 border-t space-y-3">
+              <div className="mt-6 pt-6 border-t border-dashed space-y-4">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
                   <span className="font-medium">GH₵ {cartTotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>Delivery Fee</span>
-                  <div className="flex items-center">
-                    <span className="font-medium">GH₵ {deliveryFee.toFixed(2)}</span>
-                    {distance > 0 && (
-                      <span className="text-xs text-gray-500 ml-2">({distance.toFixed(1)}km)</span>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <span>Delivery Fee</span>
+                    <div className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                      {distance > 0 ? `${distance.toFixed(1)}km` : 'Standard'}
+                    </div>
                   </div>
+                  <span className="font-medium">GH₵ {deliveryFee.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-lg font-semibold pt-3 border-t">
+                <div className="flex justify-between text-lg font-semibold pt-4 border-t">
                   <span>Total</span>
-                  <span>GH₵ {(cartTotal + deliveryFee).toFixed(2)}</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-sm text-gray-500">GH₵</span>
+                    <span className="text-2xl text-orange-600">{(cartTotal + deliveryFee).toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Add More Items Section */}
-            <div className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold">Add More Items</h2>
+            <div className="bg-white rounded-3xl shadow-sm p-6 hover:shadow-md transition-all duration-300 border border-orange-100/50">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                    <Plus className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <h2 className="text-xl font-semibold">Add More Items</h2>
+                </div>
                 {!isLoadingMenu && !menuError && (
-                  <div className="flex gap-2 overflow-x-auto py-1">
+                  <div className="flex gap-2 overflow-x-auto py-1 scrollbar-hide">
                     {branchDetails?._menutable?.map(category => (
                       <button
                         key={category.foodType}
                         onClick={() => setSelectedCategory(category.foodType)}
-                        className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
+                        className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
                           selectedCategory === category.foodType
-                            ? 'bg-orange-500 text-white'
+                            ? 'bg-orange-500 text-white shadow-md shadow-orange-200'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
@@ -413,12 +433,12 @@ export function CheckoutPage({
               </div>
               
               {isLoadingMenu ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin h-8 w-8 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <div className="text-center py-12">
+                  <div className="animate-spin h-10 w-10 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
                   <p className="text-gray-500">Loading menu items...</p>
                 </div>
               ) : menuError ? (
-                <div className="text-center py-8 text-red-500">{menuError}</div>
+                <div className="text-center py-12 text-red-500">{menuError}</div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {currentCategory?.foods.map(item => {
@@ -428,45 +448,47 @@ export function CheckoutPage({
                     return (
                       <div
                         key={item.name}
-                        className={`flex gap-4 p-4 rounded-xl border ${
-                          !item.available ? 'opacity-60 bg-gray-50' : 'hover:border-orange-200'
+                        className={`flex gap-4 p-4 rounded-2xl border group transition-all duration-300 ${
+                          !item.available 
+                            ? 'opacity-60 bg-gray-50' 
+                            : 'hover:border-orange-200 hover:shadow-sm hover:bg-orange-50/30'
                         }`}
                       >
-                        <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                        <div className="relative w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 group-hover:shadow-lg transition-shadow">
                           {item.foodImage?.url ? (
                             <Image
                               src={item.foodImage.url}
                               alt={item.name}
                               fill
-                              sizes="80px"
-                              className={`object-cover ${!item.available ? 'grayscale' : ''}`}
+                              sizes="96px"
+                              className={`object-cover ${!item.available ? 'grayscale' : ''} transition-transform group-hover:scale-110`}
                             />
                           ) : (
-                            <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
-                              <ShoppingBag className="w-6 h-6 text-gray-400" />
+                            <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center">
+                              <ShoppingBag className="w-8 h-8 text-gray-400" />
                             </div>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
-                          <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center justify-between mt-3">
                             <span className="font-medium text-gray-900">GH₵ {item.price}</span>
                             {item.available ? (
                               quantity > 0 ? (
-                                <div className="flex items-center gap-3 bg-gray-50 rounded-full p-1">
+                                <div className="flex items-center gap-3 bg-orange-100/50 rounded-full p-1">
                                   <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="h-7 w-7 rounded-full"
+                                    className="h-8 w-8 rounded-full hover:bg-orange-200/50"
                                     onClick={() => onRemoveItem(item.name)}
                                   >
                                     <Minus className="h-4 w-4" />
                                   </Button>
-                                  <span className="w-4 text-center font-medium">{quantity}</span>
+                                  <span className="w-6 text-center font-medium">{quantity}</span>
                                   <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="h-7 w-7 rounded-full"
+                                    className="h-8 w-8 rounded-full hover:bg-orange-200/50"
                                     onClick={() => onAddItem({
                                       id: item.name,
                                       name: item.name,
@@ -482,7 +504,7 @@ export function CheckoutPage({
                               ) : (
                                 <Button
                                   size="sm"
-                                  className="bg-orange-500 hover:bg-orange-600"
+                                  className="bg-orange-500 hover:bg-orange-600 shadow-sm hover:shadow-md transition-all"
                                   onClick={() => onAddItem({
                                     id: item.name,
                                     name: item.name,
@@ -496,7 +518,7 @@ export function CheckoutPage({
                                 </Button>
                               )
                             ) : (
-                              <span className="text-sm text-gray-500">Not Available</span>
+                              <span className="text-sm text-red-500 font-medium">Not Available</span>
                             )}
                           </div>
                         </div>
@@ -510,8 +532,13 @@ export function CheckoutPage({
 
           {/* Right Column - Delivery Information */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-36">
-              <h2 className="text-xl font-semibold mb-6 text-gray-900">Delivery Information</h2>
+            <div className="bg-white rounded-3xl shadow-sm p-6 sticky top-36 border border-orange-100/50">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-orange-600" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">Delivery Details</h2>
+              </div>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">
@@ -531,12 +558,12 @@ export function CheckoutPage({
                     aria-invalid={!!formErrors.name}
                     className={`${
                       formErrors.name 
-                        ? "border-red-500 focus:ring-red-500" 
-                        : "focus:ring-orange-500 focus:border-orange-500"
-                    } h-11 transition-colors`}
+                        ? "border-red-300 focus:ring-red-500 bg-red-50" 
+                        : "focus:ring-orange-500 focus:border-orange-500 hover:border-orange-300"
+                    } h-12 rounded-xl transition-colors`}
                   />
                   {formErrors.name && (
-                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                    <p className="text-red-500 text-sm mt-1.5 flex items-center gap-1">
                       <span className="inline-block w-1 h-1 rounded-full bg-red-500 mr-1" />
                       {formErrors.name}
                     </p>
@@ -563,12 +590,12 @@ export function CheckoutPage({
                     aria-invalid={!!formErrors.phone}
                     className={`${
                       formErrors.phone 
-                        ? "border-red-500 focus:ring-red-500" 
-                        : "focus:ring-orange-500 focus:border-orange-500"
-                    } h-11 transition-colors`}
+                        ? "border-red-300 focus:ring-red-500 bg-red-50" 
+                        : "focus:ring-orange-500 focus:border-orange-500 hover:border-orange-300"
+                    } h-12 rounded-xl transition-colors`}
                   />
                   {formErrors.phone && (
-                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                    <p className="text-red-500 text-sm mt-1.5 flex items-center gap-1">
                       <span className="inline-block w-1 h-1 rounded-full bg-red-500 mr-1" />
                       {formErrors.phone}
                     </p>
@@ -592,18 +619,18 @@ export function CheckoutPage({
                       aria-invalid={!!formErrors.address}
                       className={`${
                         formErrors.address 
-                          ? "border-red-500" 
-                          : "border-gray-200"
-                      } bg-gray-50 cursor-not-allowed h-11`}
+                          ? "border-red-300 bg-red-50" 
+                          : "border-gray-200 bg-gray-50"
+                      } h-12 rounded-xl cursor-not-allowed`}
                     />
                   </div>
                   {formErrors.address && (
-                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                    <p className="text-red-500 text-sm mt-1.5 flex items-center gap-1">
                       <span className="inline-block w-1 h-1 rounded-full bg-red-500 mr-1" />
                       {formErrors.address}
                     </p>
                   )}
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm text-gray-500 mt-2 italic">
                     To change delivery address, please select a different location from the main page
                   </p>
                 </div>
@@ -620,13 +647,13 @@ export function CheckoutPage({
                     value={customerInfo.notes}
                     onChange={handleChange}
                     placeholder="Any special instructions for delivery"
-                    className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm min-h-[100px] resize-none focus:border-orange-500 focus:ring-orange-500 transition-colors"
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm min-h-[100px] resize-none focus:border-orange-500 focus:ring-orange-500 hover:border-orange-300 transition-colors"
                   />
                 </div>
 
                 <Button 
                   type="submit"
-                  className="w-full bg-orange-500 hover:bg-orange-600 h-12 text-base font-medium transition-colors relative overflow-hidden group"
+                  className="w-full bg-orange-500 hover:bg-orange-600 h-14 text-base font-medium transition-all relative overflow-hidden group rounded-xl shadow-orange-200/50 shadow-lg hover:shadow-xl"
                   disabled={isSubmitting || cart.length === 0}
                 >
                   {isSubmitting ? (
