@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ShoppingBag, Check, Plus, Minus, ArrowLeft, MapPin, Phone, User, FileText, ArrowRight } from "lucide-react"
 import Image from "next/image"
-import Link from "next/link"
 import { CartItem } from "@/types/cart"
 import { calculateDistance, calculateDeliveryFee } from "@/lib/distance"
 import { OrderFeedback } from "@/components/order-feedback"
@@ -73,9 +72,6 @@ export function CheckoutPage({
     notes: "",
     rating: 0
   })
-  const [feedback, setFeedback] = useState("")
-  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const [formErrors, setFormErrors] = useState<Partial<CustomerInfo>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -289,39 +285,6 @@ export function CheckoutPage({
   const currentCategory = branchDetails?._menutable?.find(
     cat => cat.foodType === selectedCategory
   );
-
-  const handleRatingClick = (rating: number) => {
-    setCustomerInfo(prev => ({ ...prev, rating }))
-  }
-
-  const handleFeedbackChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setFeedback(e.target.value)
-  }
-
-  const handleSubmitFeedback = async () => {
-    setIsSubmittingFeedback(true)
-    try {
-      // TODO: Replace with your actual API endpoint
-      await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/feedback/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          rating: customerInfo.rating,
-          feedback,
-          orderId: '', // Add order ID if available
-          branchId,
-          customerPhone: customerInfo.phone
-        }),
-      })
-      setFeedbackSubmitted(true)
-    } catch (error) {
-      console.error('Error submitting feedback:', error)
-    } finally {
-      setIsSubmittingFeedback(false)
-    }
-  }
 
   const formatOrderForWhatsApp = () => {
     const items = cart.map(item => 
