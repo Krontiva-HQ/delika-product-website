@@ -8,6 +8,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { CartItem } from "@/types/cart"
 import { calculateDistance, calculateDeliveryFee } from "@/lib/distance"
+import { OrderFeedback } from "@/components/order-feedback"
 
 interface CheckoutPageProps {
   cart: CartItem[]
@@ -25,6 +26,7 @@ interface CheckoutPageProps {
   branchCity: string
   onBackToCart: () => void
   branchLocation?: { latitude: number; longitude: number }
+  branchPhone: string
 }
 
 interface CustomerInfo {
@@ -32,6 +34,7 @@ interface CustomerInfo {
   phone: string
   address: string
   notes: string
+  rating?: number
 }
 
 interface BranchDetails {
@@ -60,14 +63,19 @@ export function CheckoutPage({
   restaurantName,
   branchCity,
   onBackToCart,
-  branchLocation
+  branchLocation,
+  branchPhone
 }: CheckoutPageProps) {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: "",
     phone: "",
     address: "",
-    notes: ""
+    notes: "",
+    rating: 0
   })
+  const [feedback, setFeedback] = useState("")
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const [formErrors, setFormErrors] = useState<Partial<CustomerInfo>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -79,6 +87,7 @@ export function CheckoutPage({
   const [menuError, setMenuError] = useState<string | null>(null);
   const [deliveryFee, setDeliveryFee] = useState(10) // Default fee
   const [distance, setDistance] = useState(0)
+  const [showFeedback, setShowFeedback] = useState(false)
 
   useEffect(() => {
     console.log('Loading customer info and location...');
@@ -274,11 +283,6 @@ export function CheckoutPage({
       onSubmitOrder(customerInfo)
       setIsSubmitting(false)
       setIsSuccess(true)
-      
-      // Reset form after success
-      setTimeout(() => {
-        setIsSuccess(false)
-      }, 3000)
     }, 1500)
   }
 
@@ -286,21 +290,104 @@ export function CheckoutPage({
     cat => cat.foodType === selectedCategory
   );
 
+  const handleRatingClick = (rating: number) => {
+    setCustomerInfo(prev => ({ ...prev, rating }))
+  }
+
+  const handleFeedbackChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFeedback(e.target.value)
+  }
+
+  const handleSubmitFeedback = async () => {
+    setIsSubmittingFeedback(true)
+    try {
+      // TODO: Replace with your actual API endpoint
+      await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/feedback/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rating: customerInfo.rating,
+          feedback,
+          orderId: '', // Add order ID if available
+          branchId,
+          customerPhone: customerInfo.phone
+        }),
+      })
+      setFeedbackSubmitted(true)
+    } catch (error) {
+      console.error('Error submitting feedback:', error)
+    } finally {
+      setIsSubmittingFeedback(false)
+    }
+  }
+
+  const formatOrderForWhatsApp = () => {
+    const items = cart.map(item => 
+      `• ${item.name} x${item.quantity} - GH₵${(parseFloat(item.price) * item.quantity).toFixed(2)}`
+    ).join('\n')
+
+    return `🛍️ *New Order from ${customerInfo.name}*
+📍 Delivery to: ${customerInfo.address}
+📱 Phone: ${customerInfo.phone}
+${customerInfo.notes ? `📝 Notes: ${customerInfo.notes}\n` : ''}
+*Order Details:*
+${items}
+
+*Summary:*
+Subtotal: GH₵${cartTotal.toFixed(2)}
+Delivery Fee: GH₵${deliveryFee.toFixed(2)}
+*Total: GH₵${(cartTotal + deliveryFee).toFixed(2)}*`
+  }
+
+  const handleWhatsAppClick = () => {
+    const message = encodeURIComponent(formatOrderForWhatsApp())
+    const whatsappUrl = `https://wa.me/233${branchPhone}?text=${message}`
+    window.open(whatsappUrl, '_blank')
+    setShowFeedback(true)
+  }
+
   if (isSuccess) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8">
           <div className="text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Check className="h-10 w-10 text-green-600" />
-            </div>
-            <h3 className="text-2xl font-semibold text-gray-900 mb-3">Order Placed Successfully!</h3>
-            <p className="text-gray-600 mb-8">Your order receipt has been sent to your phone.</p>
-            <Link href={`/branch/${branchId}`}>
-              <Button className="bg-orange-500 hover:bg-orange-600 h-12 px-8 font-medium">
-                Return to Restaurant
-              </Button>
-            </Link>
+            {!showFeedback ? (
+              <>
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Check className="h-10 w-10 text-green-600" />
+                </div>
+                <h3 className="text-2xl font-semibold text-gray-900 mb-3">Order Created Successfully!</h3>
+                <p className="text-gray-600 mb-8">Complete your order by confirming on WhatsApp</p>
+                
+                <div className="space-y-4">
+                  <div className="bg-gray-50 rounded-xl p-4 text-left">
+                    <h4 className="font-medium text-gray-900 mb-2">Next Steps:</h4>
+                    <ol className="list-decimal list-inside space-y-2 text-gray-600">
+                      <li>Click the WhatsApp button below</li>
+                      <li>Review your order details</li>
+                      <li>Confirm your order on WhatsApp</li>
+                      <li>Wait for delivery updates</li>
+                    </ol>
+                  </div>
+                  
+                  <Button 
+                    onClick={handleWhatsAppClick}
+                    className="w-full bg-[#25D366] hover:bg-[#1ea952] h-12 gap-2 text-base"
+                  >
+                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"/>
+                    </svg>
+                    Continue on WhatsApp
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="border-t pt-8 mt-8">
+                <OrderFeedback branchId={branchId} customerPhone={customerInfo.phone} />
+              </div>
+            )}
           </div>
         </div>
       </div>

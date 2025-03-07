@@ -20,9 +20,9 @@ export function LocationModal({ isOpen, onClose, onLocationSelect }: LocationMod
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]" aria-describedby="location-modal-description">
         <DialogHeader>
-          <DialogTitle>Select Location</DialogTitle>
+          <DialogTitle>Set Delivery Location</DialogTitle>
           <DialogDescription id="location-modal-description">
-            Choose your delivery location to see available restaurants in your area.
+            Enter your delivery address to find restaurants that deliver to your location. This helps us show you available restaurants and calculate delivery fees accurately.
           </DialogDescription>
         </DialogHeader>
         <GooglePlacesAutocomplete onPlaceSelect={handleSelect} />

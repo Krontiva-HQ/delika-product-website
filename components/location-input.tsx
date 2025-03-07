@@ -128,7 +128,7 @@ const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, 
             <label className="block text-[14px] leading-[22px] font-sans text-black mb-2">{label}</label>
             <div className="relative w-full" style={{ width: '100%' }}>
                 <input
-                    placeholder={`Enter ${label.toLowerCase()} location`}
+                    placeholder={`Enter delivery ${label.toLowerCase()} location`}
                     value={address}
                     onChange={handleInputChange}
                     disabled={disabled}

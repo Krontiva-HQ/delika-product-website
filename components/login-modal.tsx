@@ -7,6 +7,7 @@ import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OTPInputModal } from "@/components/otp-input-modal"
 import { Eye, EyeOff } from "lucide-react"
+import { ForgotPasswordModal } from "@/components/forgot-password-modal"
 
 interface UserLocation {
   lat: string;
@@ -70,6 +71,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [showOTP, setShowOTP] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [authToken, setAuthToken] = useState("")
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email')
@@ -204,6 +206,16 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
     )
   }
 
+  if (showForgotPassword) {
+    return (
+      <ForgotPasswordModal
+        isOpen={true}
+        onClose={() => setShowForgotPassword(false)}
+        onBackToLogin={() => setShowForgotPassword(false)}
+      />
+    )
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[400px]">
@@ -263,6 +275,15 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
                     )}
                   </button>
                 </div>
+              </div>
+              <div className="flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-orange-500 hover:text-orange-600 transition-colors"
+                >
+                  Forgot Password?
+                </button>
               </div>
               <Button 
                 type="submit" 

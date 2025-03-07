@@ -132,9 +132,9 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
         aria-describedby="location-search-description"
       >
         <DialogHeader>
-          <DialogTitle>Select your location</DialogTitle>
+          <DialogTitle>Set Your Delivery Location</DialogTitle>
           <DialogDescription id="location-search-description">
-            Enter your address or use your current location to find restaurants near you.
+            Enter your delivery address or use your current location to find restaurants that deliver to you.
           </DialogDescription>
         </DialogHeader>
         
@@ -149,14 +149,14 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
               disabled={isLoading || !mapsLoaded}
             >
               <Crosshair className="w-4 h-4" />
-              {isLoading ? "Getting location..." : "Use current location"}
+              {isLoading ? "Getting delivery location..." : "Use current location for delivery"}
             </Button>
 
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search for your location"
+                placeholder="Search for your delivery location"
                 className="pl-10"
                 value={searchValue}
                 onChange={(e) => {
