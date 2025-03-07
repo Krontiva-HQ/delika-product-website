@@ -11,7 +11,7 @@ export default function CourierSignup() {
         <div className="min-h-screen flex">
           <div className="flex-1 relative hidden md:block">
             <Image 
-              src="/main-cta.jpg" 
+              src="/courier-image.jpg" 
               alt="Courier on bike" 
               fill 
               className="object-cover"
