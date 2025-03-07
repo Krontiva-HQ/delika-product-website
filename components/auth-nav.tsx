@@ -117,9 +117,11 @@ export function AuthNav({
     setIsLogoutModalOpen(true);
   };
 
-  const handleConfirmLogout = () => {
+  const handleConfirmLogout = async () => {
     setIsLogoutModalOpen(false);
-    onLogout();
+    await onLogout();
+    // Refresh the page after logout
+    window.location.reload();
   };
 
   return (

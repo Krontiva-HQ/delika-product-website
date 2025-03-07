@@ -111,6 +111,7 @@ export function StoreHeader() {
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null)
   const [user, setUser] = useState<UserData | null>(null)
   const [userCoordinates, setUserCoordinates] = useState<{lat: number, lng: number} | null>(null)
+  const [likedBranches, setLikedBranches] = useState<Set<string>>(new Set())
 
   useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -200,9 +201,11 @@ export function StoreHeader() {
     // Check if user is logged in
     const token = localStorage.getItem('authToken')
     if (token) {
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}')
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}') as UserData
       if (userData.id) {
         setUser(userData)
+        // Fetch latest favorites data
+        fetchUserFavorites(userData.id);
       }
     }
   }, [])
@@ -270,16 +273,81 @@ export function StoreHeader() {
     localStorage.removeItem('currentView')
   }
 
+  // Add function to fetch user favorites
+  const fetchUserFavorites = async (userId: string) => {
+    try {
+      const response = await fetch(`https://api-server.krontiva.africa/api:uEBBwbSs/get/customer/details?userId=${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (response.ok) {
+        const customerData = await response.json();
+        if (customerData.favoriteRestaurants) {
+          const favorites = new Set<string>(
+            customerData.favoriteRestaurants.map((fav: FavoriteRestaurant) => fav.branchName)
+          );
+          setLikedBranches(favorites);
+          localStorage.setItem('filteredFavoritesCount', favorites.size.toString());
+        }
+      } else {
+        console.error('Failed to fetch user favorites');
+      }
+    } catch (error) {
+      console.error('Error fetching user favorites:', error);
+    }
+  };
+
   const handleLoginSuccess = (userData: UserData) => {
     setUser(userData)
     localStorage.setItem('userData', JSON.stringify(userData))
+    
+    // Fetch latest favorites after login
+    fetchUserFavorites(userData.id);
   }
 
-  const handleLogout = () => {
-    setUser(null)
-    localStorage.removeItem('authToken')
-    localStorage.removeItem('userData')
-    setCurrentView('stores')
+  const handleLogout = async () => {
+    try {
+      // First reset all modals
+      setIsLoginModalOpen(false)
+      setIsSignupModalOpen(false)
+
+      // Clear user data
+      setUser(null)
+      
+      // Clear favorites data
+      setLikedBranches(new Set())
+      localStorage.removeItem('filteredFavoritesCount')
+      
+      // Clear auth data
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('userData')
+      
+      // Reset view and navigation
+      setCurrentView('stores')
+      setSelectedBranchId(null)
+      localStorage.removeItem('selectedBranchId')
+      localStorage.removeItem('currentView')
+
+      // Small delay to ensure state updates are processed
+      await new Promise(resolve => setTimeout(resolve, 100));
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  }
+
+  const handleLoginClick = () => {
+    // Ensure modals are in correct state before opening
+    setIsSignupModalOpen(false)
+    setIsLoginModalOpen(true)
+  }
+
+  const handleSignupClick = () => {
+    // Ensure modals are in correct state before opening
+    setIsLoginModalOpen(false)
+    setIsSignupModalOpen(true)
   }
 
   const handleHomeClick = () => {
@@ -288,6 +356,51 @@ export function StoreHeader() {
     localStorage.removeItem('selectedBranchId')
     localStorage.removeItem('currentView')
   }
+
+  // Update handleLikeToggle to refresh favorites after toggling
+  const handleLikeToggle = async (branchName: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent branch selection when clicking like
+
+    if (!user) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+
+    const isCurrentlyLiked = likedBranches.has(branchName);
+    
+    try {
+      const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/customer/favorites/add/remove/restaurant', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          branchName: branchName,
+          liked: !isCurrentlyLiked
+        })
+      });
+
+      if (response.ok) {
+        // Update local state temporarily
+        const newLikedBranches = new Set(likedBranches);
+        if (isCurrentlyLiked) {
+          newLikedBranches.delete(branchName);
+        } else {
+          newLikedBranches.add(branchName);
+        }
+        setLikedBranches(newLikedBranches);
+        localStorage.setItem('filteredFavoritesCount', newLikedBranches.size.toString());
+
+        // Fetch latest favorites to ensure sync with server
+        await fetchUserFavorites(user.id);
+      } else {
+        console.error('Failed to update favorite status');
+      }
+    } catch (error) {
+      console.error('Error updating favorite status:', error);
+    }
+  };
 
   const renderContent = () => {
     switch (currentView) {
@@ -372,13 +485,14 @@ export function StoreHeader() {
                       className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer"
                     >
                       <button 
-                        className="absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-400 hover:text-orange-500 hover:bg-white transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent branch selection when clicking like
-                          // TODO: Implement add to favorites functionality
-                        }}
+                        className={`absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-colors ${
+                          likedBranches.has(branch.id) 
+                            ? 'text-orange-500' 
+                            : 'text-gray-400 hover:text-orange-500 hover:bg-white'
+                        }`}
+                        onClick={(e) => handleLikeToggle(branch.id, e)}
                       >
-                        <ThumbsUp className="w-5 h-5" />
+                        <ThumbsUp className={`w-5 h-5 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
                       </button>
                       <div className="relative h-36">
                         <Image
@@ -422,8 +536,8 @@ export function StoreHeader() {
         userData={user}
         onViewChange={setCurrentView}
         currentView={currentView}
-        onLoginClick={() => setIsLoginModalOpen(true)}
-        onSignupClick={() => setIsSignupModalOpen(true)}
+        onLoginClick={handleLoginClick}
+        onSignupClick={handleSignupClick}
         onLogout={handleLogout}
         onHomeClick={handleHomeClick}
       />

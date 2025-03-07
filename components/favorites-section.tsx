@@ -93,7 +93,32 @@ export function FavoritesSection() {
 
         // Get user data from localStorage
         const userData = JSON.parse(localStorage.getItem('userData') || '{}') as UserData;
-        const favoriteIds = userData.customerTable?.[0]?.favoriteRestaurants.map(fav => fav.branchName) || [];
+        
+        if (!userData.id) {
+          if (isMounted) {
+            setFavoriteBranches([]);
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        // Fetch user's favorites from new endpoint
+        const customerResponse = await fetch(
+          `https://api-server.krontiva.africa/api:uEBBwbSs/get/customer/details?userId=${userData.id}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          }
+        );
+
+        if (!customerResponse.ok) {
+          throw new Error(`HTTP error! status: ${customerResponse.status}`);
+        }
+
+        const customerData = await customerResponse.json();
+        const favoriteIds = customerData.favoriteRestaurants?.map((fav: FavoriteRestaurant) => fav.branchName) || [];
 
         if (favoriteIds.length === 0) {
           if (isMounted) {
@@ -104,21 +129,15 @@ export function FavoritesSection() {
         }
 
         // Fetch all branches
-        const response = await fetch(
-          'https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_branches_table',
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
+        const branchesResponse = await fetch(
+          'https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_branches_table'
         );
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        if (!branchesResponse.ok) {
+          throw new Error(`HTTP error! status: ${branchesResponse.status}`);
         }
 
-        const allBranches = await response.json();
+        const allBranches = await branchesResponse.json();
         
         // Filter branches to only include favorites
         let userFavorites = allBranches.filter((branch: Branch) => 
