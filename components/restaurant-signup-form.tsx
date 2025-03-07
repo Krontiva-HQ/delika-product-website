@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import LocationInput from './location-input'
-import { LocationData } from './location'
+import { DeliveryLocationData } from './location'
 
 const formSchema = z.object({
   business_name: z.string().min(2, "Business name must be at least 2 characters"),
@@ -41,7 +41,7 @@ const formSchema = z.object({
 export function RestaurantSignupForm() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [locationData, setLocationData] = useState<LocationData | undefined>(undefined)
+  const [locationData, setLocationData] = useState<DeliveryLocationData | undefined>(undefined)
   const [branchData, setBranchData] = useState<{ 
     name: string, 
     phone_number: string,
@@ -124,7 +124,7 @@ export function RestaurantSignupForm() {
     }
   }
 
-  const handleLocationSelect = (location: LocationData) => {
+  const handleLocationSelect = (location: DeliveryLocationData) => {
     setLocationData(location)
     form.setValue('address', location.address)
   }

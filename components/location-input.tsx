@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LocationData } from '@/components/location';
+import { DeliveryLocationData } from '@/components/location';
 import { loadGoogleMaps } from "@/lib/google-maps"
 
 interface LocationInputProps {
     label: string;
-    onLocationSelect: (location: LocationData) => void;
-    prefillData?: LocationData;
+    onLocationSelect: (location: DeliveryLocationData) => void;
+    prefillData?: DeliveryLocationData;
     disabled?: boolean;
 }
 
@@ -104,7 +104,7 @@ const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, 
                 { placeId: place.place_id },
                 (result, status) => {
                     if (status === google.maps.places.PlacesServiceStatus.OK && result) {
-                        const locationData: LocationData = {
+                        const locationData: DeliveryLocationData = {
                             longitude: result.geometry?.location?.lng() || 0,
                             latitude: result.geometry?.location?.lat() || 0,
                             name: result.name || '',
