@@ -21,6 +21,7 @@ interface BranchDetails {
   branchName: string
   branchLocation: string
   branchCity?: string
+  branchPhoneNumber: string
   _menutable: MenuCategory[]
   restaurant?: Array<{
     restaurantName: string
@@ -143,6 +144,7 @@ export default function CheckoutRoute({ params }: { params: Promise<{ branchId: 
       restaurantName={branch.restaurant?.[0]?.restaurantName || ''}
       branchCity={branch.branchCity || ''}
       onBackToCart={() => router.push('/shop')}
+      branchPhone={branch.branchPhoneNumber || ''}
     />
   )
 } 
