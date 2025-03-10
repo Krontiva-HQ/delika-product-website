@@ -360,15 +360,30 @@ export function StoreHeader() {
   // Update handleLikeToggle to refresh favorites after toggling
   const handleLikeToggle = async (branchName: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent branch selection when clicking like
+    e.preventDefault(); // Prevent any default behavior
 
     if (!user) {
       setIsLoginModalOpen(true);
       return;
     }
 
+    const targetButton = e.currentTarget as HTMLButtonElement;
     const isCurrentlyLiked = likedBranches.has(branchName);
     
+    // Provide immediate visual feedback
+    targetButton.classList.add(isCurrentlyLiked ? 'animate-unliked' : 'animate-liked');
+    
     try {
+      // Optimistically update UI
+      const newLikedBranches = new Set(likedBranches);
+      if (isCurrentlyLiked) {
+        newLikedBranches.delete(branchName);
+      } else {
+        newLikedBranches.add(branchName);
+      }
+      setLikedBranches(newLikedBranches);
+      localStorage.setItem('filteredFavoritesCount', newLikedBranches.size.toString());
+      
       const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/customer/favorites/add/remove/restaurant', {
         method: 'PATCH',
         headers: {
@@ -382,23 +397,26 @@ export function StoreHeader() {
       });
 
       if (response.ok) {
-        // Update local state temporarily
-        const newLikedBranches = new Set(likedBranches);
-        if (isCurrentlyLiked) {
-          newLikedBranches.delete(branchName);
-        } else {
-          newLikedBranches.add(branchName);
-        }
-        setLikedBranches(newLikedBranches);
-        localStorage.setItem('filteredFavoritesCount', newLikedBranches.size.toString());
-
         // Fetch latest favorites to ensure sync with server
         await fetchUserFavorites(user.id);
       } else {
         console.error('Failed to update favorite status');
+        // Revert UI if API failed
+        const revertedLikedBranches = new Set(likedBranches);
+        setLikedBranches(revertedLikedBranches);
+        localStorage.setItem('filteredFavoritesCount', revertedLikedBranches.size.toString());
       }
     } catch (error) {
       console.error('Error updating favorite status:', error);
+      // Revert UI if error occurred
+      const revertedLikedBranches = new Set(likedBranches);
+      setLikedBranches(revertedLikedBranches);
+      localStorage.setItem('filteredFavoritesCount', revertedLikedBranches.size.toString());
+    } finally {
+      // Remove animation class after animation completes
+      setTimeout(() => {
+        targetButton.classList.remove('animate-liked', 'animate-unliked');
+      }, 300);
     }
   };
 
@@ -485,14 +503,15 @@ export function StoreHeader() {
                       className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer"
                     >
                       <button 
-                        className={`absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-colors ${
+                        className={`absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
                           likedBranches.has(branch.id) 
-                            ? 'text-orange-500' 
-                            : 'text-gray-400 hover:text-orange-500 hover:bg-white'
+                            ? 'text-orange-500 scale-110 hover:scale-105' 
+                            : 'text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105'
                         }`}
                         onClick={(e) => handleLikeToggle(branch.id, e)}
+                        aria-label={likedBranches.has(branch.id) ? "Unlike restaurant" : "Like restaurant"}
                       >
-                        <ThumbsUp className={`w-5 h-5 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
+                        <ThumbsUp className={`w-5 h-5 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
                       </button>
                       <div className="relative h-36">
                         <Image
