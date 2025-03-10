@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, Search, ChevronDown, ChevronLeft, Filter, ThumbsUp } from "lucide-react"
+import { MapPin, Search, ChevronDown, ChevronLeft, Filter, ThumbsUp, Heart } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import {
@@ -511,7 +511,7 @@ export function StoreHeader() {
                         onClick={(e) => handleLikeToggle(branch.id, e)}
                         aria-label={likedBranches.has(branch.id) ? "Unlike restaurant" : "Like restaurant"}
                       >
-                        <ThumbsUp className={`w-5 h-5 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
+                        <Heart className={`w-5 h-5 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
                       </button>
                       <div className="relative h-36">
                         <Image
