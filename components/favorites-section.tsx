@@ -104,7 +104,7 @@ export function FavoritesSection() {
 
         // Fetch user's favorites from new endpoint
         const customerResponse = await fetch(
-          `https://api-server.krontiva.africa/api:uEBBwbSs/get/customer/details?userId=${userData.id}`,
+          `${process.env.NEXT_PUBLIC_CUSTOMER_DETAILS_API}?userId=${userData.id}`,
           {
             method: 'GET',
             headers: {
@@ -129,9 +129,7 @@ export function FavoritesSection() {
         }
 
         // Fetch all branches
-        const branchesResponse = await fetch(
-          'https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_branches_table'
-        );
+        const branchesResponse = await fetch(process.env.NEXT_PUBLIC_BRANCHES_API!);
 
         if (!branchesResponse.ok) {
           throw new Error(`HTTP error! status: ${branchesResponse.status}`);

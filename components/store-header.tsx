@@ -121,7 +121,7 @@ export function StoreHeader() {
   useEffect(() => {
     async function fetchBranches() {
       try {
-        const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_branches_table')
+        const response = await fetch(process.env.NEXT_PUBLIC_BRANCHES_API!)
         const data = await response.json()
         setBranches(data)
       } catch (error) {
@@ -276,7 +276,7 @@ export function StoreHeader() {
   // Add function to fetch user favorites
   const fetchUserFavorites = async (userId: string) => {
     try {
-      const response = await fetch(`https://api-server.krontiva.africa/api:uEBBwbSs/get/customer/details?userId=${userId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_CUSTOMER_DETAILS_API}?userId=${userId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -384,7 +384,7 @@ export function StoreHeader() {
       setLikedBranches(newLikedBranches);
       localStorage.setItem('filteredFavoritesCount', newLikedBranches.size.toString());
       
-      const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/customer/favorites/add/remove/restaurant', {
+      const response = await fetch(process.env.NEXT_PUBLIC_FAVORITES_API!, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -436,7 +436,16 @@ export function StoreHeader() {
           </div>
         )
       case 'orders':
-        return <div>Orders content here</div>
+        return (
+          <div className="container mx-auto px-4 py-8">
+            <h1 className="text-2xl font-bold mb-6">Your Orders</h1>
+            <EmptyState
+              title="No orders yet"
+              description="When you place orders, they will appear here. Start ordering from your favorite restaurants!"
+              icon="shopping-bag"
+            />
+          </div>
+        )
       case 'favorites':
         return <FavoritesSection />
       case 'profile':
