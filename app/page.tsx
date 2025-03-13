@@ -13,7 +13,7 @@ export default function Home() {
       <SiteHeader />
       <main className="relative">
         <HeroSection />
-        <BrandBanner />
+       {/* <BrandBanner /> */}
         <NewFeature />
         <MoreFeatures />
         <MainCTA />
