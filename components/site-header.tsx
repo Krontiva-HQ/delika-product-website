@@ -21,9 +21,13 @@ export function SiteHeader() {
         {/* Logo */}
         <Link 
           href="/" 
-          className="relative z-20 flex items-center font-bold text-xl md:text-2xl text-orange-500 hover:text-orange-600 transition-colors"
+          className="relative z-20 flex items-center"
         >
-          Delika
+          <img
+            src="/Delika-Logo.png"
+            alt="Delika Logo"
+            className="h-8 w-auto"
+          />
         </Link>
 
         {/* Desktop Navigation */}
