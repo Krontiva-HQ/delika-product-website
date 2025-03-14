@@ -1,3 +1,5 @@
+# Delika Product Website
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
@@ -34,3 +36,59 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## API Usage
+
+This project uses Next.js API routes to securely communicate with external APIs without exposing sensitive URLs on the client side.
+
+### Environment Variables
+
+The project uses environment variables defined in `.env.local` for API endpoints. These are accessed server-side to prevent exposure in the client-side code.
+
+### Making API Calls
+
+Use the utility functions in `lib/api.js` to make API calls:
+
+```javascript
+import { 
+  apiGet, 
+  apiPost, 
+  login, 
+  getBranches, 
+  getCustomerDetails, 
+  updateFavorites,
+  submitRestaurantApproval,
+  submitRiderApproval
+} from '@/lib/api';
+
+// For authentication
+const loginResponse = await login({ email: 'user@example.com', password: 'password' });
+
+// For branches data
+const branches = await getBranches();
+
+// For customer details
+const customerDetails = await getCustomerDetails('customer-id');
+
+// For updating favorites
+const favoritesResponse = await updateFavorites({ 
+  customerId: 'customer-id', 
+  restaurantId: 'restaurant-id' 
+});
+
+// For restaurant approval
+const restaurantResponse = await submitRestaurantApproval({
+  // restaurant data
+});
+
+// For rider approval
+const riderResponse = await submitRiderApproval({
+  // rider data
+});
+
+// For generic API calls
+const data = await apiGet('/some-endpoint');
+const result = await apiPost('/some-endpoint', { key: 'value' });
+```
+
+This approach keeps your API URLs hidden from the client side while still allowing your application to communicate with your API.
