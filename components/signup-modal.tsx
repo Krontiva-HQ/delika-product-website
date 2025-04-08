@@ -7,55 +7,7 @@ import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OTPInputModal } from "@/components/otp-input-modal"
 import { Eye, EyeOff } from "lucide-react"
-
-interface UserLocation {
-  lat: string;
-  long: string;
-}
-
-interface DeliveryAddress {
-  fromAddress: string;
-  fromLatitude: string;
-  fromLongitude: string;
-}
-
-interface FavoriteRestaurant {
-  branchName: string;
-}
-
-interface CustomerTable {
-  id: string;
-  userId: string;
-  created_at: number;
-  deliveryAddress: DeliveryAddress;
-  favoriteRestaurants: FavoriteRestaurant[];
-}
-
-interface UserData {
-  id: string;
-  OTP: string;
-  city: string;
-  role: string;
-  email: string;
-  image: string | null;
-  Status: boolean;
-  onTrip: boolean;
-  address: string;
-  country: string;
-  Location: UserLocation;
-  branchId: string | null;
-  deviceId: string;
-  fullName: string;
-  userName: string;
-  tripCount: number;
-  created_at: number;
-  postalCode: string;
-  addressFrom: string[];
-  dateOfBirth: string | null;
-  phoneNumber: string;
-  restaurantId: string | null;
-  customerTable: CustomerTable[];
-}
+import { authRequest, AuthResponse, OTPResponse, UserData } from "@/lib/api"
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -91,32 +43,25 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
       setSignupMethod(isEmailMode ? 'email' : 'phone')
 
       const endpoint = isEmailMode
-        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/register'
-        : 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/register/phoneNumber/customer'
+        ? 'register'
+        : 'register/phoneNumber/customer'
 
       const payload = isEmailMode
         ? { email, password, fullName }
         : { phoneNumber: phone, fullName }
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      })
-
-      const data = await response.json()
+      const data = await authRequest<AuthResponse>(endpoint, payload);
       
       if (data.authToken) {
         setAuthToken(data.authToken)
-        const userResponse = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/auth/me', {
+        
+        const userData = await authRequest<UserData>('me', {}, {
+          method: 'GET',
           headers: {
             'Authorization': `Bearer ${data.authToken}`,
-            'Content-Type': 'application/json',
           }
-        })
-        const userData = await userResponse.json()
+        });
+        
         setUserData(userData)
         setShowOTP(true)
       } else {
@@ -132,8 +77,8 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
   const handleOTPVerification = async (otp: string) => {
     try {
       const endpoint = signupMethod === 'email'
-        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code'
-        : 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code/phoneNumber'
+        ? 'verify/otp/code'
+        : 'verify/otp/code/phoneNumber'
 
       const payload = signupMethod === 'email'
         ? {
@@ -146,29 +91,17 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
             contact: phone
           }
 
-      const otpResponse = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const otpData = await otpResponse.json();
+      const otpData = await authRequest<OTPResponse>(endpoint, payload);
 
       if (otpData.otpValidate === 'otpFound' && userData) {
-        // Store auth token in localStorage
         localStorage.setItem('authToken', authToken);
         
-        // Store user data in localStorage
         localStorage.setItem('userData', JSON.stringify(userData));
         
-        // Call the success handler with full user data
         if (onSignupSuccess) {
           onSignupSuccess(userData);
         }
         
-        // Close the modal
         setShowOTP(false);
         onClose();
       } else {

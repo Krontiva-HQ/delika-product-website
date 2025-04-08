@@ -24,6 +24,7 @@ interface BranchDetails {
     foodTypeImage?: { url: string }
   }>
   restaurant?: Array<{
+    id: string
     restaurantLogo?: { url: string }
     restaurantName?: string
   }>
@@ -31,6 +32,8 @@ interface BranchDetails {
   branchPhoneNumber: string
   branchName?: string
   branchCity?: string
+  branchLatitude?: number
+  branchLongitude?: number
   openTime?: string
   closeTime?: string
 }

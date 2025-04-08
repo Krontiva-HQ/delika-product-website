@@ -19,6 +19,7 @@ import { AuthNav } from "@/components/auth-nav"
 import { BranchPage } from "@/components/branch-page"
 import { calculateDistance } from "@/utils/distance"
 import { FavoritesSection } from "@/components/favorites-section"
+import { getBranches, getCustomerDetails, updateFavorites } from "@/lib/api"
 
 interface Restaurant {
   restaurantName: string
@@ -112,6 +113,8 @@ export function StoreHeader() {
   const [user, setUser] = useState<UserData | null>(null)
   const [userCoordinates, setUserCoordinates] = useState<{lat: number, lng: number} | null>(null)
   const [likedBranches, setLikedBranches] = useState<Set<string>>(new Set())
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -119,17 +122,21 @@ export function StoreHeader() {
   })
 
   useEffect(() => {
-    async function fetchBranches() {
+    async function fetchBranchesData() {
+      setIsLoading(true)
+      setError(null)
       try {
-        const response = await fetch(process.env.NEXT_PUBLIC_BRANCHES_API!)
-        const data = await response.json()
+        const data = await getBranches<Branch[]>()
         setBranches(data)
       } catch (error) {
         console.error('Error fetching branches:', error)
+        setError('Failed to load branches. Please try again later.')
+      } finally {
+        setIsLoading(false)
       }
     }
 
-    fetchBranches()
+    fetchBranchesData()
   }, [])
 
   useEffect(() => {
@@ -275,28 +282,35 @@ export function StoreHeader() {
 
   // Add function to fetch user favorites
   const fetchUserFavorites = async (userId: string) => {
+    if (!userId) {
+      console.log('No userId provided to fetchUserFavorites, skipping fetch');
+      return;
+    }
+    
+    console.log(`Fetching favorites for user: ${userId}`);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_CUSTOMER_DETAILS_API}?userId=${userId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      if (response.ok) {
-        const customerData = await response.json();
-        if (customerData.favoriteRestaurants) {
-          const favorites = new Set<string>(
-            customerData.favoriteRestaurants.map((fav: FavoriteRestaurant) => fav.branchName)
-          );
-          setLikedBranches(favorites);
-          localStorage.setItem('filteredFavoritesCount', favorites.size.toString());
-        }
+      // Use our API utility function instead of direct fetch
+      const customerData = await getCustomerDetails(userId);
+      
+      console.log('Customer data received:', customerData);
+      
+      if (customerData?.favoriteRestaurants) {
+        const favorites = new Set<string>(
+          customerData.favoriteRestaurants.map((fav: FavoriteRestaurant) => fav.branchName)
+        );
+        console.log(`Found ${favorites.size} favorite restaurants`);
+        setLikedBranches(favorites);
+        localStorage.setItem('filteredFavoritesCount', favorites.size.toString());
       } else {
-        console.error('Failed to fetch user favorites');
+        console.log('No favorite restaurants found in customer data');
+        setLikedBranches(new Set<string>());
+        localStorage.setItem('filteredFavoritesCount', '0');
       }
     } catch (error) {
       console.error('Error fetching user favorites:', error);
+      // Clear favorites on error to prevent stale data
+      setLikedBranches(new Set<string>());
+      localStorage.setItem('filteredFavoritesCount', '0');
     }
   };
 
@@ -384,28 +398,15 @@ export function StoreHeader() {
       setLikedBranches(newLikedBranches);
       localStorage.setItem('filteredFavoritesCount', newLikedBranches.size.toString());
       
-      const response = await fetch(process.env.NEXT_PUBLIC_FAVORITES_API!, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          branchName: branchName,
-          liked: !isCurrentlyLiked
-        })
+      // Use our API utility function instead of direct fetch
+      await updateFavorites({
+        userId: user.id,
+        branchName: branchName,
+        liked: !isCurrentlyLiked
       });
-
-      if (response.ok) {
-        // Fetch latest favorites to ensure sync with server
-        await fetchUserFavorites(user.id);
-      } else {
-        console.error('Failed to update favorite status');
-        // Revert UI if API failed
-        const revertedLikedBranches = new Set(likedBranches);
-        setLikedBranches(revertedLikedBranches);
-        localStorage.setItem('filteredFavoritesCount', revertedLikedBranches.size.toString());
-      }
+      
+      // Fetch latest favorites to ensure sync with server
+      await fetchUserFavorites(user.id);
     } catch (error) {
       console.error('Error updating favorite status:', error);
       // Revert UI if error occurred

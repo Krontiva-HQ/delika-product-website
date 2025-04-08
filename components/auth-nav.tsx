@@ -24,7 +24,7 @@ interface UserLocation {
   long: string;
 }
 
-interface DeliveryAddress {
+export interface DeliveryAddress {
   fromAddress: string;
   fromLatitude: string;
   fromLongitude: string;
@@ -42,7 +42,7 @@ interface CustomerTable {
   favoriteRestaurants: FavoriteRestaurant[];
 }
 
-interface UserData {
+export interface UserData {
   id: string;
   OTP: string;
   city: string;

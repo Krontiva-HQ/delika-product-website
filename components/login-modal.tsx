@@ -8,55 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OTPInputModal } from "@/components/otp-input-modal"
 import { Eye, EyeOff } from "lucide-react"
 import { ForgotPasswordModal } from "@/components/forgot-password-modal"
-
-interface UserLocation {
-  lat: string;
-  long: string;
-}
-
-interface DeliveryAddress {
-  fromAddress: string;
-  fromLatitude: string;
-  fromLongitude: string;
-}
-
-interface FavoriteRestaurant {
-  branchName: string;
-}
-
-interface CustomerTable {
-  id: string;
-  userId: string;
-  created_at: number;
-  deliveryAddress: DeliveryAddress;
-  favoriteRestaurants: FavoriteRestaurant[];
-}
-
-interface UserData {
-  id: string;
-  OTP: string;
-  city: string;
-  role: string;
-  email: string;
-  image: string | null;
-  Status: boolean;
-  onTrip: boolean;
-  address: string;
-  country: string;
-  Location: UserLocation;
-  branchId: string | null;
-  deviceId: string;
-  fullName: string;
-  userName: string;
-  tripCount: number;
-  created_at: number;
-  postalCode: string;
-  addressFrom: string[];
-  dateOfBirth: string | null;
-  phoneNumber: string;
-  restaurantId: string | null;
-  customerTable: CustomerTable[];
-}
+import { login, authRequest, AuthResponse, OTPResponse, UserData } from "@/lib/api" // Import our API utility functions with types
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -77,45 +29,50 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string>("")
+  const [otpError, setOtpError] = useState<string>("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError("")
     setIsLoading(true)
-    setError("") // Clear any previous errors
-    
+
     try {
+      // Determine login method based on active tab
       const isEmailMode = e.currentTarget.getAttribute('data-mode') === 'email'
       setLoginMethod(isEmailMode ? 'email' : 'phone')
 
-      const endpoint = isEmailMode
-        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/login'
-        : 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/login/phoneNumber/customer'
-
-      const payload = isEmailMode
-        ? { email, password }
-        : { phoneNumber: phone }
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      })
-
-      const data = await response.json()
+      let data: AuthResponse;
+      if (isEmailMode) {
+        // Use our login utility function for email login
+        data = await login({ email, password });
+      } else {
+        // Use our authRequest utility function for phone login
+        data = await authRequest<AuthResponse>('login/phoneNumber/customer', { phoneNumber: phone });
+      }
       
       if (data.authToken) {
         setAuthToken(data.authToken)
-        const userResponse = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/auth/me', {
-          headers: {
-            'Authorization': `Bearer ${data.authToken}`,
-            'Content-Type': 'application/json',
-          }
-        })
-        const userData = await userResponse.json()
-        setUserData(userData)
-        setShowOTP(true)
+        console.log('Auth token received:', data.authToken.substring(0, 10) + '...');
+        
+        try {
+          // Use our authRequest utility function to get user data
+          console.log('Fetching user data with /me endpoint');
+          const userData = await authRequest<UserData>('me', {}, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${data.authToken}`,
+            }
+          });
+          
+          console.log('User data received:', userData ? 'success' : 'null');
+          setUserData(userData)
+          setShowOTP(true)
+        } catch (userDataError) {
+          console.error('Error fetching user data:', userDataError);
+          // Even if we can't fetch user data, we can still show OTP
+          // since we have the auth token
+          setShowOTP(true);
+        }
       } else {
         // Handle specific error messages
         if (data.message) {
@@ -136,72 +93,86 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
 
   const handleOTPVerification = async (otp: string) => {
     try {
-      const endpoint = loginMethod === 'email'
-        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code'
-        : 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code/phoneNumber'
-
-      const payload = loginMethod === 'email'
-        ? {
-            OTP: parseInt(otp),
-            type: true,
-            contact: email
+      // OTP verification is now handled in the OTP input modal
+      // Here we just need to handle the success case
+      
+      // Store auth token in localStorage
+      localStorage.setItem('authToken', authToken);
+      
+      // If we don't have userData yet, try to fetch it again
+      let finalUserData = userData;
+      if (!finalUserData && authToken) {
+        try {
+          console.log('Fetching user data again after OTP verification');
+          
+          // Use direct fetch instead of authRequest to avoid potential issues
+          const response = await fetch('/api/auth/me', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            }
+          });
+          
+          if (response.ok) {
+            finalUserData = await response.json();
+            console.log('User data received after OTP:', finalUserData ? 'success' : 'null');
+          } else {
+            console.error('Failed to fetch user data:', response.status);
           }
-        : {
-            OTP: parseInt(otp),
-            contact: phone
-          }
-
-      const otpResponse = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const otpData = await otpResponse.json();
-
-      if (otpData.otpValidate === 'otpFound' && userData) {
-        // Store auth token in localStorage
-        localStorage.setItem('authToken', authToken);
-        
+        } catch (userDataError) {
+          console.error('Error fetching user data after OTP:', userDataError);
+        }
+      }
+      
+      if (finalUserData) {
         // Store user data in localStorage and trigger a custom event
-        localStorage.setItem('userData', JSON.stringify(userData));
+        localStorage.setItem('userData', JSON.stringify(finalUserData));
         window.dispatchEvent(new Event('userDataUpdated'));
         
         // Call the success handler with full user data
-        onLoginSuccess(userData);
-        
-        // Close the modal
-        setShowOTP(false);
-        onClose();
-
-        // Check for redirect URL
-        const redirectUrl = localStorage.getItem('loginRedirectUrl');
-        if (redirectUrl) {
-          localStorage.removeItem('loginRedirectUrl');
-          window.location.href = redirectUrl;
-        } else {
-          // If no redirect URL, just reload the page
-          window.location.reload();
-        }
+        onLoginSuccess(finalUserData);
       } else {
-        console.error('OTP verification failed');
+        // If we still don't have user data, create a minimal user object
+        const minimalUserData = {
+          id: 'temp-id',
+          fullName: loginMethod === 'email' ? email : phone,
+          email: loginMethod === 'email' ? email : '',
+          phoneNumber: loginMethod === 'phone' ? phone : '',
+        } as UserData;
+        
+        localStorage.setItem('userData', JSON.stringify(minimalUserData));
+        onLoginSuccess(minimalUserData);
+        console.warn('Using minimal user data as full profile could not be fetched');
+      }
+      
+      // Close the modal
+      setShowOTP(false);
+      onClose();
+
+      // Check for redirect URL
+      const redirectUrl = localStorage.getItem('loginRedirectUrl');
+      if (redirectUrl) {
+        localStorage.removeItem('loginRedirectUrl');
+        window.location.href = redirectUrl;
       }
     } catch (error) {
       console.error('OTP verification error:', error);
+      setOtpError('An error occurred during verification. Please try again.');
     }
   };
 
   if (showOTP) {
     return (
       <OTPInputModal
-        isOpen={true}
+        isOpen={showOTP}
         onClose={() => setShowOTP(false)}
         onVerify={handleOTPVerification}
-        email={email}
-        phone={phone}
+        email={loginMethod === 'email' ? email : undefined}
+        phone={loginMethod === 'phone' ? phone : undefined}
+        authToken={authToken}
         signupMethod={loginMethod}
+        errorMessage={otpError}
       />
     )
   }
@@ -218,7 +189,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Login to your account</DialogTitle>
         </DialogHeader>

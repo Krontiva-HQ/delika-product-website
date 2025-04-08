@@ -105,11 +105,15 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
       
       if (data.result) {
         const address = data.result.formatted_address
-        onLocationSelect({
+        const locationData = {
           address,
           lat: data.result.geometry.location.lat,
           lng: data.result.geometry.location.lng
-        })
+        }
+        // Save to localStorage
+        localStorage.setItem('userLocationData', JSON.stringify(locationData))
+        
+        onLocationSelect(locationData)
         setSearchValue("")
         onClose()
       }

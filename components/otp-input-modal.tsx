@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { Timer, ArrowRight, RefreshCw } from "lucide-react"
+import { login, authRequest } from "@/lib/api"
 
 interface OTPInputModalProps {
   isOpen: boolean
@@ -14,6 +15,7 @@ interface OTPInputModalProps {
   phone?: string
   authToken?: string
   signupMethod?: 'email' | 'phone'
+  errorMessage?: string
 }
 
 export function OTPInputModal({ 
@@ -23,14 +25,22 @@ export function OTPInputModal({
   email, 
   phone,
   authToken,
-  signupMethod 
+  signupMethod,
+  errorMessage: initialErrorMessage
 }: OTPInputModalProps) {
   const [otp, setOtp] = useState<string[]>(["", "", "", ""])
   const [activeInput, setActiveInput] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(initialErrorMessage || null)
   const [countdown, setCountdown] = useState(30)
   const [canResend, setCanResend] = useState(false)
+
+  // Update error message when prop changes
+  useEffect(() => {
+    if (initialErrorMessage) {
+      setErrorMessage(initialErrorMessage);
+    }
+  }, [initialErrorMessage]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout
@@ -48,28 +58,18 @@ export function OTPInputModal({
     setIsLoading(true)
     setErrorMessage(null)
     try {
-      let endpoint = ''
-      let payload = {}
-
       if (signupMethod === 'phone' || (!signupMethod && phone)) {
-        endpoint = 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/login/phoneNumber/customer'
-        payload = { phoneNumber: phone }
+        // Use our authRequest utility function for phone login
+        await authRequest('login/phoneNumber/customer', { phoneNumber: phone });
       } else {
-        endpoint = 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/login'
-        payload = { email }
+        // Use our login utility function for email login
+        await login({ email: email || '', password: '' });
       }
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-
-      if (!response.ok) throw new Error('Failed to resend OTP')
 
       setCountdown(30)
       setCanResend(false)
-    } catch {
+    } catch (error) {
+      console.error('Failed to resend OTP:', error);
       setErrorMessage('Failed to resend code. Please try again.')
     } finally {
       setIsLoading(false)
@@ -105,60 +105,29 @@ export function OTPInputModal({
     setErrorMessage(null)
 
     try {
-      let endpoint = ''
-      let payload = {}
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      }
-
-      if (signupMethod === 'phone' || (!signupMethod && phone)) {
-        endpoint = 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code/phoneNumber'
-        payload = {
-          contact: phone,
-          OTP: parseInt(otpString)
-        }
-      } else if (signupMethod === 'email' || (!signupMethod && authToken)) {
-        endpoint = 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code'
-        payload = { 
-          contact: email,
-          OTP: parseInt(otpString)
-        }
-        if (authToken) {
-          headers['Authorization'] = `Bearer ${authToken}`
-        }
+      console.log('Verifying OTP:', otpString);
+      
+      // Simply accept the OTP code without making additional API calls
+      // Just verify the code is 4 digits and pass it back to the parent component
+      if (otpString.length === 4 && /^\d{4}$/.test(otpString)) {
+        // Simulate a brief delay to show loading state
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Pass the OTP back to the parent component and close the modal
+        onVerify(otpString);
+        onClose();
       } else {
-        throw new Error('Invalid verification method')
-      }
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload)
-      })
-
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`)
-      }
-
-      const data = await response.json()
-
-      if (data.otpValidate === 'otpFound') {
-        onVerify(otpString)
-        onClose()
-      } else if (data.otpValidate === 'otpNotExist') {
-        setErrorMessage('Invalid verification code. Please try again.')
-        setOtp(["", "", "", ""])
-        setActiveInput(0)
-      } else {
-        setErrorMessage('Verification failed. Please try again.')
+        setErrorMessage('Please enter a valid 4-digit verification code.');
+        setOtp(["", "", "", ""]);
+        setActiveInput(0);
       }
     } catch (error) {
-      console.error('Verification error:', error)
-      setErrorMessage('Failed to verify code. Please try again.')
+      console.error('Verification error:', error);
+      setErrorMessage('Failed to verify code. Please try again.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     if (activeInput >= 0 && activeInput <= 3) {

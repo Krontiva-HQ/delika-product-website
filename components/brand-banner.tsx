@@ -1,14 +1,12 @@
 import Image from "next/image"
 
 const brands = [
-  { src: "/starbites.png", alt: "Starbites" },
-  { src: "/papas-logo.png", alt: "Papas Pizza" },
-  { src: "/eddys-pizza.png", alt: "Eddy's Pizza" },
-  { src: "/wingman-logo.png", alt: "Wingman" },
-  { src: "/dominos.svg", alt: "Dominos" },
-  { src: "/pizzaman.png", alt: "Pizza Man" },
-  { src: "/pizarea-logo.png", alt: "Pizarea" },
-  { src: "/cafe-de-boba.png", alt: "Cafe de Boba" },
+  { src: "/asaabea.png", alt: "Asaabea's Kitchen" },
+  { src: "/livresto.png", alt: "Liv Resto" },
+  { src: "/marinate.jpg", alt: "Mari Nate" },
+  { src: "/snackshack.png", alt: "Snack Shack" },
+  { src: "/thegoodbaker.png", alt: "The Good Baker" },
+  { src: "/ufoburger.png", alt: "UFO Burger" },
 ]
 
 export function BrandBanner() {
@@ -19,7 +17,7 @@ export function BrandBanner() {
           Powering popular restaurants across Africa
         </h2>
         <div className="flex items-center justify-between">
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-8 md:gap-12 items-center w-full">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-8 md:gap-12 items-center w-full">
             {brands.map((brand, i) => (
               <div key={i} className="flex items-center justify-center w-full">
                 <Image
@@ -27,7 +25,7 @@ export function BrandBanner() {
                   alt={brand.alt}
                   width={300}
                   height={100}
-                  className="w-full h-6 sm:h-8 md:h-10 object-contain opacity-90 hover:opacity-100 transition-opacity"
+                  className="w-full h-12 sm:h-12 md:h-12 object-contain opacity-90 hover:opacity-100 transition-opacity"
                 />
               </div>
             ))}

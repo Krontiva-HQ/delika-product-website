@@ -8,6 +8,11 @@ import Image from "next/image"
 import { CartItem } from "@/types/cart"
 import { calculateDistance, calculateDeliveryFee } from "@/lib/distance"
 import { OrderFeedback } from "@/components/order-feedback"
+import { submitOrder, initializePaystackPayment } from '@/lib/api'
+import { UserData } from '@/components/auth-nav';
+import { DeliveryAddress } from '@/components/auth-nav';
+import { useRouter } from "next/navigation"
+import { toast } from "@/components/ui/use-toast"
 
 interface CheckoutPageProps {
   cart: CartItem[]
@@ -48,6 +53,19 @@ interface BranchDetails {
     }>
     foodTypeImage?: { url: string }
   }>
+  restaurant?: Array<{
+    id: string
+    restaurantLogo?: { url: string }
+    restaurantName?: string
+  }>
+  branchLocation: string
+  branchPhoneNumber: string
+  branchName?: string
+  branchCity?: string
+  branchLatitude?: number
+  branchLongitude?: number
+  openTime?: string
+  closeTime?: string
 }
 
 export function CheckoutPage({
@@ -84,6 +102,7 @@ export function CheckoutPage({
   const [deliveryFee, setDeliveryFee] = useState(10) // Default fee
   const [distance, setDistance] = useState(0)
   const [showFeedback, setShowFeedback] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     console.log('Loading customer info and location...');
@@ -262,25 +281,118 @@ export function CheckoutPage({
     return Object.keys(errors).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!validateForm()) {
-      // Scroll to the first error
-      const firstErrorField = document.querySelector('[aria-invalid="true"]')
-      firstErrorField?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      return
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    setIsSubmitting(true);
+
+    try {
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+      const deliveryAddress = JSON.parse(localStorage.getItem('deliveryAddress') || '{}');
+      const locationData = JSON.parse(localStorage.getItem('locationData') || '{}');
+
+      // Ensure coordinates are numbers
+      const branchLat = parseFloat(branchDetails?.branchLatitude?.toString() || '0');
+      const branchLng = parseFloat(branchDetails?.branchLongitude?.toString() || '0');
+      const userLat = parseFloat(locationData.lat?.toString() || '0');
+      const userLng = parseFloat(locationData.lng?.toString() || '0');
+
+      // Calculate delivery distance
+      const deliveryDistance = await calculateDistance(
+        { latitude: branchLat, longitude: branchLng },
+        { latitude: userLat, longitude: userLng }
+      );
+
+      const deliveryFee = calculateDeliveryFee(deliveryDistance);
+
+      // Generate a unique order ID
+      const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // Calculate total amount in GHS
+      const totalAmount = cartTotal + deliveryFee;
+
+      try {
+        // Initialize Paystack payment
+        const paymentResponse = await initializePaystackPayment(
+          totalAmount,
+          userData?.email || '',
+          orderId,
+          userData?.id || ''
+        );
+
+        if (paymentResponse?.data?.authorization_url) {
+          // Prepare order data
+          const orderData = {
+            id: orderId,
+            restaurantId: branchDetails?.restaurant?.[0]?.id || '',
+            branchId: branchId,
+            customerName: customerInfo.name,
+            customerPhoneNumber: customerInfo.phone,
+            pickupName: branchName,
+            dropoffName: customerInfo.address,
+            orderPrice: cartTotal.toString(),
+            deliveryPrice: deliveryFee.toString(),
+            totalPrice: totalAmount.toString(),
+            orderComment: customerInfo.notes || '',
+            products: cart.map(item => ({
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity.toString()
+            })),
+            pickup: [{
+              fromLatitude: branchDetails?.branchLatitude?.toString() || '',
+              fromLongitude: branchDetails?.branchLongitude?.toString() || '',
+              fromAddress: branchName
+            }],
+            dropOff: [{
+              toLatitude: locationData?.lat?.toString() || '',
+              toLongitude: locationData?.lng?.toString() || '',
+              toAddress: locationData?.address || customerInfo.address
+            }],
+            foodAndDeliveryFee: true,
+            payNow: true,
+            payLater: false,
+            paymentStatus: "Pending",
+            orderStatus: "ReadyForPickup",
+            deliveryDistance: deliveryDistance.toString(),
+            trackingUrl: "",
+            dropOffCity: branchCity || "",
+            paystackReferenceCode: paymentResponse.data.reference,
+            customerId: userData?.id || null,
+            orderDate: new Date().toISOString().split('T')[0],
+            orderReceivedTime: Date.now(),
+            completed: false,
+            Walkin: false,
+            payVisaCard: false
+          };
+
+          // Submit order
+          await submitOrder(orderData);
+
+          // Redirect to Paystack payment page
+          window.location.href = paymentResponse.data.authorization_url;
+        } else {
+          throw new Error('Failed to initialize payment');
+        }
+      } catch (paymentError: any) {
+        console.error('Payment initialization error:', paymentError);
+        toast({
+          title: "Payment Error",
+          description: paymentError.message || "Failed to initialize payment. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process order. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsSubmitting(true)
-    
-    // Simulate API call
-    setTimeout(() => {
-      onSubmitOrder(customerInfo)
-      setIsSubmitting(false)
-      setIsSuccess(true)
-    }, 1500)
-  }
+  };
 
   const currentCategory = branchDetails?._menutable?.find(
     cat => cat.foodType === selectedCategory
@@ -324,7 +436,7 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                 <h3 className="text-2xl font-semibold text-gray-900 mb-3">Order Created Successfully!</h3>
                 <p className="text-gray-600 mb-8">Complete your order by confirming on WhatsApp</p>
                 
-                <div className="space-y-4">
+                <div className="space-y-4"> 
                   <div className="bg-gray-50 rounded-xl p-4 text-left">
                     <h4 className="font-medium text-gray-900 mb-2">Next Steps:</h4>
                     <ol className="list-decimal list-inside space-y-2 text-gray-600">
