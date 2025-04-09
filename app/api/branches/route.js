@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-export async function GET(request) {
+export async function GET(_request) {
   try {
     // Use the branches API URL from environment variables
     // For server-side API routes, we should use server-side environment variables
