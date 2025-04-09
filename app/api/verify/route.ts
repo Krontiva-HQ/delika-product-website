@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+interface VerificationResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    verified: boolean;
+    [key: string]: unknown;
+  };
+}
+
 export async function POST(request: NextRequest) {
   console.log('Simple OTP verification handler called');
   try {
@@ -45,7 +54,7 @@ export async function POST(request: NextRequest) {
     });
     
     // Try to parse the response as JSON
-    let responseData: any;
+    let responseData: VerificationResponse;
     const contentType = response.headers.get('content-type');
     
     console.log(`Response status: ${response.status}`);

@@ -1,5 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+interface ErrorResponse {
+  error: string;
+  details?: unknown;
+  url?: string;
+  raw?: string;
+  parseError?: string;
+}
+
+interface CustomerDetailsResponse {
+  customerId?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  [key: string]: unknown;
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Get query parameters if any
@@ -80,7 +97,7 @@ export async function GET(request: NextRequest) {
     
     if (!response.ok) {
       let errorText: string;
-      let errorJson: any = null;
+      let errorJson: ErrorResponse | null = null;
       
       try {
         // Try to parse as JSON first
@@ -124,7 +141,7 @@ export async function GET(request: NextRequest) {
         console.error('Authentication may be required for this endpoint');
       }
       
-      return NextResponse.json(
+      return NextResponse.json<ErrorResponse>(
         { 
           error: `Failed to fetch customer details: ${statusCode} ${statusText}`, 
           details: errorJson || errorText,
@@ -135,7 +152,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Try to get the successful response
-    let responseData: any;
+    let responseData: CustomerDetailsResponse;
     let responseText: string;
     
     try {
@@ -147,7 +164,7 @@ export async function GET(request: NextRequest) {
         console.log('Successfully parsed customer details as JSON');
       } catch (jsonError) {
         console.error('Failed to parse response as JSON:', jsonError);
-        return NextResponse.json(
+        return NextResponse.json<ErrorResponse>(
           { 
             error: 'Invalid JSON response from customer details API', 
             raw: responseText,
@@ -158,7 +175,7 @@ export async function GET(request: NextRequest) {
       }
     } catch (textError) {
       console.error('Failed to read response as text:', textError);
-      return NextResponse.json(
+      return NextResponse.json<ErrorResponse>(
         { 
           error: 'Failed to read API response', 
           parseError: textError instanceof Error ? textError.message : String(textError)
@@ -168,10 +185,10 @@ export async function GET(request: NextRequest) {
     }
     
     console.log('Successfully fetched customer details');
-    return NextResponse.json(responseData);
+    return NextResponse.json<CustomerDetailsResponse>(responseData);
   } catch (error) {
     console.error('Customer details API error:', error);
-    return NextResponse.json(
+    return NextResponse.json<ErrorResponse>(
       { error: `Internal server error: ${error instanceof Error ? error.message : String(error)}` },
       { status: 500 }
     );
@@ -243,7 +260,7 @@ export async function POST(request: NextRequest) {
     
     if (!response.ok) {
       let errorText: string;
-      let errorJson: any = null;
+      let errorJson: ErrorResponse | null = null;
       
       try {
         // Try to parse as JSON first
@@ -256,7 +273,7 @@ export async function POST(request: NextRequest) {
         console.error('API error response (Text):', errorText);
       }
       
-      return NextResponse.json(
+      return NextResponse.json<ErrorResponse>(
         { 
           error: `Failed to fetch customer details: ${statusCode} ${statusText}`, 
           details: errorJson || errorText,
@@ -267,7 +284,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Try to get the successful response
-    let responseData: any;
+    let responseData: CustomerDetailsResponse;
     let responseText: string;
     
     try {
@@ -279,7 +296,7 @@ export async function POST(request: NextRequest) {
         console.log('Successfully parsed customer details as JSON');
       } catch (jsonError) {
         console.error('Failed to parse response as JSON:', jsonError);
-        return NextResponse.json(
+        return NextResponse.json<ErrorResponse>(
           { 
             error: 'Invalid JSON response from customer details API', 
             raw: responseText,
@@ -290,7 +307,7 @@ export async function POST(request: NextRequest) {
       }
     } catch (textError) {
       console.error('Failed to read response as text:', textError);
-      return NextResponse.json(
+      return NextResponse.json<ErrorResponse>(
         { 
           error: 'Failed to read API response', 
           parseError: textError instanceof Error ? textError.message : String(textError)
@@ -300,10 +317,10 @@ export async function POST(request: NextRequest) {
     }
     
     console.log('Successfully fetched customer details');
-    return NextResponse.json(responseData);
+    return NextResponse.json<CustomerDetailsResponse>(responseData);
   } catch (error) {
     console.error('Customer details API error:', error);
-    return NextResponse.json(
+    return NextResponse.json<ErrorResponse>(
       { error: `Internal server error: ${error instanceof Error ? error.message : String(error)}` },
       { status: 500 }
     );

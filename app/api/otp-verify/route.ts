@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+interface OTPVerificationResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    token?: string;
+    userId?: string;
+    [key: string]: unknown;
+  };
+}
+
 export async function POST(request: NextRequest) {
   console.log('App Router OTP verification handler called');
   try {
@@ -45,7 +55,7 @@ export async function POST(request: NextRequest) {
     });
     
     // Try to parse the response as JSON
-    let responseData: any;
+    let responseData: OTPVerificationResponse;
     const contentType = response.headers.get('content-type');
     
     console.log(`Response status: ${response.status}`);

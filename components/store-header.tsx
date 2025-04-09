@@ -113,8 +113,6 @@ export function StoreHeader() {
   const [user, setUser] = useState<UserData | null>(null)
   const [userCoordinates, setUserCoordinates] = useState<{lat: number, lng: number} | null>(null)
   const [likedBranches, setLikedBranches] = useState<Set<string>>(new Set())
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -123,16 +121,11 @@ export function StoreHeader() {
 
   useEffect(() => {
     async function fetchBranchesData() {
-      setIsLoading(true)
-      setError(null)
       try {
         const data = await getBranches<Branch[]>()
         setBranches(data)
       } catch (error) {
         console.error('Error fetching branches:', error)
-        setError('Failed to load branches. Please try again later.')
-      } finally {
-        setIsLoading(false)
       }
     }
 

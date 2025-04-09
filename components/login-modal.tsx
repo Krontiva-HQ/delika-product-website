@@ -8,7 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OTPInputModal } from "@/components/otp-input-modal"
 import { Eye, EyeOff } from "lucide-react"
 import { ForgotPasswordModal } from "@/components/forgot-password-modal"
-import { login, authRequest, AuthResponse, OTPResponse, UserData } from "@/lib/api" // Import our API utility functions with types
+import { login, authRequest, AuthResponse, UserData } from "@/lib/api" // Remove OTPResponse from imports
+import { toast } from "@/components/ui/use-toast"
+import { useRouter } from "next/navigation"
 
 interface LoginModalProps {
   isOpen: boolean;

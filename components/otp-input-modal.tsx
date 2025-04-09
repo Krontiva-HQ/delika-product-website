@@ -13,7 +13,6 @@ interface OTPInputModalProps {
   onVerify: (otp: string) => void
   email?: string
   phone?: string
-  authToken?: string
   signupMethod?: 'email' | 'phone'
   errorMessage?: string
 }
@@ -24,7 +23,6 @@ export function OTPInputModal({
   onVerify, 
   email, 
   phone,
-  authToken,
   signupMethod,
   errorMessage: initialErrorMessage
 }: OTPInputModalProps) {
