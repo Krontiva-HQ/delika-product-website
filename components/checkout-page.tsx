@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ShoppingBag, Check, Plus, Minus, ArrowLeft, MapPin, Phone, User, FileText, ArrowRight } from "lucide-react"
+import { ShoppingBag, Plus, Minus, ArrowLeft, MapPin, Phone, User, FileText, ArrowRight } from "lucide-react"
 import Image from "next/image"
 import { CartItem } from "@/types/cart"
 import { calculateDistance, calculateDeliveryFee } from "@/lib/distance"
@@ -406,13 +406,6 @@ ${items}
 Subtotal: GH₵${cartTotal.toFixed(2)}
 Delivery Fee: GH₵${deliveryFee.toFixed(2)}
 *Total: GH₵${(cartTotal + deliveryFee).toFixed(2)}*`
-  }
-
-  const handleWhatsAppClick = () => {
-    const message = encodeURIComponent(formatOrderForWhatsApp())
-    const whatsappUrl = `https://wa.me/233${branchPhone}?text=${message}`
-    window.open(whatsappUrl, '_blank')
-    setShowFeedback(true)
   }
 
   if (showFeedback) {
