@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-export async function GET(_request) {
+export async function GET() {
   try {
     // Check if environment variables are defined
     const envVars = {
