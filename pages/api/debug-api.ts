@@ -60,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         try {
           responseData = await response.json();
           console.log('Response data:', JSON.stringify(responseData));
-        } catch (parseError) {
+        } catch {
           const text = await response.text();
           console.log('Failed to parse JSON response:', text);
           responseData = { text, parseError: true };
