@@ -57,13 +57,11 @@ export async function POST(request: NextRequest) {
       throw new Error('No response received from the server');
     }
 
-    const status = response.status || 500;
-    
     // Try to parse the response as JSON
     let responseData: VerificationResponse;
     const contentType = response.headers.get('content-type');
     
-    console.log(`Response status: ${status}`);
+    console.log(`Response status: ${response.status}`);
     console.log(`Response content-type: ${contentType}`);
     
     if (contentType && contentType.includes('application/json')) {
@@ -79,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Return the response with the same status code
-    return NextResponse.json(responseData, { status });
+    return NextResponse.json(responseData, { status: response.status });
   } catch (error) {
     console.error(`OTP verification error:`, error);
     return NextResponse.json(
