@@ -66,7 +66,10 @@ export async function POST(request: NextRequest) {
     } else {
       const text = await response.text();
       console.log(`Non-JSON response from OTP verification:`, text);
-      responseData = { message: text };
+      responseData = { 
+        success: response.ok,
+        message: text 
+      };
     }
     
     // Return the response with the same status code
