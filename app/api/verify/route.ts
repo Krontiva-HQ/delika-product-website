@@ -11,9 +11,6 @@ interface VerificationResponse {
 
 export async function POST(request: NextRequest) {
   console.log('Simple OTP verification handler called');
-  let response: Response | undefined;
-  let responseData: VerificationResponse;
-  
   try {
     // Get the data from the request
     const data = await request.json();
@@ -49,17 +46,24 @@ export async function POST(request: NextRequest) {
     console.log('With headers:', JSON.stringify(headers));
     
     // Make the actual API call to your external API
-    response = await fetch(endpoint, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers,
       body: JSON.stringify(data),
       cache: 'no-store'
     });
+
+    if (!response) {
+      throw new Error('No response received from the server');
+    }
+
+    const status = response.status || 500;
     
     // Try to parse the response as JSON
+    let responseData: VerificationResponse;
     const contentType = response.headers.get('content-type');
     
-    console.log(`Response status: ${response.status}`);
+    console.log(`Response status: ${status}`);
     console.log(`Response content-type: ${contentType}`);
     
     if (contentType && contentType.includes('application/json')) {
@@ -75,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Return the response with the same status code
-    return NextResponse.json(responseData, { status: response.status });
+    return NextResponse.json(responseData, { status });
   } catch (error) {
     console.error(`OTP verification error:`, error);
     return NextResponse.json(
