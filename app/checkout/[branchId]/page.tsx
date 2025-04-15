@@ -135,7 +135,6 @@ export default function CheckoutRoute({ params }: { params: Promise<{ branchId: 
     <CheckoutPage
       cart={cart}
       cartTotal={cartTotal}
-      onSubmitOrder={handleSubmitOrder}
       onAddItem={addToCart}
       onRemoveItem={removeFromCart}
       menuCategories={branch._menutable}
