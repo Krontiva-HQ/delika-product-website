@@ -172,7 +172,6 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         onVerify={handleOTPVerification}
         email={loginMethod === 'email' ? email : undefined}
         phone={loginMethod === 'phone' ? phone : undefined}
-        authToken={authToken}
         signupMethod={loginMethod}
         errorMessage={otpError}
       />
