@@ -240,7 +240,7 @@ export default function CheckoutSuccessPage() {
 
             {/* Order ID */}
             <div className="text-center text-sm text-gray-500">
-              Order #: {orderDetails.id.split('-')[0]}
+              Order #: {orderDetails.orderNumber}
             </div>
 
             <Button 
