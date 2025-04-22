@@ -51,20 +51,33 @@ export async function POST(request: NextRequest) {
     console.log(`Response status: ${response.status}`);
     console.log(`Response content-type: ${contentType}`);
     
-    if (contentType && contentType.includes('application/json')) {
-      responseData = await response.json();
-      console.log('Response data:', JSON.stringify(responseData));
-    } else {
-      const text = await response.text();
-      console.log(`Non-JSON response from OTP verification:`, text);
-      responseData = { 
-        success: response.ok,
-        message: text 
-      };
+    try {
+      if (contentType && contentType.includes('application/json')) {
+        responseData = await response.json();
+        console.log('Response data:', JSON.stringify(responseData));
+      } else {
+        const text = await response.text();
+        console.log(`Non-JSON response from OTP verification:`, text);
+        responseData = { 
+          success: response.ok,
+          message: text 
+        };
+      }
+      
+      // Return the response with the same status code
+      return NextResponse.json(responseData, { 
+        status: response.status || 200 
+      });
+    } catch (parseError) {
+      console.error('Error parsing response:', parseError);
+      return NextResponse.json(
+        { 
+          success: false,
+          message: 'Error parsing response from server'
+        },
+        { status: 500 }
+      );
     }
-    
-    // Return the response with the same status code
-    return NextResponse.json(responseData, { status: response.status });
   } catch (error) {
     console.error(`OTP verification error:`, error);
     return NextResponse.json(
