@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getBaseHeaders } from '@/app/utils/api'
 
 export async function POST(request: Request) {
   try {
@@ -11,10 +12,7 @@ export async function POST(request: Request) {
     
     const response = await fetch(process.env.RESTAURANT_APPROVAL_API!, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
+      headers: getBaseHeaders(),
       body: JSON.stringify(dataWithStatus),
     })
 

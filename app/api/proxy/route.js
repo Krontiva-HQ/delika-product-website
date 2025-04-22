@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getBaseHeaders } from '@/app/utils/api';
 
 export async function POST(request) {
   try {
@@ -19,7 +20,7 @@ export async function POST(request) {
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        ...getBaseHeaders(),
         ...headers,
       },
       body: JSON.stringify(data),
@@ -60,9 +61,7 @@ export async function GET(request) {
     // Make the actual API call to your external API
     const response = await fetch(endpoint, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getBaseHeaders(),
     });
     
     const responseData = await response.json();

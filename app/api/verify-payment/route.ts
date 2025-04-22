@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getBaseHeaders } from '@/app/utils/api'
 
 export async function POST(request: Request) {
   try {
@@ -9,8 +10,8 @@ export async function POST(request: Request) {
       {
         method: 'GET',
         headers: {
+          ...getBaseHeaders(),
           Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-          'Content-Type': 'application/json',
         },
       }
     )

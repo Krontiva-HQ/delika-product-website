@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getBaseHeaders } from '@/app/utils/api'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -10,7 +11,10 @@ export async function GET(request: Request) {
 
   try {
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${process.env.GOOGLE_MAPS_API_KEY}`
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${process.env.GOOGLE_MAPS_API_KEY}`,
+      {
+        headers: getBaseHeaders()
+      }
     )
     const data = await response.json()
     

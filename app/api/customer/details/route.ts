@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBaseHeaders, getClientHeaders } from '@/app/utils/api';
 
 interface ErrorResponse {
   error: string;
@@ -65,20 +66,8 @@ export async function GET(request: NextRequest) {
       console.log('Using query parameter URL:', fullUrl);
     }
     
-    // Prepare headers with possible authorization
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    
-    // Add authorization header if it was in the original request
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    } else {
-      // Try to get auth token from localStorage if it exists in the browser
-      // (This won't work server-side but shows the attempt)
-      console.log('No auth token in request headers, will attempt without it');
-    }
-    
+    // Get headers with authorization
+    const headers = await getClientHeaders();
     console.log('Request headers:', headers);
     
     // Make the actual API call
@@ -230,16 +219,8 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Prepare headers with possible authorization
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    
-    // Add authorization header if it was in the original request
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    }
-    
+    // Get headers with authorization
+    const headers = await getClientHeaders();
     console.log('Request headers:', headers);
     console.log('Sending POST to:', customerDetailsApiUrl);
     

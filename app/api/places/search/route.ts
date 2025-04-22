@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getBaseHeaders } from '@/app/utils/api'
 
 interface GooglePlacesResult {
   formatted_address: string
@@ -21,7 +22,10 @@ export async function GET(request: Request) {
 
   try {
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&region=gh&key=${process.env.GOOGLE_MAPS_API_KEY}`
+      `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&region=gh&key=${process.env.GOOGLE_MAPS_API_KEY}`,
+      {
+        headers: getBaseHeaders()
+      }
     )
     const data = await response.json()
     

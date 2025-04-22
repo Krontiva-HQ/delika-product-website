@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBaseHeaders } from '@/app/utils/api';
 
 interface OTPVerificationResponse {
   success: boolean;
@@ -21,9 +22,6 @@ export async function POST(request: NextRequest) {
     const apiBaseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api-server.krontiva.africa/api:uEBBwbSs";
     console.log('Using API base URL:', apiBaseUrl);
     
-    // Get authorization header if present
-    const authHeader = request.headers.get('Authorization');
-    
     // Determine the verification type (email or phone)
     const isPhoneVerification = data.contact && !data.type;
     
@@ -32,24 +30,13 @@ export async function POST(request: NextRequest) {
       ? `${apiBaseUrl}/auth/verify/otp/code/phoneNumber`
       : `${apiBaseUrl}/auth/verify/otp/code`;
     
-    // Prepare headers
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    
-    // Add authorization header if present
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    }
-    
     console.log(`Making OTP verification request to ${endpoint}`);
     console.log('Request data:', JSON.stringify(data));
-    console.log('With headers:', JSON.stringify(headers));
     
     // Make the actual API call to your external API
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers,
+      headers: getBaseHeaders(),
       body: JSON.stringify(data),
       cache: 'no-store'
     });

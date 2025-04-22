@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+ import { getBaseHeaders } from '@/app/utils/api';
 
 export async function POST(request) {
   try {
@@ -53,11 +54,12 @@ export async function POST(request) {
     const response = await fetch('/api/proxy', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        ...getBaseHeaders(),
       },
       body: JSON.stringify({
         endpoint: ordersApiUrl,
         data: orderData,
+        headers: getBaseHeaders(), // Pass auth headers to be used in the proxy
       }),
     });
 

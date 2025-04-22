@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+
 export async function POST(request, { params }) {
   try {
     // Get the path from the URL

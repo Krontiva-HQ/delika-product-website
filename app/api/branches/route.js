@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getBaseHeaders } from '@/app/utils/api';
 
 export async function GET() {
   try {
@@ -19,9 +20,7 @@ export async function GET() {
     // Make the actual API call
     const response = await fetch(branchesApiUrl, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getBaseHeaders(),
       // Add cache: 'no-store' to prevent caching issues
       cache: 'no-store'
     });
@@ -64,9 +63,7 @@ export async function POST(request) {
     // Make the actual API call
     const response = await fetch(branchesApiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getBaseHeaders(),
       body: JSON.stringify(data),
       cache: 'no-store'
     });

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getBaseHeaders } from '@/app/utils/api';
 
 export async function POST(request) {
   try {
@@ -20,9 +21,7 @@ export async function POST(request) {
     // Make the actual API call
     const response = await fetch(favoritesApiUrl, {
       method: 'PATCH', // Use PATCH since we're updating a resource
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getBaseHeaders(),
       body: JSON.stringify(data),
       cache: 'no-store'
     });

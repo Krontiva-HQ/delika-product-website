@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getBaseHeaders } from '@/app/utils/api';
 
 export async function POST(request) {
   try {
@@ -10,9 +11,7 @@ export async function POST(request) {
     // Make the actual API call
     const response = await fetch(restaurantApprovalApiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getBaseHeaders(),
       body: JSON.stringify(data),
     });
     
@@ -46,9 +45,7 @@ export async function GET(request) {
     // Make the actual API call
     const response = await fetch(`${restaurantApprovalApiUrl}${queryParams}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getBaseHeaders(),
     });
     
     if (!response.ok) {
