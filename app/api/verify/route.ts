@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBaseHeaders } from '@/app/utils/api';
 
+// Prevent prerendering of this API route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 interface VerificationResponse {
   success: boolean;
   message: string;
