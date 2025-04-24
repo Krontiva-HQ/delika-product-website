@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/components/ui/use-toast'
 
-function CheckoutSuccessContent() {
+export default function SuccessClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [isVerifying, setIsVerifying] = useState(true)
@@ -255,9 +255,3 @@ function CheckoutSuccessContent() {
     </div>
   )
 }
-
-export default function CheckoutSuccessPage() {
-  return (
-    <CheckoutSuccessContent />
-  )
-} 
