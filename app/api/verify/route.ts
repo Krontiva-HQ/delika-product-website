@@ -3,7 +3,7 @@ import { getBaseHeaders } from '@/app/utils/api';
 
 // Prevent prerendering of this API route
 export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 
 interface VerificationResponse {
   success: boolean;
@@ -15,15 +15,12 @@ interface VerificationResponse {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('Simple OTP verification handler called');
   try {
     // Get the data from the request
     const data = await request.json();
-    console.log('Received data:', JSON.stringify(data));
     
     // Use the API base URL from environment variables
     const apiBaseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api-server.krontiva.africa/api:uEBBwbSs";
-    console.log('Using API base URL:', apiBaseUrl);
     
     // Determine the verification type (email or phone)
     const isPhoneVerification = data.contact && !data.type;
@@ -33,9 +30,6 @@ export async function POST(request: NextRequest) {
       ? `${apiBaseUrl}/auth/verify/otp/code/phoneNumber`
       : `${apiBaseUrl}/auth/verify/otp/code`;
     
-    console.log(`Making OTP verification request to ${endpoint}`);
-    console.log('Request data:', JSON.stringify(data));
-    
     // Make the actual API call to your external API
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -44,58 +38,46 @@ export async function POST(request: NextRequest) {
       cache: 'no-store'
     });
 
-    // Ensure we have a valid response
-    if (!response || typeof response.status !== 'number') {
-      throw new Error('Invalid response from server');
-    }
-
-    // Try to parse the response as JSON
-    let responseData: VerificationResponse;
+    // Handle the response
+    const status = response.status;
     const contentType = response.headers.get('content-type');
     
-    console.log(`Response status: ${response.status}`);
-    console.log(`Response content-type: ${contentType}`);
+    let responseData: VerificationResponse;
     
-    try {
-      if (contentType && contentType.includes('application/json')) {
-        const jsonData = await response.json();
-        responseData = {
-          success: response.ok,
-          message: jsonData.message || 'Verification completed',
-          data: jsonData.data
-        };
-        console.log('Response data:', JSON.stringify(responseData));
-      } else {
-        const text = await response.text();
-        console.log(`Non-JSON response from OTP verification:`, text);
-        responseData = { 
-          success: response.ok,
-          message: text 
-        };
-      }
-      
-      // Return the response with the same status code
-      return NextResponse.json(responseData, { 
-        status: response.status 
-      });
-    } catch (parseError) {
-      console.error('Error parsing response:', parseError);
-      return NextResponse.json(
-        { 
-          success: false,
-          message: 'Error parsing response from server'
-        },
-        { status: 500 }
-      );
+    if (contentType?.includes('application/json')) {
+      const jsonData = await response.json();
+      responseData = {
+        success: response.ok,
+        message: jsonData.message || 'Verification completed',
+        data: jsonData.data
+      };
+    } else {
+      const text = await response.text();
+      responseData = { 
+        success: response.ok,
+        message: text 
+      };
     }
-  } catch (error) {
-    console.error(`OTP verification error:`, error);
-    return NextResponse.json(
-      { 
-        success: false,
-        message: `Internal server error: ${error instanceof Error ? error.message : String(error)}`
+    
+    return new NextResponse(JSON.stringify(responseData), {
+      status,
+      headers: {
+        'Content-Type': 'application/json',
       },
-      { status: 500 }
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return new NextResponse(
+      JSON.stringify({
+        success: false,
+        message: `Internal server error: ${errorMessage}`
+      }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
     );
   }
 } 
