@@ -44,8 +44,9 @@ export async function POST(request: NextRequest) {
       cache: 'no-store'
     });
 
-    if (!response) {
-      throw new Error('No response received from the server');
+    // Ensure we have a valid response
+    if (!response || typeof response.status !== 'number') {
+      throw new Error('Invalid response from server');
     }
 
     // Try to parse the response as JSON
@@ -57,7 +58,12 @@ export async function POST(request: NextRequest) {
     
     try {
       if (contentType && contentType.includes('application/json')) {
-        responseData = await response.json();
+        const jsonData = await response.json();
+        responseData = {
+          success: response.ok,
+          message: jsonData.message || 'Verification completed',
+          data: jsonData.data
+        };
         console.log('Response data:', JSON.stringify(responseData));
       } else {
         const text = await response.text();
@@ -68,12 +74,9 @@ export async function POST(request: NextRequest) {
         };
       }
       
-      // Ensure we have a valid status code
-      const statusCode = response.status || 200;
-      
       // Return the response with the same status code
       return NextResponse.json(responseData, { 
-        status: statusCode 
+        status: response.status 
       });
     } catch (parseError) {
       console.error('Error parsing response:', parseError);
