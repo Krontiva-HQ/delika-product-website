@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/components/ui/use-toast'
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [isVerifying, setIsVerifying] = useState(true)
@@ -253,5 +253,11 @@ export default function CheckoutSuccessPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <CheckoutSuccessContent />
   )
 } 
