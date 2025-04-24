@@ -68,9 +68,12 @@ export async function POST(request: NextRequest) {
         };
       }
       
+      // Ensure we have a valid status code
+      const statusCode = response.status || 200;
+      
       // Return the response with the same status code
       return NextResponse.json(responseData, { 
-        status: response.status || 200 
+        status: statusCode 
       });
     } catch (parseError) {
       console.error('Error parsing response:', parseError);
