@@ -28,6 +28,7 @@ export async function POST(request: Request) {
         currency: 'GHS',
         channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer'],
         callback_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success`,
+        webhook_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/paystack/webhook`,
         metadata: {
           orderId,
           customerId,
