@@ -244,7 +244,7 @@ export default function ClientCheckoutSuccess() {
             </div>
 
             <Button 
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/shop')}
               className="bg-orange-500 hover:bg-orange-600 w-full"
             >
               Return to Home
