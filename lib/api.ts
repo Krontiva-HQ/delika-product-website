@@ -229,9 +229,9 @@ export async function getBranches<T = any>(): Promise<T> {
  * @param customerId - Optional customer ID
  * @returns The customer details
  */
-export async function getCustomerDetails<T = any>(customerId?: string): Promise<T> {
+export async function getCustomerDetails<T = any>(userId?: string): Promise<T> {
   try {
-    console.log(`Calling getCustomerDetails with customerId: ${customerId || 'none'}`);
+    console.log(`Calling getCustomerDetails with customerId: ${userId || 'none'}`);
     
     // Get auth token from localStorage if available
     let headers: Record<string, string> = {
@@ -257,7 +257,7 @@ export async function getCustomerDetails<T = any>(customerId?: string): Promise<
     }
     
     // Construct the URL with the customerId as a query parameter
-    const url = customerId ? `${customerDetailsApiUrl}?customerId=${encodeURIComponent(customerId)}` : customerDetailsApiUrl;
+    const url = userId ? `${customerDetailsApiUrl}?userId=${encodeURIComponent(userId)}` : customerDetailsApiUrl;
     
     // Make the API call
     const response = await fetch(url, {

@@ -391,12 +391,35 @@ export function StoreHeader() {
       setLikedBranches(newLikedBranches);
       localStorage.setItem('filteredFavoritesCount', newLikedBranches.size.toString());
       
-      // Use our API utility function instead of direct fetch
-      await updateFavorites({
+      // Log the API call
+      console.log('Calling CUSTOMER_FAVORITES_API with:', {
         userId: user.id,
         branchName: branchName,
         liked: !isCurrentlyLiked
       });
+
+      // Call the CUSTOMER_FAVORITES_API endpoint
+      const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/customer/favorites/add/remove/restaurant', {
+        method: 'PATCH',
+        
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}` // Add authorization token
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          branchName: branchName,
+          liked: !isCurrentlyLiked,
+          field_value: user.id // Add required field_value parameter
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update favorites');
+      }
+
+      const responseData = await response.json();
+      console.log('CUSTOMER_FAVORITES_API response:', responseData);
       
       // Fetch latest favorites to ensure sync with server
       await fetchUserFavorites(user.id);
