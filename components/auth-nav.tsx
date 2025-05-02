@@ -214,7 +214,7 @@ export function AuthNav({
                 onClick={onHomeClick}
                 className={`font-semibold ${currentView === 'stores' ? 'text-orange-500' : 'text-gray-600 hover:text-gray-900'}`}
               >
-                Shops
+                Restaurants
               </button>
               {userName && (
                 <>

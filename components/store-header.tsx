@@ -517,7 +517,7 @@ export function StoreHeader() {
               className="mb-4 text-orange-500 hover:text-orange-600 flex items-center gap-1"
             >
               <ChevronLeft className="w-4 h-4" />
-              Back to Stores
+              Back to Restaurants
             </button>
             <BranchPage params={{ id: selectedBranchId! }} />
           </div>
