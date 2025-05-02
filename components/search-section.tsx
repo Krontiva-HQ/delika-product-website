@@ -16,12 +16,51 @@ export function SearchSection({ onSearch, userLocation, onLocationClick }: Searc
 
   useEffect(() => {
     loadGoogleMaps().catch(console.error)
+
+    // Log current location data when component mounts
+    const locationData = localStorage.getItem('userLocationData')
+    if (locationData) {
+      const parsedData = JSON.parse(locationData)
+      console.log('Current Location Data:', {
+        address: parsedData.address,
+        coordinates: {
+          latitude: parsedData.lat,
+          longitude: parsedData.lng
+        }
+      })
+    }
   }, [])
+
+  // Log when location changes
+  useEffect(() => {
+    if (userLocation) {
+      const locationData = localStorage.getItem('userLocationData')
+      if (locationData) {
+        const parsedData = JSON.parse(locationData)
+        console.log('Location Updated:', {
+          address: userLocation,
+          coordinates: {
+            latitude: parsedData.lat,
+            longitude: parsedData.lng
+          }
+        })
+      }
+    }
+  }, [userLocation])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setSearchValue(value)
     onSearch(value)
+  }
+
+  const handleLocationClick = () => {
+    console.log('Location button clicked')
+    const locationData = localStorage.getItem('userLocationData')
+    if (locationData) {
+      console.log('Current Location Data before change:', JSON.parse(locationData))
+    }
+    onLocationClick()
   }
 
   return (
@@ -41,7 +80,7 @@ export function SearchSection({ onSearch, userLocation, onLocationClick }: Searc
             </div>
             <button
               type="button"
-              onClick={onLocationClick}
+              onClick={handleLocationClick}
               className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
             >
               <MapPin className="w-5 h-5" />

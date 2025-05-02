@@ -46,17 +46,31 @@ export function CartModal({
 }: CartModalProps) {
   // Add the calculation function at the top of the component
   const calculateDeliveryFee = (distance: number): number => {
+    console.log('\nDelivery Fee Calculation:');
+    console.log('Distance:', distance.toFixed(2), 'km');
+    
+    let fee;
     if (distance <= 1) {
-      return 15; // Fixed fee for distances up to 1km
+      fee = 15;
+      console.log('Distance ≤ 1km: Fixed fee of', fee, 'GH₵');
     } else if (distance <= 2) {
-      return 20; // Fixed fee for distances between 1km and 2km
+      fee = 20;
+      console.log('Distance between 1-2km: Fixed fee of', fee, 'GH₵');
     } else if (distance <= 10) {
-      // For distances > 2km and <= 10km: 17 cedis base price + 2.5 cedis per km beyond 2km
-      return 17 + ((distance - 2) * 2.5);
+      fee = 17 + ((distance - 2) * 2.5);
+      console.log('Distance between 2-10km:');
+      console.log('Base price: 17 GH₵');
+      console.log('Additional distance beyond 2km:', (distance - 2).toFixed(2), 'km');
+      console.log('Additional fee:', ((distance - 2) * 2.5).toFixed(2), 'GH₵');
+      console.log('Total fee:', fee.toFixed(2), 'GH₵');
     } else {
-      // For distances above 10km: 3.5 * distance + 20
-      return (3.5 * distance) + 20;
+      fee = (3.5 * distance) + 20;
+      console.log('Distance > 10km:');
+      console.log('Distance multiplier:', distance.toFixed(2), 'km * 3.5 GH₵ =', (3.5 * distance).toFixed(2), 'GH₵');
+      console.log('Base fee: 20 GH₵');
+      console.log('Total fee:', fee.toFixed(2), 'GH₵');
     }
+    return fee;
   };
 
   const router = useRouter()
@@ -69,25 +83,45 @@ export function CartModal({
       try {
         // Get user's location from localStorage
         const locationData = localStorage.getItem('userLocationData')
+        console.log('Location data from localStorage:', locationData)
+        
         if (!locationData || !branchLocation) {
+          console.log('Missing location data:', { 
+            hasUserLocation: !!locationData, 
+            hasBranchLocation: !!branchLocation,
+            branchLocationDetails: branchLocation // Log the actual branch location object
+          })
           setDeliveryFee(15) // Default to minimum fee if no location data
           return
         }
 
         const { lat, lng } = JSON.parse(locationData)
+        console.log('User coordinates:', { lat, lng })
+        console.log('Branch coordinates:', branchLocation)
+        
+        // Ensure branch coordinates are numbers
+        const branchLat = parseFloat(branchLocation.latitude.toString())
+        const branchLng = parseFloat(branchLocation.longitude.toString())
+        
+        console.log('Parsed coordinates:', { 
+          user: { lat, lng },
+          branch: { latitude: branchLat, longitude: branchLng }
+        })
         
         // Calculate distance between user and branch
         const distance = await calculateDistance(
           { latitude: lat, longitude: lng },
-          { latitude: branchLocation.latitude, longitude: branchLocation.longitude }
+          { latitude: branchLat, longitude: branchLng }
         )
         
         setDistance(distance)
         const fee = calculateDeliveryFee(distance)
         setDeliveryFee(fee)
         
-        console.log('Distance:', distance, 'km')
-        console.log('Calculated fee:', fee, 'GH₵')
+        console.log('=== DELIVERY FEE CALCULATION ===')
+        console.log('Distance:', distance.toFixed(2), 'km')
+        console.log('Calculated fee:', fee.toFixed(2), 'GH₵')
+        console.log('=============================')
       } catch (error) {
         console.error('Error calculating delivery fee:', error)
         setDeliveryFee(15) // Default to minimum fee on error

@@ -449,6 +449,8 @@ export function BranchPage({ params }: BranchPageProps) {
             branchCity: branch.branchCity,
             openTime: branch.openTime,
             closeTime: branch.closeTime,
+            branchLatitude: branch.branchLatitude?.toString(),
+            branchLongitude: branch.branchLongitude?.toString(),
             _restaurantTable: branch.restaurant
           }}
         />

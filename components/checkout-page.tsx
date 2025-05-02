@@ -281,7 +281,7 @@ export function CheckoutPage({
 
     try {
       const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      const locationData = JSON.parse(localStorage.getItem('locationData') || '{}');
+      const locationData = JSON.parse(localStorage.getItem('userLocationData') || '{}');
 
       // Ensure coordinates are numbers
       const branchLat = parseFloat(branchDetails?.branchLatitude?.toString() || '0');
@@ -332,14 +332,14 @@ export function CheckoutPage({
               quantity: item.quantity.toString()
             })),
             pickup: [{
-              fromLatitude: branchDetails?.branchLatitude?.toString() || '',
-              fromLongitude: branchDetails?.branchLongitude?.toString() || '',
+              fromLatitude: branchLat.toString(),
+              fromLongitude: branchLng.toString(),
               fromAddress: branchName
             }],
             dropOff: [{
-              toLatitude: locationData?.lat?.toString() || '',
-              toLongitude: locationData?.lng?.toString() || '',
-              toAddress: locationData?.address || customerInfo.address
+              toLatitude: userLat.toString(),
+              toLongitude: userLng.toString(),
+              toAddress: locationData.address || customerInfo.address
             }],
             foodAndDeliveryFee: true,
             payNow: true,
@@ -357,6 +357,30 @@ export function CheckoutPage({
             Walkin: false,
             payVisaCard: false
           };
+
+          console.log('=== ORDER SUBMISSION DATA ===');
+          console.log('Order ID:', orderData.id);
+          console.log('Customer Details:', {
+            name: orderData.customerName,
+            phone: orderData.customerPhoneNumber,
+            address: orderData.dropoffName
+          });
+          console.log('Location Details:', {
+            pickup: orderData.pickup[0],
+            dropOff: orderData.dropOff[0],
+            distance: `${orderData.deliveryDistance}km`
+          });
+          console.log('Order Items:', orderData.products);
+          console.log('Pricing:', {
+            orderPrice: `GH₵${orderData.orderPrice}`,
+            deliveryFee: `GH₵${orderData.deliveryPrice}`,
+            total: `GH₵${orderData.totalPrice}`
+          });
+          console.log('Payment Details:', {
+            reference: orderData.paystackReferenceCode,
+            status: orderData.paymentStatus
+          });
+          console.log('========================');
 
           // Submit order
           await submitOrder(orderData);

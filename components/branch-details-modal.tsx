@@ -10,6 +10,8 @@ interface BranchDetailsModalProps {
     branchName?: string
     branchLocation?: string
     branchPhoneNumber?: string
+    branchLongitude?: string
+    branchLatitude?: string
     branchCity?: string
     openTime?: string
     closeTime?: string
@@ -24,6 +26,10 @@ interface BranchDetailsModalProps {
 
 export function BranchDetailsModal({ isOpen, onClose, branch }: BranchDetailsModalProps) {
   console.log('Branch details:', branch);
+  console.log('Branch coordinates:', {
+    latitude: branch.branchLatitude,
+    longitude: branch.branchLongitude
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -38,6 +44,11 @@ export function BranchDetailsModal({ isOpen, onClose, branch }: BranchDetailsMod
             <div>
               <h4 className="font-medium text-gray-900">Location</h4>
               <p className="text-gray-600">{branch.branchLocation || 'Location not available'}</p>
+              {(branch.branchLatitude && branch.branchLongitude) && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Coordinates: {branch.branchLatitude}, {branch.branchLongitude}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex items-start gap-3">

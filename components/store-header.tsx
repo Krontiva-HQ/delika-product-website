@@ -113,6 +113,9 @@ export function StoreHeader() {
   const [user, setUser] = useState<UserData | null>(null)
   const [userCoordinates, setUserCoordinates] = useState<{lat: number, lng: number} | null>(null)
   const [likedBranches, setLikedBranches] = useState<Set<string>>(new Set())
+  const [searchRadius, setSearchRadius] = useState<number>(8) // Default 8km radius
+  const [showExpandedSearch, setShowExpandedSearch] = useState<boolean>(false)
+  const [filteredOutResults, setFilteredOutResults] = useState<Branch[]>([])
 
   useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -229,9 +232,46 @@ export function StoreHeader() {
         parseFloat(branch.branchLatitude),
         parseFloat(branch.branchLongitude)
       );
-      return distance <= 8; // Only show branches within 8km
+      return distance <= searchRadius;
     });
   };
+
+  // Add useEffect to handle filtered results
+  useEffect(() => {
+    if (!userCoordinates || !searchQuery) {
+      setFilteredOutResults([]);
+      setShowExpandedSearch(false);
+      // Reset search radius when search is cleared
+      setSearchRadius(8);
+      return;
+    }
+
+    const outsideRadius = branches.filter(branch => {
+      const distance = calculateDistance(
+        userCoordinates.lat,
+        userCoordinates.lng,
+        parseFloat(branch.branchLatitude),
+        parseFloat(branch.branchLongitude)
+      );
+      return distance > searchRadius && distance <= 15 && (
+        branch.branchName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        branch._restaurantTable[0].restaurantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        branch.branchLocation.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    });
+
+    setFilteredOutResults(outsideRadius);
+    setShowExpandedSearch(outsideRadius.length > 0);
+  }, [branches, searchQuery, userCoordinates, searchRadius]);
+
+  // Add useEffect to reset search radius when returning to stores view
+  useEffect(() => {
+    if (currentView === 'stores') {
+      setSearchRadius(8);
+      setShowExpandedSearch(false);
+      setFilteredOutResults([]);
+    }
+  }, [currentView]);
 
   // Further filter by search query
   const searchResults = searchQuery
@@ -265,12 +305,37 @@ export function StoreHeader() {
     localStorage.setItem('currentView', 'branch')
   }
 
-  // Clear localStorage when going back to stores
+  // Add effect to restore search query from localStorage
+  useEffect(() => {
+    const savedSearch = localStorage.getItem('lastSearchQuery');
+    if (savedSearch) {
+      setSearchQuery(savedSearch);
+    }
+  }, []);
+
+  // Modify search input handler to save to localStorage
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    if (value) {
+      localStorage.setItem('lastSearchQuery', value);
+    } else {
+      localStorage.removeItem('lastSearchQuery');
+    }
+  };
+
+  // Modify handleBackToStores to not clear search
   const handleBackToStores = () => {
     setCurrentView('stores')
     setSelectedBranchId(null)
     localStorage.removeItem('selectedBranchId')
     localStorage.removeItem('currentView')
+    // Don't reset search radius if we have an active search
+    if (!searchQuery) {
+      setSearchRadius(8)
+      setShowExpandedSearch(false)
+      setFilteredOutResults([])
+    }
   }
 
   // Add function to fetch user favorites
@@ -437,6 +502,11 @@ export function StoreHeader() {
     }
   };
 
+  const handleExpandSearch = () => {
+    setSearchRadius(15);
+    setShowExpandedSearch(false);
+  };
+
   const renderContent = () => {
     switch (currentView) {
       case 'branch':
@@ -483,7 +553,7 @@ export function StoreHeader() {
                       placeholder="Search restaurants and stores"
                       className="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={handleSearchChange}
                     />
                   </div>
 
@@ -563,11 +633,31 @@ export function StoreHeader() {
                   ))}
                 </div>
               ) : (
-                <EmptyState
-                  title="No restaurants found"
-                  description={searchQuery ? `We couldn't find any restaurants matching "${searchQuery}"` : "No restaurants available"}
-                  icon="search"
-                />
+                <div className="flex flex-col items-center justify-center py-8">
+                  {showExpandedSearch ? (
+                    <div className="text-center">
+                      <div className="mb-4">
+                        <Search className="w-12 h-12 text-gray-400 mx-auto" />
+                      </div>
+                      <p className="text-gray-600 mb-4">
+                       {filteredOutResults.length} {filteredOutResults.length === 1 ? 'restaurant' : 'restaurants'} matches your search, but it's a bit far away.
+                      </p>
+                      <button
+                        onClick={handleExpandSearch}
+                        className="text-orange-600 hover:text-orange-700 font-medium inline-flex items-center gap-2 border border-orange-600 rounded-md px-4 py-2 hover:bg-orange-50 transition-colors"
+                      >
+                        Click here to expand your search
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <EmptyState
+                      title="No restaurants found"
+                      description={searchQuery ? `We couldn't find any restaurants matching "${searchQuery}"` : "No restaurants available"}
+                      icon="search"
+                    />
+                  )}
+                </div>
               )}
             </div>
           </div>

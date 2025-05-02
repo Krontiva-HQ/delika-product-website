@@ -52,11 +52,13 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
             const data = await response.json()
             if (data.results[0]) {
               const address = data.results[0].formatted_address
-              onLocationSelect({
+              const locationData = {
                 address,
                 lat: latitude,
                 lng: longitude
-              })
+              }
+              console.log('Current location selected:', locationData)
+              onLocationSelect(locationData)
               onClose()
             }
           } catch (error) {
@@ -110,7 +112,8 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
           lat: data.result.geometry.location.lat,
           lng: data.result.geometry.location.lng
         }
-        // Save to localStorage
+        console.log('Location selected from search:', locationData)
+        // Save to localStorage with consistent key
         localStorage.setItem('userLocationData', JSON.stringify(locationData))
         
         onLocationSelect(locationData)

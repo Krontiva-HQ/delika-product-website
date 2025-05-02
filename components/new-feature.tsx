@@ -8,7 +8,7 @@ export function NewFeature() {
       <div className="grid md:grid-cols-2 gap-16 items-center">
         <div className="relative h-[500px] rounded-2xl overflow-hidden">
           <Image
-            src="/new-feature.jpg"
+            src="/new-feature.webp"
             alt="New feature illustration"
             fill
             className="object-cover"

@@ -2,16 +2,15 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { Menu, X } from "lucide-react"
+import { Menu, X, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function SiteHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   const menuItems = [
-    { href: "/shop", label: "Shops" },
-    { href: "/restaurants", label: "Restaurants" },
-    { href: "/couriers", label: "Couriers" },
+    { href: "/shop", label: "Restaurants" },
     { href: "/about", label: "About" },
   ]
 
@@ -41,6 +40,39 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
+          
+          {/* Join Delika Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center gap-1 text-sm font-medium text-black hover:text-orange-500 transition-colors"
+            >
+              Join Delika
+              <ChevronDown className={cn(
+                "h-4 w-4 transition-transform duration-200",
+                isDropdownOpen ? "rotate-180" : ""
+              )} />
+            </button>
+            
+            {isDropdownOpen && (
+              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2">
+                <Link
+                  href="/restaurants"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  as Restaurant
+                </Link>
+                <Link
+                  href="/couriers"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  as Courier
+                </Link>
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -74,6 +106,25 @@ export function SiteHeader() {
                 {item.label}
               </Link>
             ))}
+            <div className="space-y-2">
+              <div className="text-lg font-medium text-gray-900">Join Delika</div>
+              <div className="pl-4 space-y-2">
+                <Link
+                  href="/restaurant"
+                  className="block text-base text-gray-600 hover:text-orange-500 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  as Restaurant
+                </Link>
+                <Link
+                  href="/couriers"
+                  className="block text-base text-gray-600 hover:text-orange-500 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  as Courier
+                </Link>
+              </div>
+            </div>
           </nav>
         </div>
       </div>

@@ -17,7 +17,7 @@ export function MainCTA() {
           {/* Right image */}
           <div className="absolute -right-28 -bottom-16 h-[140%] w-[450px] md:w-[450px]">
             <Image
-              src="/burger.png"
+              src="/burger.webp"
               alt="Delika illustration"
               fill
               className="object-contain object-right-bottom opacity-20 md:opacity-100"
