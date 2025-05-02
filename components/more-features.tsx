@@ -27,7 +27,7 @@ export function MoreFeatures() {
         <div className="relative min-h-screen lg:h-auto">
           <div className="sticky top-0 h-screen">
             <Image
-              src="/main.jpg"
+              src="/main.webp"
               alt="Office environment"
               fill
               className="object-cover"
