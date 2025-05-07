@@ -2,13 +2,16 @@
 
 import Image from "next/image"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ShoppingCart, Minus, Plus, Trash2, AlertCircle } from "lucide-react"
+import { ShoppingCart, Minus, Plus, Trash2, AlertCircle, Bike, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { CartItem } from "@/types/cart"
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"
 import { calculateDistance } from "@/lib/distance"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 
 interface CartModalProps {
   isOpen: boolean
@@ -77,6 +80,7 @@ export function CartModal({
   const [isProcessingAuth, setIsProcessingAuth] = useState(false)
   const [deliveryFee, setDeliveryFee] = useState(15) // Default to minimum fee
   const [distance, setDistance] = useState(0)
+  const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian'>('rider')
 
   useEffect(() => {
     const calculateFee = async () => {
@@ -268,6 +272,60 @@ export function CartModal({
 
             <div className="border-t bg-white px-6 py-4 sticky bottom-0">
               <div className="space-y-3">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 font-medium">Choose Delivery Type</span>
+                  </div>
+                  <RadioGroup
+                    value={deliveryType}
+                    onValueChange={(value) => setDeliveryType(value as 'rider' | 'pedestrian')}
+                    className="grid grid-cols-2 gap-2"
+                  >
+                    <div>
+                      <RadioGroupItem
+                        value="rider"
+                        id="rider"
+                        className="peer sr-only"
+                      />
+                      <Label
+                        htmlFor="rider"
+                        className={cn(
+                          "flex items-center gap-2 rounded-md border border-gray-200 p-2 hover:bg-gray-50 cursor-pointer",
+                          "peer-data-[state=checked]:border-orange-500 peer-data-[state=checked]:bg-orange-50",
+                          "transition-all duration-200"
+                        )}
+                      >
+                        <Bike className="h-4 w-4 text-gray-600" />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">Rider</div>
+                          <div className="text-xs text-gray-500">Faster delivery</div>
+                        </div>
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem
+                        value="pedestrian"
+                        id="pedestrian"
+                        className="peer sr-only"
+                      />
+                      <Label
+                        htmlFor="pedestrian"
+                        className={cn(
+                          "flex items-center gap-2 rounded-md border border-gray-200 p-2 hover:bg-gray-50 cursor-pointer",
+                          "peer-data-[state=checked]:border-orange-500 peer-data-[state=checked]:bg-orange-50",
+                          "transition-all duration-200"
+                        )}
+                      >
+                        <User className="h-4 w-4 text-gray-600" />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">Pedestrian</div>
+                          <div className="text-xs text-gray-500">Economical option</div>
+                        </div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-600">Subtotal</span>
                   <span className="font-medium">GH₵ {cartTotal.toFixed(2)}</span>

@@ -57,10 +57,8 @@ export function OTPInputModal({
     setErrorMessage(null)
     try {
       if (signupMethod === 'phone' || (!signupMethod && phone)) {
-        // Use our authRequest utility function for phone login
         await authRequest('login/phoneNumber/customer', { phoneNumber: phone });
       } else {
-        // Use our login utility function for email login
         await login({ email: email || '', password: '' });
       }
 
@@ -74,7 +72,7 @@ export function OTPInputModal({
     }
   }
 
-  const handleInputChange = (index: number, value: string) => {
+  const handleInputChange = async (index: number, value: string) => {
     if (value.length > 1) value = value[0]
     if (!/^\d*$/.test(value)) return
 
@@ -86,6 +84,37 @@ export function OTPInputModal({
     if (value && index < 3) {
       setActiveInput(index + 1)
     }
+
+    // Auto-verify when last digit is entered
+    if (value && index === 3) {
+      const otpString = newOTP.join('')
+      if (otpString.length === 4) {
+        setIsLoading(true)
+        setErrorMessage(null)
+
+        try {
+          console.log('Verifying OTP:', otpString);
+          
+          if (otpString.length === 4 && /^\d{4}$/.test(otpString)) {
+            // Simulate a brief delay to show loading state
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Pass the OTP back to the parent component and close the modal
+            onVerify(otpString);
+            onClose();
+          } else {
+            setErrorMessage('Please enter a valid 4-digit verification code.');
+            setOtp(["", "", "", ""]);
+            setActiveInput(0);
+          }
+        } catch (error) {
+          console.error('Verification error:', error);
+          setErrorMessage('Failed to verify code. Please try again.');
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    }
   }
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -93,39 +122,6 @@ export function OTPInputModal({
       setActiveInput(index - 1)
     }
   }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const otpString = otp.join('')
-    if (otpString.length !== 4) return
-
-    setIsLoading(true)
-    setErrorMessage(null)
-
-    try {
-      console.log('Verifying OTP:', otpString);
-      
-      // Simply accept the OTP code without making additional API calls
-      // Just verify the code is 4 digits and pass it back to the parent component
-      if (otpString.length === 4 && /^\d{4}$/.test(otpString)) {
-        // Simulate a brief delay to show loading state
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Pass the OTP back to the parent component and close the modal
-        onVerify(otpString);
-        onClose();
-      } else {
-        setErrorMessage('Please enter a valid 4-digit verification code.');
-        setOtp(["", "", "", ""]);
-        setActiveInput(0);
-      }
-    } catch (error) {
-      console.error('Verification error:', error);
-      setErrorMessage('Failed to verify code. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (activeInput >= 0 && activeInput <= 3) {
@@ -147,7 +143,7 @@ export function OTPInputModal({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 py-4">
+        <div className="space-y-6 py-4">
           <div className="flex justify-center gap-3">
             {otp.map((digit, index) => (
               <Input
@@ -170,47 +166,36 @@ export function OTPInputModal({
             </div>
           )}
 
-          <div className="flex flex-col items-center gap-4">
-            <Button 
-              type="submit" 
-              className="w-full bg-orange-500 hover:bg-orange-600 h-12 text-lg font-medium"
-              disabled={isLoading || otp.join('').length !== 4}
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <span className="animate-spin">⏳</span>
-                  Verifying...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  Verify Code
-                  <ArrowRight className="w-5 h-5" />
-                </span>
-              )}
-            </Button>
-
-            <div className="flex items-center gap-2 text-sm">
-              {!canResend ? (
-                <>
-                  <Timer className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-500">Resend code in {countdown}s</span>
-                </>
-              ) : (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="text-orange-500 hover:text-orange-600"
-                  onClick={handleResendOTP}
-                  disabled={isLoading}
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Resend Code
-                </Button>
-              )}
+          {isLoading && (
+            <div className="text-center text-gray-500">
+              <span className="flex items-center justify-center gap-2">
+                <span className="animate-spin">⏳</span>
+                Verifying...
+              </span>
             </div>
+          )}
+
+          <div className="flex items-center gap-2 text-sm">
+            {!canResend ? (
+              <>
+                <Timer className="w-4 h-4 text-gray-500" />
+                <span className="text-gray-500">Resend code in {countdown}s</span>
+              </>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-orange-500 hover:text-orange-600"
+                onClick={handleResendOTP}
+                disabled={isLoading}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Resend Code
+              </Button>
+            )}
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   )
-} 
+}
