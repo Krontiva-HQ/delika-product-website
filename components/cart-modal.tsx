@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ShoppingCart, Minus, Plus, Trash2, AlertCircle, Bike, User } from "lucide-react"
+import { ShoppingCart, Minus, Plus, Trash2, AlertCircle, Bike, User, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { CartItem } from "@/types/cart"
@@ -47,45 +47,17 @@ export function CartModal({
   isAuthenticated,
   branchLocation
 }: CartModalProps) {
-  // Add the calculation function at the top of the component
-  const calculateDeliveryFee = (distance: number): number => {
-    console.log('\nDelivery Fee Calculation:');
-    console.log('Distance:', distance.toFixed(2), 'km');
-    
-    let fee;
-    if (distance <= 1) {
-      fee = 15;
-      console.log('Distance ≤ 1km: Fixed fee of', fee, 'GH₵');
-    } else if (distance <= 2) {
-      fee = 20;
-      console.log('Distance between 1-2km: Fixed fee of', fee, 'GH₵');
-    } else if (distance <= 10) {
-      fee = 17 + ((distance - 2) * 2.5);
-      console.log('Distance between 2-10km:');
-      console.log('Base price: 17 GH₵');
-      console.log('Additional distance beyond 2km:', (distance - 2).toFixed(2), 'km');
-      console.log('Additional fee:', ((distance - 2) * 2.5).toFixed(2), 'GH₵');
-      console.log('Total fee:', fee.toFixed(2), 'GH₵');
-    } else {
-      fee = (3.5 * distance) + 20;
-      console.log('Distance > 10km:');
-      console.log('Distance multiplier:', distance.toFixed(2), 'km * 3.5 GH₵ =', (3.5 * distance).toFixed(2), 'GH₵');
-      console.log('Base fee: 20 GH₵');
-      console.log('Total fee:', fee.toFixed(2), 'GH₵');
-    }
-    return fee;
-  };
-
   const router = useRouter()
   const [isProcessingAuth, setIsProcessingAuth] = useState(false)
-  const [deliveryFee, setDeliveryFee] = useState(15) // Default to minimum fee
+  const [deliveryFee, setDeliveryFee] = useState(15)
   const [distance, setDistance] = useState(0)
-  const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian'>('rider')
+  const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian' | 'pickup'>('rider')
+  const [riderFee, setRiderFee] = useState(0)
+  const [pedestrianFee, setPedestrianFee] = useState(0)
 
   useEffect(() => {
     const calculateFee = async () => {
       try {
-        // Get user's location from localStorage
         const locationData = localStorage.getItem('userLocationData')
         console.log('Location data from localStorage:', locationData)
         
@@ -93,49 +65,95 @@ export function CartModal({
           console.log('Missing location data:', { 
             hasUserLocation: !!locationData, 
             hasBranchLocation: !!branchLocation,
-            branchLocationDetails: branchLocation // Log the actual branch location object
+            branchLocationDetails: branchLocation
           })
-          setDeliveryFee(15) // Default to minimum fee if no location data
+          setDeliveryFee(15)
+          setRiderFee(15)
+          setPedestrianFee(15)
           return
         }
 
         const { lat, lng } = JSON.parse(locationData)
-        console.log('User coordinates:', { lat, lng })
-        console.log('Branch coordinates:', branchLocation)
-        
-        // Ensure branch coordinates are numbers
         const branchLat = parseFloat(branchLocation.latitude.toString())
         const branchLng = parseFloat(branchLocation.longitude.toString())
         
-        console.log('Parsed coordinates:', { 
-          user: { lat, lng },
-          branch: { latitude: branchLat, longitude: branchLng }
-        })
-        
-        // Calculate distance between user and branch
         const distance = await calculateDistance(
           { latitude: lat, longitude: lng },
           { latitude: branchLat, longitude: branchLng }
         )
         
         setDistance(distance)
-        const fee = calculateDeliveryFee(distance)
-        setDeliveryFee(fee)
+
+        console.log('Making API request to:', `${process.env.NEXT_PUBLIC_DELIVERY_PRICE}`)
+        console.log('Request payload:', { distance, deliveryType })
+
+        // Call the delivery price API
+        const response = await fetch(`${process.env.NEXT_PUBLIC_DELIVERY_PRICE}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            distance,
+            deliveryType,
+          }),
+        })
+
+        console.log('API response status:', response.status)
+        
+        if (!response.ok) {
+          throw new Error(`Failed to calculate delivery fee: ${response.status}`)
+        }
+
+        const responseJson = await response.json()
+        console.log('API response data:', responseJson)
+
+        // Add proper type checking and fallbacks
+        const riderFee = typeof responseJson.riderFee === 'number' ? responseJson.riderFee : 0
+        const pedestrianFee = typeof responseJson.pedestrianFee === 'number' ? responseJson.pedestrianFee : 0
+
+        console.log('Extracted fees:', { riderFee, pedestrianFee })
+
+        setRiderFee(riderFee)
+        setPedestrianFee(pedestrianFee)
+        
+        // Set the fee based on the selected delivery type
+        const currentFee = deliveryType === 'rider' ? riderFee : pedestrianFee
+        console.log(`Setting delivery fee for ${deliveryType} to:`, currentFee)
+        setDeliveryFee(currentFee)
         
         console.log('=== DELIVERY FEE CALCULATION ===')
         console.log('Distance:', distance.toFixed(2), 'km')
-        console.log('Calculated fee:', fee.toFixed(2), 'GH₵')
+        console.log('Delivery Type:', deliveryType)
+        console.log('Rider Fee:', riderFee, 'GH₵')
+        console.log('Pedestrian Fee:', pedestrianFee, 'GH₵')
+        console.log('Selected Fee:', currentFee, 'GH₵')
         console.log('=============================')
       } catch (error) {
         console.error('Error calculating delivery fee:', error)
-        setDeliveryFee(15) // Default to minimum fee on error
+        // Set default values on error
+        setDeliveryFee(15)
+        setRiderFee(15)
+        setPedestrianFee(15)
       }
     }
 
     if (isOpen) {
       calculateFee()
     }
-  }, [isOpen, branchLocation])
+  }, [isOpen, branchLocation, deliveryType])
+
+  // Update delivery fee when delivery type changes
+  useEffect(() => {
+    console.log('Delivery type changed to:', deliveryType)
+    console.log('Current fees:', { riderFee, pedestrianFee })
+    
+    // Set to 0 if pickup is selected
+    const fee = deliveryType === 'pickup' ? 0 : (deliveryType === 'rider' ? riderFee : pedestrianFee)
+    
+    console.log('Setting new delivery fee to:', fee)
+    setDeliveryFee(fee)
+  }, [deliveryType, riderFee, pedestrianFee])
 
   // Check authentication status whenever the modal opens
   useEffect(() => {
@@ -169,7 +187,7 @@ export function CartModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[450px] p-0 gap-0 bg-white overflow-hidden">
+      <DialogContent className="sm:max-w-[450px] p-0 gap-0 bg-white overflow-hidden max-h-[90vh] flex flex-col">
         <DialogHeader className="px-6 py-4 border-b sticky top-0 bg-white z-10">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
@@ -184,7 +202,7 @@ export function CartModal({
 
         {cart.length > 0 ? (
           <>
-            <div className="px-6 space-y-4 max-h-[60vh] overflow-y-auto py-6">
+            <div className="px-6 space-y-4 overflow-y-auto flex-1 py-6">
               {hasUnavailableItems && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
@@ -195,14 +213,14 @@ export function CartModal({
               )}
               
               <AnimatePresence>
-                {cart.map((item) => {
+                {cart.map((item, index) => {
                   const menuItem = menuCategories
                     .flatMap(cat => cat.foods)
                     .find(food => food.name === item.name);
 
                   return (
                     <motion.div
-                      key={item.id}
+                      key={`${item.id}-${index}`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -100 }}
@@ -272,14 +290,19 @@ export function CartModal({
 
             <div className="border-t bg-white px-6 py-4 sticky bottom-0">
               <div className="space-y-3">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-medium">GH₵ {cartTotal.toFixed(2)}</span>
+                </div>
+
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-600 font-medium">Choose Delivery Type</span>
                   </div>
                   <RadioGroup
                     value={deliveryType}
-                    onValueChange={(value) => setDeliveryType(value as 'rider' | 'pedestrian')}
-                    className="grid grid-cols-2 gap-2"
+                    onValueChange={(value) => setDeliveryType(value as 'rider' | 'pedestrian' | 'pickup')}
+                    className="grid grid-cols-3 gap-2"
                   >
                     <div>
                       <RadioGroupItem
@@ -298,7 +321,7 @@ export function CartModal({
                         <Bike className="h-4 w-4 text-gray-600" />
                         <div>
                           <div className="text-sm font-medium text-gray-900">Rider</div>
-                          <div className="text-xs text-gray-500">Faster delivery</div>
+                          <div className="text-xs text-gray-500">GH₵ {riderFee.toFixed(2)}</div>
                         </div>
                       </Label>
                     </div>
@@ -319,17 +342,34 @@ export function CartModal({
                         <User className="h-4 w-4 text-gray-600" />
                         <div>
                           <div className="text-sm font-medium text-gray-900">Pedestrian</div>
-                          <div className="text-xs text-gray-500">Economical option</div>
+                          <div className="text-xs text-gray-500">GH₵ {pedestrianFee.toFixed(2)}</div>
+                        </div>
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem
+                        value="pickup"
+                        id="pickup"
+                        className="peer sr-only"
+                      />
+                      <Label
+                        htmlFor="pickup"
+                        className={cn(
+                          "flex items-center gap-2 rounded-md border border-gray-200 p-2 hover:bg-gray-50 cursor-pointer",
+                          "peer-data-[state=checked]:border-orange-500 peer-data-[state=checked]:bg-orange-50",
+                          "transition-all duration-200"
+                        )}
+                      >
+                        <Store className="h-4 w-4 text-gray-600" />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">Pickup</div>
+                          <div className="text-xs text-gray-500">Free</div>
                         </div>
                       </Label>
                     </div>
                   </RadioGroup>
                 </div>
 
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">GH₵ {cartTotal.toFixed(2)}</span>
-                </div>
                 <div className="flex justify-between items-center text-sm">
                   <div className="flex items-center gap-2">
                     <span className="text-gray-600">Delivery Fee</span>
@@ -341,6 +381,7 @@ export function CartModal({
                   </div>
                   <span className="font-medium">GH₵ {deliveryFee.toFixed(2)}</span>
                 </div>
+
                 <div className="flex justify-between items-center pt-3 border-t">
                   <span className="font-medium">Total</span>
                   <span className="font-semibold text-lg">GH₵ {(cartTotal + deliveryFee).toFixed(2)}</span>
