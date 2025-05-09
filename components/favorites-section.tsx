@@ -6,6 +6,7 @@ import { MapPin, ChevronLeft, ThumbsUp } from "lucide-react"
 import { EmptyState } from "@/components/empty-state"
 import { BranchPage } from "@/components/branch-page"
 import { calculateDistance } from "@/utils/distance"
+import { updateFavorites } from "@/lib/api"
 
 interface Branch {
   id: string
@@ -52,6 +53,7 @@ export function FavoritesSection() {
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<'favorites' | 'branch'>('favorites');
   const [userCoordinates, setUserCoordinates] = useState<{lat: number, lng: number} | null>(null);
+  const [removingFavorites, setRemovingFavorites] = useState<Set<string>>(new Set());
 
   // Update localStorage with filtered count for AuthNav
   useEffect(() => {
@@ -189,6 +191,72 @@ export function FavoritesSection() {
     localStorage.removeItem('currentView');
   };
 
+  // Handle removing from favorites
+  const handleRemoveFavorite = async (branchId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent branch selection when clicking unlike
+    
+    try {
+      // Add to removing set for UI feedback
+      setRemovingFavorites(prev => new Set(prev).add(branchId));
+      
+      // Get user data from localStorage
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}') as UserData;
+      
+      if (!userData.id) {
+        console.error('No user ID found');
+        return;
+      }
+      
+      // Call the favorites API to remove the restaurant
+      await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/customer/favorites/add/remove/restaurant', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({
+          userId: userData.id,
+          branchName: branchId,
+          liked: false,
+          field_value: userData.id
+        }),
+      });
+      
+      // Update local state to remove the branch from favorites
+      setFavoriteBranches(prevBranches => 
+        prevBranches.filter(branch => branch.id !== branchId)
+      );
+      
+      // Update count in localStorage
+      localStorage.setItem('filteredFavoritesCount', 
+        (favoriteBranches.length - 1).toString()
+      );
+      
+      // Show feedback
+      const feedbackElem = document.createElement('div');
+      feedbackElem.textContent = 'Removed from favorites';
+      feedbackElem.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md shadow-md z-50';
+      document.body.appendChild(feedbackElem);
+      setTimeout(() => document.body.removeChild(feedbackElem), 2000);
+      
+    } catch (error) {
+      console.error('Error removing from favorites:', error);
+      // Show error feedback
+      const feedbackElem = document.createElement('div');
+      feedbackElem.textContent = 'Failed to remove from favorites';
+      feedbackElem.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-md shadow-md z-50';
+      document.body.appendChild(feedbackElem);
+      setTimeout(() => document.body.removeChild(feedbackElem), 2000);
+    } finally {
+      // Remove from removing set
+      setRemovingFavorites(prev => {
+        const updated = new Set(prev);
+        updated.delete(branchId);
+        return updated;
+      });
+    }
+  };
+
   if (isLoading) {
     return <div className="text-center py-8">Loading your favorites...</div>;
   }
@@ -235,11 +303,12 @@ export function FavoritesSection() {
             onClick={() => handleBranchSelect(branch)}
           >
             <button 
-              className="absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full text-orange-500 hover:text-orange-600 hover:bg-white transition-colors"
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent branch selection when clicking like
-                // TODO: Implement remove from favorites functionality
-              }}
+              className={`absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full text-orange-500 hover:text-orange-600 hover:bg-white transition-colors ${
+                removingFavorites.has(branch.id) ? 'opacity-50 pointer-events-none' : ''
+              }`}
+              onClick={(e) => handleRemoveFavorite(branch.id, e)}
+              aria-label="Remove from favorites"
+              disabled={removingFavorites.has(branch.id)}
             >
               <ThumbsUp className="w-5 h-5 fill-current" />
             </button>

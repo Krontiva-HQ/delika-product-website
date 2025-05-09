@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Star, MapPin, Clock, Plus, Minus } from "lucide-react"
+import { Star, MapPin, Clock, Plus, Minus, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BranchDetailsModal } from "@/components/branch-details-modal"
 import { EmptyState } from "@/components/empty-state"
@@ -258,16 +258,12 @@ export function BranchPage({ params }: BranchPageProps) {
                     <span>{branch.branchCity}</span>
                   </div>
                 </div>
-                <Button 
-                  className="absolute bottom-4 right-4 bg-white text-gray-900 hover:bg-gray-100"
-                  onClick={() => setIsDetailsModalOpen(true)}
-                >
-                  More Info
-                </Button>
               </div>
-              
-              {/* Restaurant Quick Info */}
-              <div className="p-4 border-t border-gray-100">
+            </div>
+
+            {/* Restaurant Quick Info */}
+            <div className="p-4 border-t border-gray-100">
+              <div className="flex flex-wrap items-center justify-between">
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-gray-600">
                   <div className="flex items-center gap-1">
                     <MapPin className="w-4 h-4 flex-shrink-0" />
@@ -281,6 +277,45 @@ export function BranchPage({ params }: BranchPageProps) {
                         : 'Hours not available'}
                     </span>
                   </div>
+                </div>
+                
+                <div className="flex items-center gap-3 mt-2 sm:mt-0">
+                  <button 
+                    onClick={() => setIsDetailsModalOpen(true)}
+                    className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1 px-3 py-1 rounded-full border border-gray-200 hover:border-gray-300"
+                  >
+                    View Details
+                  </button>
+                  <button 
+                    onClick={() => {
+                      // Create a slugified name combining restaurant and branch names
+                      const restaurantName = branch.restaurant?.[0]?.restaurantName || '';
+                      const branchName = branch.branchName || '';
+                      
+                      const combinedName = `${restaurantName}-${branchName}`;
+                      const slug = combinedName
+                        .toString()
+                        .toLowerCase()
+                        .replace(/\s+/g, '-')
+                        .replace(/[^\w\-]+/g, '')
+                        .replace(/\-\-+/g, '-')
+                        .replace(/^-+/, '')
+                        .replace(/-+$/, '');
+                        
+                      const url = `${window.location.origin}/restaurant/${slug}`;
+                      navigator.clipboard.writeText(url);
+                      // Show temporary feedback
+                      const feedbackElem = document.createElement('div');
+                      feedbackElem.textContent = 'Link copied!';
+                      feedbackElem.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md shadow-md z-50';
+                      document.body.appendChild(feedbackElem);
+                      setTimeout(() => document.body.removeChild(feedbackElem), 2000);
+                    }}
+                    className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1 px-3 py-1 rounded-full border border-gray-200 hover:border-gray-300"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    Share
+                  </button>
                 </div>
               </div>
             </div>

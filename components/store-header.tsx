@@ -20,6 +20,8 @@ import { BranchPage } from "@/components/branch-page"
 import { calculateDistance } from "@/utils/distance"
 import { FavoritesSection } from "@/components/favorites-section"
 import { getBranches, getCustomerDetails, updateFavorites } from "@/lib/api"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import Link from "next/link"
 
 interface Restaurant {
   restaurantName: string
@@ -101,6 +103,10 @@ interface UserData {
 }
 
 export function StoreHeader() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  
   const [branches, setBranches] = useState<Branch[]>([])
   const [selectedCity, setSelectedCity] = useState<string>('all')
   const [userLocation, setUserLocation] = useState<string>("Loading location...")
@@ -191,14 +197,36 @@ export function StoreHeader() {
   }, [])
 
   useEffect(() => {
-    // Check localStorage for selected branch on mount
-    const savedBranchId = localStorage.getItem('selectedBranchId')
-    const savedView = localStorage.getItem('currentView') as 'stores' | 'orders' | 'favorites' | 'profile' | 'settings' | 'branch' | null
-    if (savedBranchId && savedView) {
-      setSelectedBranchId(savedBranchId)
-      setCurrentView(savedView)
+    // Check if we're on a restaurant page by examining the URL
+    const path = pathname || ''
+    console.log("Current path:", path);
+    
+    if (path.startsWith('/restaurant/')) {
+      const slug = path.split('/').pop() || ''
+      console.log("Detected restaurant slug from URL:", slug);
+      
+      if (slug) {
+        // Find the branch ID from the slug
+        const branch = branches.find(b => slugify(b.branchName) === slug)
+        if (branch) {
+          setSelectedBranchId(branch.id)
+          setCurrentView('branch')
+          localStorage.setItem('selectedBranchId', branch.id)
+          localStorage.setItem('currentView', 'branch')
+        }
+      }
+    } else if (path.startsWith('/branch/')) {
+      const branchId = path.split('/').pop() || ''
+      console.log("Detected branch ID from URL:", branchId);
+      
+      if (branchId) {
+        setSelectedBranchId(branchId)
+        setCurrentView('branch')
+        localStorage.setItem('selectedBranchId', branchId)
+        localStorage.setItem('currentView', 'branch')
+      }
     }
-  }, [])
+  }, [pathname, branches])
 
   useEffect(() => {
     // Check if user is logged in
@@ -297,12 +325,19 @@ export function StoreHeader() {
     localStorage.setItem('userLocationData', JSON.stringify({ address, lat, lng }))
   }
 
-  // Save to localStorage when branch is selected
+  // Modify handleBranchSelect to use router navigation with slug
   const handleBranchSelect = (branch: Branch) => {
+    // Store the branch ID in state and localStorage (keep for backward compatibility)
     setSelectedBranchId(branch.id)
     setCurrentView('branch')
     localStorage.setItem('selectedBranchId', branch.id)
     localStorage.setItem('currentView', 'branch')
+    
+    // Generate a URL-friendly slug from the restaurant name and branch name
+    const slug = slugify(branch._restaurantTable[0].restaurantName, branch.branchName)
+    
+    // Navigate to the branch page with a shareable URL
+    router.push(`/restaurant/${slug}`)
   }
 
   // Add effect to restore search query from localStorage
@@ -324,12 +359,17 @@ export function StoreHeader() {
     }
   };
 
-  // Modify handleBackToStores to not clear search
+  // Modify handleBackToStores to use router navigation
   const handleBackToStores = () => {
     setCurrentView('stores')
     setSelectedBranchId(null)
     localStorage.removeItem('selectedBranchId')
     localStorage.removeItem('currentView')
+    
+    // Stay on the current page but reset the view to show restaurants
+    // This is more intuitive than navigating to the home page
+    // We're not using router.push('/') as that would take users away from the restaurant listings
+    
     // Don't reset search radius if we have an active search
     if (!searchQuery) {
       setSearchRadius(8)
@@ -507,18 +547,40 @@ export function StoreHeader() {
     setShowExpandedSearch(false);
   };
 
+  // Helper function to create URL-friendly slugs
+  // Now using both restaurant name and branch name to ensure uniqueness
+  function slugify(text: string, branchName?: string): string {
+    // If branch name is provided, combine restaurant name and branch name
+    const slugText = branchName 
+      ? `${text}-${branchName}`
+      : text;
+      
+    return slugText
+      .toString()
+      .toLowerCase()
+      .replace(/\s+/g, '-')     // Replace spaces with -
+      .replace(/[^\w\-]+/g, '') // Remove all non-word chars
+      .replace(/\-\-+/g, '-')   // Replace multiple - with single -
+      .replace(/^-+/, '')       // Trim - from start of text
+      .replace(/-+$/, '')       // Trim - from end of text
+  }
+
   const renderContent = () => {
     switch (currentView) {
       case 'branch':
         return (
           <div className="container mx-auto px-4 py-8">
-            <button 
-              onClick={handleBackToStores}
+            <Link 
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                handleBackToStores()
+              }}
               className="mb-4 text-orange-500 hover:text-orange-600 flex items-center gap-1"
             >
               <ChevronLeft className="w-4 h-4" />
               Back to Restaurants
-            </button>
+            </Link>
             <BranchPage params={{ id: selectedBranchId! }} />
           </div>
         )
@@ -593,10 +655,14 @@ export function StoreHeader() {
               {searchResults.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {searchResults.map((branch) => (
-                    <div
+                    <Link
                       key={branch.id}
-                      onClick={() => handleBranchSelect(branch)}
-                      className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer"
+                      href={`/restaurant/${slugify(branch._restaurantTable[0].restaurantName, branch.branchName)}`}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handleBranchSelect(branch)
+                      }}
+                      className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
                     >
                       <button 
                         className={`absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
@@ -629,7 +695,7 @@ export function StoreHeader() {
                           <span className="truncate">{branch.branchLocation}</span>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               ) : (
