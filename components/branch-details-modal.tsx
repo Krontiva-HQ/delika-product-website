@@ -25,12 +25,6 @@ interface BranchDetailsModalProps {
 }
 
 export function BranchDetailsModal({ isOpen, onClose, branch }: BranchDetailsModalProps) {
-  console.log('Branch details:', branch);
-  console.log('Branch coordinates:', {
-    latitude: branch.branchLatitude,
-    longitude: branch.branchLongitude
-  });
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px] p-6">

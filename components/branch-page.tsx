@@ -32,8 +32,8 @@ interface BranchDetails {
   branchPhoneNumber: string
   branchName?: string
   branchCity?: string
-  branchLatitude?: number
-  branchLongitude?: number
+  branchLatitude: string
+  branchLongitude: string
   openTime?: string
   closeTime?: string
 }
@@ -153,7 +153,6 @@ export function BranchPage({ params }: BranchPageProps) {
           setSelectedCategory(detailsData._menutable[0].foodType)
         }
       } catch (error) {
-        console.error('Error fetching branch:', error)
         setError("Failed to load branch details")
       } finally {
         setIsLoading(false)
@@ -408,6 +407,10 @@ export function BranchPage({ params }: BranchPageProps) {
         total={cartTotal}
         itemCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
         onClick={() => setIsCartModalOpen(true)}
+        branchLocation={{
+          latitude: branch.branchLatitude,
+          longitude: branch.branchLongitude
+        }}
       />
 
       <CartModal
@@ -445,6 +448,10 @@ export function BranchPage({ params }: BranchPageProps) {
         })) || []}
         isAuthenticated={!!user}
         onLoginClick={() => setIsLoginModalOpen(true)}
+        branchLocation={{
+          latitude: parseFloat(branch.branchLatitude),
+          longitude: parseFloat(branch.branchLongitude)
+        }}
       />
 
       <LoginModal
@@ -484,8 +491,8 @@ export function BranchPage({ params }: BranchPageProps) {
             branchCity: branch.branchCity,
             openTime: branch.openTime,
             closeTime: branch.closeTime,
-            branchLatitude: branch.branchLatitude?.toString(),
-            branchLongitude: branch.branchLongitude?.toString(),
+            branchLatitude: branch.branchLatitude,
+            branchLongitude: branch.branchLongitude,
             _restaurantTable: branch.restaurant
           }}
         />

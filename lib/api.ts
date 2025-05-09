@@ -443,4 +443,49 @@ export async function initializePaystackPayment(
     console.error('Payment initialization error:', error);
     throw error;
   }
+}
+
+export async function calculateDeliveryPrices(params: {
+  pickup: {
+    fromLatitude: string;
+    fromLongitude: string;
+  };
+  dropOff: {
+    toLatitude: string;
+    toLongitude: string;
+  };
+  rider: boolean;
+  pedestrian: boolean;
+}) {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_DELIVERY_PRICE || "https://api-server.krontiva.africa/api:uEBBwbSs/calculate/delivery/price"
+
+    const response = await fetch(
+      apiUrl,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(params),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to calculate delivery price");
+    }
+
+    const data = await response.json();
+
+    if (!data.riderFee && !data.pedestrianFee) {
+      throw new Error("Invalid API response - missing fee data");
+    }
+
+    return {
+      riderFee: data.riderFee,
+      pedestrianFee: data.pedestrianFee,
+    };
+  } catch (error) {
+    throw error; // Re-throw the error to be handled by the calling component
+  }
 } 

@@ -12,6 +12,7 @@ import { calculateDistance } from "@/lib/distance"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { calculateDeliveryPrices } from "@/lib/api"
 
 interface CartModalProps {
   isOpen: boolean
@@ -49,27 +50,18 @@ export function CartModal({
 }: CartModalProps) {
   const router = useRouter()
   const [isProcessingAuth, setIsProcessingAuth] = useState(false)
-  const [deliveryFee, setDeliveryFee] = useState(15)
+  const [deliveryFee, setDeliveryFee] = useState(20)
   const [distance, setDistance] = useState(0)
   const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian' | 'pickup'>('rider')
-  const [riderFee, setRiderFee] = useState(0)
-  const [pedestrianFee, setPedestrianFee] = useState(0)
+  const [riderFee, setRiderFee] = useState(20)
+  const [pedestrianFee, setPedestrianFee] = useState(3.6)
 
   useEffect(() => {
     const calculateFee = async () => {
       try {
         const locationData = localStorage.getItem('userLocationData')
-        console.log('Location data from localStorage:', locationData)
         
         if (!locationData || !branchLocation) {
-          console.log('Missing location data:', { 
-            hasUserLocation: !!locationData, 
-            hasBranchLocation: !!branchLocation,
-            branchLocationDetails: branchLocation
-          })
-          setDeliveryFee(15)
-          setRiderFee(15)
-          setPedestrianFee(15)
           return
         }
 
@@ -84,57 +76,28 @@ export function CartModal({
         
         setDistance(distance)
 
-        console.log('Making API request to:', `${process.env.NEXT_PUBLIC_DELIVERY_PRICE}`)
-        console.log('Request payload:', { distance, deliveryType })
-
-        // Call the delivery price API
-        const response = await fetch(`${process.env.NEXT_PUBLIC_DELIVERY_PRICE}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        // Get delivery prices from API
+        const { riderFee: newRiderFee, pedestrianFee: newPedestrianFee } = await calculateDeliveryPrices({
+          pickup: {
+            fromLatitude: branchLat.toString(),
+            fromLongitude: branchLng.toString(),
           },
-          body: JSON.stringify({
-            distance,
-            deliveryType,
-          }),
-        })
+          dropOff: {
+            toLatitude: lat.toString(),
+            toLongitude: lng.toString(),
+          },
+          rider: true,
+          pedestrian: true
+        });
 
-        console.log('API response status:', response.status)
-        
-        if (!response.ok) {
-          throw new Error(`Failed to calculate delivery fee: ${response.status}`)
-        }
-
-        const responseJson = await response.json()
-        console.log('API response data:', responseJson)
-
-        // Add proper type checking and fallbacks
-        const riderFee = typeof responseJson.riderFee === 'number' ? responseJson.riderFee : 0
-        const pedestrianFee = typeof responseJson.pedestrianFee === 'number' ? responseJson.pedestrianFee : 0
-
-        console.log('Extracted fees:', { riderFee, pedestrianFee })
-
-        setRiderFee(riderFee)
-        setPedestrianFee(pedestrianFee)
+        setRiderFee(newRiderFee)
+        setPedestrianFee(newPedestrianFee)
         
         // Set the fee based on the selected delivery type
-        const currentFee = deliveryType === 'rider' ? riderFee : pedestrianFee
-        console.log(`Setting delivery fee for ${deliveryType} to:`, currentFee)
+        const currentFee = deliveryType === 'rider' ? newRiderFee : (deliveryType === 'pedestrian' ? newPedestrianFee : 0)
         setDeliveryFee(currentFee)
-        
-        console.log('=== DELIVERY FEE CALCULATION ===')
-        console.log('Distance:', distance.toFixed(2), 'km')
-        console.log('Delivery Type:', deliveryType)
-        console.log('Rider Fee:', riderFee, 'GH₵')
-        console.log('Pedestrian Fee:', pedestrianFee, 'GH₵')
-        console.log('Selected Fee:', currentFee, 'GH₵')
-        console.log('=============================')
       } catch (error) {
-        console.error('Error calculating delivery fee:', error)
-        // Set default values on error
-        setDeliveryFee(15)
-        setRiderFee(15)
-        setPedestrianFee(15)
+        // Handle error silently
       }
     }
 
@@ -145,13 +108,12 @@ export function CartModal({
 
   // Update delivery fee when delivery type changes
   useEffect(() => {
-    console.log('Delivery type changed to:', deliveryType)
-    console.log('Current fees:', { riderFee, pedestrianFee })
-    
-    // Set to 0 if pickup is selected
-    const fee = deliveryType === 'pickup' ? 0 : (deliveryType === 'rider' ? riderFee : pedestrianFee)
-    
-    console.log('Setting new delivery fee to:', fee)
+    if (deliveryType === 'pickup') {
+      setDeliveryFee(0)
+      return
+    }
+
+    const fee = deliveryType === 'rider' ? riderFee : pedestrianFee
     setDeliveryFee(fee)
   }, [deliveryType, riderFee, pedestrianFee])
 
