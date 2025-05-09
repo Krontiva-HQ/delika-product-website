@@ -75,6 +75,17 @@ const restaurants: Restaurant[] = [
 export function TopRatedSection() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
+  const slugify = (text: string) => {
+    return text
+      .toString()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '')
+  }
+
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
       const scrollAmount = 600
@@ -122,7 +133,7 @@ export function TopRatedSection() {
           >
             {restaurants.map((restaurant) => (
               <div key={restaurant.id} className="flex-none w-[280px]">
-                <Link href={`/restaurant/${restaurant.id}`}>
+                <Link href={`/restaurant/${slugify(restaurant.name)}`}>
                   <div className="relative aspect-[4/3] rounded-lg overflow-hidden mb-2">
                     <Image
                       src={restaurant.image || "/main.jpg"}
