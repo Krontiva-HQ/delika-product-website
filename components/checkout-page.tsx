@@ -8,8 +8,11 @@ import Image from "next/image"
 import { CartItem } from "@/types/cart"
 import { calculateDistance, calculateDeliveryFee } from "@/lib/distance"
 import { OrderFeedback } from "@/components/order-feedback"
-import { submitOrder, initializePaystackPayment } from '@/lib/api'
+import { submitOrder } from '@/lib/api'
 import { toast } from "@/components/ui/use-toast"
+import { Dialog } from "@/components/ui/dialog"
+import { useRouter } from "next/navigation"
+import { PaystackModal } from "@/components/payment/paystack-modal"
 
 interface CheckoutPageProps {
   cart: CartItem[]
@@ -96,6 +99,8 @@ export function CheckoutPage({
   const [deliveryFee, setDeliveryFee] = useState(10)
   const [distance, setDistance] = useState(0)
   const [showFeedback, setShowFeedback] = useState(false)
+  const [showPaystackModal, setShowPaystackModal] = useState(false)
+  const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian' | 'pickup'>('rider')
 
   useEffect(() => {
     console.log('Loading customer info and location...');
@@ -149,6 +154,12 @@ export function CheckoutPage({
         ...prev,
         address: address
       }))
+    }
+
+    // Load the selected delivery type from localStorage
+    const savedDeliveryType = localStorage.getItem('selectedDeliveryType')
+    if (savedDeliveryType) {
+      setDeliveryType(savedDeliveryType as 'rider' | 'pedestrian' | 'pickup')
     }
   }, []);
 
@@ -303,101 +314,83 @@ export function CheckoutPage({
       // Calculate total amount in GHS
       const totalAmount = cartTotal + deliveryFee;
 
-      try {
-        // Initialize Paystack payment
-        const paymentResponse = await initializePaystackPayment(
-          totalAmount,
-          userData?.email || '',
-          orderId,
-          userData?.id || ''
-        );
+      // Prepare order data
+      const orderData = {
+        id: orderId,
+        restaurantId: branchDetails?.restaurant?.[0]?.id || '',
+        branchId: branchId,
+        customerName: customerInfo.name,
+        customerPhoneNumber: customerInfo.phone,
+        pickupName: branchName,
+        dropoffName: customerInfo.address,
+        orderPrice: cartTotal.toString(),
+        deliveryPrice: deliveryFee.toString(),
+        totalPrice: totalAmount.toString(),
+        orderComment: customerInfo.notes || '',
+        products: cart.map(item => ({
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity.toString()
+        })),
+        pickup: [{
+          fromLatitude: branchLat.toString(),
+          fromLongitude: branchLng.toString(),
+          fromAddress: branchName
+        }],
+        dropOff: [{
+          toLatitude: userLat.toString(),
+          toLongitude: userLng.toString(),
+          toAddress: locationData.address || customerInfo.address
+        }],
+        foodAndDeliveryFee: true,
+        payNow: true,
+        payLater: false,
+        paymentStatus: "Pending",
+        orderStatus: "ReadyForPickup",
+        deliveryDistance: deliveryDistance.toString(),
+        trackingUrl: "",
+        dropOffCity: branchCity || "",
+        customerId: userData?.id || null,
+        orderDate: new Date().toISOString().split('T')[0],
+        orderReceivedTime: Date.now(),
+        completed: false,
+        Walkin: false,
+        payVisaCard: false
+      };
 
-        if (paymentResponse?.data?.authorization_url) {
-          // Prepare order data
-          const orderData = {
-            id: orderId,
-            restaurantId: branchDetails?.restaurant?.[0]?.id || '',
-            branchId: branchId,
-            customerName: customerInfo.name,
-            customerPhoneNumber: customerInfo.phone,
-            pickupName: branchName,
-            dropoffName: customerInfo.address,
-            orderPrice: cartTotal.toString(),
-            deliveryPrice: deliveryFee.toString(),
-            totalPrice: totalAmount.toString(),
-            orderComment: customerInfo.notes || '',
-            products: cart.map(item => ({
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity.toString()
-            })),
-            pickup: [{
-              fromLatitude: branchLat.toString(),
-              fromLongitude: branchLng.toString(),
-              fromAddress: branchName
-            }],
-            dropOff: [{
-              toLatitude: userLat.toString(),
-              toLongitude: userLng.toString(),
-              toAddress: locationData.address || customerInfo.address
-            }],
-            foodAndDeliveryFee: true,
-            payNow: true,
-            payLater: false,
-            paymentStatus: "Pending",
-            orderStatus: "ReadyForPickup",
-            deliveryDistance: deliveryDistance.toString(),
-            trackingUrl: "",
-            dropOffCity: branchCity || "",
-            paystackReferenceCode: paymentResponse.data.reference,
-            customerId: userData?.id || null,
-            orderDate: new Date().toISOString().split('T')[0],
-            orderReceivedTime: Date.now(),
-            completed: false,
-            Walkin: false,
-            payVisaCard: false
-          };
+      console.log('=== ORDER SUBMISSION DATA ===');
+      console.log('Order ID:', orderData.id);
+      console.log('Customer Details:', {
+        name: orderData.customerName,
+        phone: orderData.customerPhoneNumber,
+        address: orderData.dropoffName
+      });
+      console.log('Location Details:', {
+        pickup: orderData.pickup[0],
+        dropOff: orderData.dropOff[0],
+        distance: `${orderData.deliveryDistance}km`
+      });
+      console.log('Order Items:', orderData.products);
+      console.log('Pricing:', {
+        orderPrice: `GH₵${orderData.orderPrice}`,
+        deliveryFee: `GH₵${orderData.deliveryPrice}`,
+        total: `GH₵${orderData.totalPrice}`
+      });
+      console.log('========================');
 
-          console.log('=== ORDER SUBMISSION DATA ===');
-          console.log('Order ID:', orderData.id);
-          console.log('Customer Details:', {
-            name: orderData.customerName,
-            phone: orderData.customerPhoneNumber,
-            address: orderData.dropoffName
-          });
-          console.log('Location Details:', {
-            pickup: orderData.pickup[0],
-            dropOff: orderData.dropOff[0],
-            distance: `${orderData.deliveryDistance}km`
-          });
-          console.log('Order Items:', orderData.products);
-          console.log('Pricing:', {
-            orderPrice: `GH₵${orderData.orderPrice}`,
-            deliveryFee: `GH₵${orderData.deliveryPrice}`,
-            total: `GH₵${orderData.totalPrice}`
-          });
-          console.log('Payment Details:', {
-            reference: orderData.paystackReferenceCode,
-            status: orderData.paymentStatus
-          });
-          console.log('========================');
+      // Submit order
+      await submitOrder(orderData);
 
-          // Submit order
-          await submitOrder(orderData);
+      // Show success message
+      toast({
+        title: "Order Placed Successfully",
+        description: "Your order has been received and is being processed.",
+        variant: "default",
+      });
 
-          // Redirect to Paystack payment page
-          window.location.href = paymentResponse.data.authorization_url;
-        } else {
-          throw new Error('Failed to initialize payment');
-        }
-      } catch (paymentError: unknown) {
-        console.error('Payment initialization error:', paymentError);
-        toast({
-          title: "Payment Error",
-          description: paymentError instanceof Error ? paymentError.message : "Failed to initialize payment. Please try again.",
-          variant: "destructive",
-        });
-      }
+      // Show feedback form
+      setShowFeedback(true);
+
     } catch (error) {
       console.error('Error submitting order:', error);
       toast({
@@ -431,6 +424,20 @@ Subtotal: GH₵${cartTotal.toFixed(2)}
 Delivery Fee: GH₵${deliveryFee.toFixed(2)}
 *Total: GH₵${(cartTotal + deliveryFee).toFixed(2)}*`
   }
+
+  const handleOpenPaystackModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (validateForm()) {
+      console.log('Opening Paystack modal...');
+      setShowPaystackModal(true);
+    }
+  };
+
+  // Only submit order after payment modal is complete
+  const handlePaymentComplete = async () => {
+    await handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+  };
 
   if (showFeedback) {
     return (
@@ -527,6 +534,9 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                     <span>Delivery Fee</span>
                     <div className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
                       {distance > 0 ? `${distance.toFixed(1)}km` : 'Standard'}
+                    </div>
+                    <div className="px-2 py-1 bg-orange-100 rounded-full text-xs text-orange-700">
+                      {deliveryType === 'rider' ? 'Rider' : deliveryType === 'pedestrian' ? 'Pedestrian' : 'Pickup'}
                     </div>
                   </div>
                   <span className="font-medium">GH₵ {deliveryFee.toFixed(2)}</span>
@@ -789,9 +799,10 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                 </div>
 
                 <Button 
-                  type="submit"
+                  type="button"
                   className="w-full bg-orange-500 hover:bg-orange-600 h-14 text-base font-medium transition-all relative overflow-hidden group rounded-xl shadow-orange-200/50 shadow-lg hover:shadow-xl"
                   disabled={isSubmitting || cart.length === 0}
+                  onClick={handleOpenPaystackModal}
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
@@ -818,6 +829,14 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
           </div>
         </div>
       </div>
+      {showPaystackModal && (
+        <PaystackModal
+          open={showPaystackModal}
+          onClose={() => setShowPaystackModal(false)}
+          onComplete={handlePaymentComplete}
+          amount={cartTotal + deliveryFee}
+        />
+      )}
     </div>
   )
 } 

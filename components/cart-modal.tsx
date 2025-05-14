@@ -131,12 +131,15 @@ export function CartModal({
   const handleCheckout = () => {
     if (!isAuthenticated) {
       setIsProcessingAuth(true)
-      // Store the intended redirect URL
+      // Store the intended redirect URL and delivery type
       localStorage.setItem('loginRedirectUrl', `/checkout/${branchId}`)
+      localStorage.setItem('selectedDeliveryType', deliveryType)
       onLoginClick()
       onClose()
       return
     }
+    // Store the delivery type before redirecting
+    localStorage.setItem('selectedDeliveryType', deliveryType)
     router.push(`/checkout/${branchId}`)
   }
 
