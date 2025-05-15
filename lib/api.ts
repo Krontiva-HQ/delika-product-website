@@ -393,11 +393,14 @@ export const submitOrder = async (orderData: any) => {
       body: JSON.stringify(orderData),
     });
 
+    const responseData = await response.json();
+    console.log('Order post response:', responseData);
+
     if (!response.ok) {
       throw new Error('Failed to submit order');
     }
 
-    return await response.json();
+    return responseData;
   } catch (error) {
     console.error('Error submitting order:', error);
     throw error;

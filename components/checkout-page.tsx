@@ -359,10 +359,19 @@ export function CheckoutPage({
       };
 
       // Submit order first
-      await submitOrder(orderData);
+      const orderResponse = await submitOrder(orderData);
+      console.log('Order submission response:', orderResponse);
+      
+      // Store the full response in localStorage
+      localStorage.setItem('orderSubmissionResponse', JSON.stringify({
+        response: orderResponse,
+        timestamp: new Date().toISOString()
+      }));
 
-      // Redirect to /pay page with amount and orderId
-      router.push(`/pay?amount=${cartTotal + deliveryFee}&orderId=${orderId}`);
+      const backendOrderId = orderResponse?.result1?.id || orderId;
+      console.log('Using order ID:', backendOrderId);
+      // Redirect to /pay page with amount, orderId from backend and customerId
+      router.push(`/pay?amount=${cartTotal + deliveryFee}&orderId=${backendOrderId}&customerId=${userData?.id || ''}`);
     } catch (error) {
       console.error('Error submitting order:', error);
       toast({

@@ -3,7 +3,7 @@
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ShoppingBag, Check } from "lucide-react"
 
 interface CartItem {
@@ -20,6 +20,7 @@ interface CheckoutModalProps {
   cart: CartItem[]
   cartTotal: number
   onSubmitOrder: (customerInfo: CustomerInfo) => void
+  deliveryFee: number
 }
 
 interface CustomerInfo {
@@ -34,7 +35,8 @@ export function CheckoutModal({
   onClose,
   cart,
   cartTotal,
-  onSubmitOrder
+  onSubmitOrder,
+  deliveryFee
 }: CheckoutModalProps) {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: "",
@@ -72,6 +74,10 @@ export function CheckoutModal({
     }, 2000)
   }
 
+  useEffect(() => {
+    console.log('Current delivery fee:', deliveryFee);
+  }, [deliveryFee]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
@@ -97,9 +103,13 @@ export function CheckoutModal({
                   </div>
                 ))}
               </div>
+              <div className="flex justify-between text-sm">
+                <span>Delivery Fee</span>
+                <span>GH₵ {deliveryFee.toFixed(2)}</span>
+              </div>
               <div className="border-t pt-2 flex justify-between font-medium">
                 <span>Total</span>
-                <span>GH₵ {cartTotal.toFixed(2)}</span>
+                <span>GH₵ {(cartTotal + deliveryFee).toFixed(2)}</span>
               </div>
             </div>
             

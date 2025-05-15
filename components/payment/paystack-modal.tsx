@@ -3,52 +3,200 @@
 import { useState } from "react"
 import { Dialog } from "@/components/ui/dialog"
 import { useRouter } from "next/navigation"
+import { toast } from "@/components/ui/use-toast"
 
 interface PaystackModalProps {
   open: boolean
   onClose: () => void
   onComplete: () => void
   amount: number
+  orderId: string
+  customerId: string
 }
 
-export function PaystackModal({ open, onClose, onComplete, amount }: PaystackModalProps) {
+export function PaystackModal({ open, onClose, onComplete, amount, orderId, customerId }: PaystackModalProps) {
+  console.log('PaystackModal received orderId:', orderId);
   const [step, setStep] = useState(1)
   const [phone, setPhone] = useState("")
   const [provider, setProvider] = useState("")
   const [otp, setOtp] = useState("")
   const [otpError, setOtpError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [otpMessage, setOtpMessage] = useState("")
+  const [reference, setReference] = useState("")
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [verifyError, setVerifyError] = useState("")
+  const [canVerify, setCanVerify] = useState(true)
   const router = useRouter()
 
   const providers = [
-    { value: "MTN", label: "MTN" },
-    { value: "AirtelTigo", label: "AirtelTigo" },
-    { value: "Telecel", label: "Telecel" },
+    { value: "MTN", label: "MTN", apiValue: "mtn" },
+    { value: "AirtelTigo", label: "AirtelTigo", apiValue: "atl" },
+    { value: "Telecel", label: "Telecel", apiValue: "vod" },
   ]
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!phone.match(/^0\d{9}$/)) return
     if (!provider) return
-    setStep(2)
-  }
 
-  const handleVerifyOtp = () => {
-    if (!otp.match(/^\d{6}$/)) {
-      setOtpError("OTP must be 6 digits")
-      return
+    setIsLoading(true)
+    try {
+      const selectedProvider = providers.find(p => p.value === provider)
+      const response = await fetch(process.env.NEXT_PUBLIC_CHARGE_API || "https://api-server.krontiva.africa/api:uEBBwbSs/charge/api/paystack", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: amount * 100,
+          mobile_money: {
+            phone: phone,
+            provider: selectedProvider?.apiValue || ""
+          },
+          customerId: customerId,
+          orderId: orderId,
+        }),
+      })
+
+      const paystackResponse = await response.clone().json().catch(() => null);
+      console.log('Paystack response (handleConfirm):', paystackResponse);
+
+      if (!response.ok) {
+        throw new Error('Failed to initialize payment')
+      }
+
+      // Handle different response statuses
+      const paymentStatus = paystackResponse?.result1?.response?.result?.data?.status;
+      const displayText = paystackResponse?.result1?.response?.result?.data?.display_text;
+      const paymentReference = paystackResponse?.result1?.response?.result?.data?.reference;
+      setReference(paymentReference || "");
+
+      if (paymentStatus === 'send_otp') {
+        setStep(2);
+        setOtpMessage(displayText || 'Please enter the one-time password sent to your phone');
+      } else if (paymentStatus === 'pay_offline') {
+        setStep(3);
+        setOtpMessage(displayText || 'Please complete the authorization on your mobile device');
+        // Enable verification after 15 seconds
+        setCanVerify(false);
+        setTimeout(() => setCanVerify(true), 15000);
+      } else {
+        throw new Error('Unexpected payment status');
+      }
+
+    } catch (error) {
+      console.error('Payment initialization error:', error)
+      toast({
+        title: "Error",
+        description: "Failed to initialize payment. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
-    setOtpError("")
-    setStep(3)
   }
 
-  const handleDone = () => {
-    setStep(1)
-    setPhone("")
-    setProvider("")
-    setOtp("")
-    setOtpError("")
-    onComplete()
-    onClose()
-  }
+  const handleVerifyOtp = async () => {
+    if (!otp.match(/^\d{6}$/)) {
+      setOtpError("OTP must be 6 digits");
+      return;
+    }
+    setOtpError("");
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `${
+          process.env.NEXT_PUBLIC_CHARGE_API_OTP || 
+          "https://api-server.krontiva.africa/api:uEBBwbSs/charge/api/paystack/otp"
+        }?otp=${otp}&reference=${reference}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const verificationResponse = await response.json();
+      console.log('OTP verification response:', verificationResponse);
+
+      if (!response.ok) {
+        setOtpError("Incorrect OTP, please try again");
+        return;
+      }
+
+      // Handle verification response
+      const verificationStatus = verificationResponse?.result1?.response?.result?.data?.status;
+      const verificationMessage = verificationResponse?.result1?.response?.result?.data?.display_text;
+
+      if (verificationStatus === 'pay_offline') {
+        setStep(3);
+        setOtpMessage(verificationMessage || 'Please complete the authorization on your mobile device');
+      } else if (verificationStatus === 'success') {
+        setStep(3);
+        setOtpMessage('Payment successful!');
+      } else {
+        setOtpError("Incorrect OTP, kindly enter the right OTP");
+      }
+
+    } catch (error) {
+      console.error('OTP verification error:', error);
+      setOtpError("Failed to verify OTP, please try again");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDone = async () => {
+    setIsVerifying(true);
+    setVerifyError("");
+
+    try {
+      const response = await fetch(
+        `${
+          process.env.NEXT_PUBLIC_CHARGE_API_VERIFY || 
+          "https://api-server.krontiva.africa/api:uEBBwbSs/charge/api/verify/payment"
+        }?reference=${reference}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const verificationData = await response.json();
+      console.log('Payment verification response:', verificationData);
+
+      if (!response.ok) {
+        throw new Error('Payment verification failed');
+      }
+
+      const paymentStatus = verificationData?.result1?.response?.result?.data?.status;
+      
+      if (paymentStatus === 'success') {
+        // Redirect to success page
+        router.push(`/checkout/success?reference=${reference}`);
+        onComplete();
+        onClose();
+      } else {
+        setVerifyError("Payment not confirmed yet. Please try again in 15 seconds.");
+        setCanVerify(false);
+        setTimeout(() => {
+          setCanVerify(true);
+          setVerifyError("");
+        }, 15000);
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+      setVerifyError("Failed to verify payment. Please try again.");
+      setCanVerify(false);
+      setTimeout(() => setCanVerify(true), 15000);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -90,12 +238,19 @@ export function PaystackModal({ open, onClose, onComplete, amount }: PaystackMod
                 </select>
               </div>
               <button
-                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg ${(!phone.match(/^0\d{9}$/) || !provider) ? 'opacity-60 cursor-not-allowed' : ''}`}
-                disabled={!phone.match(/^0\d{9}$/) || !provider}
+                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg ${(!phone.match(/^0\d{9}$/) || !provider || isLoading) ? 'opacity-60 cursor-not-allowed' : ''}`}
+                disabled={!phone.match(/^0\d{9}$/) || !provider || isLoading}
                 onClick={handleConfirm}
                 type="button"
               >
-                Confirm • GH₵ {amount.toFixed(2)}
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                    Processing...
+                  </div>
+                ) : (
+                  `Confirm • GH₵ ${amount.toFixed(2)}`
+                )}
               </button>
             </div>
           )}
@@ -104,7 +259,7 @@ export function PaystackModal({ open, onClose, onComplete, amount }: PaystackMod
               <div className="flex flex-col items-center mb-6">
                 <div className="text-4xl mb-2">🔒</div>
                 <div className="text-center font-medium text-gray-700 mb-2">
-                  Enter the 6-digit OTP sent to your phone
+                  {otpMessage}
                 </div>
               </div>
               <input
@@ -117,29 +272,50 @@ export function PaystackModal({ open, onClose, onComplete, amount }: PaystackMod
               />
               {otpError && <div className="text-red-500 text-sm mb-2">{otpError}</div>}
               <button
-                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg ${otp.length !== 6 ? 'opacity-60 cursor-not-allowed' : ''}`}
-                disabled={otp.length !== 6}
+                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg ${otp.length !== 6 || isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                disabled={otp.length !== 6 || isLoading}
                 onClick={handleVerifyOtp}
                 type="button"
               >
-                Verify OTP
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                    Verifying...
+                  </div>
+                ) : (
+                  'Verify OTP'
+                )}
               </button>
             </div>
           )}
           {step === 3 && (
             <div className="flex flex-col items-center">
-              <div className="text-4xl mb-2">✅</div>
+              <div className="text-4xl mb-2">📱</div>
               <div className="text-center font-medium text-gray-700 mb-4">
-                Check your phone to enter your momo pin.<br />
-                When done, click below to complete payment.
+                {otpMessage}
               </div>
               <button
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg mb-3"
+                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg mb-3 ${
+                  !canVerify ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
                 onClick={handleDone}
+                disabled={!canVerify || isVerifying}
                 type="button"
               >
-                Done
+                {isVerifying ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                    Verifying...
+                  </div>
+                ) : (
+                  'Payment Completed'
+                )}
               </button>
+              {verifyError && (
+                <div className="text-red-500 text-sm text-center">
+                  {verifyError}
+                </div>
+              )}
             </div>
           )}
           <button
