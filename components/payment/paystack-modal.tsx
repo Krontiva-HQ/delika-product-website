@@ -60,7 +60,7 @@ export function PaystackModal({ open, onClose, onComplete, amount }: PaystackMod
                 <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold mb-2">DELIKA</span>
                 <div className="text-4xl mb-2">📱</div>
                 <div className="text-center font-medium text-gray-700 mb-2">
-                  Use the test mobile money number and provider below to start the payment
+                  Enter your mobile money number and provider to start the payment
                 </div>
               </div>
               <div className="mb-4">
@@ -90,7 +90,7 @@ export function PaystackModal({ open, onClose, onComplete, amount }: PaystackMod
                 </select>
               </div>
               <button
-                className={`w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg transition-all text-lg ${(!phone.match(/^0\d{9}$/) || !provider) ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg ${(!phone.match(/^0\d{9}$/) || !provider) ? 'opacity-60 cursor-not-allowed' : ''}`}
                 disabled={!phone.match(/^0\d{9}$/) || !provider}
                 onClick={handleConfirm}
                 type="button"
@@ -134,7 +134,7 @@ export function PaystackModal({ open, onClose, onComplete, amount }: PaystackMod
                 When done, click below to complete payment.
               </div>
               <button
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-all text-lg mb-3"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg mb-3"
                 onClick={handleDone}
                 type="button"
               >

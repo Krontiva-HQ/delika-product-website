@@ -12,7 +12,6 @@ import { submitOrder } from '@/lib/api'
 import { toast } from "@/components/ui/use-toast"
 import { Dialog } from "@/components/ui/dialog"
 import { useRouter } from "next/navigation"
-import { PaystackModal } from "@/components/payment/paystack-modal"
 
 interface CheckoutPageProps {
   cart: CartItem[]
@@ -99,8 +98,9 @@ export function CheckoutPage({
   const [deliveryFee, setDeliveryFee] = useState(10)
   const [distance, setDistance] = useState(0)
   const [showFeedback, setShowFeedback] = useState(false)
-  const [showPaystackModal, setShowPaystackModal] = useState(false)
   const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian' | 'pickup'>('rider')
+
+  const router = useRouter();
 
   useEffect(() => {
     console.log('Loading customer info and location...');
@@ -358,39 +358,11 @@ export function CheckoutPage({
         payVisaCard: false
       };
 
-      console.log('=== ORDER SUBMISSION DATA ===');
-      console.log('Order ID:', orderData.id);
-      console.log('Customer Details:', {
-        name: orderData.customerName,
-        phone: orderData.customerPhoneNumber,
-        address: orderData.dropoffName
-      });
-      console.log('Location Details:', {
-        pickup: orderData.pickup[0],
-        dropOff: orderData.dropOff[0],
-        distance: `${orderData.deliveryDistance}km`
-      });
-      console.log('Order Items:', orderData.products);
-      console.log('Pricing:', {
-        orderPrice: `GH₵${orderData.orderPrice}`,
-        deliveryFee: `GH₵${orderData.deliveryPrice}`,
-        total: `GH₵${orderData.totalPrice}`
-      });
-      console.log('========================');
-
-      // Submit order
+      // Submit order first
       await submitOrder(orderData);
 
-      // Show success message
-      toast({
-        title: "Order Placed Successfully",
-        description: "Your order has been received and is being processed.",
-        variant: "default",
-      });
-
-      // Show feedback form
-      setShowFeedback(true);
-
+      // Redirect to /pay page with amount and orderId
+      router.push(`/pay?amount=${cartTotal + deliveryFee}&orderId=${orderId}`);
     } catch (error) {
       console.error('Error submitting order:', error);
       toast({
@@ -425,20 +397,6 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
 *Total: GH₵${(cartTotal + deliveryFee).toFixed(2)}*`
   }
 
-  const handleOpenPaystackModal = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (validateForm()) {
-      console.log('Opening Paystack modal...');
-      setShowPaystackModal(true);
-    }
-  };
-
-  // Only submit order after payment modal is complete
-  const handlePaymentComplete = async () => {
-    await handleSubmit({ preventDefault: () => {} } as React.FormEvent);
-  };
-
   if (showFeedback) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4">
@@ -453,7 +411,7 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
-      {/* Simplified Header */}
+      {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10 shadow-sm backdrop-blur-lg bg-white/80">
         <div className="container mx-auto px-4 py-4 max-w-6xl">
           <div className="flex items-center justify-between">
@@ -473,15 +431,14 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Order Details */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Order Summary */}
+          <div className="lg:col-span-2">
             <div className="bg-white rounded-3xl shadow-sm p-6 hover:shadow-md transition-all duration-300 border border-orange-100/50">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
                     <ShoppingBag className="w-5 h-5 text-orange-600" />
                   </div>
-                  <h2 className="text-xl font-semibold text-gray-900">Order Summary</h2>
+                  <h2 className="text-xl font-semibold">Order Summary</h2>
                 </div>
                 <div className="text-right">
                   <h3 className="font-medium text-gray-900">{restaurantName || 'Restaurant'}</h3>
@@ -490,40 +447,33 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                   </p>
                 </div>
               </div>
-              
-              {cart.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-2xl">
-                  <ShoppingBag className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500">Your cart is empty</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-100">
-                  {cart.map(item => (
-                    <div key={item.id} className="py-4 flex items-center justify-between group">
-                      <div className="flex items-start gap-4">
-                        {item.image && (
-                          <div className="relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 group-hover:shadow-md transition-shadow">
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-medium text-gray-900">{item.name}</div>
-                          <div className="text-sm text-gray-500 mt-1">Quantity: {item.quantity}</div>
+
+              <div className="divide-y divide-gray-100">
+                {cart.map(item => (
+                  <div key={item.id} className="py-4 flex items-center justify-between">
+                    <div className="flex items-start gap-4">
+                      {item.image && (
+                        <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                          />
                         </div>
-                      </div>
-                      <div className="font-medium text-gray-900">
-                        GH₵ {(parseFloat(item.price) * item.quantity).toFixed(2)}
+                      )}
+                      <div>
+                        <h3 className="font-medium text-gray-900">{item.name}</h3>
+                        <p className="text-sm text-gray-500 mt-1">Quantity: {item.quantity}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-              
+                    <span className="font-medium text-gray-900">
+                      GH₵ {(parseFloat(item.price) * item.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
               <div className="mt-6 pt-6 border-t border-dashed space-y-4">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
@@ -532,12 +482,11 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                 <div className="flex justify-between text-gray-600">
                   <div className="flex items-center gap-2">
                     <span>Delivery Fee</span>
-                    <div className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
-                      {distance > 0 ? `${distance.toFixed(1)}km` : 'Standard'}
-                    </div>
-                    <div className="px-2 py-1 bg-orange-100 rounded-full text-xs text-orange-700">
-                      {deliveryType === 'rider' ? 'Rider' : deliveryType === 'pedestrian' ? 'Pedestrian' : 'Pickup'}
-                    </div>
+                    {distance > 0 && (
+                      <span className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                        {distance.toFixed(1)}km
+                      </span>
+                    )}
                   </div>
                   <span className="font-medium">GH₵ {deliveryFee.toFixed(2)}</span>
                 </div>
@@ -550,134 +499,9 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                 </div>
               </div>
             </div>
-
-            {/* Add More Items Section */}
-            <div className="bg-white rounded-3xl shadow-sm p-6 hover:shadow-md transition-all duration-300 border border-orange-100/50">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                    <Plus className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <h2 className="text-xl font-semibold">Add More Items</h2>
-                </div>
-                {!isLoadingMenu && !menuError && (
-                  <div className="flex gap-2 overflow-x-auto py-1 scrollbar-hide">
-                    {branchDetails?._menutable?.map(category => (
-                      <button
-                        key={category.foodType}
-                        onClick={() => setSelectedCategory(category.foodType)}
-                        className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
-                          selectedCategory === category.foodType
-                            ? 'bg-orange-500 text-white shadow-md shadow-orange-200'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {category.foodType}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              {isLoadingMenu ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin h-10 w-10 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-gray-500">Loading menu items...</p>
-                </div>
-              ) : menuError ? (
-                <div className="text-center py-12 text-red-500">{menuError}</div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {currentCategory?.foods.map(item => {
-                    const itemInCart = cart.find(cartItem => cartItem.id === item.name);
-                    const quantity = itemInCart?.quantity || 0;
-
-                    return (
-                      <div
-                        key={item.name}
-                        className={`flex gap-4 p-4 rounded-2xl border group transition-all duration-300 ${
-                          !item.available 
-                            ? 'opacity-60 bg-gray-50' 
-                            : 'hover:border-orange-200 hover:shadow-sm hover:bg-orange-50/30'
-                        }`}
-                      >
-                        <div className="relative w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 group-hover:shadow-lg transition-shadow">
-                          {item.foodImage?.url ? (
-                            <Image
-                              src={item.foodImage.url}
-                              alt={item.name}
-                              fill
-                              sizes="96px"
-                              className={`object-cover ${!item.available ? 'grayscale' : ''} transition-transform group-hover:scale-110`}
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center">
-                              <ShoppingBag className="w-8 h-8 text-gray-400" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
-                          <div className="flex items-center justify-between mt-3">
-                            <span className="font-medium text-gray-900">GH₵ {item.price}</span>
-                            {item.available ? (
-                              quantity > 0 ? (
-                                <div className="flex items-center gap-3 bg-orange-100/50 rounded-full p-1">
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-8 w-8 rounded-full hover:bg-orange-200/50"
-                                    onClick={() => onRemoveItem(item.name)}
-                                  >
-                                    <Minus className="h-4 w-4" />
-                                  </Button>
-                                  <span className="w-6 text-center font-medium">{quantity}</span>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-8 w-8 rounded-full hover:bg-orange-200/50"
-                                    onClick={() => onAddItem({
-                                      id: item.name,
-                                      name: item.name,
-                                      price: item.price,
-                                      quantity: 1,
-                                      image: item.foodImage?.url,
-                                      available: item.available
-                                    })}
-                                  >
-                                    <Plus className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  className="bg-orange-500 hover:bg-orange-600 shadow-sm hover:shadow-md transition-all"
-                                  onClick={() => onAddItem({
-                                    id: item.name,
-                                    name: item.name,
-                                    price: item.price,
-                                    quantity: 1,
-                                    image: item.foodImage?.url,
-                                    available: item.available
-                                  })}
-                                >
-                                  Add to Order
-                                </Button>
-                              )
-                            ) : (
-                              <span className="text-sm text-red-500 font-medium">Not Available</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Right Column - Delivery Information */}
+          {/* Right Column - Delivery Details */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-3xl shadow-sm p-6 sticky top-36 border border-orange-100/50">
               <div className="flex items-center gap-3 mb-8">
@@ -686,6 +510,7 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                 </div>
                 <h2 className="text-xl font-semibold text-gray-900">Delivery Details</h2>
               </div>
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">
@@ -700,23 +525,10 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                     onChange={handleChange}
                     placeholder="Enter your full name"
                     required
-                    pattern="[A-Za-z\s]+"
-                    title="Please enter only letters and spaces"
-                    aria-invalid={!!formErrors.name}
-                    className={`${
-                      formErrors.name 
-                        ? "border-red-300 focus:ring-red-500 bg-red-50" 
-                        : "focus:ring-orange-500 focus:border-orange-500 hover:border-orange-300"
-                    } h-12 rounded-xl transition-colors`}
+                    className="h-12 rounded-xl"
                   />
-                  {formErrors.name && (
-                    <p className="text-red-500 text-sm mt-1.5 flex items-center gap-1">
-                      <span className="inline-block w-1 h-1 rounded-full bg-red-500 mr-1" />
-                      {formErrors.name}
-                    </p>
-                  )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">
                     <div className="flex items-center gap-2">
@@ -730,25 +542,10 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                     onChange={handleChange}
                     placeholder="Enter your phone number"
                     required
-                    type="tel"
-                    pattern="[0-9]*"
-                    inputMode="numeric"
-                    title="Please enter only numbers"
-                    aria-invalid={!!formErrors.phone}
-                    className={`${
-                      formErrors.phone 
-                        ? "border-red-300 focus:ring-red-500 bg-red-50" 
-                        : "focus:ring-orange-500 focus:border-orange-500 hover:border-orange-300"
-                    } h-12 rounded-xl transition-colors`}
+                    className="h-12 rounded-xl"
                   />
-                  {formErrors.phone && (
-                    <p className="text-red-500 text-sm mt-1.5 flex items-center gap-1">
-                      <span className="inline-block w-1 h-1 rounded-full bg-red-500 mr-1" />
-                      {formErrors.phone}
-                    </p>
-                  )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">
                     <div className="flex items-center gap-2">
@@ -756,32 +553,16 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                       Delivery Address <span className="text-red-500">*</span>
                     </div>
                   </label>
-                  <div className="relative">
-                    <Input
-                      name="address"
-                      value={customerInfo.address}
-                      readOnly
-                      placeholder="Your delivery address will be shown here"
-                      required
-                      aria-invalid={!!formErrors.address}
-                      className={`${
-                        formErrors.address 
-                          ? "border-red-300 bg-red-50" 
-                          : "border-gray-200 bg-gray-50"
-                      } h-12 rounded-xl cursor-not-allowed`}
-                    />
-                  </div>
-                  {formErrors.address && (
-                    <p className="text-red-500 text-sm mt-1.5 flex items-center gap-1">
-                      <span className="inline-block w-1 h-1 rounded-full bg-red-500 mr-1" />
-                      {formErrors.address}
-                    </p>
-                  )}
-                  <p className="text-sm text-gray-500 mt-2 italic">
-                    To change delivery address, please select a different location from the main page
-                  </p>
+                  <Input
+                    name="address"
+                    value={customerInfo.address}
+                    onChange={handleChange}
+                    placeholder="Enter your delivery address"
+                    required
+                    className="h-12 rounded-xl"
+                  />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">
                     <div className="flex items-center gap-2">
@@ -794,15 +575,14 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                     value={customerInfo.notes}
                     onChange={handleChange}
                     placeholder="Any special instructions for delivery"
-                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm min-h-[100px] resize-none focus:border-orange-500 focus:ring-orange-500 hover:border-orange-300 transition-colors"
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm min-h-[100px]"
                   />
                 </div>
 
                 <Button 
-                  type="button"
+                  type="submit"
                   className="w-full bg-orange-500 hover:bg-orange-600 h-14 text-base font-medium transition-all relative overflow-hidden group rounded-xl shadow-orange-200/50 shadow-lg hover:shadow-xl"
                   disabled={isSubmitting || cart.length === 0}
-                  onClick={handleOpenPaystackModal}
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
@@ -829,14 +609,6 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
           </div>
         </div>
       </div>
-      {showPaystackModal && (
-        <PaystackModal
-          open={showPaystackModal}
-          onClose={() => setShowPaystackModal(false)}
-          onComplete={handlePaymentComplete}
-          amount={cartTotal + deliveryFee}
-        />
-      )}
     </div>
   )
-} 
+}

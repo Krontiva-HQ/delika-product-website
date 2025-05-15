@@ -54,38 +54,36 @@ export function CheckoutModal({
     e.preventDefault()
     setIsSubmitting(true)
     
-    // Simulate API call
+    // Submit order information
+    onSubmitOrder(customerInfo)
+    setIsSubmitting(false)
+    setIsSuccess(true)
+    
+    // Reset form after success
     setTimeout(() => {
-      onSubmitOrder(customerInfo)
-      setIsSubmitting(false)
-      setIsSuccess(true)
-      
-      // Reset form after success
-      setTimeout(() => {
-        setIsSuccess(false)
-        onClose()
-        setCustomerInfo({
-          name: "",
-          phone: "",
-          address: "",
-          notes: ""
-        })
-      }, 2000)
-    }, 1500)
+      setIsSuccess(false)
+      onClose()
+      setCustomerInfo({
+        name: "",
+        phone: "",
+        address: "",
+        notes: ""
+      })
+    }, 2000)
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogTitle className="text-xl font-semibold mb-4">Complete Your Order</DialogTitle>
+        <DialogTitle className="text-xl font-semibold mb-4">Review Order Details</DialogTitle>
         
         {isSuccess ? (
           <div className="py-8 text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Check className="h-8 w-8 text-green-600" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Order Placed Successfully!</h3>
-            <p className="text-gray-500">Your order receipt has been sent to your phone.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Order Details Confirmed</h3>
+            <p className="text-gray-500">Proceeding to checkout page...</p>
           </div>
         ) : (
           <>
@@ -101,9 +99,8 @@ export function CheckoutModal({
               </div>
               <div className="border-t pt-2 flex justify-between font-medium">
                 <span>Total</span>
-                <span>GH₵ {(cartTotal + 10).toFixed(2)}</span>
+                <span>GH₵ {cartTotal.toFixed(2)}</span>
               </div>
-              <div className="text-xs text-gray-500 mt-1 text-right">Including GH₵ 10.00 delivery fee</div>
             </div>
             
             <form onSubmit={handleSubmit}>
@@ -165,7 +162,7 @@ export function CheckoutModal({
                   ) : (
                     <span className="flex items-center gap-2">
                       <ShoppingBag className="h-5 w-5" />
-                      Send Order Receipt
+                      Continue to Checkout
                     </span>
                   )}
                 </Button>

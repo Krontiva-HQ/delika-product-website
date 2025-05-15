@@ -140,7 +140,9 @@ export function CartModal({
     }
     // Store the delivery type before redirecting
     localStorage.setItem('selectedDeliveryType', deliveryType)
+    // Only navigate to checkout page, nothing else
     router.push(`/checkout/${branchId}`)
+    onClose()
   }
 
   const hasUnavailableItems = cart.some(item => {
@@ -357,7 +359,7 @@ export function CartModal({
                 onClick={handleCheckout}
                 disabled={hasUnavailableItems}
               >
-                {hasUnavailableItems ? 'Remove Unavailable Items' : 'Place Order'}
+                {hasUnavailableItems ? 'Remove Unavailable Items' : 'Proceed to Checkout'}
               </Button>
               {!isAuthenticated && (
                 <p className="text-sm text-gray-500 text-center mt-2">
