@@ -52,7 +52,7 @@ export function CartModal({
   const [isProcessingAuth, setIsProcessingAuth] = useState(false)
   const [deliveryFee, setDeliveryFee] = useState(20)
   const [distance, setDistance] = useState(0)
-  const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian' | 'pickup'>('rider')
+  const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian'>('rider')
   const [riderFee, setRiderFee] = useState(0)
   const [pedestrianFee, setPedestrianFee] = useState(0)
   const [isLoadingDelivery, setIsLoadingDelivery] = useState(false)
@@ -101,7 +101,7 @@ export function CartModal({
         setPedestrianFee(newPedestrianFee)
         
         // Set the fee based on the selected delivery type
-        const currentFee = deliveryType === 'rider' ? newRiderFee : (deliveryType === 'pedestrian' ? newPedestrianFee : 0)
+        const currentFee = deliveryType === 'rider' ? newRiderFee : newPedestrianFee
         setDeliveryFee(currentFee)
       } catch (error) {
         // Handle error silently
@@ -114,17 +114,6 @@ export function CartModal({
       calculateFee()
     }
   }, [isOpen, branchLocation, deliveryType])
-
-  // Update delivery fee when delivery type changes
-  useEffect(() => {
-    if (deliveryType === 'pickup') {
-      setDeliveryFee(0)
-      return
-    }
-
-    const fee = deliveryType === 'rider' ? riderFee : pedestrianFee
-    setDeliveryFee(fee)
-  }, [deliveryType, riderFee, pedestrianFee])
 
   // Check authentication status whenever the modal opens
   useEffect(() => {
@@ -279,8 +268,8 @@ export function CartModal({
                   </div>
                   <RadioGroup
                     value={deliveryType}
-                    onValueChange={(value) => setDeliveryType(value as 'rider' | 'pedestrian' | 'pickup')}
-                    className="grid grid-cols-3 gap-2"
+                    onValueChange={(value) => setDeliveryType(value as 'rider' | 'pedestrian')}
+                    className="grid grid-cols-2 gap-2"
                   >
                     <div>
                       <RadioGroupItem
@@ -321,27 +310,6 @@ export function CartModal({
                         <div>
                           <div className="text-sm font-medium text-gray-900">Pedestrian</div>
                           <div className="text-xs text-gray-500">GH₵ {pedestrianFee.toFixed(2)}</div>
-                        </div>
-                      </Label>
-                    </div>
-                    <div>
-                      <RadioGroupItem
-                        value="pickup"
-                        id="pickup"
-                        className="peer sr-only"
-                      />
-                      <Label
-                        htmlFor="pickup"
-                        className={cn(
-                          "flex items-center gap-2 rounded-md border border-gray-200 p-2 hover:bg-gray-50 cursor-pointer",
-                          "peer-data-[state=checked]:border-orange-500 peer-data-[state=checked]:bg-orange-50",
-                          "transition-all duration-200"
-                        )}
-                      >
-                        <Store className="h-4 w-4 text-gray-600" />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">Pickup</div>
-                          <div className="text-xs text-gray-500">Free</div>
                         </div>
                       </Label>
                     </div>
