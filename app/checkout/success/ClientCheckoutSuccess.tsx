@@ -41,7 +41,9 @@ export default function ClientCheckoutSuccess() {
 
         const verifyData = await verifyResponse.json()
 
-        if (verifyData.status) {
+        // Correct path to payment status
+        const paymentStatus = verifyData.response?.result?.data?.status;
+        if (paymentStatus === 'success') {
           try {
             // Fetch all orders to find the one with matching reference
             const ordersResponse = await fetch(process.env.NEXT_PUBLIC_ORDERS_API || '', {
@@ -81,7 +83,7 @@ export default function ClientCheckoutSuccess() {
             throw new Error('Failed to process order')
           }
         } else {
-          throw new Error('Payment verification failed')
+          throw new Error(`Payment not confirmed. Status: ${paymentStatus}`)
         }
       } catch (error) {
         console.error('Error verifying payment:', error)

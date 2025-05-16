@@ -49,7 +49,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: Number(amount) * 100,
+          amount: Number(amount),
           mobile_money: {
             phone: phone,
             provider: selectedProvider?.apiValue || ""
@@ -154,6 +154,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
     setVerifyError("");
 
     try {
+      // Call your backend API that proxies Paystack's verify endpoint
       const response = await fetch(
         `${
           process.env.NEXT_PUBLIC_CHARGE_API_VERIFY || 
@@ -167,17 +168,12 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
         }
       );
 
-      const verificationData = await response.json();
-      console.log('Payment verification response:', verificationData);
+      const verifyData = await response.json();
+      // Adjust this path to match your actual response structure
+      const paymentStatus = verifyData.response?.result?.data?.status;
 
-      if (!response.ok) {
-        throw new Error('Payment verification failed');
-      }
-
-      const paymentStatus = verificationData?.result1?.response?.result?.data?.status;
-      
       if (paymentStatus === 'success') {
-        // Redirect to success page
+        // Navigate to the success page
         router.push(`/checkout/success?reference=${reference}`);
         onComplete();
         onClose();
@@ -190,7 +186,6 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
         }, 15000);
       }
     } catch (error) {
-      console.error('Verification error:', error);
       setVerifyError("Failed to verify payment. Please try again.");
       setCanVerify(false);
       setTimeout(() => setCanVerify(true), 15000);
