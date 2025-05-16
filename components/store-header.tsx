@@ -706,7 +706,7 @@ export function StoreHeader() {
                         <Search className="w-12 h-12 text-gray-400 mx-auto" />
                       </div>
                       <p className="text-gray-600 mb-4">
-                       {filteredOutResults.length} {filteredOutResults.length === 1 ? 'restaurant' : 'restaurants'} matches your search, but it's a bit far away.
+                        We found {filteredOutResults.length} {filteredOutResults.length === 1 ? 'restaurant' : 'restaurants'} matching your search, but they're a bit far from your location.
                       </p>
                       <button
                         onClick={handleExpandSearch}
