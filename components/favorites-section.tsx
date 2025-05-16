@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { MapPin, ChevronLeft, ThumbsUp } from "lucide-react"
+import { MapPin, ChevronLeft, Heart } from "lucide-react"
 import { EmptyState } from "@/components/empty-state"
 import { BranchPage } from "@/components/branch-page"
 import { calculateDistance } from "@/utils/distance"
@@ -303,14 +303,18 @@ export function FavoritesSection() {
             onClick={() => handleBranchSelect(branch)}
           >
             <button 
-              className={`absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full text-orange-500 hover:text-orange-600 hover:bg-white transition-colors ${
-                removingFavorites.has(branch.id) ? 'opacity-50 pointer-events-none' : ''
+              className={`absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
+                removingFavorites.has(branch.id)
+                  ? 'opacity-50 pointer-events-none'
+                  : favoriteBranches.some(b => b.id === branch.id)
+                  ? 'text-orange-500 scale-110 hover:scale-105'
+                  : 'text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105'
               }`}
               onClick={(e) => handleRemoveFavorite(branch.id, e)}
               aria-label="Remove from favorites"
               disabled={removingFavorites.has(branch.id)}
             >
-              <ThumbsUp className="w-5 h-5 fill-current" />
+              <Heart className={`w-5 h-5 transition-all duration-200 ${favoriteBranches.some(b => b.id === branch.id) ? 'fill-current' : ''}`} />
             </button>
             <div className="relative h-48">
               <Image
