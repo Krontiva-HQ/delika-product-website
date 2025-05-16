@@ -204,14 +204,10 @@ export function CheckoutPage({
   useEffect(() => {
     const storedFee = localStorage.getItem('checkoutDeliveryFee')
     const storedType = localStorage.getItem('selectedDeliveryType')
-    
     if (storedFee && storedType) {
       setDeliveryFee(Number(storedFee))
       setDeliveryType(storedType as 'rider' | 'pedestrian' | 'pickup')
-      // Clear immediately after reading
-      localStorage.removeItem('checkoutDeliveryFee')
-      localStorage.removeItem('selectedDeliveryType')
-      console.log('Cleared delivery details from localStorage')
+      // DO NOT clear here! Only clear after payment success.
     }
   }, [])
 

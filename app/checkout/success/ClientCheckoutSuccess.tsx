@@ -12,6 +12,12 @@ export default function ClientCheckoutSuccess() {
   const router = useRouter()
   const reference = searchParams?.get('reference')
 
+  // Clear delivery fee and type after successful payment
+  useEffect(() => {
+    localStorage.removeItem('checkoutDeliveryFee');
+    localStorage.removeItem('selectedDeliveryType');
+  }, []);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-orange-50 to-white px-4 py-8">
       <div className="max-w-md w-full bg-white rounded-3xl shadow-lg p-8">
