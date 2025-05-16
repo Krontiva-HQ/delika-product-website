@@ -75,7 +75,6 @@ export function CheckoutModal({
   }
 
   useEffect(() => {
-    console.log('Current delivery fee:', deliveryFee);
   }, [deliveryFee]);
 
   return (

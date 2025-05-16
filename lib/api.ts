@@ -231,8 +231,6 @@ export async function getBranches<T = any>(): Promise<T> {
  */
 export async function getCustomerDetails<T = any>(userId?: string): Promise<T> {
   try {
-    console.log(`Calling getCustomerDetails with customerId: ${userId || 'none'}`);
-    
     // Get auth token from localStorage if available
     let headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -242,10 +240,7 @@ export async function getCustomerDetails<T = any>(userId?: string): Promise<T> {
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('authToken');
       if (token) {
-        console.log('Including authorization token in request');
         headers['Authorization'] = `Bearer ${token}`;
-      } else {
-        console.log('No authorization token available');
       }
     }
     
@@ -265,8 +260,6 @@ export async function getCustomerDetails<T = any>(userId?: string): Promise<T> {
       headers,
     });
     
-    console.log(`Response status: ${response.status}`);
-    
     // Handle non-OK responses
     if (!response.ok) {
       let errorText = '';
@@ -277,7 +270,6 @@ export async function getCustomerDetails<T = any>(userId?: string): Promise<T> {
         errorText = await response.text();
       }
       
-      console.error('API error response:', errorText);
       throw new Error(`Failed to fetch customer details: ${response.status}`);
     }
     

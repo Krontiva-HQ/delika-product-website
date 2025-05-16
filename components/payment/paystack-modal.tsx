@@ -15,7 +15,6 @@ interface PaystackModalProps {
 }
 
 export function PaystackModal({ open, onClose, onComplete, amount, orderId, customerId }: PaystackModalProps) {
-  console.log('PaystackModal received orderId:', orderId);
   const [step, setStep] = useState(1)
   const [phone, setPhone] = useState("")
   const [provider, setProvider] = useState("")
@@ -36,7 +35,6 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
   ]
 
   const handleConfirm = async () => {
-    console.log('Paystack amount received:', amount);
     if (!phone.match(/^0\d{9}$/)) return
     if (!provider) return
 
@@ -60,7 +58,6 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
       })
 
       const paystackResponse = await response.clone().json().catch(() => null);
-      console.log('Paystack response (handleConfirm):', paystackResponse);
 
       if (!response.ok) {
         throw new Error('Failed to initialize payment')
@@ -86,7 +83,6 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
       }
 
     } catch (error) {
-      console.error('Payment initialization error:', error)
       toast({
         title: "Error",
         description: "Failed to initialize payment. Please try again.",
@@ -114,7 +110,6 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
       );
 
       const verificationResponse = await response.json();
-      console.log('OTP verification response:', verificationResponse);
 
       // Use the status and code from the API response, not the HTTP response
       const apiStatus = verificationResponse?.response?.status;
@@ -129,7 +124,6 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
         setOtpError("Incorrect OTP, kindly enter the right OTP");
       }
     } catch (error) {
-      console.error('OTP verification error:', error);
       setOtpError("Failed to verify OTP, please try again");
     } finally {
       setIsLoading(false);

@@ -101,36 +101,28 @@ export function CheckoutPage({
   const router = useRouter();
 
   useEffect(() => {
-    console.log('Loading customer info and location...');
-    
     // Try to get the saved location first
     const savedLocation = localStorage.getItem('userLocation');
-    console.log('Raw saved location:', savedLocation);
     
     if (savedLocation) {
       try {
         const locationData = JSON.parse(savedLocation);
-        console.log('Parsed location data:', locationData);
         
         if (locationData.address) {
-          console.log('Setting address:', locationData.address);
           setCustomerInfo(prev => {
             const updated = {
               ...prev,
               address: locationData.address
             };
-            console.log('Updated customer info:', updated);
             return updated;
           });
         }
       } catch (e) {
-        console.error('Error parsing saved location:', e);
       }
     }
     
     // Then try to load saved customer info
     const savedInfo = localStorage.getItem('customerInfo');
-    console.log('Saved customer info:', savedInfo);
     
     if (savedInfo) {
       try {
@@ -140,7 +132,6 @@ export function CheckoutPage({
           ...parsedInfo
         }));
       } catch (e) {
-        console.error('Error parsing saved customer info:', e);
       }
     }
 
@@ -191,7 +182,6 @@ export function CheckoutPage({
           setSelectedCategory(data._menutable[0].foodType);
         }
       } catch (error) {
-        console.error('Error fetching branch details:', error);
         setMenuError("Failed to load menu items");
       } finally {
         setIsLoadingMenu(false);
@@ -274,7 +264,6 @@ export function CheckoutPage({
 
       // Calculate total amount in GHS
       const totalAmount = cartTotal + deliveryFee;
-      console.log('Order totalPrice:', totalAmount.toFixed(2));
 
       // Prepare order data
       const orderData = {
@@ -321,7 +310,6 @@ export function CheckoutPage({
 
       // Submit order first
       const orderResponse = await submitOrder(orderData);
-      console.log('Order submission response:', orderResponse);
       
       // Store the full response in localStorage
       localStorage.setItem('orderSubmissionResponse', JSON.stringify({
@@ -330,11 +318,9 @@ export function CheckoutPage({
       }));
 
       const backendOrderId = orderResponse?.result1?.id || orderId;
-      console.log('Using order ID:', backendOrderId);
       // Redirect to /pay page with amount, orderId from backend and customerId
       router.push(`/pay?amount=${totalAmount}&orderId=${backendOrderId}&customerId=${userData?.id || ''}`);
     } catch (error) {
-      console.error('Error submitting order:', error);
       toast({
         title: "Error",
         description: "Failed to process order. Please try again.",
@@ -369,8 +355,6 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
 
   const handlePayment = () => {
     const totalAmount = cartTotal + deliveryFee;
-    console.log('Order totalPrice:', totalAmount);
-    console.log('Sending to Paystack:', totalAmount);
     // Open Paystack modal with the amount
   }
 

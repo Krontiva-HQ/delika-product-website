@@ -12,7 +12,6 @@ export default function PayPage() {
   useEffect(() => {
     const orderResponse = localStorage.getItem('orderSubmissionResponse');
     if (orderResponse) {
-      console.log('Order response carried to payment page:', JSON.parse(orderResponse));
       localStorage.removeItem('orderSubmissionResponse'); // Clean up after reading
     }
   }, []);
