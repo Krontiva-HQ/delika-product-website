@@ -53,8 +53,12 @@ export function CartModal({
   const [deliveryFee, setDeliveryFee] = useState(20)
   const [distance, setDistance] = useState(0)
   const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian' | 'pickup'>('rider')
-  const [riderFee, setRiderFee] = useState(20)
-  const [pedestrianFee, setPedestrianFee] = useState(3.6)
+  const [riderFee, setRiderFee] = useState(0)
+  const [pedestrianFee, setPedestrianFee] = useState(0)
+
+  useEffect(() => {
+    console.log('Delivery type changed to:', deliveryType)
+  }, [deliveryType])
 
   useEffect(() => {
     const calculateFee = async () => {
@@ -134,12 +138,14 @@ export function CartModal({
       // Store the intended redirect URL and delivery type
       localStorage.setItem('loginRedirectUrl', `/checkout/${branchId}`)
       localStorage.setItem('selectedDeliveryType', deliveryType)
+      console.log('Saved delivery type to localStorage:', deliveryType)
       onLoginClick()
       onClose()
       return
     }
     // Store the delivery type before redirecting
     localStorage.setItem('selectedDeliveryType', deliveryType)
+    console.log('Saved delivery type to localStorage:', deliveryType)
     // Only navigate to checkout page, nothing else
     router.push(`/checkout/${branchId}`)
     onClose()

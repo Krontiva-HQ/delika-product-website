@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { ShoppingBag, Plus, Minus, ArrowLeft, MapPin, Phone, User, FileText, ArrowRight } from "lucide-react"
 import Image from "next/image"
 import { CartItem } from "@/types/cart"
-import { calculateDistance, calculateDeliveryFee } from "@/lib/distance"
 import { OrderFeedback } from "@/components/order-feedback"
 import { submitOrder } from '@/lib/api'
 import { toast } from "@/components/ui/use-toast"
@@ -95,8 +94,7 @@ export function CheckoutPage({
   const [branchDetails, setBranchDetails] = useState<BranchDetails | null>(null);
   const [isLoadingMenu, setIsLoadingMenu] = useState(true);
   const [menuError, setMenuError] = useState<string | null>(null);
-  const [deliveryFee, setDeliveryFee] = useState(10)
-  const [distance, setDistance] = useState(0)
+  const [deliveryFee, setDeliveryFee] = useState(0)
   const [showFeedback, setShowFeedback] = useState(false)
   const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian' | 'pickup'>('rider')
 
@@ -204,37 +202,14 @@ export function CheckoutPage({
   }, [branchId, selectedCategory]);
 
   useEffect(() => {
-    const calculateFee = async () => {
-      try {
-        // Get user's location from localStorage
-        const locationData = localStorage.getItem('userLocationData')
-        if (!locationData || !branchLocation) {
-          setDeliveryFee(15) // Default to minimum fee if no location data
-          return
-        }
-
-        const { lat, lng } = JSON.parse(locationData)
-        
-        // Calculate distance between user and branch
-        const distance = await calculateDistance(
-          { latitude: lat, longitude: lng },
-          { latitude: branchLocation.latitude, longitude: branchLocation.longitude }
-        )
-        
-        setDistance(distance)
-        const fee = calculateDeliveryFee(distance)
-        setDeliveryFee(fee)
-        
-        console.log('Distance:', distance, 'km')
-        console.log('Calculated fee:', fee, 'GH₵')
-      } catch (error) {
-        console.error('Error calculating delivery fee:', error)
-        setDeliveryFee(15) // Default to minimum fee on error
-      }
+    const storedFee = localStorage.getItem('checkoutDeliveryFee')
+    const storedType = localStorage.getItem('selectedDeliveryType')
+    
+    if (storedFee && storedType) {
+      setDeliveryFee(Number(storedFee))
+      setDeliveryType(storedType as 'rider' | 'pedestrian' | 'pickup')
     }
-
-    calculateFee()
-  }, [branchLocation])
+  }, [])
 
   const validatePhoneNumber = (value: string) => {
     return /^\d+$/.test(value); // Only allows digits
@@ -294,20 +269,6 @@ export function CheckoutPage({
       const userData = JSON.parse(localStorage.getItem('userData') || '{}');
       const locationData = JSON.parse(localStorage.getItem('userLocationData') || '{}');
 
-      // Ensure coordinates are numbers
-      const branchLat = parseFloat(branchDetails?.branchLatitude?.toString() || '0');
-      const branchLng = parseFloat(branchDetails?.branchLongitude?.toString() || '0');
-      const userLat = parseFloat(locationData.lat?.toString() || '0');
-      const userLng = parseFloat(locationData.lng?.toString() || '0');
-
-      // Calculate delivery distance
-      const deliveryDistance = await calculateDistance(
-        { latitude: branchLat, longitude: branchLng },
-        { latitude: userLat, longitude: userLng }
-      );
-
-      const deliveryFee = calculateDeliveryFee(deliveryDistance);
-
       // Generate a unique order ID
       const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -333,13 +294,13 @@ export function CheckoutPage({
           quantity: item.quantity.toString()
         })),
         pickup: [{
-          fromLatitude: branchLat.toString(),
-          fromLongitude: branchLng.toString(),
+          fromLatitude: branchDetails?.branchLatitude?.toString() || '0',
+          fromLongitude: branchDetails?.branchLongitude?.toString() || '0',
           fromAddress: branchName
         }],
         dropOff: [{
-          toLatitude: userLat.toString(),
-          toLongitude: userLng.toString(),
+          toLatitude: locationData.lat?.toString() || '0',
+          toLongitude: locationData.lng?.toString() || '0',
           toAddress: locationData.address || customerInfo.address
         }],
         foodAndDeliveryFee: true,
@@ -347,7 +308,6 @@ export function CheckoutPage({
         payLater: false,
         paymentStatus: "Pending",
         orderStatus: "ReadyForPickup",
-        deliveryDistance: deliveryDistance.toString(),
         trackingUrl: "",
         dropOffCity: branchCity || "",
         customerId: userData?.id || null,
@@ -491,11 +451,9 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                 <div className="flex justify-between text-gray-600">
                   <div className="flex items-center gap-2">
                     <span>Delivery Fee</span>
-                    {distance > 0 && (
-                      <span className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
-                        {distance.toFixed(1)}km
-                      </span>
-                    )}
+                    <span className="px-2 py-1 bg-orange-100 rounded-full text-xs text-orange-700">
+                      {deliveryType.charAt(0).toUpperCase() + deliveryType.slice(1)}
+                    </span>
                   </div>
                   <span className="font-medium">GH₵ {deliveryFee.toFixed(2)}</span>
                 </div>
