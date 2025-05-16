@@ -98,49 +98,36 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
   }
 
   const handleVerifyOtp = async () => {
-    if (!otp.match(/^\d{6}$/)) {
+    if (!otp.match(/^[0-9]{6}$/)) {
       setOtpError("OTP must be 6 digits");
       return;
     }
     setOtpError("");
-    
     setIsLoading(true);
     try {
       const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_CHARGE_API_OTP || 
-          "https://api-server.krontiva.africa/api:uEBBwbSs/charge/api/paystack/otp"
-        }?otp=${otp}&reference=${reference}`,
+        `${process.env.NEXT_PUBLIC_CHARGE_API_OTP || "https://api-server.krontiva.africa/api:uEBBwbSs/charge/api/paystack/otp"}?otp=${otp}&reference=${reference}`,
         {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         }
       );
 
       const verificationResponse = await response.json();
       console.log('OTP verification response:', verificationResponse);
 
-      if (!response.ok) {
-        setOtpError("Incorrect OTP, please try again");
-        return;
-      }
+      // Use the status and code from the API response, not the HTTP response
+      const apiStatus = verificationResponse?.response?.status;
+      const result = verificationResponse?.response?.result;
 
-      // Handle verification response
-      const verificationStatus = verificationResponse?.result1?.response?.result?.data?.status;
-      const verificationMessage = verificationResponse?.result1?.response?.result?.data?.display_text;
-
-      if (verificationStatus === 'pay_offline') {
+      if (apiStatus === 200 && result?.data?.status === 'pay_offline') {
         setStep(3);
-        setOtpMessage(verificationMessage || 'Please complete the authorization on your mobile device');
-      } else if (verificationStatus === 'success') {
-        setStep(3);
-        setOtpMessage('Payment successful!');
+        setOtpMessage(result?.data?.display_text || 'Please complete the authorization on your mobile device');
+      } else if (apiStatus === 400 && result?.code === 'invalid_otp') {
+        setOtpError(result?.message || 'The OTP provided is incorrect. Please check again');
       } else {
         setOtpError("Incorrect OTP, kindly enter the right OTP");
       }
-
     } catch (error) {
       console.error('OTP verification error:', error);
       setOtpError("Failed to verify OTP, please try again");
