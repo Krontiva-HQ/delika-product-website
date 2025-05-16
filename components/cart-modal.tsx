@@ -55,6 +55,7 @@ export function CartModal({
   const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian' | 'pickup'>('rider')
   const [riderFee, setRiderFee] = useState(0)
   const [pedestrianFee, setPedestrianFee] = useState(0)
+  const [isLoadingDelivery, setIsLoadingDelivery] = useState(false)
 
   useEffect(() => {
     console.log('Delivery type changed to:', deliveryType)
@@ -63,9 +64,11 @@ export function CartModal({
   useEffect(() => {
     const calculateFee = async () => {
       try {
+        setIsLoadingDelivery(true)
         const locationData = localStorage.getItem('userLocationData')
         
         if (!locationData || !branchLocation) {
+          setIsLoadingDelivery(false)
           return
         }
 
@@ -102,6 +105,8 @@ export function CartModal({
         setDeliveryFee(currentFee)
       } catch (error) {
         // Handle error silently
+      } finally {
+        setIsLoadingDelivery(false)
       }
     }
 
@@ -363,9 +368,13 @@ export function CartModal({
               <Button 
                 className="w-full mt-4 bg-orange-500 hover:bg-orange-600 h-12 text-lg font-medium"
                 onClick={handleCheckout}
-                disabled={hasUnavailableItems}
+                disabled={hasUnavailableItems || isLoadingDelivery}
               >
-                {hasUnavailableItems ? 'Remove Unavailable Items' : 'Proceed to Checkout'}
+                {isLoadingDelivery
+                  ? 'Calculating delivery...'
+                  : hasUnavailableItems
+                    ? 'Remove Unavailable Items'
+                    : 'Proceed to Checkout'}
               </Button>
               {!isAuthenticated && (
                 <p className="text-sm text-gray-500 text-center mt-2">
