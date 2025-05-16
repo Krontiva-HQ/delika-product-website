@@ -208,6 +208,10 @@ export function CheckoutPage({
     if (storedFee && storedType) {
       setDeliveryFee(Number(storedFee))
       setDeliveryType(storedType as 'rider' | 'pedestrian' | 'pickup')
+      // Clear immediately after reading
+      localStorage.removeItem('checkoutDeliveryFee')
+      localStorage.removeItem('selectedDeliveryType')
+      console.log('Cleared delivery details from localStorage')
     }
   }, [])
 
@@ -274,6 +278,7 @@ export function CheckoutPage({
 
       // Calculate total amount in GHS
       const totalAmount = cartTotal + deliveryFee;
+      console.log('Order totalPrice:', totalAmount.toFixed(2));
 
       // Prepare order data
       const orderData = {
@@ -331,7 +336,7 @@ export function CheckoutPage({
       const backendOrderId = orderResponse?.result1?.id || orderId;
       console.log('Using order ID:', backendOrderId);
       // Redirect to /pay page with amount, orderId from backend and customerId
-      router.push(`/pay?amount=${cartTotal + deliveryFee}&orderId=${backendOrderId}&customerId=${userData?.id || ''}`);
+      router.push(`/pay?amount=${totalAmount}&orderId=${backendOrderId}&customerId=${userData?.id || ''}`);
     } catch (error) {
       console.error('Error submitting order:', error);
       toast({
@@ -364,6 +369,13 @@ ${items}
 Subtotal: GH₵${cartTotal.toFixed(2)}
 Delivery Fee: GH₵${deliveryFee.toFixed(2)}
 *Total: GH₵${(cartTotal + deliveryFee).toFixed(2)}*`
+  }
+
+  const handlePayment = () => {
+    const totalAmount = cartTotal + deliveryFee;
+    console.log('Order totalPrice:', totalAmount);
+    console.log('Sending to Paystack:', totalAmount);
+    // Open Paystack modal with the amount
   }
 
   if (showFeedback) {

@@ -135,18 +135,18 @@ export function CartModal({
   const handleCheckout = () => {
     if (!isAuthenticated) {
       setIsProcessingAuth(true)
-      // Store the intended redirect URL and delivery type
       localStorage.setItem('loginRedirectUrl', `/checkout/${branchId}`)
       localStorage.setItem('selectedDeliveryType', deliveryType)
-      console.log('Saved delivery type to localStorage:', deliveryType)
+      localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
+      console.log('Saved delivery details to localStorage')
       onLoginClick()
       onClose()
       return
     }
-    // Store the delivery type before redirecting
+    // Store both delivery type and fee
     localStorage.setItem('selectedDeliveryType', deliveryType)
-    console.log('Saved delivery type to localStorage:', deliveryType)
-    // Only navigate to checkout page, nothing else
+    localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
+    console.log('Saved delivery details to localStorage:', { deliveryType, deliveryFee })
     router.push(`/checkout/${branchId}`)
     onClose()
   }

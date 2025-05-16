@@ -36,6 +36,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
   ]
 
   const handleConfirm = async () => {
+    console.log('Paystack amount received:', amount);
     if (!phone.match(/^0\d{9}$/)) return
     if (!provider) return
 
@@ -48,7 +49,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: amount * 100,
+          amount: Number(amount) * 100,
           mobile_money: {
             phone: phone,
             provider: selectedProvider?.apiValue || ""
