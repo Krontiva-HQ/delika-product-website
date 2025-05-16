@@ -157,7 +157,6 @@ export function FavoritesSection() {
           setFavoriteBranches(userFavorites);
         }
       } catch (error) {
-        console.error('Error fetching favorites:', error);
         if (isMounted) {
           setError('Failed to load favorite restaurants');
         }
@@ -203,7 +202,7 @@ export function FavoritesSection() {
       const userData = JSON.parse(localStorage.getItem('userData') || '{}') as UserData;
       
       if (!userData.id) {
-        console.error('No user ID found');
+
         return;
       }
       
@@ -240,7 +239,7 @@ export function FavoritesSection() {
       setTimeout(() => document.body.removeChild(feedbackElem), 2000);
       
     } catch (error) {
-      console.error('Error removing from favorites:', error);
+
       // Show error feedback
       const feedbackElem = document.createElement('div');
       feedbackElem.textContent = 'Failed to remove from favorites';

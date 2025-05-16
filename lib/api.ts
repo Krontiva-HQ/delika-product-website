@@ -95,7 +95,7 @@ export async function apiPost<T = any>(endpoint: string, data: any, headers = {}
     
     return responseData as T;
   } catch (error) {
-    console.error('API request error:', error);
+
     throw error;
   }
 }
@@ -122,7 +122,7 @@ export async function apiGet<T = any>(endpoint: string): Promise<T> {
     
     return responseData as T;
   } catch (error) {
-    console.error('API request error:', error);
+
     throw error;
   }
 }
@@ -150,7 +150,7 @@ export async function login(credentials: { email: string; password: string }): P
     
     return responseData as AuthResponse;
   } catch (error) {
-    console.error('Login error:', error);
+
     throw error;
   }
 }
@@ -193,7 +193,7 @@ export async function authRequest<T = any>(
     
     return responseData as T;
   } catch (error) {
-    console.error(`Auth request error (${path}):`, error);
+
     throw error;
   }
 }
@@ -219,7 +219,7 @@ export async function getBranches<T = any>(): Promise<T> {
     
     return responseData as T;
   } catch (error) {
-    console.error('Branches API error:', error);
+
     throw error;
   }
 }
@@ -277,7 +277,7 @@ export async function getCustomerDetails<T = any>(userId?: string): Promise<T> {
     const data = await response.json();
     return data as T;
   } catch (error) {
-    console.error('Customer details API error:', error);
+
     throw error;
   }
 }
@@ -309,7 +309,7 @@ export async function updateFavorites<T = any>(data: {
     
     return responseData as T;
   } catch (error) {
-    console.error('Favorites API error:', error);
+
     throw error;
   }
 }
@@ -337,7 +337,6 @@ export async function submitRestaurantApproval<T = any>(data: any): Promise<T> {
     
     return responseData as T;
   } catch (error) {
-    console.error('Restaurant approval API error:', error);
     throw error;
   }
 }
@@ -365,7 +364,6 @@ export async function submitRiderApproval<T = any>(data: any): Promise<T> {
     
     return responseData as T;
   } catch (error) {
-    console.error('Rider approval API error:', error);
     throw error;
   }
 }
@@ -386,7 +384,6 @@ export const submitOrder = async (orderData: any) => {
     });
 
     const responseData = await response.json();
-    console.log('Order post response:', responseData);
 
     if (!response.ok) {
       throw new Error('Failed to submit order');
@@ -394,7 +391,7 @@ export const submitOrder = async (orderData: any) => {
 
     return responseData;
   } catch (error) {
-    console.error('Error submitting order:', error);
+
     throw error;
   }
 };
@@ -435,7 +432,6 @@ export async function initializePaystackPayment(
     const data = await response.json();
     return { data };
   } catch (error) {
-    console.error('Payment initialization error:', error);
     throw error;
   }
 }

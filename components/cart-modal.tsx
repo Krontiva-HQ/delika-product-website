@@ -58,7 +58,6 @@ export function CartModal({
   const [isLoadingDelivery, setIsLoadingDelivery] = useState(false)
 
   useEffect(() => {
-    console.log('Delivery type changed to:', deliveryType)
   }, [deliveryType])
 
   useEffect(() => {
@@ -132,7 +131,6 @@ export function CartModal({
       localStorage.setItem('loginRedirectUrl', `/checkout/${branchId}`)
       localStorage.setItem('selectedDeliveryType', deliveryType)
       localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
-      console.log('Saved delivery details to localStorage')
       onLoginClick()
       onClose()
       return
@@ -140,7 +138,6 @@ export function CartModal({
     // Store both delivery type and fee
     localStorage.setItem('selectedDeliveryType', deliveryType)
     localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
-    console.log('Saved delivery details to localStorage:', { deliveryType, deliveryFee })
     router.push(`/checkout/${branchId}`)
     onClose()
   }

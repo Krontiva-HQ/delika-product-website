@@ -110,7 +110,6 @@ export function BranchPage({ params }: BranchPageProps) {
       try {
         setCart(JSON.parse(savedCart))
       } catch (e) {
-        console.error("Error parsing saved cart:", e)
       }
     }
   }, [params.id])

@@ -134,7 +134,7 @@ export function StoreHeader() {
         const data = await getBranches<Branch[]>()
         setBranches(data)
       } catch (error) {
-        console.error('Error fetching branches:', error)
+
       }
     }
 
@@ -181,12 +181,12 @@ export function StoreHeader() {
                 )
               }
             } catch (error) {
-              console.error("Error fetching address:", error)
+
               setUserLocation("Location not found")
             }
           },
           (error) => {
-            console.error("Error getting location:", error)
+
             setUserLocation("Location access denied")
           }
         )
@@ -199,11 +199,11 @@ export function StoreHeader() {
   useEffect(() => {
     // Check if we're on a restaurant page by examining the URL
     const path = pathname || ''
-    console.log("Current path:", path);
+
     
     if (path.startsWith('/restaurant/')) {
       const slug = path.split('/').pop() || ''
-      console.log("Detected restaurant slug from URL:", slug);
+
       
       if (slug) {
         // Find the branch ID from the slug
@@ -217,7 +217,7 @@ export function StoreHeader() {
       }
     } else if (path.startsWith('/branch/')) {
       const branchId = path.split('/').pop() || ''
-      console.log("Detected branch ID from URL:", branchId);
+
       
       if (branchId) {
         setSelectedBranchId(branchId)
@@ -381,31 +381,29 @@ export function StoreHeader() {
   // Add function to fetch user favorites
   const fetchUserFavorites = async (userId: string) => {
     if (!userId) {
-      console.log('No userId provided to fetchUserFavorites, skipping fetch');
       return;
     }
     
-    console.log(`Fetching favorites for user: ${userId}`);
+   
     try {
       // Use our API utility function instead of direct fetch
       const customerData = await getCustomerDetails(userId);
       
-      console.log('Customer data received:', customerData);
       
       if (customerData?.favoriteRestaurants) {
         const favorites = new Set<string>(
           customerData.favoriteRestaurants.map((fav: FavoriteRestaurant) => fav.branchName)
         );
-        console.log(`Found ${favorites.size} favorite restaurants`);
+
         setLikedBranches(favorites);
         localStorage.setItem('filteredFavoritesCount', favorites.size.toString());
       } else {
-        console.log('No favorite restaurants found in customer data');
+
         setLikedBranches(new Set<string>());
         localStorage.setItem('filteredFavoritesCount', '0');
       }
     } catch (error) {
-      console.error('Error fetching user favorites:', error);
+
       // Clear favorites on error to prevent stale data
       setLikedBranches(new Set<string>());
       localStorage.setItem('filteredFavoritesCount', '0');
@@ -446,7 +444,6 @@ export function StoreHeader() {
       // Small delay to ensure state updates are processed
       await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
-      console.error('Error during logout:', error);
     }
   }
 
@@ -496,12 +493,7 @@ export function StoreHeader() {
       setLikedBranches(newLikedBranches);
       localStorage.setItem('filteredFavoritesCount', newLikedBranches.size.toString());
       
-      // Log the API call
-      console.log('Calling CUSTOMER_FAVORITES_API with:', {
-        userId: user.id,
-        branchName: branchName,
-        liked: !isCurrentlyLiked
-      });
+
 
       // Call the CUSTOMER_FAVORITES_API endpoint
       const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/customer/favorites/add/remove/restaurant', {
@@ -524,12 +516,10 @@ export function StoreHeader() {
       }
 
       const responseData = await response.json();
-      console.log('CUSTOMER_FAVORITES_API response:', responseData);
       
       // Fetch latest favorites to ensure sync with server
       await fetchUserFavorites(user.id);
     } catch (error) {
-      console.error('Error updating favorite status:', error);
       // Revert UI if error occurred
       const revertedLikedBranches = new Set(likedBranches);
       setLikedBranches(revertedLikedBranches);
