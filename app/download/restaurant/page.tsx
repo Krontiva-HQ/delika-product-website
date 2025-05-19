@@ -1,13 +1,13 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
-import { ParticleBackground } from "@/components/particle-background"
+// import { ParticleBackground } from "@/components/particle-background"
 import { Footer } from "@/components/footer"
 
 export default function RestaurantDownloadPage() {
   return (
     <div className="min-h-screen bg-[#1a1a1a] relative overflow-hidden">
-      <ParticleBackground />
+      {/* <ParticleBackground /> */}
       <div className="relative z-10">
         <section className="w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
