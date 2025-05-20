@@ -65,7 +65,6 @@ export function OTPInputModal({
       setCountdown(30)
       setCanResend(false)
     } catch (error) {
-      console.error('Failed to resend OTP:', error);
       setErrorMessage('Failed to resend code. Please try again.')
     } finally {
       setIsLoading(false)
@@ -92,11 +91,9 @@ export function OTPInputModal({
       setErrorMessage(null)
 
       try {
-        console.log('Verifying OTP:', otpString);
         // Pass the OTP back to the parent component for verification
         onVerify(otpString);
       } catch (error) {
-        console.error('Verification error:', error);
         setErrorMessage('Failed to verify code. Please try again.');
       } finally {
         setIsLoading(false);

@@ -54,11 +54,9 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
       
       if (data.authToken) {
         setAuthToken(data.authToken)
-        console.log('Auth token received:', data.authToken.substring(0, 10) + '...');
         
         try {
           // Use our authRequest utility function to get user data
-          console.log('Fetching user data with /me endpoint');
           const userData = await authRequest<UserData>('me', {}, {
             method: 'GET',
             headers: {
@@ -66,12 +64,10 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
             }
           });
           
-          console.log('User data received:', userData ? 'success' : 'null');
           setUserData(userData)
           setOtpError("")
           setShowOTP(true)
         } catch (userDataError) {
-          console.error('Error fetching user data:', userDataError);
           // Even if we can't fetch user data, we can still show OTP
           // since we have the auth token
           setOtpError("")
@@ -88,7 +84,6 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         }
       }
     } catch (error) {
-      console.error('Login error:', error)
       setError("An error occurred. Please try again.")
     } finally {
       setIsLoading(false)
@@ -97,9 +92,6 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
 
   const handleOTPVerification = async (otp: string) => {
     try {
-      console.log('Starting OTP verification process...');
-      console.log('Login method:', loginMethod);
-      console.log('Contact:', loginMethod === 'email' ? email : phone);
       
       // Prepare the verification payload
       const payload = {
@@ -107,14 +99,12 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         contact: loginMethod === 'email' ? email : phone
       };
       
-      console.log('Verification payload:', payload);
 
       // Make the API call to verify OTP
-      console.log('Making API call to verify OTP...');
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
       const endpoint = loginMethod === 'email'
-        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code'
-        : 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code/phoneNumber';
-      console.log('Using endpoint:', endpoint);
+        ? `${apiBaseUrl}/verify/otp/code`
+        : `${apiBaseUrl}/verify/otp/code/phoneNumber`;
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -124,10 +114,8 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
       });
 
       const data = await response.json();
-      console.log('OTP verification response:', data);
 
       if (data.otpValidate === 'otpFound') {
-        console.log('OTP verification successful!');
         // Store auth token in localStorage
         localStorage.setItem('authToken', authToken);
         
@@ -135,7 +123,6 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         let finalUserData = userData;
         if (!finalUserData && authToken) {
           try {
-            console.log('Fetching user data again after OTP verification');
             
             // Use direct fetch instead of authRequest to avoid potential issues
             const response = await fetch('/api/auth/me', {
@@ -148,12 +135,9 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
             
             if (response.ok) {
               finalUserData = await response.json();
-              console.log('User data received after OTP:', finalUserData ? 'success' : 'null');
             } else {
-              console.error('Failed to fetch user data:', response.status);
             }
           } catch (userDataError) {
-            console.error('Error fetching user data after OTP:', userDataError);
           }
         }
         
@@ -175,7 +159,6 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
           
           localStorage.setItem('userData', JSON.stringify(minimalUserData));
           onLoginSuccess(minimalUserData);
-          console.warn('Using minimal user data as full profile could not be fetched');
         }
         
         // Close the modal
@@ -189,14 +172,12 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
           window.location.href = redirectUrl;
         }
       } else if (data.otpValidate === 'otpNotExist') {
-        console.log('OTP verification failed: OTP does not exist');
         setOtpError('Invalid verification code. Please try again.');
         // Don't close the modal, let the user try again
       } else {
         setOtpError('Invalid verification code. Please try again.');
       }
     } catch (error) {
-      console.error('OTP verification error:', error);
       setOtpError('An error occurred during verification. Please try again.');
     }
   };

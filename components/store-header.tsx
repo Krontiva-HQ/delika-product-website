@@ -2,7 +2,7 @@
 
 import { MapPin, Search, ChevronDown, ChevronLeft, Filter, Heart } from "lucide-react"
 import Image from "next/image"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -102,6 +102,26 @@ interface UserData {
   customerTable: CustomerTable[];
 }
 
+interface Product {
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface Order {
+  id: string;
+  orderNumber: number;
+  orderStatus: string;
+  orderDate: string;
+  totalPrice: number;
+  paymentStatus: string;
+  pickupName: string;
+  dropoffName: string;
+  orderComment?: string;
+  products: Product[];
+  // ...add other fields as needed
+}
+
 export function StoreHeader() {
   const router = useRouter()
   const pathname = usePathname()
@@ -122,6 +142,10 @@ export function StoreHeader() {
   const [searchRadius, setSearchRadius] = useState<number>(8) // Default 8km radius
   const [showExpandedSearch, setShowExpandedSearch] = useState<boolean>(false)
   const [filteredOutResults, setFilteredOutResults] = useState<Branch[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const ORDERS_PER_PAGE = 10
 
   useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -516,9 +540,9 @@ export function StoreHeader() {
       }
 
       const responseData = await response.json();
-      
-      // Fetch latest favorites to ensure sync with server
-      await fetchUserFavorites(user.id);
+      setOrders(responseData);
+      localStorage.setItem('orders', JSON.stringify(responseData));
+      setCurrentView('orders');
     } catch (error) {
       // Revert UI if error occurred
       const revertedLikedBranches = new Set(likedBranches);
@@ -555,6 +579,44 @@ export function StoreHeader() {
       .replace(/-+$/, '')       // Trim - from end of text
   }
 
+  const fetchOrderHistory = useCallback(async () => {
+    localStorage.removeItem('orders');
+    if (!user?.id) return;
+
+    setIsLoading(true);
+    try {
+      const url = new URL(process.env.NEXT_PUBLIC_GET_ORDER_PER_CUSTOMER_API || '');
+      url.searchParams.append('userId', user.id);
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch order history');
+      const data = await response.json();
+      setOrders(data);
+      localStorage.setItem('orders', JSON.stringify(data));
+      setCurrentView('orders');
+    } catch (error) {
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id, setCurrentView]);
+
+  const totalPages = Math.ceil(orders.length / ORDERS_PER_PAGE);
+  const paginatedOrders = orders.slice(
+    (currentPage - 1) * ORDERS_PER_PAGE,
+    currentPage * ORDERS_PER_PAGE
+  );
+
+
+  useEffect(() => {
+    if (currentView === 'orders' && user?.id) {
+      fetchOrderHistory();
+    }
+  }, [currentView, user?.id, fetchOrderHistory]);
+
   const renderContent = () => {
     switch (currentView) {
       case 'branch':
@@ -576,13 +638,125 @@ export function StoreHeader() {
         )
       case 'orders':
         return (
-          <div className="container mx-auto px-4 py-8">
-            <h1 className="text-2xl font-bold mb-6">Your Orders</h1>
-            <EmptyState
-              title="No orders yet"
-              description="When you place orders, they will appear here. Start ordering from your favorite restaurants!"
-              icon="shopping-bag"
-            />
+          <div className="py-8 max-w-7xl mx-auto">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900">Order History</h2>
+              <div className="text-sm text-gray-500">
+                Showing {orders.length} orders
+              </div>
+            </div>
+
+            {orders.length > 0 && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {paginatedOrders.map((order) => (
+                    <div key={order.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
+                      <div className="p-4">
+                        {/* Header Section - Made more compact */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-lg font-semibold text-gray-900">#{order.orderNumber}</h3>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                order.orderStatus === 'Completed' ? 'bg-green-100 text-green-700' :
+                                order.orderStatus === 'Assigned' ? 'bg-blue-100 text-blue-700' :
+                                order.orderStatus === 'Cancelled' ? 'bg-red-100 text-red-700' :
+                                'bg-gray-100 text-gray-700'
+                              }`}>
+                                {order.orderStatus}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500">{new Date(order.orderDate).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}</p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-gray-900">₵{Number(order.totalPrice).toFixed(2)}</div>
+                            <p className="text-xs text-gray-500">{order.paymentStatus}</p>
+                          </div>
+                        </div>
+
+                        {/* Order Details - More compact layout */}
+                        <div className="space-y-4">
+                          {/* Products Section */}
+                          <div className="bg-gray-50 rounded-lg p-3">
+                            <h4 className="text-sm font-medium text-gray-900 mb-2">Order Items</h4>
+                            <div className="space-y-2">
+                              {order.products.map((product: Product, index: number) => (
+                                <div key={index} className="flex items-center justify-between text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <span className="w-5 h-5 flex items-center justify-center bg-orange-100 text-orange-600 rounded-full text-xs">
+                                      {product.quantity}
+                                    </span>
+                                    <span className="text-gray-700 text-sm">{product.name}</span>
+                                  </div>
+                                  <span className="font-medium text-gray-900 text-sm">
+                                    ₵{(Number(product.price) * Number(product.quantity)).toFixed(2)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Delivery Details - More compact */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-gray-50 rounded-lg p-3">
+                              <div className="flex items-center gap-1 mb-1">
+                                <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                </svg>
+                                <h4 className="text-xs font-medium text-gray-900">Pickup</h4>
+                              </div>
+                              <p className="text-xs text-gray-600 line-clamp-2">{order.pickupName}</p>
+                            </div>
+
+                            <div className="bg-gray-50 rounded-lg p-3">
+                              <div className="flex items-center gap-1 mb-1">
+                                <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                </svg>
+                                <h4 className="text-xs font-medium text-gray-900">Delivery</h4>
+                              </div>
+                              <p className="text-xs text-gray-600 line-clamp-2">{order.dropoffName}</p>
+                            </div>
+                          </div>
+
+                          {/* Order Notes - More compact */}
+                          {order.orderComment && (
+                            <div className="bg-yellow-50 rounded-lg p-3">
+                              <div className="flex items-center gap-1 mb-1">
+                                <svg className="w-3 h-3 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                <h4 className="text-xs font-medium text-gray-900">Notes</h4>
+                              </div>
+                              <p className="text-xs text-gray-600 line-clamp-2">{order.orderComment}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <div className="flex justify-center mt-6 gap-2">
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <button
+                        key={i}
+                        className={`px-3 py-1 rounded ${currentPage === i + 1 ? 'bg-orange-500 text-white' : 'bg-gray-200'}`}
+                        onClick={() => setCurrentPage(i + 1)}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )
       case 'favorites':
