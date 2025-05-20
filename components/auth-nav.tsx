@@ -254,15 +254,7 @@ export function AuthNav({
                         <div className="text-sm font-medium">{userData?.email}</div>
                         <div className="text-xs text-gray-500">{userData?.phoneNumber}</div>
                       </div>
-                      <DropdownMenuSeparator />
-                      <div className="px-2 py-1.5">
-                        <div className="text-xs text-gray-500">
-                          <div>Role: {userData?.role}</div>
-                          <div>Trip Count: {userData?.tripCount}</div>
-                          <div>Member since: {new Date(userData?.created_at || 0).toLocaleDateString()}</div>
-                        </div>
-                      </div>
-                      <DropdownMenuSeparator />
+                     
                       <DropdownMenuItem className="text-red-600" onSelect={handleLogoutClick}>
                         Logout
                       </DropdownMenuItem>

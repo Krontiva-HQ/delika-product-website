@@ -4,15 +4,22 @@ import Link from "next/link"
 import { useState } from "react"
 import { Menu, X, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { usePathname } from "next/navigation"
 
 export function SiteHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const pathname = usePathname()
 
   const menuItems = [
     { href: "/shop", label: "Restaurants" },
     { href: "/about", label: "About" },
   ]
+
+  // Don't show header at all on /shop page
+  if (pathname === "/shop") {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white">
