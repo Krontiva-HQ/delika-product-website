@@ -31,6 +31,8 @@ interface CheckoutPageProps {
   onBackToCart: () => void
   branchLocation?: { latitude: number; longitude: number }
   branchPhone: string
+  initialFullName?: string
+  initialPhoneNumber?: string
 }
 
 interface CustomerInfo {
@@ -80,11 +82,13 @@ export function CheckoutPage({
   branchCity,
   onBackToCart,
   branchLocation,
-  branchPhone
+  branchPhone,
+  initialFullName = "",
+  initialPhoneNumber = ""
 }: CheckoutPageProps) {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
-    name: "",
-    phone: "",
+    name: initialFullName,
+    phone: initialPhoneNumber,
     address: "",
     notes: "",
     rating: 0
@@ -203,6 +207,15 @@ export function CheckoutPage({
       // DO NOT clear here! Only clear after payment success.
     }
   }, [])
+
+  // Sync customerInfo with initialFullName and initialPhoneNumber if they change
+  useEffect(() => {
+    setCustomerInfo((prev) => ({
+      ...prev,
+      name: initialFullName,
+      phone: initialPhoneNumber,
+    }));
+  }, [initialFullName, initialPhoneNumber]);
 
   const validatePhoneNumber = (value: string) => {
     return /^\d+$/.test(value); // Only allows digits

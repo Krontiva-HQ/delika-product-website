@@ -42,7 +42,6 @@ export default function CheckoutRoute({ params }: { params: Promise<{ branchId: 
       try {
         setCart(JSON.parse(savedCart))
       } catch (e) {
-        console.error("Error parsing saved cart:", e)
       }
     }
     
@@ -115,13 +114,22 @@ export default function CheckoutRoute({ params }: { params: Promise<{ branchId: 
   }, 0)
 
   const handleSubmitOrder = (customerInfo: CustomerInfo) => {
-    console.log('Order placed:', { cart, customerInfo, total: cartTotal + 10 })
     // Here you would typically send this data to your backend
     
     // Clear cart after successful order
     localStorage.removeItem(`cart-${resolvedParams.branchId}`)
     setCart([])
   }
+
+  // Get userData from localStorage
+  let initialFullName = ""
+  let initialPhoneNumber = ""
+  if (typeof window !== "undefined") {
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    initialFullName = userData.fullName || "";
+    initialPhoneNumber = userData.phoneNumber || "";
+  }
+
 
   if (isLoading) {
     return <div className="container mx-auto px-4 py-8">Loading...</div>
@@ -144,6 +152,8 @@ export default function CheckoutRoute({ params }: { params: Promise<{ branchId: 
       branchCity={branch.branchCity || ''}
       onBackToCart={() => router.push('/shop')}
       branchPhone={branch.branchPhoneNumber || ''}
+      initialFullName={initialFullName}
+      initialPhoneNumber={initialPhoneNumber}
     />
   )
 } 
