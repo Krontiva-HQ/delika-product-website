@@ -374,6 +374,14 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
     // Open Paystack modal with the amount
   }
 
+  // Validation for required fields
+  const isPlaceOrderDisabled =
+    isSubmitting ||
+    cart.length === 0 ||
+    !customerInfo.name.trim() ||
+    !customerInfo.phone.trim() ||
+    !customerInfo.address.trim();
+
   if (showFeedback) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4">
@@ -698,7 +706,7 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                 <Button 
                   type="submit"
                   className="w-full bg-orange-500 hover:bg-orange-600 h-14 text-base font-medium transition-all relative overflow-hidden group rounded-xl shadow-orange-200/50 shadow-lg hover:shadow-xl"
-                  disabled={isSubmitting || cart.length === 0}
+                  disabled={isPlaceOrderDisabled}
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
