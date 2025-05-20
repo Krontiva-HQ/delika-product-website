@@ -68,11 +68,13 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
           
           console.log('User data received:', userData ? 'success' : 'null');
           setUserData(userData)
+          setOtpError("")
           setShowOTP(true)
         } catch (userDataError) {
           console.error('Error fetching user data:', userDataError);
           // Even if we can't fetch user data, we can still show OTP
           // since we have the auth token
+          setOtpError("")
           setShowOTP(true);
         }
       } else {
@@ -95,68 +97,99 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
 
   const handleOTPVerification = async (otp: string) => {
     try {
-      // OTP verification is now handled in the OTP input modal
-      // Here we just need to handle the success case
+      console.log('Starting OTP verification process...');
+      console.log('Login method:', loginMethod);
+      console.log('Contact:', loginMethod === 'email' ? email : phone);
       
-      // Store auth token in localStorage
-      localStorage.setItem('authToken', authToken);
+      // Prepare the verification payload
+      const payload = {
+        OTP: parseInt(otp),
+        contact: loginMethod === 'email' ? email : phone
+      };
       
-      // If we don't have userData yet, try to fetch it again
-      let finalUserData = userData;
-      if (!finalUserData && authToken) {
-        try {
-          console.log('Fetching user data again after OTP verification');
-          
-          // Use direct fetch instead of authRequest to avoid potential issues
-          const response = await fetch('/api/auth/me', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authToken}`
-            }
-          });
-          
-          if (response.ok) {
-            finalUserData = await response.json();
-            console.log('User data received after OTP:', finalUserData ? 'success' : 'null');
-          } else {
-            console.error('Failed to fetch user data:', response.status);
-          }
-        } catch (userDataError) {
-          console.error('Error fetching user data after OTP:', userDataError);
-        }
-      }
-      
-      if (finalUserData) {
-        // Store user data in localStorage and trigger a custom event
-        localStorage.setItem('userData', JSON.stringify(finalUserData));
-        window.dispatchEvent(new Event('userDataUpdated'));
-        
-        // Call the success handler with full user data
-        onLoginSuccess(finalUserData);
-      } else {
-        // If we still don't have user data, create a minimal user object
-        const minimalUserData = {
-          id: 'temp-id',
-          fullName: loginMethod === 'email' ? email : phone,
-          email: loginMethod === 'email' ? email : '',
-          phoneNumber: loginMethod === 'phone' ? phone : '',
-        } as UserData;
-        
-        localStorage.setItem('userData', JSON.stringify(minimalUserData));
-        onLoginSuccess(minimalUserData);
-        console.warn('Using minimal user data as full profile could not be fetched');
-      }
-      
-      // Close the modal
-      setShowOTP(false);
-      onClose();
+      console.log('Verification payload:', payload);
 
-      // Check for redirect URL
-      const redirectUrl = localStorage.getItem('loginRedirectUrl');
-      if (redirectUrl) {
-        localStorage.removeItem('loginRedirectUrl');
-        window.location.href = redirectUrl;
+      // Make the API call to verify OTP
+      console.log('Making API call to verify OTP...');
+      const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      console.log('OTP verification response:', data);
+
+      if (data.otpValidate === 'otpFound') {
+        console.log('OTP verification successful!');
+        // Store auth token in localStorage
+        localStorage.setItem('authToken', authToken);
+        
+        // If we don't have userData yet, try to fetch it again
+        let finalUserData = userData;
+        if (!finalUserData && authToken) {
+          try {
+            console.log('Fetching user data again after OTP verification');
+            
+            // Use direct fetch instead of authRequest to avoid potential issues
+            const response = await fetch('/api/auth/me', {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+              }
+            });
+            
+            if (response.ok) {
+              finalUserData = await response.json();
+              console.log('User data received after OTP:', finalUserData ? 'success' : 'null');
+            } else {
+              console.error('Failed to fetch user data:', response.status);
+            }
+          } catch (userDataError) {
+            console.error('Error fetching user data after OTP:', userDataError);
+          }
+        }
+        
+        if (finalUserData) {
+          // Store user data in localStorage and trigger a custom event
+          localStorage.setItem('userData', JSON.stringify(finalUserData));
+          window.dispatchEvent(new Event('userDataUpdated'));
+          
+          // Call the success handler with full user data
+          onLoginSuccess(finalUserData);
+        } else {
+          // If we still don't have user data, create a minimal user object
+          const minimalUserData = {
+            id: 'temp-id',
+            fullName: loginMethod === 'email' ? email : phone,
+            email: loginMethod === 'email' ? email : '',
+            phoneNumber: loginMethod === 'phone' ? phone : '',
+          } as UserData;
+          
+          localStorage.setItem('userData', JSON.stringify(minimalUserData));
+          onLoginSuccess(minimalUserData);
+          console.warn('Using minimal user data as full profile could not be fetched');
+        }
+        
+        // Close the modal
+        setShowOTP(false);
+        onClose();
+
+        // Check for redirect URL
+        const redirectUrl = localStorage.getItem('loginRedirectUrl');
+        if (redirectUrl) {
+          localStorage.removeItem('loginRedirectUrl');
+          window.location.href = redirectUrl;
+        }
+      } else if (data.otpValidate === 'otpNotExist') {
+        console.log('OTP verification failed: OTP does not exist');
+        setOtpError('Invalid verification code. Please try again.');
+        // Don't close the modal, let the user try again
+      } else {
+        setOtpError('Invalid verification code. Please try again.');
       }
     } catch (error) {
       console.error('OTP verification error:', error);

@@ -85,34 +85,21 @@ export function OTPInputModal({
       setActiveInput(index + 1)
     }
 
-    // Auto-verify when last digit is entered
-    if (value && index === 3) {
-      const otpString = newOTP.join('')
-      if (otpString.length === 4) {
-        setIsLoading(true)
-        setErrorMessage(null)
+    // Only verify when all 4 digits are entered
+    const otpString = newOTP.join('')
+    if (otpString.length === 4 && /^\d{4}$/.test(otpString)) {
+      setIsLoading(true)
+      setErrorMessage(null)
 
-        try {
-          console.log('Verifying OTP:', otpString);
-          
-          if (otpString.length === 4 && /^\d{4}$/.test(otpString)) {
-            // Simulate a brief delay to show loading state
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            // Pass the OTP back to the parent component and close the modal
-            onVerify(otpString);
-            onClose();
-          } else {
-            setErrorMessage('Please enter a valid 4-digit verification code.');
-            setOtp(["", "", "", ""]);
-            setActiveInput(0);
-          }
-        } catch (error) {
-          console.error('Verification error:', error);
-          setErrorMessage('Failed to verify code. Please try again.');
-        } finally {
-          setIsLoading(false);
-        }
+      try {
+        console.log('Verifying OTP:', otpString);
+        // Pass the OTP back to the parent component for verification
+        onVerify(otpString);
+      } catch (error) {
+        console.error('Verification error:', error);
+        setErrorMessage('Failed to verify code. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
     }
   }
