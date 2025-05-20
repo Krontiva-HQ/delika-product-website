@@ -111,7 +111,11 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
 
       // Make the API call to verify OTP
       console.log('Making API call to verify OTP...');
-      const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code', {
+      const endpoint = loginMethod === 'email'
+        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code'
+        : 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code/phoneNumber';
+      console.log('Using endpoint:', endpoint);
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
