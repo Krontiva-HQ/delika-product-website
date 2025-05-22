@@ -4,7 +4,6 @@ import { getBaseHeaders } from '@/app/utils/api';
 export async function GET() {
   try {
     // Use the branches API URL from environment variables
-    // For server-side API routes, we should use server-side environment variables
     const branchesApiUrl = process.env.BRANCHES_API || process.env.NEXT_PUBLIC_BRANCHES_API;
     
     if (!branchesApiUrl) {
@@ -15,13 +14,10 @@ export async function GET() {
       );
     }
     
-    console.log('Fetching branches from:', branchesApiUrl);
-    
     // Make the actual API call
     const response = await fetch(branchesApiUrl, {
       method: 'GET',
       headers: getBaseHeaders(),
-      // Add cache: 'no-store' to prevent caching issues
       cache: 'no-store'
     });
     

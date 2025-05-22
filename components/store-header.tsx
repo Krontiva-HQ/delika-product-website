@@ -29,6 +29,7 @@ interface Restaurant {
   restaurantLogo: {
     url: string
   }
+  active: boolean
 }
 
 interface Branch {
@@ -155,15 +156,15 @@ export function StoreHeader() {
   useEffect(() => {
     async function fetchBranchesData() {
       try {
-        const data = await getBranches<Branch[]>()
-        setBranches(data)
+        const data = await getBranches<Branch[]>();
+        setBranches(data);
       } catch (error) {
-
+        console.error('Error fetching branches:', error);
       }
     }
 
-    fetchBranchesData()
-  }, [])
+    fetchBranchesData();
+  }, []);
 
   useEffect(() => {
     // Load saved location on mount
@@ -270,14 +271,24 @@ export function StoreHeader() {
 
   // Filter branches by selected city
   const filteredBranches = selectedCity === 'all' 
-    ? branches 
-    : branches.filter(branch => branch.branchCity === selectedCity)
+    ? branches.filter(branch => {
+        const isActive = branch._restaurantTable[0]?.active ?? true;
+        return isActive;
+      })
+    : branches.filter(branch => {
+        const isActive = branch._restaurantTable[0]?.active ?? true;
+        const matchesCity = branch.branchCity === selectedCity;
+        return matchesCity && isActive;
+      });
 
   // Filter branches by distance
   const filterBranchesByDistance = (branches: Branch[], userLat?: number, userLng?: number) => {
     if (!userLat || !userLng) return branches;
 
     return branches.filter(branch => {
+      const isActive = branch._restaurantTable[0]?.active ?? true;
+      if (!isActive) return false;
+      
       const distance = calculateDistance(
         userLat,
         userLng,
@@ -293,23 +304,28 @@ export function StoreHeader() {
     if (!userCoordinates || !searchQuery) {
       setFilteredOutResults([]);
       setShowExpandedSearch(false);
-      // Reset search radius when search is cleared
       setSearchRadius(8);
       return;
     }
 
     const outsideRadius = branches.filter(branch => {
+      const isActive = branch._restaurantTable[0]?.active ?? true;
+      if (!isActive) return false;
+
       const distance = calculateDistance(
         userCoordinates.lat,
         userCoordinates.lng,
         parseFloat(branch.branchLatitude),
         parseFloat(branch.branchLongitude)
       );
-      return distance > searchRadius && distance <= 15 && (
+      const matchesSearch = (
         branch.branchName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        branch._restaurantTable[0].restaurantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        branch._restaurantTable[0]?.restaurantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         branch.branchLocation.toLowerCase().includes(searchQuery.toLowerCase())
       );
+      const isOutsideRange = distance > searchRadius && distance <= 15;
+      
+      return isOutsideRange && matchesSearch;
     });
 
     setFilteredOutResults(outsideRadius);
@@ -330,7 +346,7 @@ export function StoreHeader() {
     ? filterBranchesByDistance(
         filteredBranches.filter(branch => 
           branch.branchName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          branch._restaurantTable[0].restaurantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          branch._restaurantTable[0]?.restaurantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
           branch.branchLocation.toLowerCase().includes(searchQuery.toLowerCase())
         ),
         userCoordinates?.lat,
