@@ -29,7 +29,6 @@ interface Restaurant {
   restaurantLogo: {
     url: string
   }
-  active: boolean
 }
 
 interface Branch {
@@ -42,6 +41,7 @@ interface Branch {
   branchLongitude: string
   _restaurantTable: Restaurant[]
   created_at: number
+  active: boolean
 }
 
 type Libraries = ("places" | "geocoding")[]
@@ -272,11 +272,11 @@ export function StoreHeader() {
   // Filter branches by selected city
   const filteredBranches = selectedCity === 'all' 
     ? branches.filter(branch => {
-        const isActive = branch._restaurantTable[0]?.active ?? true;
+        const isActive = branch.active ?? true;
         return isActive;
       })
     : branches.filter(branch => {
-        const isActive = branch._restaurantTable[0]?.active ?? true;
+        const isActive = branch.active ?? true;
         const matchesCity = branch.branchCity === selectedCity;
         return matchesCity && isActive;
       });
@@ -286,7 +286,7 @@ export function StoreHeader() {
     if (!userLat || !userLng) return branches;
 
     return branches.filter(branch => {
-      const isActive = branch._restaurantTable[0]?.active ?? true;
+      const isActive = branch.active ?? true;
       if (!isActive) return false;
       
       const distance = calculateDistance(
@@ -309,7 +309,7 @@ export function StoreHeader() {
     }
 
     const outsideRadius = branches.filter(branch => {
-      const isActive = branch._restaurantTable[0]?.active ?? true;
+      const isActive = branch.active ?? true;
       if (!isActive) return false;
 
       const distance = calculateDistance(
