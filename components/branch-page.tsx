@@ -69,6 +69,43 @@ interface CartItem {
   image?: string
 }
 
+function parseTimeToMinutes(timeStr?: string): number | null {
+  if (!timeStr) return null;
+  // Handles both "8:00 AM" and "16:30" formats
+  let hour = 0, minute = 0;
+  let isPM = false;
+  let isAM = false;
+  let time = timeStr.trim();
+  if (time.toLowerCase().includes('am') || time.toLowerCase().includes('pm')) {
+    // 12-hour format
+    isPM = time.toLowerCase().includes('pm');
+    isAM = time.toLowerCase().includes('am');
+    time = time.replace(/am|pm|AM|PM/, '').trim();
+  }
+  const [h, m] = time.split(':');
+  hour = parseInt(h, 10);
+  minute = m ? parseInt(m, 10) : 0;
+  if (isPM && hour < 12) hour += 12;
+  if (isAM && hour === 12) hour = 0;
+  return hour * 60 + minute;
+}
+
+const isRestaurantOpen = (openTime?: string, closeTime?: string): boolean => {
+  if (!openTime || !closeTime) return false;
+
+  // Get current GMT time in minutes
+  const now = new Date();
+  const currentHour = now.getUTCHours();
+  const currentMinute = now.getUTCMinutes();
+  const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+  const openTimeInMinutes = parseTimeToMinutes(openTime);
+  const closeTimeInMinutes = parseTimeToMinutes(closeTime);
+  if (openTimeInMinutes === null || closeTimeInMinutes === null) return false;
+
+  return currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes <= closeTimeInMinutes;
+};
+
 export function BranchPage({ params }: BranchPageProps) {
   const [branch, setBranch] = useState<BranchDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -80,6 +117,7 @@ export function BranchPage({ params }: BranchPageProps) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
   const [user, setUser] = useState<UserData | null>(null)
+  const [isOpen, setIsOpen] = useState(false)
 
   // Check authentication status on mount and when localStorage changes
   useEffect(() => {
@@ -160,6 +198,13 @@ export function BranchPage({ params }: BranchPageProps) {
 
     fetchBranch()
   }, [params.id])
+
+  // Add this effect to check restaurant status
+  useEffect(() => {
+    if (branch) {
+      setIsOpen(isRestaurantOpen(branch.openTime, branch.closeTime));
+    }
+  }, [branch]);
 
   const addToCart = (item: CartItem & { available: boolean }) => {
     setCart(prevCart => {
@@ -275,6 +320,10 @@ export function BranchPage({ params }: BranchPageProps) {
                         : 'Hours not available'}
                     </span>
                   </div>
+                  <div className={`flex items-center gap-1 ${isOpen ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className="w-2 h-2 rounded-full bg-current"></span>
+                    <span>{isOpen ? 'Open Now' : 'Closed'}</span>
+                  </div>
                 </div>
                 
                 <div className="flex items-center gap-3 mt-2 sm:mt-0">
@@ -321,13 +370,18 @@ export function BranchPage({ params }: BranchPageProps) {
             {/* Menu Items */}
             <div className="bg-white rounded-lg p-4 sm:p-6">
               <h2 className="font-semibold mb-4 sm:mb-6">{selectedCategory}</h2>
+              {!isOpen && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+                  This restaurant is currently closed. Orders can only be placed during operating hours.
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 {currentCategory?.foods?.map((item) => {
                   const itemInCart = cart.find(cartItem => cartItem.id === item.name);
                   const quantity = itemInCart?.quantity || 0;
                   
                   return (
-                    <div key={item.name} className={`flex flex-col gap-4 p-4 border rounded-lg ${!item.available ? 'opacity-50' : ''}`}>
+                    <div key={item.name} className={`flex flex-col gap-4 p-4 border rounded-lg ${!item.available || !isOpen ? 'opacity-50' : ''}`}>
                       <div className="relative w-full h-40 flex-shrink-0">
                         {item.foodImage && (
                           <Image
@@ -344,7 +398,7 @@ export function BranchPage({ params }: BranchPageProps) {
                         <div className="flex items-center justify-between mt-2">
                           <span className="font-medium text-gray-900">GH₵ {item.price}</span>
                           <div className="flex items-center gap-2">
-                            {item.available ? (
+                            {item.available && isOpen ? (
                               quantity > 0 ? (
                                 <div className="flex items-center gap-2">
                                   <Button 
