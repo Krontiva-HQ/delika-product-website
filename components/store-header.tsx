@@ -148,6 +148,7 @@ export function StoreHeader() {
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [currentPage, setCurrentPage] = useState(1)
   const ORDERS_PER_PAGE = 10
+  const [isBranchPageLoaded, setIsBranchPageLoaded] = useState(false)
 
   useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -366,10 +367,11 @@ export function StoreHeader() {
     localStorage.setItem('userLocationData', JSON.stringify({ address, lat, lng }))
   }
 
-  // Modify handleBranchSelect to show loading spinner during navigation
+  // Modify handleBranchSelect to handle loading state
   const handleBranchSelect = async (branch: Branch) => {
     try {
       setIsLoading(true)
+      setIsBranchPageLoaded(false)
       
       // Generate a URL-friendly slug from the restaurant name and branch name
       const slug = slugify(branch._restaurantTable[0].restaurantName, branch.branchName)
@@ -388,13 +390,22 @@ export function StoreHeader() {
       console.error('Navigation error:', error)
       setCurrentView('stores')
       setSelectedBranchId(null)
-    } finally {
-      // Keep loading state for a minimum duration to ensure smooth transition
-      setTimeout(() => {
-        setIsLoading(false)
-      }, 500)
+      setIsLoading(false)
     }
   }
+
+  // Add effect to handle branch page loading
+  useEffect(() => {
+    if (currentView === 'branch' && selectedBranchId) {
+      // Wait for branch page to be fully loaded
+      const timer = setTimeout(() => {
+        setIsBranchPageLoaded(true)
+        setIsLoading(false)
+      }, 1000) // Adjust this time if needed
+
+      return () => clearTimeout(timer)
+    }
+  }, [currentView, selectedBranchId])
 
   // Add effect to restore search query from localStorage
   useEffect(() => {
@@ -647,6 +658,10 @@ export function StoreHeader() {
   }, [currentView, user?.id, fetchOrderHistory]);
 
   const renderContent = () => {
+    if (isLoading) {
+      return null // Don't render content while loading
+    }
+
     switch (currentView) {
       case 'branch':
         return (
@@ -945,7 +960,7 @@ export function StoreHeader() {
           fullScreen
         />
       )}
-      {renderContent()}
+      {!isLoading && renderContent()}
       
       <LocationSearchModal
         isOpen={isLocationModalOpen}
