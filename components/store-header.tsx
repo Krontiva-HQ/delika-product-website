@@ -22,6 +22,7 @@ import { FavoritesSection } from "@/components/favorites-section"
 import { getBranches, getCustomerDetails, updateFavorites } from "@/lib/api"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { LoadingSpinner } from "@/components/loading-spinner"
 
 interface Restaurant {
   restaurantName: string
@@ -365,19 +366,34 @@ export function StoreHeader() {
     localStorage.setItem('userLocationData', JSON.stringify({ address, lat, lng }))
   }
 
-  // Modify handleBranchSelect to use router navigation with slug
-  const handleBranchSelect = (branch: Branch) => {
-    // Store the branch ID in state and localStorage (keep for backward compatibility)
-    setSelectedBranchId(branch.id)
-    setCurrentView('branch')
-    localStorage.setItem('selectedBranchId', branch.id)
-    localStorage.setItem('currentView', 'branch')
-    
-    // Generate a URL-friendly slug from the restaurant name and branch name
-    const slug = slugify(branch._restaurantTable[0].restaurantName, branch.branchName)
-    
-    // Navigate to the branch page with a shareable URL
-    router.push(`/restaurant/${slug}`)
+  // Modify handleBranchSelect to show loading spinner during navigation
+  const handleBranchSelect = async (branch: Branch) => {
+    try {
+      setIsLoading(true)
+      
+      // Generate a URL-friendly slug from the restaurant name and branch name
+      const slug = slugify(branch._restaurantTable[0].restaurantName, branch.branchName)
+      
+      // Set state first
+      setSelectedBranchId(branch.id)
+      setCurrentView('branch')
+      
+      // Update localStorage
+      localStorage.setItem('selectedBranchId', branch.id)
+      localStorage.setItem('currentView', 'branch')
+      
+      // Navigate to the branch page
+      await router.push(`/restaurant/${slug}`)
+    } catch (error) {
+      console.error('Navigation error:', error)
+      setCurrentView('stores')
+      setSelectedBranchId(null)
+    } finally {
+      // Keep loading state for a minimum duration to ensure smooth transition
+      setTimeout(() => {
+        setIsLoading(false)
+      }, 500)
+    }
   }
 
   // Add effect to restore search query from localStorage
@@ -921,6 +937,14 @@ export function StoreHeader() {
         onLogout={handleLogout}
         onHomeClick={handleHomeClick}
       />
+      {isLoading && (
+        <LoadingSpinner 
+          size="md"
+          color="orange"
+          text="Loading restaurant..."
+          fullScreen
+        />
+      )}
       {renderContent()}
       
       <LocationSearchModal
