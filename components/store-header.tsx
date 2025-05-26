@@ -226,31 +226,19 @@ export function StoreHeader() {
   useEffect(() => {
     // Check if we're on a restaurant page by examining the URL
     const path = pathname || ''
-
     
     if (path.startsWith('/restaurant/')) {
       const slug = path.split('/').pop() || ''
-
       
       if (slug) {
         // Find the branch ID from the slug
-        const branch = branches.find(b => slugify(b.branchName) === slug)
+        const branch = branches.find(b => slugify(b._restaurantTable[0].restaurantName, b.branchName) === slug)
         if (branch) {
           setSelectedBranchId(branch.id)
           setCurrentView('branch')
           localStorage.setItem('selectedBranchId', branch.id)
           localStorage.setItem('currentView', 'branch')
         }
-      }
-    } else if (path.startsWith('/branch/')) {
-      const branchId = path.split('/').pop() || ''
-
-      
-      if (branchId) {
-        setSelectedBranchId(branchId)
-        setCurrentView('branch')
-        localStorage.setItem('selectedBranchId', branchId)
-        localStorage.setItem('currentView', 'branch')
       }
     }
   }, [pathname, branches])
@@ -384,8 +372,8 @@ export function StoreHeader() {
       localStorage.setItem('selectedBranchId', branch.id)
       localStorage.setItem('currentView', 'branch')
       
-      // Navigate to the branch page
-      await router.push(`/restaurant/${slug}`)
+      // Navigate to the branch page using replace instead of push
+      await router.replace(`/restaurant/${slug}`)
     } catch (error) {
       console.error('Navigation error:', error)
       setCurrentView('stores')
@@ -394,7 +382,7 @@ export function StoreHeader() {
     }
   }
 
-  // Add effect to handle branch page loading
+  // Modify the useEffect that handles branch page loading
   useEffect(() => {
     if (currentView === 'branch' && selectedBranchId) {
       // Wait for branch page to be fully loaded
@@ -432,17 +420,7 @@ export function StoreHeader() {
     setSelectedBranchId(null)
     localStorage.removeItem('selectedBranchId')
     localStorage.removeItem('currentView')
-    
-    // Stay on the current page but reset the view to show restaurants
-    // This is more intuitive than navigating to the home page
-    // We're not using router.push('/') as that would take users away from the restaurant listings
-    
-    // Don't reset search radius if we have an active search
-    if (!searchQuery) {
-      setSearchRadius(8)
-      setShowExpandedSearch(false)
-      setFilteredOutResults([])
-    }
+    router.push('/')
   }
 
   // Add function to fetch user favorites
