@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Facebook, Twitter, Instagram, Linkedin, Music } from "lucide-react"
+import {FaTiktok} from "react-icons/fa"
 
 export function Footer() {
   return (
@@ -95,7 +96,7 @@ export function Footer() {
                 rel="noopener noreferrer" 
                 className="text-gray-400 hover:text-white transition-colors"
               >
-                <Music size={20} />
+                <FaTiktok size={20} />
               </a>
               <a 
                 href="https://www.linkedin.com/showcase/103558886/admin/page-posts/published/" 
