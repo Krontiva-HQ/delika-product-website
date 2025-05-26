@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, Search, ChevronDown, ChevronLeft, Filter, Heart } from "lucide-react"
+import { MapPin, Search, ChevronDown, ChevronLeft, Filter, Heart, Loader2 } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useState, useCallback } from "react"
 import {
@@ -232,7 +232,7 @@ export function StoreHeader() {
       
       if (slug) {
         // Find the branch ID from the slug
-        const branch = branches.find(b => slugify(b.branchName) === slug)
+        const branch = branches.find(b => slugify(b._restaurantTable[0].restaurantName, b.branchName) === slug)
         if (branch) {
           setSelectedBranchId(branch.id)
           setCurrentView('branch')
@@ -365,19 +365,27 @@ export function StoreHeader() {
     localStorage.setItem('userLocationData', JSON.stringify({ address, lat, lng }))
   }
 
-  // Modify handleBranchSelect to use router navigation with slug
-  const handleBranchSelect = (branch: Branch) => {
-    // Store the branch ID in state and localStorage (keep for backward compatibility)
-    setSelectedBranchId(branch.id)
-    setCurrentView('branch')
-    localStorage.setItem('selectedBranchId', branch.id)
-    localStorage.setItem('currentView', 'branch')
-    
-    // Generate a URL-friendly slug from the restaurant name and branch name
-    const slug = slugify(branch._restaurantTable[0].restaurantName, branch.branchName)
-    
-    // Navigate to the branch page with a shareable URL
-    router.push(`/restaurant/${slug}`)
+  // Modify handleBranchSelect to show loading spinner
+  const handleBranchSelect = async (branch: Branch) => {
+    try {
+      setIsLoading(true)
+      
+      // Generate a URL-friendly slug from the restaurant name and branch name
+      const slug = slugify(branch._restaurantTable[0].restaurantName, branch.branchName)
+      
+      // Set state first
+      setSelectedBranchId(branch.id)
+      setCurrentView('branch')
+      
+      // Update localStorage
+      localStorage.setItem('selectedBranchId', branch.id)
+      localStorage.setItem('currentView', 'branch')
+      
+      // Navigate to the branch page
+      await router.push(`/restaurant/${slug}`, { scroll: false })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Add effect to restore search query from localStorage
@@ -924,6 +932,14 @@ export function StoreHeader() {
         onLogout={handleLogout}
         onHomeClick={handleHomeClick}
       />
+      {isLoading && (
+        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-gray-600 font-medium">Loading restaurant...</p>
+          </div>
+        </div>
+      )}
       {renderContent()}
       
       <LocationSearchModal
