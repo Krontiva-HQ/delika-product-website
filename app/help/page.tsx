@@ -18,7 +18,7 @@ export default function HelpPage() {
           </h2>
           <p className="text-gray-700 mb-4">For general inquiries and support:</p>
           <a href="mailto:support@delika.com" className="text-blue-600 hover:underline">
-            support@delika.com
+            support@krontiva.africa
           </a>
         </div>
 
@@ -27,19 +27,22 @@ export default function HelpPage() {
             <Phone className="mr-2" /> Phone Support
           </h2>
           <p className="text-gray-700 mb-4">Available Monday to Friday, 9 AM - 6 PM:</p>
-          <a href="tel:+233200000000" className="text-blue-600 hover:underline">
-            +233 20 000 0000
+          <a href="tel:+233225689200" className="text-blue-600 hover:underline">
+          +233 25 689 9200
           </a>
         </div>
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-8">
         <h2 className="text-xl font-semibold mb-4 flex items-center">
-          <MessageCircle className="mr-2" /> Live Chat
+          <MessageCircle className="mr-2" /> WhatsApp Chat
         </h2>
         <p className="text-gray-700 mb-4">
-          Our live chat support is available 24/7. Click the chat icon in the bottom right corner of your screen to start a conversation with our support team.
+          Our customer service is available 24/7 to reply to your messages. Click the number below to start a conversation with our support team.
         </p>
+        <a href="tel:+23325689200" className="text-blue-600 hover:underline">
+            +233 25 689 9200
+          </a>
       </div>
 
       <div className="bg-gray-50 p-6 rounded-lg">
