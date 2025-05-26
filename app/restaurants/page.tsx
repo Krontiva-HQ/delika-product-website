@@ -11,7 +11,7 @@ export default function RestaurantSignup() {
         <div className="min-h-screen flex">
           <div className="flex-1 relative hidden md:block">
             <Image 
-              src="/main-cta.jpg" 
+              src="/restaurant-interior.jpg" 
               alt="Restaurant interior" 
               fill 
               className="object-cover"

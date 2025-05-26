@@ -44,7 +44,7 @@ export default function About() {
         <section className="relative h-[70vh] flex items-center">
           <div className="absolute inset-0">
             <Image
-              src="/courier-image.jpg"
+              src="/newrider.jpeg"
               alt="Delika team"
               fill
               className="object-cover"
@@ -109,7 +109,7 @@ export default function About() {
                 className="relative h-[500px] rounded-2xl overflow-hidden"
               >
                 <Image
-                  src="/new-feature.jpg"
+                  src="/newrider-p.png"
                   alt="Delika mission"
                   fill
                   className="object-cover"
