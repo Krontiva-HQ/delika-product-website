@@ -74,7 +74,7 @@ export function Footer() {
                 <Facebook size={20} />
               </a>
               <a 
-                href="https://x.com/home?lang=en" 
+                href="https://x.com/delika.gh" 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="text-gray-400 hover:text-white transition-colors"
