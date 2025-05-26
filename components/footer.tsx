@@ -66,7 +66,7 @@ export function Footer() {
             <h3 className="text-lg font-semibold mb-4">Connect With Us</h3>
             <div className="flex space-x-4">
               <a 
-                href="https://www.facebook.com/delika.gh" 
+                href="https://www.facebook.com/delikaapp" 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="text-gray-400 hover:text-white transition-colors"
@@ -90,7 +90,7 @@ export function Footer() {
                 <Instagram size={20} />
               </a>
               <a 
-                href="https://www.tiktok.com/@delika.gh?lang=en" 
+                href="https://www.tiktok.com/@delika.gh" 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="text-gray-400 hover:text-white transition-colors"
