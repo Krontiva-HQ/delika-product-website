@@ -1,6 +1,6 @@
 "use client"
 
-import { MapPin, Search, ChevronDown, ChevronLeft, Filter, Heart, Loader2 } from "lucide-react"
+import { MapPin, Search, ChevronDown, ChevronLeft, Filter, Heart } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useState, useCallback } from "react"
 import {
@@ -232,7 +232,7 @@ export function StoreHeader() {
       
       if (slug) {
         // Find the branch ID from the slug
-        const branch = branches.find(b => slugify(b._restaurantTable[0].restaurantName, b.branchName) === slug)
+        const branch = branches.find(b => slugify(b.branchName) === slug)
         if (branch) {
           setSelectedBranchId(branch.id)
           setCurrentView('branch')
@@ -365,27 +365,19 @@ export function StoreHeader() {
     localStorage.setItem('userLocationData', JSON.stringify({ address, lat, lng }))
   }
 
-  // Modify handleBranchSelect to show loading spinner
-  const handleBranchSelect = async (branch: Branch) => {
-    try {
-      setIsLoading(true)
-      
-      // Generate a URL-friendly slug from the restaurant name and branch name
-      const slug = slugify(branch._restaurantTable[0].restaurantName, branch.branchName)
-      
-      // Set state first
-      setSelectedBranchId(branch.id)
-      setCurrentView('branch')
-      
-      // Update localStorage
-      localStorage.setItem('selectedBranchId', branch.id)
-      localStorage.setItem('currentView', 'branch')
-      
-      // Navigate to the branch page
-      await router.push(`/restaurant/${slug}`, { scroll: false })
-    } finally {
-      setIsLoading(false)
-    }
+  // Modify handleBranchSelect to use router navigation with slug
+  const handleBranchSelect = (branch: Branch) => {
+    // Store the branch ID in state and localStorage (keep for backward compatibility)
+    setSelectedBranchId(branch.id)
+    setCurrentView('branch')
+    localStorage.setItem('selectedBranchId', branch.id)
+    localStorage.setItem('currentView', 'branch')
+    
+    // Generate a URL-friendly slug from the restaurant name and branch name
+    const slug = slugify(branch._restaurantTable[0].restaurantName, branch.branchName)
+    
+    // Navigate to the branch page with a shareable URL
+    router.push(`/restaurant/${slug}`)
   }
 
   // Add effect to restore search query from localStorage
@@ -514,7 +506,7 @@ export function StoreHeader() {
     localStorage.removeItem('currentView')
   }
 
-  // Update handleLikeToggle to refresh favorites after toggling
+  // Update handleLikeToggle to handle the response properly
   const handleLikeToggle = async (branchName: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent branch selection when clicking like
     e.preventDefault(); // Prevent any default behavior
@@ -540,22 +532,19 @@ export function StoreHeader() {
       }
       setLikedBranches(newLikedBranches);
       localStorage.setItem('filteredFavoritesCount', newLikedBranches.size.toString());
-      
-
 
       // Call the CUSTOMER_FAVORITES_API endpoint
       const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/customer/favorites/add/remove/restaurant', {
         method: 'PATCH',
-        
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}` // Add authorization token
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
         body: JSON.stringify({
           userId: user.id,
           branchName: branchName,
           liked: !isCurrentlyLiked,
-          field_value: user.id // Add required field_value parameter
+          field_value: user.id
         }),
       });
 
@@ -563,10 +552,10 @@ export function StoreHeader() {
         throw new Error('Failed to update favorites');
       }
 
-      const responseData = await response.json();
-      setOrders(responseData);
-      localStorage.setItem('orders', JSON.stringify(responseData));
-      setCurrentView('orders');
+      // Don't try to set orders from the favorites response
+      // Just refresh the favorites data
+      await fetchUserFavorites(user.id);
+      
     } catch (error) {
       // Revert UI if error occurred
       const revertedLikedBranches = new Set(likedBranches);
@@ -932,14 +921,6 @@ export function StoreHeader() {
         onLogout={handleLogout}
         onHomeClick={handleHomeClick}
       />
-      {isLoading && (
-        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-gray-600 font-medium">Loading restaurant...</p>
-          </div>
-        </div>
-      )}
       {renderContent()}
       
       <LocationSearchModal
