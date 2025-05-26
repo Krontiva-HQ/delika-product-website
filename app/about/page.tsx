@@ -109,7 +109,7 @@ export default function About() {
                 className="relative h-[500px] rounded-2xl overflow-hidden"
               >
                 <Image
-                  src="/newrider-p.png"
+                  src="/rider.jpeg"
                   alt="Delika mission"
                   fill
                   className="object-cover"
