@@ -361,17 +361,33 @@ export function StoreHeader() {
       setIsLoading(true)
       setIsBranchPageLoaded(false)
       
-      // Validate branch data
-      if (!branch || !branch._restaurantTable || !branch._restaurantTable[0]) {
-        throw new Error('Invalid branch data')
+      // Debug logging
+      console.log('Branch data:', branch)
+      
+      // Validate branch data with more specific checks
+      if (!branch) {
+        throw new Error('Branch is undefined')
+      }
+      
+      if (!branch._restaurantTable) {
+        throw new Error('Restaurant table is undefined')
+      }
+      
+      if (!Array.isArray(branch._restaurantTable) || branch._restaurantTable.length === 0) {
+        throw new Error('Restaurant table is empty')
+      }
+      
+      const restaurant = branch._restaurantTable[0]
+      if (!restaurant || !restaurant.restaurantName) {
+        throw new Error('Restaurant name is missing')
       }
 
       // Generate a URL-friendly slug from the restaurant name and branch name
-      const restaurantName = branch._restaurantTable[0].restaurantName
+      const restaurantName = restaurant.restaurantName
       const branchName = branch.branchName
       
-      if (!restaurantName || !branchName) {
-        throw new Error('Missing restaurant or branch name')
+      if (!branchName) {
+        throw new Error('Branch name is missing')
       }
 
       const slug = slugify(restaurantName, branchName)
