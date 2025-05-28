@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronDown } from "lucide-react"
+import { SiteHeader } from "@/components/site-header"
+import { Footer } from "@/components/footer"
 
 const faqs = [
   {
@@ -69,6 +71,18 @@ export function FAQSection() {
         </div>
       </div>
     </section>
+  )
+}
+
+export default function FAQPage() {
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <SiteHeader />
+      <main className="flex-grow">
+        <FAQSection />
+      </main>
+      <Footer />
+    </div>
   )
 }
 
