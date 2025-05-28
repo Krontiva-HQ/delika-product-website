@@ -232,7 +232,14 @@ export function StoreHeader() {
       
       if (slug) {
         // Find the branch ID from the slug
-        const branch = branches.find(b => slugify(b._restaurantTable[0].restaurantName, b.branchName) === slug)
+        const branch = branches.find(b => {
+          // Add null checks for _restaurantTable
+          if (!b._restaurantTable || !b._restaurantTable[0] || !b._restaurantTable[0].restaurantName) {
+            return false;
+          }
+          return slugify(b._restaurantTable[0].restaurantName, b.branchName) === slug;
+        });
+        
         if (branch) {
           setSelectedBranchId(branch.id)
           setCurrentView('branch')
