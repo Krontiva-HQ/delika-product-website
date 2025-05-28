@@ -361,8 +361,20 @@ export function StoreHeader() {
       setIsLoading(true)
       setIsBranchPageLoaded(false)
       
+      // Validate branch data
+      if (!branch || !branch._restaurantTable || !branch._restaurantTable[0]) {
+        throw new Error('Invalid branch data')
+      }
+
       // Generate a URL-friendly slug from the restaurant name and branch name
-      const slug = slugify(branch._restaurantTable[0].restaurantName, branch.branchName)
+      const restaurantName = branch._restaurantTable[0].restaurantName
+      const branchName = branch.branchName
+      
+      if (!restaurantName || !branchName) {
+        throw new Error('Missing restaurant or branch name')
+      }
+
+      const slug = slugify(restaurantName, branchName)
       
       // Set state first
       setSelectedBranchId(branch.id)
@@ -376,9 +388,11 @@ export function StoreHeader() {
       await router.replace(`/restaurant/${slug}`)
     } catch (error) {
       console.error('Navigation error:', error)
+      // Reset states on error
       setCurrentView('stores')
       setSelectedBranchId(null)
       setIsLoading(false)
+      // Show error to user (you might want to add a toast notification here)
     }
   }
 
@@ -582,6 +596,8 @@ export function StoreHeader() {
   // Helper function to create URL-friendly slugs
   // Now using both restaurant name and branch name to ensure uniqueness
   function slugify(text: string, branchName?: string): string {
+    if (!text) return '';
+    
     // If branch name is provided, combine restaurant name and branch name
     const slugText = branchName 
       ? `${text}-${branchName}`
@@ -590,11 +606,13 @@ export function StoreHeader() {
     return slugText
       .toString()
       .toLowerCase()
+      .trim()
       .replace(/\s+/g, '-')     // Replace spaces with -
       .replace(/[^\w\-]+/g, '') // Remove all non-word chars
       .replace(/\-\-+/g, '-')   // Replace multiple - with single -
       .replace(/^-+/, '')       // Trim - from start of text
       .replace(/-+$/, '')       // Trim - from end of text
+      || 'restaurant';          // Fallback if empty after processing
   }
 
   const fetchOrderHistory = useCallback(async () => {
