@@ -6,6 +6,16 @@ import { Footer } from "@/components/footer"
 import InventoryModal from "@/components/inventory-modal"
 import CurrentInventorySection from "@/components/current-inventory-section"
 
+// Define InventoryItem type for use in this file
+interface InventoryItem {
+  Name: string
+  Category: string
+  Subcategory: string
+  Restaurant: string
+  imag: string
+  price?: string
+}
+
 export default function InventoryPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
@@ -20,12 +30,6 @@ export default function InventoryPage() {
     setModalOpen(true)
   }
 
-  // Handler for opening modal in edit mode with item data
-  const handleEditInventory = (item) => {
-    setSelectedItem(item)
-    setEditMode(true)
-    setModalOpen(true)
-  }
 
   const handleRestaurantClick = (restaurant: string, items: any[]) => {
     setExpandedRestaurant(restaurant)
