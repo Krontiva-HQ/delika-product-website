@@ -1,6 +1,6 @@
 import React, { useEffect } from "react"
 import { useState } from "react"
-import { Dialog } from "@/components/ui/dialog"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { LoadingSpinner } from "@/components/loading-spinner"
 
 interface InventoryModalProps {
@@ -40,7 +40,7 @@ export default function InventoryModal({ open, onClose, item, editMode }: Invent
       setContactName(item.contactName || "")
       setMomoNumber(item.momoNumber || "")
       setEmail(item.email || "")
-      setSelectedItems([{ ...item, image: { url: item.imag }, price: item.price }])
+      setSelectedItems([{ ...item, image: { url: item.image.url }, price: item.price }])
       setStep(1)
     } else if (!open) {
       setRestaurantName("")
@@ -93,10 +93,10 @@ export default function InventoryModal({ open, onClose, item, editMode }: Invent
       body.append("momoNumber", momoNumber)
       body.append("contactName", contactName)
       // If image is a URL, fetch and convert to File
-      const response = await fetch(item.image?.url || item.imag)
+      const response = await fetch(item.image?.url)
       const blob = await response.blob()
       const file = new File([blob], item.Name + ".png", { type: blob.type })
-      body.append("imag", file)
+      body.append("photoUpload", file)
       await fetch("https://api-server.krontiva.africa/api:uEBBwbSs/delika_pre_inventory", {
         method: "POST",
         body
@@ -125,10 +125,8 @@ export default function InventoryModal({ open, onClose, item, editMode }: Invent
   if (!open) return null
 
   return (
-    <Dialog open={open} onClose={onClose}>
-      {/* Background overlay */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-40" />
-      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] md:w-[70vw] max-w-5xl z-50 bg-white p-6 rounded-lg shadow-lg border">
+    <Dialog open={open} onOpenChange={open => { if (!open) onClose() }}>
+      <DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] md:w-[70vw] max-w-5xl z-50 bg-white p-6 rounded-lg shadow-lg border">
         <button className="float-right" onClick={onClose}>×</button>
         {step === 1 && (
           <div>
@@ -261,7 +259,7 @@ export default function InventoryModal({ open, onClose, item, editMode }: Invent
             </button>
           </div>
         )}
-      </div>
+      </DialogContent>
     </Dialog>
   )
 } 
