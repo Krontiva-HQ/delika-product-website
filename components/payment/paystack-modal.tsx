@@ -199,7 +199,12 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent 
+        className="sm:max-w-md"
+        style={{ 
+          fontFamily: '"Rubik", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+        }}
+      >
         <DialogHeader className="text-center">
           <DialogTitle className="flex flex-col items-center gap-2">
             <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">
