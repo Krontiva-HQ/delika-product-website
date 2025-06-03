@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useRouter } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
+import Image from "next/image"
 
 interface PaystackModalProps {
   open: boolean
@@ -207,10 +208,13 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
       >
         <DialogHeader className="text-center">
           <DialogTitle className="flex flex-col items-center gap-2">
-            <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">
-              DELIKA
-            </span>
-            <div className="text-4xl">📱</div>
+            <Image
+              src="/Delika-Logo.png"
+              alt="Delika Logo"
+              width={80}
+              height={32}
+              className="h-8 w-auto"
+            />
           </DialogTitle>
         </DialogHeader>
 
@@ -218,7 +222,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
           {step === 1 && (
             <div className="space-y-4">
               <div className="text-center">
-                <p className="text-gray-700 font-medium">
+                <p className="text-gray-700 font-normal text-sm">
                   Enter your mobile money number and provider to start the payment
                 </p>
               </div>
