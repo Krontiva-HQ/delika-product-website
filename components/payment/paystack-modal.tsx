@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Dialog } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useRouter } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
 
@@ -199,34 +199,43 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 font-rubik">
-        <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md relative font-rubik">
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="text-center">
+          <DialogTitle className="flex flex-col items-center gap-2">
+            <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">
+              DELIKA
+            </span>
+            <div className="text-4xl">📱</div>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6">
           {step === 1 && (
-            <div className="font-rubik">
-              <div className="flex flex-col items-center mb-6">
-                <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold mb-2 font-rubik">DELIKA</span>
-                <div className="text-4xl mb-2">📱</div>
-                <div className="text-center font-medium text-gray-700 mb-2 font-rubik">
+            <div className="space-y-4">
+              <div className="text-center">
+                <p className="text-gray-700 font-medium">
                   Enter your mobile money number and provider to start the payment
-                </div>
+                </p>
               </div>
-              <div className="mb-4">
+              
+              <div className="space-y-4">
                 <div className="relative">
                   <input
                     type="tel"
-                    className="w-full border rounded-lg px-4 py-3 pr-14 text-lg focus:outline-none focus:ring-2 focus:ring-orange-400 font-rubik"
+                    className="w-full border rounded-lg px-4 py-3 pr-14 text-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                     placeholder="050 000 0000"
                     value={phone}
                     onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, "").slice(0, 10))}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
-                    <span className="fi fi-gh rounded-full w-6 h-6 bg-gray-100 border border-gray-200 flex items-center justify-center">🇬🇭</span>
+                    <span className="rounded-full w-6 h-6 bg-gray-100 border border-gray-200 flex items-center justify-center">
+                      🇬🇭
+                    </span>
                   </span>
                 </div>
-              </div>
-              <div className="mb-6">
+
                 <select
-                  className="w-full border rounded-lg px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-orange-400 font-rubik"
+                  className="w-full border rounded-lg px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
                   value={provider}
                   onChange={e => setProvider(e.target.value)}
                 >
@@ -235,101 +244,115 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                     <option key={p.value} value={p.value}>{p.label}</option>
                   ))}
                 </select>
+
+                <button
+                  className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg ${
+                    (!phone.match(/^0\d{9}$/) || !provider || isLoading) ? 'opacity-60 cursor-not-allowed' : ''
+                  }`}
+                  disabled={!phone.match(/^0\d{9}$/) || !provider || isLoading}
+                  onClick={handleConfirm}
+                  type="button"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                      Processing...
+                    </div>
+                  ) : (
+                    `Confirm • GH₵ ${amount.toFixed(2)}`
+                  )}
+                </button>
               </div>
-              <button
-                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg font-rubik ${(!phone.match(/^0\d{9}$/) || !provider || isLoading) ? 'opacity-60 cursor-not-allowed' : ''}`}
-                disabled={!phone.match(/^0\d{9}$/) || !provider || isLoading}
-                onClick={handleConfirm}
-                type="button"
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center font-rubik">
-                    <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
-                    Processing...
-                  </div>
-                ) : (
-                  `Confirm • GH₵ ${amount.toFixed(2)}`
-                )}
-              </button>
             </div>
           )}
+
           {step === 2 && (
-            <div className="font-rubik">
-              <div className="flex flex-col items-center mb-6">
+            <div className="space-y-4">
+              <div className="text-center">
                 <div className="text-4xl mb-2">🔒</div>
-                <div className="text-center font-medium text-gray-700 mb-2 font-rubik">
+                <p className="text-gray-700 font-medium">
                   {otpMessage}
-                </div>
+                </p>
               </div>
-              <input
-                type="text"
-                className="w-full border rounded-lg px-4 py-3 text-lg text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-orange-400 mb-2 font-rubik"
-                placeholder="------"
-                value={otp}
-                onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
-                maxLength={6}
-              />
-              {otpError && <div className="text-red-500 text-sm mb-2 font-rubik">{otpError}</div>}
-              <button
-                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg font-rubik ${otp.length !== 6 || isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
-                disabled={otp.length !== 6 || isLoading}
-                onClick={handleVerifyOtp}
-                type="button"
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center font-rubik">
-                    <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
-                    Verifying...
+              
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  className="w-full border rounded-lg px-4 py-3 text-lg text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  placeholder="------"
+                  value={otp}
+                  onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+                  maxLength={6}
+                />
+                
+                {otpError && (
+                  <div className="text-red-500 text-sm text-center">
+                    {otpError}
                   </div>
-                ) : (
-                  'Verify OTP'
                 )}
-              </button>
+
+                <button
+                  className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg ${
+                    otp.length !== 6 || isLoading ? 'opacity-60 cursor-not-allowed' : ''
+                  }`}
+                  disabled={otp.length !== 6 || isLoading}
+                  onClick={handleVerifyOtp}
+                  type="button"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                      Verifying...
+                    </div>
+                  ) : (
+                    'Verify OTP'
+                  )}
+                </button>
+              </div>
             </div>
           )}
+
           {step === 3 && (
-            <div className="flex flex-col items-center font-rubik">
-              <div className="text-4xl mb-2">📱</div>
-              <div className="text-center font-medium text-gray-700 mb-4 font-rubik">
-                {otpMessage}
+            <div className="space-y-4">
+              <div className="text-center">
+                <div className="text-4xl mb-2">📱</div>
+                <p className="text-gray-700 font-medium">
+                  {otpMessage}
+                </p>
               </div>
-              <button
-                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg mb-3 font-rubik ${
-                  !canVerify ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                onClick={handleDone}
-                disabled={!canVerify || isVerifying}
-                type="button"
-              >
-                {isVerifying ? (
-                  <div className="flex items-center justify-center gap-2 font-rubik">
-                    <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                    Verifying...
+              
+              <div className="space-y-4">
+                <button
+                  className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg ${
+                    !canVerify ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                  onClick={handleDone}
+                  disabled={!canVerify || isVerifying}
+                  type="button"
+                >
+                  {isVerifying ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                      Verifying...
+                    </div>
+                  ) : (
+                    'Payment Completed'
+                  )}
+                </button>
+
+                {verifyError && (
+                  <div className="text-red-500 text-sm text-center">
+                    {countdown > 0 
+                      ? verifyError.replace("15 seconds", `${countdown} second${countdown !== 1 ? 's' : ''}`)
+                      : verifyError
+                    }
                   </div>
-                ) : (
-                  'Payment Completed'
                 )}
-              </button>
-              {verifyError && (
-                <div className="text-red-500 text-sm text-center font-rubik">
-                  {countdown > 0 
-                    ? verifyError.replace("15 seconds", `${countdown} second${countdown !== 1 ? 's' : ''}`)
-                    : verifyError
-                  }
-                </div>
-              )}
+              </div>
             </div>
           )}
-          <button
-            className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-xl font-rubik"
-            onClick={() => router.back()}
-            type="button"
-            aria-label="Close"
-          >
-            ×
-          </button>
         </div>
-      </div>
+      </DialogContent>
     </Dialog>
   )
 } 

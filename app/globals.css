@@ -66,3 +66,18 @@
     @apply bg-background text-foreground font-rubik;
   }
 }
+
+@layer components {
+  /* Ensure dialogs and portals use Rubik font */
+  [data-radix-portal] {
+    font-family: var(--font-rubik), Rubik, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif !important;
+  }
+  
+  .dialog-content-rubik {
+    font-family: var(--font-rubik), Rubik, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif !important;
+  }
+  
+  .dialog-content-rubik * {
+    font-family: inherit !important;
+  }
+}
