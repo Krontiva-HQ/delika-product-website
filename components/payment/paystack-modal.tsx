@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog } from "@/components/ui/dialog"
 import { useRouter } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
@@ -26,7 +26,32 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
   const [isVerifying, setIsVerifying] = useState(false)
   const [verifyError, setVerifyError] = useState("")
   const [canVerify, setCanVerify] = useState(true)
+  const [countdown, setCountdown] = useState(0)
   const router = useRouter()
+
+  // Countdown effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (countdown > 0) {
+      interval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            setCanVerify(true);
+            setVerifyError("");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [countdown]);
 
   const providers = [
     { value: "MTN", label: "MTN", apiValue: "mtn" },
@@ -77,7 +102,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
         setOtpMessage(displayText || 'Please complete the authorization on your mobile device');
         // Enable verification after 15 seconds
         setCanVerify(false);
-        setTimeout(() => setCanVerify(true), 15000);
+        setCountdown(15);
       } else {
         throw new Error('Unexpected payment status');
       }
@@ -161,15 +186,12 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
       } else {
         setVerifyError("Payment not confirmed yet. Please try again in 15 seconds.");
         setCanVerify(false);
-        setTimeout(() => {
-          setCanVerify(true);
-          setVerifyError("");
-        }, 15000);
+        setCountdown(15);
       }
     } catch (error) {
       setVerifyError("Failed to verify payment. Please try again.");
       setCanVerify(false);
-      setTimeout(() => setCanVerify(true), 15000);
+      setCountdown(15);
     } finally {
       setIsVerifying(false);
     }
@@ -177,14 +199,14 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-        <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md relative">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 font-rubik">
+        <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md relative font-rubik">
           {step === 1 && (
-            <div>
+            <div className="font-rubik">
               <div className="flex flex-col items-center mb-6">
-                <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold mb-2">DELIKA</span>
+                <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold mb-2 font-rubik">DELIKA</span>
                 <div className="text-4xl mb-2">📱</div>
-                <div className="text-center font-medium text-gray-700 mb-2">
+                <div className="text-center font-medium text-gray-700 mb-2 font-rubik">
                   Enter your mobile money number and provider to start the payment
                 </div>
               </div>
@@ -192,7 +214,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                 <div className="relative">
                   <input
                     type="tel"
-                    className="w-full border rounded-lg px-4 py-3 pr-14 text-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    className="w-full border rounded-lg px-4 py-3 pr-14 text-lg focus:outline-none focus:ring-2 focus:ring-orange-400 font-rubik"
                     placeholder="050 000 0000"
                     value={phone}
                     onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, "").slice(0, 10))}
@@ -204,7 +226,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
               </div>
               <div className="mb-6">
                 <select
-                  className="w-full border rounded-lg px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="w-full border rounded-lg px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-orange-400 font-rubik"
                   value={provider}
                   onChange={e => setProvider(e.target.value)}
                 >
@@ -215,13 +237,13 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                 </select>
               </div>
               <button
-                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg ${(!phone.match(/^0\d{9}$/) || !provider || isLoading) ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg font-rubik ${(!phone.match(/^0\d{9}$/) || !provider || isLoading) ? 'opacity-60 cursor-not-allowed' : ''}`}
                 disabled={!phone.match(/^0\d{9}$/) || !provider || isLoading}
                 onClick={handleConfirm}
                 type="button"
               >
                 {isLoading ? (
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-center font-rubik">
                     <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
                     Processing...
                   </div>
@@ -232,30 +254,30 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
             </div>
           )}
           {step === 2 && (
-            <div>
+            <div className="font-rubik">
               <div className="flex flex-col items-center mb-6">
                 <div className="text-4xl mb-2">🔒</div>
-                <div className="text-center font-medium text-gray-700 mb-2">
+                <div className="text-center font-medium text-gray-700 mb-2 font-rubik">
                   {otpMessage}
                 </div>
               </div>
               <input
                 type="text"
-                className="w-full border rounded-lg px-4 py-3 text-lg text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-orange-400 mb-2"
+                className="w-full border rounded-lg px-4 py-3 text-lg text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-orange-400 mb-2 font-rubik"
                 placeholder="------"
                 value={otp}
                 onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
                 maxLength={6}
               />
-              {otpError && <div className="text-red-500 text-sm mb-2">{otpError}</div>}
+              {otpError && <div className="text-red-500 text-sm mb-2 font-rubik">{otpError}</div>}
               <button
-                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg ${otp.length !== 6 || isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg font-rubik ${otp.length !== 6 || isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
                 disabled={otp.length !== 6 || isLoading}
                 onClick={handleVerifyOtp}
                 type="button"
               >
                 {isLoading ? (
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-center font-rubik">
                     <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
                     Verifying...
                   </div>
@@ -266,13 +288,13 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
             </div>
           )}
           {step === 3 && (
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center font-rubik">
               <div className="text-4xl mb-2">📱</div>
-              <div className="text-center font-medium text-gray-700 mb-4">
+              <div className="text-center font-medium text-gray-700 mb-4 font-rubik">
                 {otpMessage}
               </div>
               <button
-                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg mb-3 ${
+                className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg mb-3 font-rubik ${
                   !canVerify ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
                 onClick={handleDone}
@@ -280,7 +302,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                 type="button"
               >
                 {isVerifying ? (
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-2 font-rubik">
                     <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
                     Verifying...
                   </div>
@@ -289,14 +311,17 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                 )}
               </button>
               {verifyError && (
-                <div className="text-red-500 text-sm text-center">
-                  {verifyError}
+                <div className="text-red-500 text-sm text-center font-rubik">
+                  {countdown > 0 
+                    ? verifyError.replace("15 seconds", `${countdown} second${countdown !== 1 ? 's' : ''}`)
+                    : verifyError
+                  }
                 </div>
               )}
             </div>
           )}
           <button
-            className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-xl"
+            className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-xl font-rubik"
             onClick={() => router.back()}
             type="button"
             aria-label="Close"

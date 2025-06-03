@@ -17,7 +17,8 @@ module.exports = {
   			sans: [
   				'var(--font-sans)',
                     ...fontFamily.sans
-                ]
+                ],
+  			rubik: ['var(--font-rubik)', ...fontFamily.sans],
   		},
   		colors: {
   			border: 'hsl(var(--border))',

@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
+import { Rubik } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster"
 import Script from "next/script"
+
+const rubik = Rubik({
+  subsets: ["latin"],
+  variable: "--font-rubik",
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+});
 
 export const metadata: Metadata = {
   title: "Delika - Built for restaurants",
@@ -15,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`antialiased`}>
+      <body className={`${rubik.variable} antialiased font-rubik`}>
         {children}
         <Toaster />
         <Script
