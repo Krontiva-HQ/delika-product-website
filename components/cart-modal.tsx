@@ -99,9 +99,15 @@ export function CartModal({
         setRiderFee(newRiderFee)
         setPedestrianFee(newPedestrianFee)
         
-        // Set the fee based on the selected delivery type
-        const currentFee = deliveryType === 'rider' ? newRiderFee : newPedestrianFee
-        setDeliveryFee(currentFee)
+        // If distance > 2km and pedestrian is selected, switch to rider
+        if (distance > 2 && deliveryType === 'pedestrian') {
+          setDeliveryType('rider')
+          setDeliveryFee(newRiderFee)
+        } else {
+          // Set the fee based on the selected delivery type
+          const currentFee = deliveryType === 'rider' ? newRiderFee : newPedestrianFee
+          setDeliveryFee(currentFee)
+        }
       } catch (error) {
         // Handle error silently
       } finally {
@@ -294,19 +300,37 @@ export function CartModal({
                         value="pedestrian"
                         id="pedestrian"
                         className="peer sr-only"
+                        disabled={distance > 2}
                       />
                       <Label
                         htmlFor="pedestrian"
                         className={cn(
-                          "flex items-center gap-2 rounded-md border border-gray-200 p-2 hover:bg-gray-50 cursor-pointer",
-                          "peer-data-[state=checked]:border-orange-500 peer-data-[state=checked]:bg-orange-50",
-                          "transition-all duration-200"
+                          "flex items-center gap-2 rounded-md border border-gray-200 p-2 cursor-pointer transition-all duration-200",
+                          distance > 2 
+                            ? "opacity-50 cursor-not-allowed bg-gray-100 border-gray-300" 
+                            : "hover:bg-gray-50 peer-data-[state=checked]:border-orange-500 peer-data-[state=checked]:bg-orange-50"
                         )}
                       >
-                        <User className="h-4 w-4 text-gray-600" />
+                        <User className={cn(
+                          "h-4 w-4",
+                          distance > 2 ? "text-gray-400" : "text-gray-600"
+                        )} />
                         <div>
-                          <div className="text-sm font-medium text-gray-900">Pedestrian</div>
-                          <div className="text-xs text-gray-500">GH₵ {pedestrianFee.toFixed(2)}</div>
+                          <div className={cn(
+                            "text-sm font-medium",
+                            distance > 2 ? "text-gray-400" : "text-gray-900"
+                          )}>
+                            Pedestrian
+                            {distance > 2 && (
+                              <span className="ml-1 text-xs text-red-500">(Not available)</span>
+                            )}
+                          </div>
+                          <div className={cn(
+                            "text-xs",
+                            distance > 2 ? "text-gray-400" : "text-gray-500"
+                          )}>
+                            {distance > 2 ? "Distance too far" : `GH₵ ${pedestrianFee.toFixed(2)}`}
+                          </div>
                         </div>
                       </Label>
                     </div>
