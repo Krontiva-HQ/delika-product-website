@@ -56,6 +56,7 @@ export function CartModal({
   const [riderFee, setRiderFee] = useState(0)
   const [pedestrianFee, setPedestrianFee] = useState(0)
   const [isLoadingDelivery, setIsLoadingDelivery] = useState(false)
+  const platformFee = 3 // Platform fee of GHC3
 
   useEffect(() => {
   }, [deliveryType])
@@ -137,13 +138,15 @@ export function CartModal({
       localStorage.setItem('loginRedirectUrl', `/checkout/${branchId}`)
       localStorage.setItem('selectedDeliveryType', deliveryType)
       localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
+      localStorage.setItem('checkoutPlatformFee', platformFee.toString())
       onLoginClick()
       onClose()
       return
     }
-    // Store both delivery type and fee
+    // Store delivery type, delivery fee, and platform fee
     localStorage.setItem('selectedDeliveryType', deliveryType)
     localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
+    localStorage.setItem('checkoutPlatformFee', platformFee.toString())
     router.push(`/checkout/${branchId}`)
     onClose()
   }
@@ -349,9 +352,14 @@ export function CartModal({
                   <span className="font-medium">GH₵ {deliveryFee.toFixed(2)}</span>
                 </div>
 
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">Platform Fee</span>
+                  <span className="font-medium">GH₵ {platformFee.toFixed(2)}</span>
+                </div>
+
                 <div className="flex justify-between items-center pt-3 border-t">
                   <span className="font-medium">Total</span>
-                  <span className="font-semibold text-lg">GH₵ {(cartTotal + deliveryFee).toFixed(2)}</span>
+                  <span className="font-semibold text-lg">GH₵ {(cartTotal + deliveryFee + platformFee).toFixed(2)}</span>
                 </div>
               </div>
               <Button 

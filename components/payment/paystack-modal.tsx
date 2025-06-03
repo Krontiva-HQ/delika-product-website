@@ -286,7 +286,6 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
               
               <div className="space-y-4">
                 <input
-                  type="text"
                   className="w-full border rounded-lg px-4 py-3 text-lg text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-orange-400"
                   placeholder="------"
                   value={otp}
