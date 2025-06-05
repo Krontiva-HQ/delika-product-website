@@ -41,6 +41,7 @@ const formSchema = z.object({
 export function RestaurantSignupForm() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [emailError, setEmailError] = useState(false)
   const [locationData, setLocationData] = useState<DeliveryLocationData | undefined>(undefined)
   const [branchData, setBranchData] = useState<{ 
     name: string, 
@@ -71,6 +72,7 @@ export function RestaurantSignupForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
+    setEmailError(false)
     try {
       const transformedData = {
         business_name: values.business_name,
@@ -101,6 +103,12 @@ export function RestaurantSignupForm() {
       })
 
       const data = await response.json()
+
+      if (response.status === 403) {
+        setEmailError(true)
+        form.setValue('email', '')
+        throw new Error('The email you have provided is already in use, please enter a new email.')
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to submit form')
@@ -196,6 +204,11 @@ export function RestaurantSignupForm() {
                         <SelectItem value="Restaurant">Restaurant</SelectItem>
                         <SelectItem value="Fast Food">Fast Food</SelectItem>
                         <SelectItem value="Cafe">Cafe</SelectItem>
+                        <SelectItem value="Groceries">Groceries</SelectItem>
+                        <SelectItem value="Pharmacy">Pharmacy</SelectItem>
+                        <SelectItem value="Online Store">Online Store</SelectItem>
+                        <SelectItem value="Supermarket">Supermarket</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -243,8 +256,18 @@ export function RestaurantSignupForm() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="your@email.com" type="email" {...field} />
+                      <Input 
+                        placeholder="your@email.com" 
+                        type="email" 
+                        {...field} 
+                        className={emailError ? "border-orange-500 focus-visible:ring-orange-500" : ""}
+                      />
                     </FormControl>
+                    {emailError && (
+                      <p className="text-sm text-orange-500 mt-1">
+                        The email you have provided is already in use, please enter a new email.
+                      </p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
