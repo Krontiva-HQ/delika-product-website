@@ -87,16 +87,26 @@ export function ChatWidget() {
   const renderChat = () => (
     <div className="bg-white rounded-lg shadow-lg w-80 h-96 flex flex-col">
       <div className="p-4 border-b flex justify-between items-center bg-orange-500 text-white rounded-t-lg">
-        <div>
-          <h3 className="font-semibold">Chat with us</h3>
-          <p className="text-xs text-orange-100">
+        <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Chat with us</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-orange-600 text-xs"
+              onClick={() => setChatState('questionnaire')}
+            >
+              Change Issue
+            </Button>
+          </div>
+          <p className="text-xs text-orange-100 mt-1">
             {commonIssues.find(issue => issue.id === selectedIssue)?.title}
           </p>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="text-white hover:bg-orange-600"
+          className="text-white hover:bg-orange-600 ml-2"
           onClick={() => setChatState('closed')}
         >
           <X className="h-5 w-5" />
