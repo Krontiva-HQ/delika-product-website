@@ -3,6 +3,7 @@ import { Rubik } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster"
 import Script from "next/script"
+import { ChatWidget } from "@/components/chat-widget"
 
 const rubik = Rubik({
   subsets: ["latin"],
@@ -25,6 +26,7 @@ export default function RootLayout({
       <body className={`${rubik.variable} antialiased font-rubik`}>
         {children}
         <Toaster />
+        <ChatWidget />
         <Script
           src="https://js.paystack.co/v1/inline.js"
           strategy="beforeInteractive"
