@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { MessageCircle, X, Send, MessageSquareMore } from 'lucide-react'
+import { MessageCircle, X, Send, MessageSquareMore, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -88,20 +88,22 @@ export function ChatWidget() {
     <div className="bg-white rounded-lg shadow-lg w-80 h-96 flex flex-col">
       <div className="p-4 border-b flex justify-between items-center bg-orange-500 text-white rounded-t-lg">
         <div className="flex-1">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Chat with us</h3>
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
-              size="sm"
-              className="text-white hover:bg-orange-600 text-xs"
+              size="icon"
+              className="text-white hover:bg-orange-600"
               onClick={() => setChatState('questionnaire')}
             >
-              Change Issue
+              <ArrowLeft className="h-5 w-5" />
             </Button>
+            <div>
+              <h3 className="font-semibold">Chat with us</h3>
+              <p className="text-xs text-orange-100">
+                {commonIssues.find(issue => issue.id === selectedIssue)?.title}
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-orange-100 mt-1">
-            {commonIssues.find(issue => issue.id === selectedIssue)?.title}
-          </p>
         </div>
         <Button
           variant="ghost"
