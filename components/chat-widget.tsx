@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MessageCircle, X, Send, MessageSquareMore, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -39,12 +39,29 @@ export function ChatWidget() {
   const [chatState, setChatState] = useState<ChatState>('closed')
   const [message, setMessage] = useState('')
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null)
+  const [isAgentTyping, setIsAgentTyping] = useState(false)
+  const [messages, setMessages] = useState<Array<{ text: string; sender: 'user' | 'agent' }>>([])
+
+  // Simulate agent response after user sends a message
+  useEffect(() => {
+    if (messages.length > 0 && messages[messages.length - 1].sender === 'user') {
+      setIsAgentTyping(true)
+      const timer = setTimeout(() => {
+        setIsAgentTyping(false)
+        setMessages(prev => [...prev, {
+          text: "I understand your concern. Let me help you with that. Could you please provide more details about your issue?",
+          sender: 'agent'
+        }])
+      }, 2000) // Simulate 2 seconds of typing
+
+      return () => clearTimeout(timer)
+    }
+  }, [messages])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (message.trim()) {
-      // TODO: Implement message sending logic
-      console.log('Sending message:', message)
+      setMessages(prev => [...prev, { text: message, sender: 'user' }])
       setMessage('')
     }
   }
@@ -120,6 +137,27 @@ export function ChatWidget() {
           <div className="bg-gray-100 p-3 rounded-lg max-w-[80%]">
             <p className="text-sm">Hello! How can we help you with your {commonIssues.find(issue => issue.id === selectedIssue)?.title.toLowerCase()}?</p>
           </div>
+          
+          {messages.map((msg, index) => (
+            <div
+              key={index}
+              className={`p-3 rounded-lg max-w-[80%] ${
+                msg.sender === 'user' 
+                  ? 'bg-orange-500 text-white ml-auto' 
+                  : 'bg-gray-100'
+              }`}
+            >
+              <p className="text-sm">{msg.text}</p>
+            </div>
+          ))}
+
+          {isAgentTyping && (
+            <div className="flex space-x-2 ml-2">
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+          )}
         </div>
       </div>
 
