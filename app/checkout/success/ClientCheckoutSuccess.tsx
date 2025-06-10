@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Check, ShoppingBag, MapPin, Clock, Phone, User, Receipt, Star, Download, Share2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
@@ -10,6 +10,7 @@ import Image from 'next/image'
 interface OrderDetails {
   id: string
   customerName: string
+  orderNumber: string
   customerPhoneNumber: string
   totalPrice: string
   orderPrice: string
@@ -29,31 +30,77 @@ interface OrderDetails {
   orderReceivedTime: number
 }
 
-export default function ClientCheckoutSuccess() {
-  const searchParams = useSearchParams()
+interface PaymentVerificationResponse {
+  paymentVerification: OrderDetails | "unsuccessful"
+}
+
+interface ClientCheckoutSuccessProps {
+  reference?: string
+}
+
+export default function ClientCheckoutSuccess({ reference: propReference }: ClientCheckoutSuccessProps) {
   const router = useRouter()
-  const reference = searchParams?.get('reference')
+  const searchParams = useSearchParams()
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)
+  const [verificationError, setVerificationError] = useState(false)
 
   useEffect(() => {
-    // Get order details from localStorage
-    const orderResponse = localStorage.getItem('orderSubmissionResponse')
-    if (orderResponse) {
+    const verifyPayment = async () => {
       try {
-        const parsedResponse = JSON.parse(orderResponse)
-        setOrderDetails(parsedResponse.response?.result1 || null)
+        // Get reference from props or URL params
+        const reference = propReference || (searchParams?.get('reference') ?? null)
+        
+        if (!reference) {
+          console.error('No reference found')
+          throw new Error('No payment reference found')
+        }
+
+        // Verify payment using the new endpoint
+        const response = await fetch(`${process.env.NEXT_PUBLIC_VERIFY_ORDER_PAYMENT_API}?reference=${reference}`)
+        if (!response.ok) {
+          throw new Error('Failed to verify payment')
+        }
+
+        const data: PaymentVerificationResponse = await response.json()
+        
+        if (data.paymentVerification === "unsuccessful") {
+          setVerificationError(true)
+          toast({
+            title: "Payment Verification Failed",
+            description: "The payment could not be verified. Please contact support.",
+            variant: "destructive"
+          })
+          // Redirect to shop page after a delay
+          setTimeout(() => {
+            router.push('/shop')
+          }, 3000)
+        } else {
+          setOrderDetails(data.paymentVerification)
+        }
       } catch (error) {
-        console.error('Error parsing order response:', error)
+        console.error('Error verifying payment:', error)
+        setVerificationError(true)
+        toast({
+          title: "Error",
+          description: "Failed to verify payment. Please contact support.",
+          variant: "destructive"
+        })
+        // Redirect to shop page after a delay
+        setTimeout(() => {
+          router.push('/shop')
+        }, 3000)
+      } finally {
+        setLoading(false)
       }
     }
+
+    verifyPayment()
     
     // Clear delivery fee and type after successful payment
     localStorage.removeItem('checkoutDeliveryFee')
     localStorage.removeItem('selectedDeliveryType')
-    
-    setLoading(false)
-  }, [])
+  }, [propReference, searchParams, router])
 
   const handleShare = () => {
     if (orderDetails) {
@@ -96,22 +143,22 @@ export default function ClientCheckoutSuccess() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 px-4">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center border border-green-100">
           <div className="animate-spin h-12 w-12 border-4 border-green-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Receipt</h2>
-          <p className="text-gray-600">Please wait while we prepare your order details...</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Verifying Payment</h2>
+          <p className="text-gray-600">Please wait while we verify your payment...</p>
         </div>
       </div>
     )
   }
 
-  if (!orderDetails) {
+  if (verificationError || !orderDetails) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-pink-50 to-rose-50 px-4">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center border border-red-100">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <Receipt className="h-8 w-8 text-red-600" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Receipt Not Found</h2>
-          <p className="text-gray-600 mb-6">We couldn't find your order details.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Payment Verification Failed</h2>
+          <p className="text-gray-600 mb-6">We couldn't verify your payment. Please contact support.</p>
           <Button 
             onClick={() => router.push('/shop')} 
             className="bg-red-500 hover:bg-red-600 w-full"
@@ -160,7 +207,7 @@ export default function ClientCheckoutSuccess() {
             <div className="flex justify-between items-end">
               <div>
                 <p className="text-sm opacity-90">Order #</p>
-                <p className="font-mono text-lg font-semibold">{orderDetails.id}</p>
+                <p className="font-mono text-lg font-semibold">{orderDetails.orderNumber}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm opacity-90">Total Amount</p>

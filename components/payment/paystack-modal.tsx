@@ -344,7 +344,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                       Verifying...
                     </div>
                   ) : (
-                    'Payment Completed'
+                    'Verify Payment'
                   )}
                 </button>
 

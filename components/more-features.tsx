@@ -1,39 +1,97 @@
 "use client"
 
 import Image from "next/image"
+import { motion } from "framer-motion"
+
+const features = [
+  {
+    title: "Smart Order Management",
+    description: "Streamline your operations with our intelligent order management system. Track orders in real-time, manage inventory, and optimize your kitchen workflow.",
+    icon: "📱",
+  },
+  {
+    title: "Delivery Optimization",
+    description: "Maximize efficiency with our AI-powered delivery routing system. Reduce delivery times and costs while improving customer satisfaction.",
+    icon: "🚚",
+  },
+  {
+    title: "Customer Insights",
+    description: "Gain valuable insights into customer behavior and preferences. Make data-driven decisions to grow your business.",
+    icon: "📊",
+  },
+  {
+    title: "Mobile App",
+    description: "Stay connected with our powerful mobile app. Manage your restaurant on the go with real-time updates and notifications.",
+    icon: "📲",
+  },
+]
 
 export function MoreFeatures() {
   return (
+    <section className="py-24 bg-gradient-to-b from-gray-50 to-white">
+      <div className="container px-4 md:px-8">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl mb-6"
+          >
+            Everything you need to{" "}
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              run your restaurant
+            </span>
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-xl text-gray-600"
+          >
+            Powerful features designed to help you manage, grow, and succeed in the restaurant business
+          </motion.p>
+        </div>
 
-    <section className="min-h-screen">
-      <div className="grid lg:grid-cols-2">
-        {/* Left content */}
-        <div className="flex items-center justify-center">
-          <div className="space-y-8 max-w-xl px-4 py-24">
-            <h2 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
-              We help <span className="text-orange-500">restaurants</span> make
-              <br />
-              their business <span className="italic">better</span>
-            </h2>
-            <p className="text-xl text-gray-600">
-              We help restaurants make their business <span className="italic text-orange-500">better</span> by providing them
-              with the tools they need to succeed. We are a team of experienced developers and designers who are passionate
-              about helping restaurants grow and succeed.
+        <div className="grid md:grid-cols-2 gap-8">
+          {features.map((feature, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-start space-x-4">
+                <div className="text-4xl">{feature.icon}</div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-gray-600">{feature.description}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="mt-16 relative h-[400px] rounded-2xl overflow-hidden"
+        >
+          <Image
+            src="/dashboard-preview.png"
+            alt="Delika Dashboard Preview"
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
+            <h3 className="text-2xl font-bold mb-2">Powerful Dashboard</h3>
+            <p className="text-white/80">
+              Get a complete overview of your restaurant's performance with our intuitive dashboard
             </p>
           </div>
-        </div>
-
-        {/* Right content */}
-        <div className="relative min-h-screen lg:h-auto">
-          <div className="sticky top-0 h-screen">
-            <Image
-              src="/main.webp"
-              alt="Office environment"
-              fill
-              className="object-cover"
-            />
-          </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   )

@@ -6,7 +6,13 @@ export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const revalidate = 0
 
-export default function CheckoutSuccessPage() {
+interface PageProps {
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export default function CheckoutSuccessPage({ searchParams }: PageProps) {
+  const reference = typeof searchParams?.reference === 'string' ? searchParams.reference : undefined
+
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-orange-50 to-white px-4">
@@ -17,7 +23,7 @@ export default function CheckoutSuccessPage() {
         </div>
       </div>
     }>
-      <ClientCheckoutSuccess />
+      <ClientCheckoutSuccess reference={reference} />
     </Suspense>
   )
 }
