@@ -92,7 +92,7 @@ export function OTPInputModal({
 
       try {
         // Pass the OTP back to the parent component for verification
-        onVerify(otpString);
+        await onVerify(otpString);
       } catch (error) {
         setErrorMessage('Failed to verify code. Please try again.');
       } finally {
@@ -139,7 +139,9 @@ export function OTPInputModal({
                 onChange={(e) => handleInputChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 maxLength={1}
-                className="w-14 h-14 text-center text-2xl font-semibold rounded-xl border-2 focus:border-orange-500 focus:ring-orange-500"
+                className={`w-14 h-14 text-center text-2xl font-semibold rounded-xl border-2 focus:border-orange-500 focus:ring-orange-500 ${
+                  errorMessage ? 'border-red-500' : ''
+                }`}
               />
             ))}
           </div>

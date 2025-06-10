@@ -32,6 +32,7 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
   const [signupMethod, setSignupMethod] = useState<'email' | 'phone'>('email')
   const [isLoading, setIsLoading] = useState(false)
   const [locationData, setLocationData] = useState<DeliveryLocationData | null>(null)
+  const [otpError, setOtpError] = useState<string>("")
 
   const handleLocationSelect = (location: DeliveryLocationData) => {
     setLocationData(location)
@@ -55,14 +56,15 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
       setSignupMethod(isEmailMode ? 'email' : 'phone')
 
       const endpoint = isEmailMode
-        ? 'register'
-        : 'register/phoneNumber/customer'
+        ? process.env.NEXT_PUBLIC_SIGNUP_EMAIL_API
+        : process.env.NEXT_PUBLIC_SIGNUP_PHONE_API
 
       const payload = isEmailMode
         ? { 
             email, 
             password, 
             fullName,
+            role: 'Customer',
             location: {
               lat: locationData.latitude.toString(),
               long: locationData.longitude.toString()
@@ -73,6 +75,7 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
         : { 
             phoneNumber: phone, 
             fullName,
+            role: 'Customer',
             location: {
               lat: locationData.latitude.toString(),
               long: locationData.longitude.toString()
@@ -81,7 +84,15 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
             city: locationData.city
           }
 
-      const data = await authRequest<AuthResponse>(endpoint, payload);
+      const response = await fetch(endpoint!, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
       
       if (data.authToken) {
         setAuthToken(data.authToken)
@@ -126,7 +137,6 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
 
       if (otpData.otpValidate === 'otpFound' && userData) {
         localStorage.setItem('authToken', authToken);
-        
         localStorage.setItem('userData', JSON.stringify(userData));
         
         if (onSignupSuccess) {
@@ -136,10 +146,11 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
         setShowOTP(false);
         onClose();
       } else {
-        console.error('OTP verification failed');
+        setOtpError('Invalid verification code. Please try again.');
       }
     } catch (error) {
       console.error('OTP verification error:', error);
+      setOtpError('Failed to verify code. Please try again.');
     }
   };
 
@@ -152,6 +163,7 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
         email={email}
         phone={phone}
         signupMethod={signupMethod}
+        errorMessage={otpError}
       />
     )
   }
