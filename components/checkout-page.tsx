@@ -104,6 +104,7 @@ export function CheckoutPage({
   const [deliveryFee, setDeliveryFee] = useState(0)
   const [showFeedback, setShowFeedback] = useState(false)
   const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian' | 'pickup'>('rider')
+  const platformFee = 3 // Platform fee of GHC3
 
   const router = useRouter();
 
@@ -278,8 +279,8 @@ export function CheckoutPage({
       // Generate a unique order ID
       const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      // Calculate total amount in GHS
-      const totalAmount = cartTotal + deliveryFee;
+      // Calculate total amount in GHS including platform fee
+      const totalAmount = cartTotal + deliveryFee + platformFee;
 
       // Prepare order data
       const orderData = {
@@ -292,6 +293,7 @@ export function CheckoutPage({
         dropoffName: customerInfo.address,
         orderPrice: cartTotal.toString(),
         deliveryPrice: deliveryFee.toString(),
+        platformFee: platformFee.toString(),
         totalPrice: totalAmount.toString(),
         orderComment: customerInfo.notes || '',
         products: cart.map(item => ({
@@ -366,7 +368,8 @@ ${items}
 *Summary:*
 Subtotal: GH₵${cartTotal.toFixed(2)}
 Delivery Fee: GH₵${deliveryFee.toFixed(2)}
-*Total: GH₵${(cartTotal + deliveryFee).toFixed(2)}*`
+Platform Fee: GH₵${platformFee.toFixed(2)}
+*Total: GH₵${(cartTotal + deliveryFee + platformFee).toFixed(2)}*`
   }
 
   const handlePayment = () => {
@@ -473,11 +476,15 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                   </div>
                   <span className="font-medium">GH₵ {deliveryFee.toFixed(2)}</span>
                 </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>Platform Fee</span>
+                  <span className="font-medium">GH₵ {platformFee.toFixed(2)}</span>
+                </div>
                 <div className="flex justify-between text-lg font-semibold pt-4 border-t">
                   <span>Total</span>
                   <div className="flex items-baseline gap-2">
                     <span className="text-sm text-gray-500">GH₵</span>
-                    <span className="text-2xl text-orange-600">{(cartTotal + deliveryFee).toFixed(2)}</span>
+                    <span className="text-2xl text-orange-600">{(cartTotal + deliveryFee + platformFee).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -717,7 +724,7 @@ Delivery Fee: GH₵${deliveryFee.toFixed(2)}
                     <div className="relative w-full h-full">
                       <span className="absolute inset-0 flex items-center justify-center gap-2 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] transform group-hover:-translate-y-full">
                         <ShoppingBag className="h-5 w-5" />
-                        Place Order • GH₵ {(cartTotal + deliveryFee).toFixed(2)}
+                        Place Order • GH₵ {(cartTotal + deliveryFee + platformFee).toFixed(2)}
                       </span>
                       <span className="absolute inset-0 flex items-center justify-center gap-2 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] transform translate-y-full group-hover:translate-y-0">
                         <span className="flex items-center gap-2">
