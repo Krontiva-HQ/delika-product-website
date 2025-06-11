@@ -17,8 +17,8 @@ export async function GET(
       )
     }
 
-    // Fetch order details using the ORDERS_API endpoint
-    const response = await fetch(`${process.env.ORDERS_API}/${orderId}`, {
+    // Fetch order details from your backend
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders/${orderId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',

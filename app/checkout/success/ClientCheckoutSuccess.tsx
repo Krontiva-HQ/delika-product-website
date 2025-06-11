@@ -36,9 +36,10 @@ interface PaymentVerificationResponse {
 
 interface ClientCheckoutSuccessProps {
   reference?: string
+  orderId?: string
 }
 
-export default function ClientCheckoutSuccess({ reference: propReference }: ClientCheckoutSuccessProps) {
+export default function ClientCheckoutSuccess({ reference: propReference, orderId: propOrderId }: ClientCheckoutSuccessProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null)
@@ -50,57 +51,56 @@ export default function ClientCheckoutSuccess({ reference: propReference }: Clie
       try {
         // Get reference from props or URL params
         const reference = propReference || (searchParams?.get('reference') ?? null)
+        const orderId = propOrderId || (searchParams?.get('orderId') ?? null)
         
-        if (!reference) {
-          console.error('No reference found')
-          throw new Error('No payment reference found')
+        if (!reference && !orderId) {
+          console.error('No reference or orderId found')
+          throw new Error('No payment reference or order ID found')
         }
 
-        // Verify payment using the new endpoint
-        const response = await fetch(`${process.env.NEXT_PUBLIC_VERIFY_ORDER_PAYMENT_API}?reference=${reference}`)
-        if (!response.ok) {
-          throw new Error('Failed to verify payment')
-        }
+        // If we have a reference, verify payment
+        if (reference) {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_VERIFY_ORDER_PAYMENT_API}?reference=${reference}`)
+          if (!response.ok) {
+            throw new Error('Failed to verify payment')
+          }
 
-        const data: PaymentVerificationResponse = await response.json()
-        
-        if (data.paymentVerification === "unsuccessful") {
-          setVerificationError(true)
-          toast({
-            title: "Payment Verification Failed",
-            description: "The payment could not be verified. Please contact support.",
-            variant: "destructive"
-          })
-          // Redirect to shop page after a delay
-          setTimeout(() => {
-            router.push('/shop')
-          }, 3000)
-        } else {
-          setOrderDetails(data.paymentVerification)
+          const data: PaymentVerificationResponse = await response.json()
+          
+          if (data.paymentVerification === "unsuccessful") {
+            setVerificationError(true)
+            toast({
+              title: "Payment Verification Failed",
+              description: "The payment could not be verified. Please contact support.",
+              variant: "destructive"
+            })
+            // Redirect to shop page after a delay
+            setTimeout(() => {
+              router.push('/shop')
+            }, 3000)
+          } else {
+            setOrderDetails(data.paymentVerification)
+          }
+        } 
+        // If we have an orderId, fetch order details
+        else if (orderId) {
+          const response = await fetch(`/api/orders/${orderId}`)
+          if (!response.ok) {
+            throw new Error('Failed to fetch order details')
+          }
+          const data = await response.json()
+          setOrderDetails(data)
         }
       } catch (error) {
-        console.error('Error verifying payment:', error)
+        console.error('Error:', error)
         setVerificationError(true)
-        toast({
-          title: "Error",
-          description: "Failed to verify payment. Please contact support.",
-          variant: "destructive"
-        })
-        // Redirect to shop page after a delay
-        setTimeout(() => {
-          router.push('/shop')
-        }, 3000)
       } finally {
         setLoading(false)
       }
     }
 
     verifyPayment()
-    
-    // Clear delivery fee and type after successful payment
-    localStorage.removeItem('checkoutDeliveryFee')
-    localStorage.removeItem('selectedDeliveryType')
-  }, [propReference, searchParams, router])
+  }, [propReference, propOrderId, searchParams, router])
 
   const handleShare = () => {
     if (orderDetails) {

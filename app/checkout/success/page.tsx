@@ -7,11 +7,15 @@ export const fetchCache = 'force-no-store'
 export const revalidate = 0
 
 interface PageProps {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: {
+    reference?: string
+    orderId?: string
+  }
 }
 
 export default function CheckoutSuccessPage({ searchParams }: PageProps) {
   const reference = typeof searchParams?.reference === 'string' ? searchParams.reference : undefined
+  const orderId = typeof searchParams?.orderId === 'string' ? searchParams.orderId : undefined
 
   return (
     <Suspense fallback={
@@ -23,7 +27,7 @@ export default function CheckoutSuccessPage({ searchParams }: PageProps) {
         </div>
       </div>
     }>
-      <ClientCheckoutSuccess reference={reference} />
+      <ClientCheckoutSuccess reference={reference} orderId={orderId} />
     </Suspense>
   )
 }
