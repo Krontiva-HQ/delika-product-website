@@ -38,7 +38,7 @@ export function MoreFeatures() {
             className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl mb-6"
           >
             Everything you need to{" "}
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-orange-600 to-orange-600 bg-clip-text text-transparent">
               run your restaurant
             </span>
           </motion.h2>
@@ -72,26 +72,7 @@ export function MoreFeatures() {
           ))}
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="mt-16 relative h-[400px] rounded-2xl overflow-hidden"
-        >
-          <Image
-            src="/dashboard-preview.png"
-            alt="Delika Dashboard Preview"
-            fill
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-            <h3 className="text-2xl font-bold mb-2">Powerful Dashboard</h3>
-            <p className="text-white/80">
-              Get a complete overview of your restaurant's performance with our intuitive dashboard
-            </p>
-          </div>
-        </motion.div>
+        
       </div>
     </section>
   )

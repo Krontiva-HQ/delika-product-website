@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { orderId: string } }
 ) {
   try {
