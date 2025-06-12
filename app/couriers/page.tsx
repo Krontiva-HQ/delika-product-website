@@ -1,6 +1,7 @@
 import Image from "next/image"
 import { CourierSignupForm } from "@/components/courier-signup-form"
 import { CourierBenefits } from "@/components/courier-benefits"
+import { NewCourierForm } from "@/components/new-courier-form"
 import { SiteHeader } from "@/components/site-header"
 
 export default function CourierSignup() {
@@ -8,7 +9,7 @@ export default function CourierSignup() {
     <>
       <SiteHeader />
       <main>
-        <div className="min-h-screen flex">
+         {/*<div className="min-h-screen flex">
           <div className="flex-1 relative hidden md:block">
             <Image 
               src="/rider.jpeg" 
@@ -21,8 +22,9 @@ export default function CourierSignup() {
           </div>
           <div className="flex-1 bg-white overflow-y-auto">
             <CourierSignupForm />
-          </div>
-        </div>
+          </div> 
+        </div>*/}
+        <NewCourierForm />
         <CourierBenefits />
       </main>
     </>
