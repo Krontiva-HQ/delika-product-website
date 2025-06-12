@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ShoppingBag, Plus, Minus, ArrowLeft, MapPin, Phone, User, FileText, ArrowRight } from "lucide-react"
 import Image from "next/image"
-import { CartItem } from "@/types/cart"
+import { CartItem as BaseCartItem } from "@/types/cart"
 import { OrderFeedback } from "@/components/order-feedback"
 import { submitOrder } from '@/lib/api'
 import { toast } from "@/components/ui/use-toast"
@@ -14,6 +14,21 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
 import { BranchPage } from "@/components/branch-page"
+
+interface CartItem extends Omit<BaseCartItem, 'available'> {
+  id: string
+  name: string
+  price: string
+  quantity: number
+  image?: string
+  available: boolean
+  selectedExtras?: Array<{
+    id: string
+    name: string
+    price: string
+    quantity: number
+  }>
+}
 
 interface CheckoutPageProps {
   cart: CartItem[]
@@ -438,26 +453,71 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
 
               <div className="divide-y divide-gray-100">
                 {cart.map(item => (
-                  <div key={item.id} className="py-4 flex items-center justify-between">
-                    <div className="flex items-start gap-4">
-                      {item.image && (
-                        <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            fill
-                            className="object-cover"
-                          />
+                  <div key={item.id} className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-start gap-4">
+                        {item.image && (
+                          <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                            <Image
+                              src={item.image}
+                              alt={item.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-medium text-gray-900">{item.name}</h3>
                         </div>
-                      )}
-                      <div>
-                        <h3 className="font-medium text-gray-900">{item.name}</h3>
-                        <p className="text-sm text-gray-500 mt-1">Quantity: {item.quantity}</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 bg-gray-50 rounded-full p-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 rounded-full"
+                            onClick={() => onRemoveItem(item.id)}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="w-8 text-center font-medium">{item.quantity}</span>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 rounded-full"
+                            onClick={() => onAddItem(item)}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <span className="font-medium text-gray-900">
+                          GH₵ {(parseFloat(item.price) * item.quantity).toFixed(2)}
+                        </span>
                       </div>
                     </div>
-                    <span className="font-medium text-gray-900">
-                      GH₵ {(parseFloat(item.price) * item.quantity).toFixed(2)}
-                    </span>
+                    
+                    {/* Extras Section */}
+                    {item.selectedExtras && item.selectedExtras.length > 0 && (
+                      <div className="mt-2 pl-6 space-y-1 border-l-2 border-gray-200">
+                        {item.selectedExtras.map(extra => (
+                          <div key={extra.id} className="flex justify-between text-sm text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <span className="text-orange-500">+</span>
+                              <span>{extra.quantity} × {extra.name}</span>
+                            </div>
+                            <span>GH₵ {(parseFloat(extra.price) * extra.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                        <div className="flex justify-between text-sm font-medium text-gray-700 pt-1 border-t border-gray-100">
+                          <span>Item Total</span>
+                          <span>GH₵ {(
+                            (parseFloat(item.price) * item.quantity) + 
+                            (item.selectedExtras.reduce((sum, extra) => 
+                              sum + (parseFloat(extra.price) * extra.quantity), 0))
+                          ).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

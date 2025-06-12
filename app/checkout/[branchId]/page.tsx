@@ -109,8 +109,12 @@ export default function CheckoutRoute({ params }: { params: Promise<{ branchId: 
     })
   }
 
-  const cartTotal = cart.reduce((total, item) => {
-    return total + (parseFloat(item.price) * item.quantity)
+  const cartTotal = cart.reduce((total: number, item: CartItem) => {
+    const itemTotal = parseFloat(item.price) * item.quantity;
+    const extrasTotal = item.selectedExtras?.reduce((extrasSum: number, extra: { price: string; quantity: number }) => {
+      return extrasSum + (parseFloat(extra.price) * extra.quantity);
+    }, 0) || 0;
+    return total + itemTotal + extrasTotal;
   }, 0)
 
   const handleSubmitOrder = (customerInfo: CustomerInfo) => {

@@ -17,7 +17,14 @@ import { calculateDeliveryPrices } from "@/lib/api"
 interface CartModalProps {
   isOpen: boolean
   onClose: () => void
-  cart: CartItem[]
+  cart: (CartItem & {
+    selectedExtras?: Array<{
+      id: string
+      name: string
+      price: string
+      quantity: number
+    }>
+  })[]
   onAddItem: (itemId: string) => void
   onRemoveItem: (itemId: string) => void
   onDeleteItem: (itemId: string) => void
@@ -57,6 +64,19 @@ export function CartModal({
   const [pedestrianFee, setPedestrianFee] = useState(0)
   const [isLoadingDelivery, setIsLoadingDelivery] = useState(false)
   const platformFee = 3 // Platform fee of GHC3
+
+  useEffect(() => {
+    console.log('Cart Items in CartModal:', cart.map(item => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      selectedExtras: item.selectedExtras,
+      total: (parseFloat(item.price) * item.quantity) + 
+        (item.selectedExtras?.reduce((sum, extra) => 
+          sum + (parseFloat(extra.price) * extra.quantity), 0) || 0)
+    })));
+  }, [cart]);
 
   useEffect(() => {
   }, [deliveryType])
@@ -139,6 +159,8 @@ export function CartModal({
       localStorage.setItem('selectedDeliveryType', deliveryType)
       localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
       localStorage.setItem('checkoutPlatformFee', platformFee.toString())
+      // Store cart items with extras in localStorage
+      localStorage.setItem('checkoutCartItems', JSON.stringify(cart))
       onLoginClick()
       onClose()
       return
@@ -147,6 +169,8 @@ export function CartModal({
     localStorage.setItem('selectedDeliveryType', deliveryType)
     localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
     localStorage.setItem('checkoutPlatformFee', platformFee.toString())
+    // Store cart items with extras in localStorage
+    localStorage.setItem('checkoutCartItems', JSON.stringify(cart))
     router.push(`/checkout/${branchId}`)
     onClose()
   }
@@ -230,8 +254,36 @@ export function CartModal({
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
+                        
+                        {/* Extras Section */}
+                        {item.selectedExtras && item.selectedExtras.length > 0 && (
+                          <div className="mt-2 pl-2 space-y-1 border-l-2 border-gray-200">
+                            {item.selectedExtras.map(extra => (
+                              <div key={extra.id} className="flex justify-between text-sm text-gray-600">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-orange-500">+</span>
+                                  <span>{extra.quantity} × {extra.name}</span>
+                                </div>
+                                <span>GH₵ {(parseFloat(extra.price) * extra.quantity).toFixed(2)}</span>
+                              </div>
+                            ))}
+                            <div className="flex justify-between text-sm font-medium text-gray-700 pt-1 border-t border-gray-100">
+                              <span>Item Total</span>
+                              <span>GH₵ {(
+                                (parseFloat(item.price) * item.quantity) + 
+                                (item.selectedExtras.reduce((sum, extra) => 
+                                  sum + (parseFloat(extra.price) * extra.quantity), 0))
+                              ).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex items-center justify-between mt-3">
-                          <span className="font-medium">GH₵ {(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
+                          <span className="font-medium">GH₵ {(
+                            (parseFloat(item.price) * item.quantity) + 
+                            (item.selectedExtras?.reduce((sum, extra) => 
+                              sum + (parseFloat(extra.price) * extra.quantity), 0) || 0)
+                          ).toFixed(2)}</span>
                           <div className="flex items-center gap-3 bg-gray-50 rounded-full p-1">
                             <Button
                               size="icon"

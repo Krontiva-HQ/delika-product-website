@@ -12,6 +12,12 @@ interface CartItem {
   price: string
   quantity: number
   image?: string
+  selectedExtras?: Array<{
+    id: string
+    name: string
+    price: string
+    quantity: number
+  }>
 }
 
 interface CheckoutModalProps {
@@ -46,6 +52,11 @@ export function CheckoutModal({
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+
+  useEffect(() => {
+    console.log('CheckoutModal received cart:', cart);
+    console.log('CheckoutModal received cartTotal:', cartTotal);
+  }, [cart, cartTotal]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -94,11 +105,34 @@ export function CheckoutModal({
           <>
             <div className="mb-6 bg-gray-50 p-4 rounded-lg">
               <h3 className="font-medium text-gray-900 mb-2">Order Summary</h3>
-              <div className="space-y-2 mb-3">
+              <div className="space-y-4 mb-3">
                 {cart.map(item => (
-                  <div key={item.id} className="flex justify-between text-sm">
-                    <span>{item.quantity} × {item.name}</span>
-                    <span>GH₵ {(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
+                  <div key={item.id} className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>{item.quantity} × {item.name}</span>
+                      <span>GH₵ {(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
+                    </div>
+                    {item.selectedExtras && item.selectedExtras.length > 0 && (
+                      <div className="pl-4 space-y-2 border-l-2 border-gray-200">
+                        {item.selectedExtras.map(extra => (
+                          <div key={extra.id} className="flex justify-between text-sm text-gray-600">
+                            <div className="flex items-center gap-2">
+                              <span className="text-orange-500">+</span>
+                              <span>{extra.quantity} × {extra.name}</span>
+                            </div>
+                            <span>GH₵ {(parseFloat(extra.price) * extra.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                        <div className="flex justify-between text-sm font-medium text-gray-700 pt-1 border-t border-gray-100">
+                          <span>Item Total</span>
+                          <span>GH₵ {(
+                            (parseFloat(item.price) * item.quantity) + 
+                            (item.selectedExtras.reduce((sum, extra) => 
+                              sum + (parseFloat(extra.price) * extra.quantity), 0))
+                          ).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

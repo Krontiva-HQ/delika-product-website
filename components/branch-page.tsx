@@ -10,6 +10,7 @@ import { FloatingCart } from "@/components/floating-cart"
 import { CartModal } from "@/components/cart-modal"
 import { LoginModal } from "@/components/login-modal"
 import { SignupModal } from "@/components/signup-modal"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface BranchDetails {
   _menutable?: Array<{
@@ -20,6 +21,20 @@ interface BranchDetails {
       available: boolean
       description?: string
       foodImage?: { url: string }
+      extras?: Array<{
+        extrasTitle: string
+        inventoryDetails: Array<{
+          id: string
+          categoryId: string
+          foodType: string
+          foodName: string
+          foodPrice: string
+          foodDescription: string
+          foodImage?: {
+            url: string
+          }
+        }>
+      }>
     }>
     foodTypeImage?: { url: string }
   }>
@@ -67,6 +82,36 @@ interface CartItem {
   price: string
   quantity: number
   image?: string
+  selectedExtras?: Array<{
+    id: string
+    name: string
+    price: string
+    quantity: number
+  }>
+}
+
+interface ItemDetailsModalProps {
+  isOpen: boolean
+  onClose: () => void
+  item: {
+    name: string
+    price: string
+    description?: string
+    foodImage?: { url: string }
+    extras?: Array<{
+      extrasTitle: string
+      inventoryDetails: Array<{
+        id: string
+        categoryId: string
+        foodType: string
+        foodName: string
+        foodPrice: string
+        foodDescription: string
+        foodImage?: { url: string }
+      }>
+    }>
+  }
+  onAddToCart: (item: CartItem & { available: boolean }) => void
 }
 
 function parseTimeToMinutes(timeStr?: string): number | null {
@@ -106,6 +151,162 @@ const isRestaurantOpen = (openTime?: string, closeTime?: string): boolean => {
   return currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes <= closeTimeInMinutes;
 };
 
+function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsModalProps) {
+  const [extrasQuantities, setExtrasQuantities] = useState<Record<string, number>>({})
+  const [quantity, setQuantity] = useState(1)
+
+  // Group extras by extrasTitle
+  const groupedExtras: Record<string, Array<any>> = {};
+  if (item.extras) {
+    item.extras.forEach(extra => {
+      if (!groupedExtras[extra.extrasTitle]) {
+        groupedExtras[extra.extrasTitle] = [];
+      }
+      groupedExtras[extra.extrasTitle].push(...extra.inventoryDetails);
+    });
+  }
+
+  const handleAddToCart = () => {
+    // Build selectedExtras array with quantity > 0
+    const selectedExtras = Object.entries(extrasQuantities)
+      .filter(([_, qty]) => qty > 0)
+      .map(([id, qty]) => {
+        // Find the extra detail by id
+        let found: any = undefined;
+        (Object.values(groupedExtras) as any[][]).forEach((details: any[]) => {
+          const match = details.find((d: any) => d.id === id);
+          if (match) found = match;
+        });
+        return found ? {
+          id: found.id,
+          name: found.foodName,
+          price: found.foodPrice,
+          quantity: qty
+        } : undefined;
+      })
+      .filter((e): e is { id: string; name: string; price: string; quantity: number } => !!e);
+
+    console.log('Adding item to cart with extras:', {
+      item: {
+        id: item.name,
+        name: item.name,
+        price: item.price,
+        quantity: quantity,
+        image: item.foodImage?.url,
+        selectedExtras: selectedExtras
+      },
+      selectedExtras
+    });
+
+    onAddToCart({
+      id: item.name,
+      name: item.name,
+      price: item.price,
+      quantity: quantity,
+      image: item.foodImage?.url,
+      available: true,
+      selectedExtras: selectedExtras
+    })
+    onClose()
+  }
+
+  // Calculate total price
+  const extrasTotal = Object.entries(extrasQuantities).reduce((sum, [id, qty]) => {
+    let price = 0;
+    Object.values(groupedExtras).forEach(details => {
+      const match = details.find((d: any) => d.id === id);
+      if (match) price = parseFloat(match.foodPrice) * qty;
+    });
+    return sum + price;
+  }, 0);
+  const totalPrice = (parseFloat(item.price) + extrasTotal) * quantity;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md p-0 overflow-hidden">
+        {/* Item Image */}
+        {item.foodImage && (
+          <div className="relative w-full h-48 sm:h-56 md:h-64">
+            <Image
+              src={item.foodImage.url}
+              alt={item.name}
+              fill
+              className="object-cover w-full h-full"
+            />
+          </div>
+        )}
+        <div className="p-6">
+          {/* Item Info */}
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold mb-1">{item.name}</h2>
+            <div className="text-2xl font-bold text-gray-900 mb-1">GH₵{parseFloat(item.price).toFixed(2)}</div>
+            {item.description && <div className="text-gray-500 text-sm mb-2">{item.description}</div>}
+          </div>
+
+          <div className="max-h-72 pr-2 mb-4 overflow-y-auto">
+            {/* Grouped Extras Section */}
+            {Object.keys(groupedExtras).length > 0 && (
+              <div className="mb-4">
+                {Object.entries(groupedExtras).map(([title, details], groupIdx) => (
+                  <div key={title} className="mb-2">
+                    <div className="text-sm font-medium text-gray-700 mb-1">{title}</div>
+                    <div className="divide-y divide-gray-100">
+                      {details.map((detail: any) => (
+                        <div key={detail.id} className="flex items-center py-2 gap-3">
+                          {detail.foodImage && (
+                            <div className="relative w-12 h-12 flex-shrink-0">
+                              <Image
+                                src={detail.foodImage.url}
+                                alt={detail.foodName}
+                                fill
+                                className="object-cover rounded-md"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-900">{detail.foodName}</span>
+                              <span className="ml-2 text-gray-500 text-sm">+GH₵{parseFloat(detail.foodPrice).toFixed(2)}</span>
+                            </div>
+                            {detail.foodDescription && (
+                              <p className="text-xs text-gray-500 mt-1">{detail.foodDescription}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button size="icon" variant="outline" onClick={() => setExtrasQuantities(q => ({ ...q, [detail.id]: Math.max(0, (q[detail.id] || 0) - 1) }))}>-</Button>
+                            <span className="w-6 text-center">{extrasQuantities[detail.id] || 0}</span>
+                            <Button size="icon" variant="outline" onClick={() => setExtrasQuantities(q => ({ ...q, [detail.id]: (q[detail.id] || 0) + 1 }))}>+</Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Quantity and Add Button */}
+          <div className="flex items-center justify-between border-t pt-4 mt-4">
+            <div className="flex items-center gap-2">
+              <Button size="icon" variant="outline" onClick={() => setQuantity(q => Math.max(1, q - 1))}>-</Button>
+              <span className="w-8 text-center font-medium">{quantity}</span>
+              <Button size="icon" variant="outline" onClick={() => setQuantity(q => q + 1)}>+</Button>
+            </div>
+            <Button 
+              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-2 rounded-full font-semibold text-base"
+              onClick={handleAddToCart}
+            >
+              Add
+              <span className="ml-2">GH₵{totalPrice.toFixed(2)}</span>
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function BranchPage({ params }: BranchPageProps) {
   const [branch, setBranch] = useState<BranchDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -118,6 +319,24 @@ export function BranchPage({ params }: BranchPageProps) {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
   const [user, setUser] = useState<UserData | null>(null)
   const [isOpen, setIsOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<{
+    name: string
+    price: string
+    description?: string
+    foodImage?: { url: string }
+    extras?: Array<{
+      extrasTitle: string
+      inventoryDetails: Array<{
+        id: string
+        categoryId: string
+        foodType: string
+        foodName: string
+        foodPrice: string
+        foodDescription: string
+        foodImage?: { url: string }
+      }>
+    }>
+  } | null>(null)
 
   // Check authentication status on mount and when localStorage changes
   useEffect(() => {
@@ -207,15 +426,21 @@ export function BranchPage({ params }: BranchPageProps) {
   }, [branch]);
 
   const addToCart = (item: CartItem & { available: boolean }) => {
+    console.log('addToCart called with item:', item);
     setCart(prevCart => {
       const existingItem = prevCart.find(cartItem => cartItem.id === item.id)
       if (existingItem) {
+        console.log('Updating existing item in cart:', {
+          before: existingItem,
+          after: { ...existingItem, quantity: existingItem.quantity + 1, selectedExtras: item.selectedExtras }
+        });
         return prevCart.map(cartItem =>
           cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+            ? { ...cartItem, quantity: cartItem.quantity + 1, selectedExtras: item.selectedExtras }
             : cartItem
         )
       }
+      console.log('Adding new item to cart:', item);
       return [...prevCart, { ...item, quantity: 1, available: item.available }]
     })
   }
@@ -235,7 +460,11 @@ export function BranchPage({ params }: BranchPageProps) {
   }
 
   const cartTotal = cart.reduce((total, item) => {
-    return total + (parseFloat(item.price) * item.quantity)
+    const itemTotal = parseFloat(item.price) * item.quantity;
+    const extrasTotal = item.selectedExtras?.reduce((extrasSum, extra) => {
+      return extrasSum + (parseFloat(extra.price) * extra.quantity);
+    }, 0) || 0;
+    return total + itemTotal + extrasTotal;
   }, 0)
 
   const deleteFromCart = (itemId: string) => {
@@ -395,6 +624,7 @@ export function BranchPage({ params }: BranchPageProps) {
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900">{item.name}</h3>
                         <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.description}</p>
+                        
                         <div className="flex items-center justify-between mt-2">
                           <span className="font-medium text-gray-900">GH₵ {item.price}</span>
                           <div className="flex items-center gap-2">
@@ -412,13 +642,12 @@ export function BranchPage({ params }: BranchPageProps) {
                                   <Button 
                                     size="icon"
                                     className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
-                                    onClick={() => addToCart({
-                                      id: item.name,
+                                    onClick={() => setSelectedItem({
                                       name: item.name,
                                       price: item.price,
-                                      quantity: 1,
-                                      image: item.foodImage?.url,
-                                      available: item.available
+                                      description: item.description,
+                                      foodImage: item.foodImage,
+                                      extras: item.extras
                                     })}
                                   >
                                     <Plus className="h-4 w-4" />
@@ -428,13 +657,12 @@ export function BranchPage({ params }: BranchPageProps) {
                                 <Button 
                                   size="icon"
                                   className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
-                                  onClick={() => addToCart({
-                                    id: item.name,
+                                  onClick={() => setSelectedItem({
                                     name: item.name,
                                     price: item.price,
-                                    quantity: 1,
-                                    image: item.foodImage?.url,
-                                    available: item.available
+                                    description: item.description,
+                                    foodImage: item.foodImage,
+                                    extras: item.extras
                                   })}
                                 >
                                   <Plus className="h-4 w-4" />
@@ -471,15 +699,18 @@ export function BranchPage({ params }: BranchPageProps) {
         onClose={() => setIsCartModalOpen(false)}
         cart={cart}
         onAddItem={(itemId) => {
+          console.log('CartModal onAddItem called with itemId:', itemId);
           const item = cart.find(i => i.id === itemId)
           if (item) {
+            console.log('Found item to add:', item);
             addToCart({
               id: item.id,
               name: item.name,
               price: item.price,
               quantity: 1,
               image: item.image,
-              available: item.available
+              available: item.available,
+              selectedExtras: item.selectedExtras
             })
           }
         }}
@@ -548,6 +779,15 @@ export function BranchPage({ params }: BranchPageProps) {
             branchLongitude: branch.branchLongitude,
             _restaurantTable: branch.restaurant
           }}
+        />
+      )}
+
+      {selectedItem && (
+        <ItemDetailsModal
+          isOpen={!!selectedItem}
+          onClose={() => setSelectedItem(null)}
+          item={selectedItem}
+          onAddToCart={addToCart}
         />
       )}
     </div>
