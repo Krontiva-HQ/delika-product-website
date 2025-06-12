@@ -220,7 +220,7 @@ export function NewCourierForm() {
                       <SelectValue placeholder="Select ID type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="license">Driver's License</SelectItem>
+                      <SelectItem value="license">Driver&apos;s License</SelectItem>
                       <SelectItem value="ghanaCard">Ghana Card</SelectItem>
                     </SelectContent>
                   </Select>
