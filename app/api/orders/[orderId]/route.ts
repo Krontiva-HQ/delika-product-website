@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 
 export async function GET(
   request: NextRequest,
@@ -7,34 +6,53 @@ export async function GET(
 ) {
   try {
     const orderId = params.orderId
-    const cookieStore = await cookies()
-    const token = cookieStore.get('token')?.value
 
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    // Fetch order details from your backend
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders/${orderId}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_XANO_API_URL}/api:delika/orders/${orderId}`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_XANO_AUTH_TOKEN}`
+      }
     })
 
     if (!response.ok) {
-      throw new Error('Failed to fetch order details')
+      throw new Error('Failed to fetch order')
     }
 
     const data = await response.json()
     return NextResponse.json(data)
   } catch (error) {
-    console.error('Error fetching order details:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch order details' },
+      { error: 'Failed to fetch order' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { orderId: string } }
+) {
+  try {
+    const orderId = params.orderId
+    const body = await request.json()
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_XANO_API_URL}/api:delika/orders/${orderId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_XANO_AUTH_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to update order')
+    }
+
+    const data = await response.json()
+    return NextResponse.json(data)
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Failed to update order' },
       { status: 500 }
     )
   }
