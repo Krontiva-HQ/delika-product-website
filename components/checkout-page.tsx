@@ -314,7 +314,12 @@ export function CheckoutPage({
         products: cart.map(item => ({
           name: item.name,
           price: item.price,
-          quantity: item.quantity.toString()
+          quantity: item.quantity.toString(),
+          extras: item.selectedExtras?.map(extra => ({
+            extrasName: extra.name,
+            extrasQuantity: extra.quantity,
+            extrasPrice: parseFloat(extra.price)
+          })) || []
         })),
         pickup: [{
           fromLatitude: branchDetails?.branchLatitude?.toString() || '0',
