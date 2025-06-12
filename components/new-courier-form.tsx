@@ -13,15 +13,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useRouter } from "next/navigation"
 
 interface FormData {
-  firstName: string
-  lastName: string
-  email: string
-  phoneNumber: string
+  first_name: string
+  last_name: string
+  email_address: string
+  phone_number: string
   nationality: string
-  idType: string
-  idNumber: string
+  id_type: string
+  id_number: string
   licenseFront: File | null
   licenseBack: File | null
   address: string
@@ -29,14 +30,16 @@ interface FormData {
 }
 
 export function NewCourierForm() {
+  const router = useRouter()
+  const [isSubmitted, setIsSubmitted] = useState(false)
   const [formData, setFormData] = useState<FormData>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phoneNumber: "",
+    first_name: "",
+    last_name: "",
+    email_address: "",
+    phone_number: "",
     nationality: "",
-    idType: "",
-    idNumber: "",
+    id_type: "",
+    id_number: "",
     licenseFront: null,
     licenseBack: null,
     address: "",
@@ -84,8 +87,58 @@ export function NewCourierForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission here
-    console.log(formData)
+    
+    try {
+      // Create FormData object to handle file uploads
+      const formDataToSend = new FormData()
+      
+      // Append all text fields
+      formDataToSend.append('first_name', formData.first_name)
+      formDataToSend.append('last_name', formData.last_name)
+      formDataToSend.append('email_address', formData.email_address)
+      formDataToSend.append('phone_number', formData.phone_number)
+      formDataToSend.append('nationality', formData.nationality)
+      formDataToSend.append('id_type', formData.id_type)
+      formDataToSend.append('id_number', formData.id_number)
+      formDataToSend.append('address', formData.address)
+      
+      // Append files
+      if (formData.licenseFront) {
+        formDataToSend.append('licenseFront', formData.licenseFront)
+      }
+      if (formData.licenseBack) {
+        formDataToSend.append('licenseBack', formData.licenseBack)
+      }
+      if (formData.selfie) {
+        formDataToSend.append('selfie', formData.selfie)
+      }
+
+      const response = await fetch(process.env.NEXT_PUBLIC_NEW_RIDER_APPROVAL_API!, {
+        method: 'POST',
+        body: formDataToSend,
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_XANO_AUTH_TOKEN}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Registration failed')
+      }
+
+      const data = await response.json()
+      
+      // Set submitted state to true
+      setIsSubmitted(true)
+      
+      // Wait for 3 seconds to show the success message
+      setTimeout(() => {
+        // Redirect to home page
+        router.push('/')
+      }, 3000)
+      
+    } catch (error) {
+      // Handle error (show error message to user)
+    }
   }
 
   return (
@@ -109,14 +162,14 @@ export function NewCourierForm() {
             <h3 className="text-2xl font-semibold mb-6">Personal Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="firstName" className="flex items-center gap-2">
+                <Label htmlFor="first_name" className="flex items-center gap-2">
                   <User className="w-4 h-4" />
-                  First Name
+                  First Name *
                 </Label>
                 <Input
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
+                  id="first_name"
+                  name="first_name"
+                  value={formData.first_name}
                   onChange={handleInputChange}
                   required
                   className="h-12"
@@ -124,14 +177,14 @@ export function NewCourierForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="lastName" className="flex items-center gap-2">
+                <Label htmlFor="last_name" className="flex items-center gap-2">
                   <User className="w-4 h-4" />
-                  Last Name
+                  Last Name *
                 </Label>
                 <Input
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
+                  id="last_name"
+                  name="last_name"
+                  value={formData.last_name}
                   onChange={handleInputChange}
                   required
                   className="h-12"
@@ -139,15 +192,15 @@ export function NewCourierForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2">
+                <Label htmlFor="email_address" className="flex items-center gap-2">
                   <Mail className="w-4 h-4" />
-                  Email Address
+                  Email Address *
                 </Label>
                 <Input
-                  id="email"
-                  name="email"
+                  id="email_address"
+                  name="email_address"
                   type="email"
-                  value={formData.email}
+                  value={formData.email_address}
                   onChange={handleInputChange}
                   required
                   className="h-12"
@@ -155,14 +208,14 @@ export function NewCourierForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber" className="flex items-center gap-2">
+                <Label htmlFor="phone_number" className="flex items-center gap-2">
                   <Phone className="w-4 h-4" />
-                  Phone Number
+                  Phone Number *
                 </Label>
                 <Input
-                  id="phoneNumber"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
+                  id="phone_number"
+                  name="phone_number"
+                  value={formData.phone_number}
                   onChange={handleInputChange}
                   required
                   className="h-12"
@@ -172,7 +225,7 @@ export function NewCourierForm() {
               <div className="space-y-2">
                 <Label htmlFor="nationality" className="flex items-center gap-2">
                   <Globe className="w-4 h-4" />
-                  Nationality
+                  Nationality *
                 </Label>
                 <Input
                   id="nationality"
@@ -187,7 +240,7 @@ export function NewCourierForm() {
               <div className="space-y-2">
                 <Label htmlFor="address" className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  Address
+                  Address *
                 </Label>
                 <Input
                   id="address"
@@ -207,38 +260,38 @@ export function NewCourierForm() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="idType" className="flex items-center gap-2">
+                  <Label htmlFor="id_type" className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    ID Type
+                    ID Type *
                   </Label>
                   <Select
-                    value={formData.idType}
-                    onValueChange={(value) => handleSelectChange("idType", value)}
+                    value={formData.id_type}
+                    onValueChange={(value) => handleSelectChange("id_type", value)}
                     required
                   >
                     <SelectTrigger className="h-12">
                       <SelectValue placeholder="Select ID type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="license">Driver&apos;s License</SelectItem>
-                      <SelectItem value="ghanaCard">Ghana Card</SelectItem>
+                      <SelectItem value="Driver's License">Driver&apos;s License</SelectItem>
+                      <SelectItem value="Ghana Card">Ghana Card</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="idNumber" className="flex items-center gap-2">
+                  <Label htmlFor="id_number" className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    ID Number
+                    ID Number *
                   </Label>
                   <Input
-                    id="idNumber"
-                    name="idNumber"
-                    value={formData.idNumber}
+                    id="id_number"
+                    name="id_number"
+                    value={formData.id_number}
                     onChange={handleInputChange}
                     required
                     className="h-12"
-                    placeholder={formData.idType === "license" ? "Enter License Number" : "Enter Ghana Card Number"}
+                    placeholder={formData.id_type === "Driver's License" ? "Enter License Number" : "Enter Ghana Card Number"}
                   />
                 </div>
               </div>
@@ -247,7 +300,7 @@ export function NewCourierForm() {
                 <div className="space-y-2">
                   <Label htmlFor="licenseFront" className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    {formData.idType === "license" ? "License Front" : "Ghana Card Front"}
+                    {formData.id_type === "Driver's License" ? "License Front" : "Ghana Card Front"} *
                   </Label>
                   <div className="relative">
                     <Input
@@ -274,7 +327,7 @@ export function NewCourierForm() {
                 <div className="space-y-2">
                   <Label htmlFor="licenseBack" className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    {formData.idType === "license" ? "License Back" : "Ghana Card Back"}
+                    {formData.id_type === "Driver's License" ? "License Back" : "Ghana Card Back"} *
                   </Label>
                   <div className="relative">
                     <Input
@@ -307,7 +360,7 @@ export function NewCourierForm() {
             <div className="space-y-2">
               <Label htmlFor="selfie" className="flex items-center gap-2">
                 <Camera className="w-4 h-4" />
-                Upload a Selfie
+                Upload a Selfie *
               </Label>
               <div className="relative">
                 <Input
@@ -335,8 +388,15 @@ export function NewCourierForm() {
           <Button
             type="submit"
             className="w-full bg-orange-600 hover:bg-orange-700 h-14 text-lg font-medium"
+            disabled={isSubmitted}
           >
-            Submit Application
+            {isSubmitted ? (
+              <div className="flex items-center justify-center gap-2">
+                <span>Your details have been submitted!</span>
+              </div>
+            ) : (
+              "Submit Application"
+            )}
           </Button>
         </form>
       </div>
