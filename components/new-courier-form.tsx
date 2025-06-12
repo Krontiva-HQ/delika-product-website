@@ -6,6 +6,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { motion } from "framer-motion"
 import { Upload, User, Mail, Phone, Globe, FileText, MapPin, Camera } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface FormData {
   firstName: string
@@ -13,7 +20,8 @@ interface FormData {
   email: string
   phoneNumber: string
   nationality: string
-  licenseNumber: string
+  idType: string
+  idNumber: string
   licenseFront: File | null
   licenseBack: File | null
   address: string
@@ -27,7 +35,8 @@ export function NewCourierForm() {
     email: "",
     phoneNumber: "",
     nationality: "",
-    licenseNumber: "",
+    idType: "",
+    idNumber: "",
     licenseFront: null,
     licenseBack: null,
     address: "",
@@ -42,6 +51,13 @@ export function NewCourierForm() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -187,28 +203,51 @@ export function NewCourierForm() {
 
           {/* License Information */}
           <div className="bg-white rounded-2xl p-8 shadow-lg">
-            <h3 className="text-2xl font-semibold mb-6">License Information</h3>
+            <h3 className="text-2xl font-semibold mb-6">Identification Information</h3>
             <div className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="licenseNumber" className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  License Number
-                </Label>
-                <Input
-                  id="licenseNumber"
-                  name="licenseNumber"
-                  value={formData.licenseNumber}
-                  onChange={handleInputChange}
-                  required
-                  className="h-12"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="idType" className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    ID Type
+                  </Label>
+                  <Select
+                    value={formData.idType}
+                    onValueChange={(value) => handleSelectChange("idType", value)}
+                    required
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="Select ID type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="license">Driver's License</SelectItem>
+                      <SelectItem value="ghanaCard">Ghana Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="idNumber" className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    ID Number
+                  </Label>
+                  <Input
+                    id="idNumber"
+                    name="idNumber"
+                    value={formData.idNumber}
+                    onChange={handleInputChange}
+                    required
+                    className="h-12"
+                    placeholder={formData.idType === "license" ? "Enter License Number" : "Enter Ghana Card Number"}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="licenseFront" className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    License Front
+                    {formData.idType === "license" ? "License Front" : "Ghana Card Front"}
                   </Label>
                   <div className="relative">
                     <Input
@@ -224,7 +263,7 @@ export function NewCourierForm() {
                       <div className="mt-2">
                         <img
                           src={previews.licenseFront}
-                          alt="License Front Preview"
+                          alt="ID Front Preview"
                           className="w-full h-32 object-cover rounded-lg"
                         />
                       </div>
@@ -235,7 +274,7 @@ export function NewCourierForm() {
                 <div className="space-y-2">
                   <Label htmlFor="licenseBack" className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    License Back
+                    {formData.idType === "license" ? "License Back" : "Ghana Card Back"}
                   </Label>
                   <div className="relative">
                     <Input
@@ -251,7 +290,7 @@ export function NewCourierForm() {
                       <div className="mt-2">
                         <img
                           src={previews.licenseBack}
-                          alt="License Back Preview"
+                          alt="ID Back Preview"
                           className="w-full h-32 object-cover rounded-lg"
                         />
                       </div>
