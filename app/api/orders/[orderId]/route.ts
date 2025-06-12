@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-type RouteSegmentProps = {
-  params: {
-    orderId: string
-  }
-}
-
 export async function GET(
-  req: NextRequest,
-  context: RouteSegmentProps
-) {
+  request: NextRequest,
+  { params }: { params: { orderId: string } }
+): Promise<NextResponse> {
   try {
-    const orderId = context.params.orderId
+    const orderId = params.orderId
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_XANO_API_URL}/api:delika/orders/${orderId}`, {
       headers: {
@@ -34,12 +28,12 @@ export async function GET(
 }
 
 export async function PUT(
-  req: NextRequest,
-  context: RouteSegmentProps
-) {
+  request: NextRequest,
+  { params }: { params: { orderId: string } }
+): Promise<NextResponse> {
   try {
-    const orderId = context.params.orderId
-    const body = await req.json()
+    const orderId = params.orderId
+    const body = await request.json()
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_XANO_API_URL}/api:delika/orders/${orderId}`, {
       method: 'PUT',
