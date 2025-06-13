@@ -11,13 +11,14 @@ type SearchParams = {
   orderId?: string
 }
 
-export default function CheckoutSuccessPage({
+export default async function CheckoutSuccessPage({
   searchParams,
 }: {
-  searchParams: SearchParams
+  searchParams: Promise<SearchParams>
 }) {
-  const reference = typeof searchParams?.reference === 'string' ? searchParams.reference : undefined
-  const orderId = typeof searchParams?.orderId === 'string' ? searchParams.orderId : undefined
+  const params = await searchParams
+  const reference = typeof params?.reference === 'string' ? params.reference : undefined
+  const orderId = typeof params?.orderId === 'string' ? params.orderId : undefined
 
   return (
     <Suspense fallback={
