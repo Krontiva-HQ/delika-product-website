@@ -6,14 +6,16 @@ export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const revalidate = 0
 
-interface PageProps {
-  searchParams: {
-    reference?: string
-    orderId?: string
-  }
+type SearchParams = {
+  reference?: string
+  orderId?: string
 }
 
-export default function CheckoutSuccessPage({ searchParams }: PageProps) {
+export default function CheckoutSuccessPage({
+  searchParams,
+}: {
+  searchParams: SearchParams
+}) {
   const reference = typeof searchParams?.reference === 'string' ? searchParams.reference : undefined
   const orderId = typeof searchParams?.orderId === 'string' ? searchParams.orderId : undefined
 
