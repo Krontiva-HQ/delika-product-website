@@ -70,6 +70,30 @@ export function NewCourierForm() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
+    
+    // Phone number validation
+    if (name === 'phone_number') {
+      // Only allow numbers and limit to 10 digits
+      const numbersOnly = value.replace(/\D/g, '')
+      if (numbersOnly.length <= 10) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: numbersOnly
+        }))
+      }
+      return
+    }
+
+    // Email validation
+    if (name === 'email_address') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }))
+      return
+    }
+
+    // For all other fields
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -113,12 +137,35 @@ export function NewCourierForm() {
     }
   }
 
+  const validateForm = () => {
+    // Phone number validation
+    if (formData.phone_number.length !== 10) {
+      setError("Phone number must be exactly 10 digits")
+      return false
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email_address)) {
+      setError("Please enter a valid email address")
+      return false
+    }
+
+    return true
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
     
     try {
+      // Validate form
+      if (!validateForm()) {
+        setIsLoading(false)
+        return
+      }
+
       // Validate required fields
       if (formData.courier_type === "Pedestrian" || formData.courier_type === "Rider") {
         if (!formData.ghana_card_number || !formData.ghana_card_front || !formData.ghana_card_back) {
@@ -238,6 +285,26 @@ export function NewCourierForm() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="phone_number" className="flex items-center gap-2 text-sm sm:text-base">
+                    <Phone className="w-4 h-4" />
+                    Phone Number
+                  </Label>
+                  <Input
+                    id="phone_number"
+                    name="phone_number"
+                    value={formData.phone_number}
+                    onChange={handleInputChange}
+                    required
+                    className="h-10 sm:h-12 text-sm sm:text-base"
+                    placeholder="Enter 10-digit phone number"
+                    type="tel"
+                    pattern="[0-9]*"
+                    inputMode="numeric"
+                  />
+                  <p className="text-xs text-gray-500">Enter a 10-digit phone number</p>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="email_address" className="flex items-center gap-2 text-sm sm:text-base">
                     <Mail className="w-4 h-4" />
                     Email Address
@@ -250,22 +317,9 @@ export function NewCourierForm() {
                     onChange={handleInputChange}
                     required
                     className="h-10 sm:h-12 text-sm sm:text-base"
+                    placeholder="Enter your email address"
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone_number" className="flex items-center gap-2 text-sm sm:text-base">
-                    <Phone className="w-4 h-4" />
-                    Phone Number
-                  </Label>
-                  <Input
-                    id="phone_number"
-                    name="phone_number"
-                    value={formData.phone_number}
-                    onChange={handleInputChange}
-                    required
-                    className="h-10 sm:h-12 text-sm sm:text-base"
-                  />
+                  <p className="text-xs text-gray-500">Enter a valid email address</p>
                 </div>
 
                 <div className="space-y-2">
