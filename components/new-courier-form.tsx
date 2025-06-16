@@ -162,9 +162,7 @@ export function NewCourierForm() {
         formDataToSend.append('selfie', formData.selfie)
       }
 
-      // Add a delay of 2 seconds to simulate processing
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
+      // Remove the artificial delay
       const response = await fetch(process.env.NEXT_PUBLIC_NEW_RIDER_APPROVAL_API!, {
         method: 'POST',
         headers: {
