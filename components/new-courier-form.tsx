@@ -188,27 +188,27 @@ export function NewCourierForm() {
 
   return (
     <>
-      <section className="py-24 bg-gray-50">
-        <div className="container mx-auto px-4 max-w-4xl">
+      <section className="py-12 sm:py-24 bg-gray-50">
+        <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-center mb-12"
+            className="text-center mb-8 sm:mb-12"
           >
-            <h2 className="text-4xl font-bold mb-4 text-gray-900">Become a Delika Courier</h2>
-            <p className="text-xl text-gray-600">
+            <h2 className="text-2xl sm:text-4xl font-bold mb-2 sm:mb-4 text-gray-900">Become a Delika Courier</h2>
+            <p className="text-base sm:text-xl text-gray-600">
               Complete the form below to start your journey as a delivery partner
             </p>
           </motion.div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
             {/* Personal Information */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg">
-              <h3 className="text-2xl font-semibold mb-6">Personal Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-8 shadow-lg">
+              <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Personal Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="first_name" className="flex items-center gap-2">
+                  <Label htmlFor="first_name" className="flex items-center gap-2 text-sm sm:text-base">
                     <User className="w-4 h-4" />
                     First Name
                   </Label>
@@ -218,12 +218,12 @@ export function NewCourierForm() {
                     value={formData.first_name}
                     onChange={handleInputChange}
                     required
-                    className="h-12"
+                    className="h-10 sm:h-12 text-sm sm:text-base"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="last_name" className="flex items-center gap-2">
+                  <Label htmlFor="last_name" className="flex items-center gap-2 text-sm sm:text-base">
                     <User className="w-4 h-4" />
                     Last Name
                   </Label>
@@ -233,12 +233,12 @@ export function NewCourierForm() {
                     value={formData.last_name}
                     onChange={handleInputChange}
                     required
-                    className="h-12"
+                    className="h-10 sm:h-12 text-sm sm:text-base"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email_address" className="flex items-center gap-2">
+                  <Label htmlFor="email_address" className="flex items-center gap-2 text-sm sm:text-base">
                     <Mail className="w-4 h-4" />
                     Email Address
                   </Label>
@@ -249,12 +249,12 @@ export function NewCourierForm() {
                     value={formData.email_address}
                     onChange={handleInputChange}
                     required
-                    className="h-12"
+                    className="h-10 sm:h-12 text-sm sm:text-base"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone_number" className="flex items-center gap-2">
+                  <Label htmlFor="phone_number" className="flex items-center gap-2 text-sm sm:text-base">
                     <Phone className="w-4 h-4" />
                     Phone Number
                   </Label>
@@ -264,12 +264,12 @@ export function NewCourierForm() {
                     value={formData.phone_number}
                     onChange={handleInputChange}
                     required
-                    className="h-12"
+                    className="h-10 sm:h-12 text-sm sm:text-base"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="nationality" className="flex items-center gap-2">
+                  <Label htmlFor="nationality" className="flex items-center gap-2 text-sm sm:text-base">
                     <Globe className="w-4 h-4" />
                     Nationality
                   </Label>
@@ -279,12 +279,12 @@ export function NewCourierForm() {
                     value={formData.nationality}
                     onChange={handleInputChange}
                     required
-                    className="h-12"
+                    className="h-10 sm:h-12 text-sm sm:text-base"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="address" className="flex items-center gap-2">
+                  <Label htmlFor="address" className="flex items-center gap-2 text-sm sm:text-base">
                     <MapPin className="w-4 h-4" />
                     Address
                   </Label>
@@ -294,14 +294,14 @@ export function NewCourierForm() {
                     value={formData.address}
                     onChange={handleInputChange}
                     required
-                    className="h-12"
+                    className="h-10 sm:h-12 text-sm sm:text-base"
                   />
                 </div>
 
                 {/* Courier Type Selection */}
-                <div className="col-span-2 space-y-4">
-                  <Label className="text-lg font-medium">Courier Type</Label>
-                  <div className="flex gap-6">
+                <div className="col-span-1 md:col-span-2 space-y-3 sm:space-y-4">
+                  <Label className="text-base sm:text-lg font-medium">Courier Type</Label>
+                  <div className="flex gap-4 sm:gap-6">
                     <div className="flex items-center space-x-2">
                       <input
                         type="radio"
@@ -312,7 +312,7 @@ export function NewCourierForm() {
                         onChange={(e) => handleSelectChange("courier_type", e.target.value)}
                         className="h-4 w-4 text-orange-600"
                       />
-                      <Label htmlFor="pedestrian" className="text-base">Pedestrian</Label>
+                      <Label htmlFor="pedestrian" className="text-sm sm:text-base">Pedestrian</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <input
@@ -324,20 +324,20 @@ export function NewCourierForm() {
                         onChange={(e) => handleSelectChange("courier_type", e.target.value)}
                         className="h-4 w-4 text-orange-600"
                       />
-                      <Label htmlFor="rider" className="text-base">Rider</Label>
+                      <Label htmlFor="rider" className="text-sm sm:text-base">Rider</Label>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Ghana Card Information - Always shown */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg">
-              <h3 className="text-2xl font-semibold mb-6">Ghana Card Information <span className="text-red-500">*</span></h3>
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Ghana Card Information */}
+            <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-8 shadow-lg">
+              <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Ghana Card Information <span className="text-red-500">*</span></h3>
+              <div className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="ghana_card_number" className="flex items-center gap-2">
+                    <Label htmlFor="ghana_card_number" className="flex items-center gap-2 text-sm sm:text-base">
                       <FileText className="w-4 h-4" />
                       Ghana Card Number <span className="text-red-500">*</span>
                     </Label>
@@ -347,15 +347,15 @@ export function NewCourierForm() {
                       value={formData.ghana_card_number}
                       onChange={handleInputChange}
                       required
-                      className="h-12"
+                      className="h-10 sm:h-12 text-sm sm:text-base"
                       placeholder="Enter Ghana Card Number"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="ghana_card_front" className="flex items-center gap-2">
+                    <Label htmlFor="ghana_card_front" className="flex items-center gap-2 text-sm sm:text-base">
                       <FileText className="w-4 h-4" />
                       Ghana Card Front <span className="text-red-500">*</span>
                     </Label>
@@ -367,14 +367,14 @@ export function NewCourierForm() {
                         accept="image/*"
                         onChange={handleFileChange}
                         required
-                        className="h-12"
+                        className="h-10 sm:h-12 text-sm sm:text-base"
                       />
                       {previews.ghana_card_front && (
                         <div className="mt-2">
                           <img
                             src={previews.ghana_card_front}
                             alt="Ghana Card Front Preview"
-                            className="w-full h-32 object-cover rounded-lg"
+                            className="w-full h-24 sm:h-32 object-cover rounded-lg"
                           />
                         </div>
                       )}
@@ -382,7 +382,7 @@ export function NewCourierForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="ghana_card_back" className="flex items-center gap-2">
+                    <Label htmlFor="ghana_card_back" className="flex items-center gap-2 text-sm sm:text-base">
                       <FileText className="w-4 h-4" />
                       Ghana Card Back <span className="text-red-500">*</span>
                     </Label>
@@ -394,14 +394,14 @@ export function NewCourierForm() {
                         accept="image/*"
                         onChange={handleFileChange}
                         required
-                        className="h-12"
+                        className="h-10 sm:h-12 text-sm sm:text-base"
                       />
                       {previews.ghana_card_back && (
                         <div className="mt-2">
                           <img
                             src={previews.ghana_card_back}
                             alt="Ghana Card Back Preview"
-                            className="w-full h-32 object-cover rounded-lg"
+                            className="w-full h-24 sm:h-32 object-cover rounded-lg"
                           />
                         </div>
                       )}
@@ -413,12 +413,12 @@ export function NewCourierForm() {
 
             {/* License Information - Only shown for Riders */}
             {formData.courier_type === "Rider" && (
-              <div className="bg-white rounded-2xl p-8 shadow-lg">
-                <h3 className="text-2xl font-semibold mb-6">Driver's License Information <span className="text-red-500">*</span></h3>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-8 shadow-lg">
+                <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Driver's License Information <span className="text-red-500">*</span></h3>
+                <div className="space-y-4 sm:space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="license_number" className="flex items-center gap-2">
+                      <Label htmlFor="license_number" className="flex items-center gap-2 text-sm sm:text-base">
                         <FileText className="w-4 h-4" />
                         License Number <span className="text-red-500">*</span>
                       </Label>
@@ -428,15 +428,15 @@ export function NewCourierForm() {
                         value={formData.license_number}
                         onChange={handleInputChange}
                         required
-                        className="h-12"
+                        className="h-10 sm:h-12 text-sm sm:text-base"
                         placeholder="Enter License Number"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="license_front" className="flex items-center gap-2">
+                      <Label htmlFor="license_front" className="flex items-center gap-2 text-sm sm:text-base">
                         <FileText className="w-4 h-4" />
                         License Front <span className="text-red-500">*</span>
                       </Label>
@@ -448,14 +448,14 @@ export function NewCourierForm() {
                           accept="image/*"
                           onChange={handleFileChange}
                           required
-                          className="h-12"
+                          className="h-10 sm:h-12 text-sm sm:text-base"
                         />
                         {previews.license_front && (
                           <div className="mt-2">
                             <img
                               src={previews.license_front}
                               alt="License Front Preview"
-                              className="w-full h-32 object-cover rounded-lg"
+                              className="w-full h-24 sm:h-32 object-cover rounded-lg"
                             />
                           </div>
                         )}
@@ -463,7 +463,7 @@ export function NewCourierForm() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="license_back" className="flex items-center gap-2">
+                      <Label htmlFor="license_back" className="flex items-center gap-2 text-sm sm:text-base">
                         <FileText className="w-4 h-4" />
                         License Back <span className="text-red-500">*</span>
                       </Label>
@@ -475,14 +475,14 @@ export function NewCourierForm() {
                           accept="image/*"
                           onChange={handleFileChange}
                           required
-                          className="h-12"
+                          className="h-10 sm:h-12 text-sm sm:text-base"
                         />
                         {previews.license_back && (
                           <div className="mt-2">
                             <img
                               src={previews.license_back}
                               alt="License Back Preview"
-                              className="w-full h-32 object-cover rounded-lg"
+                              className="w-full h-24 sm:h-32 object-cover rounded-lg"
                             />
                           </div>
                         )}
@@ -494,10 +494,10 @@ export function NewCourierForm() {
             )}
 
             {/* Selfie Upload */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg">
-              <h3 className="text-2xl font-semibold mb-6">Verification Photo</h3>
+            <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-8 shadow-lg">
+              <h3 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Verification Photo</h3>
               <div className="space-y-2">
-                <Label htmlFor="selfie" className="flex items-center gap-2">
+                <Label htmlFor="selfie" className="flex items-center gap-2 text-sm sm:text-base">
                   <Camera className="w-4 h-4" />
                   Upload a Selfie
                 </Label>
@@ -509,14 +509,14 @@ export function NewCourierForm() {
                     accept="image/*"
                     onChange={handleFileChange}
                     required
-                    className="h-12"
+                    className="h-10 sm:h-12 text-sm sm:text-base"
                   />
                   {previews.selfie && (
                     <div className="mt-2">
                       <img
                         src={previews.selfie}
                         alt="Selfie Preview"
-                        className="w-32 h-32 object-cover rounded-full mx-auto"
+                        className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-full mx-auto"
                       />
                     </div>
                   )}
@@ -526,7 +526,7 @@ export function NewCourierForm() {
 
             <Button
               type="submit"
-              className="w-full bg-orange-600 hover:bg-orange-700 h-14 text-lg font-medium"
+              className="w-full bg-orange-600 hover:bg-orange-700 h-12 sm:h-14 text-base sm:text-lg font-medium"
               disabled={isLoading}
             >
               {isLoading ? "Saving..." : "Submit Application"}
