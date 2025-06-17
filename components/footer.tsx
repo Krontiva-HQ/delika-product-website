@@ -153,7 +153,7 @@ export function Footer() {
               © {new Date().getFullYear()} Delika. All rights reserved.
             </div>
             <div className="flex space-x-6">
-              <Link href="/privacy" className="text-sm text-gray-400 hover:text-white transition-colors">
+              <Link href="/privacy-policy" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Privacy Policy
               </Link>
               <Link href="/terms" className="text-sm text-gray-400 hover:text-white transition-colors">
