@@ -115,7 +115,7 @@ export function ChatWidget() {
         } catch (error) {
           console.error('Error polling for messages:', error)
         }
-      }, 3000) // Poll every 3 seconds
+      }, 10000) // Poll every 10 seconds
 
       return () => clearInterval(pollInterval)
     }
