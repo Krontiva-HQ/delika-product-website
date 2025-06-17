@@ -107,7 +107,7 @@ export function ChatWidget() {
     if (chatState === 'chat' && sessionId) {
       const pollInterval = setInterval(async () => {
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_CHAT_GET_ENDPOINT}?session_id=${sessionId}`)
+          const response = await fetch(`/api/chat?session_id=${sessionId}`)
           if (response.ok) {
             const data = await response.json()
             if (data.messages && Array.isArray(data.messages)) {
@@ -141,7 +141,7 @@ export function ChatWidget() {
 
     try {
       setIsLoading(true)
-      const response = await fetch(process.env.NEXT_PUBLIC_CHAT_POST_ENDPOINT!, {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
