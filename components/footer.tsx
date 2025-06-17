@@ -81,21 +81,21 @@ export function Footer() {
                   Features
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link href="/pricing" className="text-gray-400 hover:text-white transition-colors">
                   Pricing
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link href="/demo" className="text-gray-400 hover:text-white transition-colors">
                   Request Demo
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link href="/case-studies" className="text-gray-400 hover:text-white transition-colors">
                   Case Studies
                 </Link>
-              </li>
+              </li> */}
             </ul>
           </div>
 
@@ -108,16 +108,16 @@ export function Footer() {
                   About Us
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link href="/careers" className="text-gray-400 hover:text-white transition-colors">
                   Careers
                 </Link>
-              </li>
-              <li>
+              </li> */}
+              {/* <li>
                 <Link href="/blog" className="text-gray-400 hover:text-white transition-colors">
                   Blog
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
                   Contact
