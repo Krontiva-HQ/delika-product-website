@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { MessageCircle, X, Send, MessageSquareMore, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -63,8 +63,16 @@ export function ChatWidget() {
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null)
   const [isAgentTyping, setIsAgentTyping] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [sessionId, setSessionId] = useState<string>('')
+  const [sessionId, setSessionId] = useState<string>(getSessionId())
   const [isLoading, setIsLoading] = useState(false)
+
+  // Add ref to access current messages state in polling
+  const messagesRef = useRef<ChatMessage[]>([])
+  
+  // Update ref whenever messages change
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
 
   // Initialize session ID on component mount
   useEffect(() => {
@@ -105,7 +113,7 @@ export function ChatWidget() {
             if (data.messages && Array.isArray(data.messages)) {
               // Add new messages that we don't already have
               const newMessages = data.messages.filter((serverMsg: any) => 
-                !messages.some(localMsg => localMsg.id === serverMsg.id)
+                !messagesRef.current.some(localMsg => localMsg.id === serverMsg.id)
               )
               if (newMessages.length > 0) {
                 setMessages(prev => [...prev, ...newMessages])
@@ -119,7 +127,7 @@ export function ChatWidget() {
 
       return () => clearInterval(pollInterval)
     }
-  }, [chatState, sessionId, messages])
+  }, [chatState, sessionId]) // Removed 'messages' from dependencies
 
   const sendMessageToServer = async (messageText: string) => {
     if (!sessionId || !selectedIssue) return
