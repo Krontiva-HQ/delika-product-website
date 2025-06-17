@@ -7,6 +7,13 @@ import { Input } from '@/components/ui/input'
 
 type ChatState = 'closed' | 'questionnaire' | 'chat'
 
+interface ChatMessage {
+  id: string
+  text: string
+  sender: 'user' | 'agent'
+  timestamp: Date
+}
+
 const commonIssues = [
   {
     id: 'order',
@@ -35,33 +42,156 @@ const commonIssues = [
   }
 ]
 
+// Generate a unique session ID for this chat session
+const generateSessionId = () => {
+  return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+}
+
+// Get or create session ID from localStorage
+const getSessionId = () => {
+  let sessionId = localStorage.getItem('delika_chat_session_id')
+  if (!sessionId) {
+    sessionId = generateSessionId()
+    localStorage.setItem('delika_chat_session_id', sessionId)
+  }
+  return sessionId
+}
+
 export function ChatWidget() {
   const [chatState, setChatState] = useState<ChatState>('closed')
   const [message, setMessage] = useState('')
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null)
   const [isAgentTyping, setIsAgentTyping] = useState(false)
-  const [messages, setMessages] = useState<Array<{ text: string; sender: 'user' | 'agent' }>>([])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [sessionId, setSessionId] = useState<string>('')
+  const [isLoading, setIsLoading] = useState(false)
 
-  // Simulate agent response after user sends a message
+  // Initialize session ID on component mount
   useEffect(() => {
-    if (messages.length > 0 && messages[messages.length - 1].sender === 'user') {
-      setIsAgentTyping(true)
-      const timer = setTimeout(() => {
-        setIsAgentTyping(false)
-        setMessages(prev => [...prev, {
-          text: "I understand your concern. Let me help you with that. Could you please provide more details about your issue?",
-          sender: 'agent'
-        }])
-      }, 2000) // Simulate 2 seconds of typing
+    setSessionId(getSessionId())
+  }, [])
 
-      return () => clearTimeout(timer)
+  // Load existing messages from localStorage
+  useEffect(() => {
+    const savedMessages = localStorage.getItem('delika_chat_messages')
+    if (savedMessages) {
+      try {
+        const parsedMessages = JSON.parse(savedMessages)
+        setMessages(parsedMessages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        })))
+      } catch (error) {
+        console.error('Error loading chat messages:', error)
+      }
+    }
+  }, [])
+
+  // Save messages to localStorage whenever messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('delika_chat_messages', JSON.stringify(messages))
     }
   }, [messages])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Poll for new messages from the server
+  useEffect(() => {
+    if (chatState === 'chat' && sessionId) {
+      const pollInterval = setInterval(async () => {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_CHAT_GET_ENDPOINT}?session_id=${sessionId}`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.messages && Array.isArray(data.messages)) {
+              // Add new messages that we don't already have
+              const newMessages = data.messages.filter((serverMsg: any) => 
+                !messages.some(localMsg => localMsg.id === serverMsg.id)
+              )
+              if (newMessages.length > 0) {
+                setMessages(prev => [...prev, ...newMessages])
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error polling for messages:', error)
+        }
+      }, 3000) // Poll every 3 seconds
+
+      return () => clearInterval(pollInterval)
+    }
+  }, [chatState, sessionId, messages])
+
+  const sendMessageToServer = async (messageText: string) => {
+    if (!sessionId || !selectedIssue) return
+
+    const messageData = {
+      sender_id: sessionId,
+      context_text: messageText,
+      sender_type: 'user',
+      issue_type: selectedIssue
+    }
+
+    try {
+      setIsLoading(true)
+      const response = await fetch(process.env.NEXT_PUBLIC_CHAT_POST_ENDPOINT!, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(messageData)
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        // Add the user message to local state
+        const userMessage: ChatMessage = {
+          id: `user_${Date.now()}`,
+          text: messageText,
+          sender: 'user',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, userMessage])
+
+        // If the server responds with an immediate reply, add it
+        if (data.response) {
+          const agentMessage: ChatMessage = {
+            id: `agent_${Date.now()}`,
+            text: data.response,
+            sender: 'agent',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, agentMessage])
+        }
+      } else {
+        console.error('Failed to send message to server')
+        // Still add the user message locally for better UX
+        const userMessage: ChatMessage = {
+          id: `user_${Date.now()}`,
+          text: messageText,
+          sender: 'user',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, userMessage])
+      }
+    } catch (error) {
+      console.error('Error sending message:', error)
+      // Add message locally even if server fails
+      const userMessage: ChatMessage = {
+        id: `user_${Date.now()}`,
+        text: messageText,
+        sender: 'user',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, userMessage])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (message.trim()) {
-      setMessages(prev => [...prev, { text: message, sender: 'user' }])
+    if (message.trim() && !isLoading) {
+      await sendMessageToServer(message.trim())
       setMessage('')
     }
   }
@@ -69,6 +199,19 @@ export function ChatWidget() {
   const handleIssueSelect = (issueId: string) => {
     setSelectedIssue(issueId)
     setChatState('chat')
+    
+    // Send initial message to server when starting chat
+    setTimeout(() => {
+      sendMessageToServer(`I need help with: ${commonIssues.find(issue => issue.id === issueId)?.title}`)
+    }, 500)
+  }
+
+  const clearChatHistory = () => {
+    setMessages([])
+    localStorage.removeItem('delika_chat_messages')
+    localStorage.removeItem('delika_chat_session_id')
+    setSessionId(generateSessionId())
+    localStorage.setItem('delika_chat_session_id', sessionId)
   }
 
   const renderQuestionnaire = () => (
@@ -134,13 +277,15 @@ export function ChatWidget() {
 
       <div className="flex-1 p-4 overflow-y-auto">
         <div className="space-y-4">
-          <div className="bg-gray-100 p-3 rounded-lg max-w-[80%]">
-            <p className="text-sm">Hello! How can we help you with your {commonIssues.find(issue => issue.id === selectedIssue)?.title.toLowerCase()}?</p>
-          </div>
+          {messages.length === 0 && (
+            <div className="bg-gray-100 p-3 rounded-lg max-w-[80%]">
+              <p className="text-sm">Hello! How can we help you with your {commonIssues.find(issue => issue.id === selectedIssue)?.title.toLowerCase()}?</p>
+            </div>
+          )}
           
-          {messages.map((msg, index) => (
+          {messages.map((msg) => (
             <div
-              key={index}
+              key={msg.id}
               className={`p-3 rounded-lg max-w-[80%] ${
                 msg.sender === 'user' 
                   ? 'bg-orange-500 text-white ml-auto' 
@@ -148,10 +293,13 @@ export function ChatWidget() {
               }`}
             >
               <p className="text-sm">{msg.text}</p>
+              <p className="text-xs opacity-70 mt-1">
+                {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
           ))}
 
-          {isAgentTyping && (
+          {isLoading && (
             <div className="flex space-x-2 ml-2">
               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -168,8 +316,13 @@ export function ChatWidget() {
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Type your message..."
             className="flex-1"
+            disabled={isLoading}
           />
-          <Button type="submit" className="bg-orange-500 hover:bg-orange-600">
+          <Button 
+            type="submit" 
+            className="bg-orange-500 hover:bg-orange-600"
+            disabled={isLoading || !message.trim()}
+          >
             <Send className="h-4 w-4" />
           </Button>
         </div>
