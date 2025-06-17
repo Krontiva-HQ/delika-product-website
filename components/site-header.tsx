@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { Menu, X, ChevronDown, Beaker } from "lucide-react"
+import { Menu, X, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { usePathname } from "next/navigation"
 
@@ -14,7 +14,6 @@ export function SiteHeader() {
   const menuItems = [
     { href: "/shop", label: "Restaurants" },
     { href: "/about", label: "About" },
-    { href: "/beta-testers", label: "Beta Testers", icon: Beaker },
   ]
 
   // Don't show header at all on /shop page
@@ -43,9 +42,8 @@ export function SiteHeader() {
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-medium text-black hover:text-orange-500 transition-colors flex items-center gap-1"
+              className="text-sm font-medium text-black hover:text-orange-500 transition-colors"
             >
-              {item.icon && <item.icon className="h-4 w-4" />}
               {item.label}
             </Link>
           ))}
@@ -109,10 +107,9 @@ export function SiteHeader() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-lg font-medium hover:text-orange-500 transition-colors flex items-center gap-2"
+                className="text-lg font-medium hover:text-orange-500 transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                {item.icon && <item.icon className="h-5 w-5" />}
                 {item.label}
               </Link>
             ))}
