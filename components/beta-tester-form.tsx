@@ -24,8 +24,8 @@ interface BetaTesterForm {
   delivery_address: string
   longitude: number | null
   latitude: number | null
-  payment_method: "momo" | "cash"
-  consent_use_of_image: boolean
+  payment_method: "momo" | "cash" | null
+  consent_use_of_image: boolean | null
   prior_experience: string
   expectations: string
 }
@@ -47,8 +47,8 @@ export function BetaTesterForm() {
     delivery_address: "",
     longitude: null,
     latitude: null,
-    payment_method: "momo",
-    consent_use_of_image: false,
+    payment_method: null,
+    consent_use_of_image: null,
     prior_experience: "",
     expectations: ""
   })
@@ -126,6 +126,16 @@ export function BetaTesterForm() {
       return false
     }
 
+    if (formData.payment_method === null) {
+      setError("Please select a preferred payment method")
+      return false
+    }
+
+    if (formData.consent_use_of_image === null) {
+      setError("Please indicate your consent for use of photos/videos")
+      return false
+    }
+
     return true
   }
 
@@ -161,8 +171,8 @@ export function BetaTesterForm() {
         delivery_address: "",
         longitude: null,
         latitude: null,
-        payment_method: "momo",
-        consent_use_of_image: false,
+        payment_method: null,
+        consent_use_of_image: null,
         prior_experience: "",
         expectations: ""
       })
@@ -280,7 +290,7 @@ export function BetaTesterForm() {
             <Label>Preferred Payment Method</Label>
             <RadioGroup
               name="payment_method"
-              value={formData.payment_method}
+              value={formData.payment_method || ""}
               onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value as "momo" | "cash" }))}
               className="flex gap-4"
             >
@@ -299,7 +309,7 @@ export function BetaTesterForm() {
             <Label>Consent for use of photos/videos</Label>
             <RadioGroup
               name="consent_use_of_image"
-              value={formData.consent_use_of_image.toString()}
+              value={formData.consent_use_of_image === null ? "" : formData.consent_use_of_image.toString()}
               onValueChange={(value) => setFormData(prev => ({ ...prev, consent_use_of_image: value === "true" }))}
               className="flex gap-4"
             >
