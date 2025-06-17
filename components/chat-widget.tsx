@@ -49,6 +49,11 @@ const generateSessionId = () => {
 
 // Get or create session ID from localStorage
 const getSessionId = () => {
+  // Check if we're in the browser
+  if (typeof window === 'undefined') {
+    return null
+  }
+  
   let sessionId = localStorage.getItem('delika_chat_session_id')
   if (!sessionId) {
     sessionId = generateSessionId()
@@ -63,8 +68,9 @@ export function ChatWidget() {
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null)
   const [isAgentTyping, setIsAgentTyping] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [sessionId, setSessionId] = useState<string>(getSessionId())
+  const [sessionId, setSessionId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isClient, setIsClient] = useState(false)
 
   // Add ref to access current messages state in polling
   const messagesRef = useRef<ChatMessage[]>([])
@@ -74,13 +80,22 @@ export function ChatWidget() {
     messagesRef.current = messages
   }, [messages])
 
-  // Initialize session ID on component mount
+  // Check if we're on the client side
   useEffect(() => {
-    setSessionId(getSessionId())
+    setIsClient(true)
   }, [])
 
-  // Load existing messages from localStorage
+  // Initialize session ID on component mount (client-side only)
   useEffect(() => {
+    if (isClient) {
+      setSessionId(getSessionId())
+    }
+  }, [isClient])
+
+  // Load existing messages from localStorage (client-side only)
+  useEffect(() => {
+    if (!isClient) return
+    
     const savedMessages = localStorage.getItem('delika_chat_messages')
     if (savedMessages) {
       try {
@@ -93,41 +108,41 @@ export function ChatWidget() {
         console.error('Error loading chat messages:', error)
       }
     }
-  }, [])
+  }, [isClient])
 
-  // Save messages to localStorage whenever messages change
+  // Save messages to localStorage whenever messages change (client-side only)
   useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem('delika_chat_messages', JSON.stringify(messages))
-    }
-  }, [messages])
+    if (!isClient || messages.length === 0) return
+    
+    localStorage.setItem('delika_chat_messages', JSON.stringify(messages))
+  }, [messages, isClient])
 
   // Poll for new messages from the server
   useEffect(() => {
-    if (chatState === 'chat' && sessionId) {
-      const pollInterval = setInterval(async () => {
-        try {
-          const response = await fetch(`/api/chat?session_id=${sessionId}`)
-          if (response.ok) {
-            const data = await response.json()
-            if (data.messages && Array.isArray(data.messages)) {
-              // Add new messages that we don't already have
-              const newMessages = data.messages.filter((serverMsg: any) => 
-                !messagesRef.current.some(localMsg => localMsg.id === serverMsg.id)
-              )
-              if (newMessages.length > 0) {
-                setMessages(prev => [...prev, ...newMessages])
-              }
+    if (!isClient || chatState !== 'chat' || !sessionId) return
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/chat?session_id=${sessionId}`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.messages && Array.isArray(data.messages)) {
+            // Add new messages that we don't already have
+            const newMessages = data.messages.filter((serverMsg: any) => 
+              !messagesRef.current.some(localMsg => localMsg.id === serverMsg.id)
+            )
+            if (newMessages.length > 0) {
+              setMessages(prev => [...prev, ...newMessages])
             }
           }
-        } catch (error) {
-          console.error('Error polling for messages:', error)
         }
-      }, 10000) // Poll every 10 seconds
+      } catch (error) {
+        console.error('Error polling for messages:', error)
+      }
+    }, 10000) // Poll every 10 seconds
 
-      return () => clearInterval(pollInterval)
-    }
-  }, [chatState, sessionId]) // Removed 'messages' from dependencies
+    return () => clearInterval(pollInterval)
+  }, [chatState, sessionId, isClient])
 
   const sendMessageToServer = async (messageText: string) => {
     if (!sessionId || !selectedIssue) return
@@ -216,10 +231,20 @@ export function ChatWidget() {
 
   const clearChatHistory = () => {
     setMessages([])
-    localStorage.removeItem('delika_chat_messages')
-    localStorage.removeItem('delika_chat_session_id')
-    setSessionId(generateSessionId())
-    localStorage.setItem('delika_chat_session_id', sessionId)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('delika_chat_messages')
+      localStorage.removeItem('delika_chat_session_id')
+    }
+    const newSessionId = generateSessionId()
+    setSessionId(newSessionId)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('delika_chat_session_id', newSessionId)
+    }
+  }
+
+  // Don't render anything during SSR
+  if (!isClient) {
+    return null
   }
 
   const renderQuestionnaire = () => (
