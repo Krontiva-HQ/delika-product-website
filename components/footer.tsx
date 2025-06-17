@@ -12,7 +12,7 @@ export function Footer() {
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-6">
               <Image
-                src="/logo.png"
+                src="/Delika-Logo.png"
                 alt="Delika Logo"
                 width={40}
                 height={40}
