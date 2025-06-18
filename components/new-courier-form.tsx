@@ -565,6 +565,7 @@ export function NewCourierForm() {
                     required
                     className="h-10 sm:h-12 text-sm sm:text-base"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Please ensure your full face is captured in the photo with no mask or sunglasses</p>
                   {previews.selfie && (
                     <div className="mt-2">
                       <img
