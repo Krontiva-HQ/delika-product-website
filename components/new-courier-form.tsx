@@ -33,6 +33,9 @@ interface FormData {
   license_front: File | null
   license_back: File | null
   selfie: File | null
+  university_name: string
+  student_id: string
+  is_student: "Yes" | "No" | ""
 }
 
 export function NewCourierForm() {
@@ -53,7 +56,10 @@ export function NewCourierForm() {
     license_number: "",
     license_front: null,
     license_back: null,
-    selfie: null
+    selfie: null,
+    university_name: "",
+    student_id: "",
+    is_student: ""
   })
 
   const [previews, setPreviews] = useState({
@@ -105,6 +111,22 @@ export function NewCourierForm() {
       ...prev,
       [name]: value
     }))
+    // Reset student fields if switching away from Pedestrian or changing is_student
+    if (name === "courier_type" && value !== "Pedestrian") {
+      setFormData(prev => ({
+        ...prev,
+        is_student: "",
+        university_name: "",
+        student_id: ""
+      }))
+    }
+    if (name === "is_student" && value !== "Yes") {
+      setFormData(prev => ({
+        ...prev,
+        university_name: "",
+        student_id: ""
+      }))
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,6 +173,14 @@ export function NewCourierForm() {
       return false
     }
 
+    // Student validation
+    if (formData.courier_type === "Pedestrian" && formData.is_student === "Yes") {
+      if (!formData.university_name || !formData.student_id) {
+        setError("Please provide your university name and student ID")
+        return false
+      }
+    }
+
     return true
   }
 
@@ -191,6 +221,14 @@ export function NewCourierForm() {
       formDataToSend.append('courier_type', formData.courier_type)
       formDataToSend.append('ghanaCard', JSON.stringify([{ id_number: formData.ghana_card_number }]))
       formDataToSend.append('license', JSON.stringify(formData.courier_type === 'Rider' ? [{ id_number: formData.license_number }] : []))
+      // Student fields
+      if (formData.courier_type === 'Pedestrian') {
+        formDataToSend.append('is_student', formData.is_student)
+        if (formData.is_student === 'Yes') {
+          formDataToSend.append('university_name', formData.university_name)
+          formDataToSend.append('student_id', formData.student_id)
+        }
+      }
 
       // Add files
       if (formData.ghana_card_front) {
@@ -382,6 +420,56 @@ export function NewCourierForm() {
                     </div>
                   </div>
                 </div>
+                {/* Student status for Pedestrian */}
+                {formData.courier_type === "Pedestrian" && (
+                  <div className="col-span-1 md:col-span-2 space-y-2">
+                    <Label className="text-base sm:text-lg font-medium">Are you a student?</Label>
+                    <select
+                      name="is_student"
+                      value={formData.is_student}
+                      onChange={e => handleSelectChange("is_student", e.target.value)}
+                      className="h-10 sm:h-12 text-sm sm:text-base border rounded-md w-full"
+                      required
+                    >
+                      <option value="">Select an option</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                )}
+                {/* University fields if student */}
+                {formData.courier_type === "Pedestrian" && formData.is_student === "Yes" && (
+                  <>
+                    <div className="space-y-2 col-span-1 md:col-span-2">
+                      <Label htmlFor="university_name" className="flex items-center gap-2 text-sm sm:text-base">
+                        University Name <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="university_name"
+                        name="university_name"
+                        value={formData.university_name}
+                        onChange={handleInputChange}
+                        required
+                        className="h-10 sm:h-12 text-sm sm:text-base"
+                        placeholder="Enter your university name"
+                      />
+                    </div>
+                    <div className="space-y-2 col-span-1 md:col-span-2">
+                      <Label htmlFor="student_id" className="flex items-center gap-2 text-sm sm:text-base">
+                        Student ID <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="student_id"
+                        name="student_id"
+                        value={formData.student_id}
+                        onChange={handleInputChange}
+                        required
+                        className="h-10 sm:h-12 text-sm sm:text-base"
+                        placeholder="Enter your student ID"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
