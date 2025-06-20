@@ -10,6 +10,8 @@ import {
   SheetTitle 
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { ProgressSteps } from '@/components/ui/progress-steps';
+import type { Step } from '@/components/ui/progress-steps';
 
 interface OrderProduct {
   name: string;
@@ -256,10 +258,62 @@ export function OrderStatusWidget() {
     }
   };
 
+  const getOrderSteps = (orderStatus: OrderStatus) => {
+    const steps: Step[] = [];
+    
+    // Order Status Steps
+    const orderStatuses = ['ReadyForPickup', 'Assigned', 'OnTheWay', 'Delivered'];
+    const currentOrderIndex = orderStatuses.indexOf(orderStatus.orderStatus);
+    
+    steps.push({
+      label: 'Order Received',
+      status: 'completed',
+      description: 'Your order has been received',
+      time: orderStatus.orderReceivedTime
+    });
+
+    orderStatuses.forEach((status, index) => {
+      steps.push({
+        label: status === 'ReadyForPickup' ? 'Ready for Pickup' :
+               status === 'Assigned' ? 'Courier Assigned' :
+               status === 'OnTheWay' ? 'On the Way' : 'Delivered',
+        status: index < currentOrderIndex ? 'completed' :
+                index === currentOrderIndex ? 'current' : 'upcoming',
+        time: status === 'Delivered' && orderStatus.orderCompletedTime ? orderStatus.orderCompletedTime :
+              status === 'OnTheWay' && orderStatus.orderOnmywayTime ? orderStatus.orderOnmywayTime :
+              status === 'Assigned' && orderStatus.orderPickedUpTime ? orderStatus.orderPickedUpTime : undefined
+      });
+    });
+
+    return steps;
+  };
+
+  const getKitchenSteps = (orderStatus: OrderStatus) => {
+    const steps: Step[] = [];
+    
+    // Kitchen Status Steps
+    const kitchenStatuses = ['Pending', 'Preparing', 'Ready'];
+    const currentKitchenIndex = kitchenStatuses.indexOf(orderStatus.kitchenStatus);
+    
+    kitchenStatuses.forEach((status, index) => {
+      steps.push({
+        label: status === 'Pending' ? 'Order Pending' :
+               status === 'Preparing' ? 'Preparing Order' : 'Order Ready',
+        status: index < currentKitchenIndex ? 'completed' :
+                index === currentKitchenIndex ? 'current' : 'upcoming',
+        description: status === 'Pending' ? 'Kitchen will start preparing soon' :
+                    status === 'Preparing' ? 'Your food is being prepared' :
+                    'Your order is ready for pickup'
+      });
+    });
+
+    return steps;
+  };
+
   if (!isLoggedIn) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 z-50">
+    <div className="fixed bottom-4 right-4 z-50">
       <Sheet>
         <SheetTrigger asChild>
           <Button 

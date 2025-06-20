@@ -3,7 +3,6 @@ import { Rubik } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster"
 import Script from "next/script"
-import { ChatWidget } from "@/components/chat-widget"
 import { OrderStatusWidget } from '@/components/order-status-widget';
 
 const rubik = Rubik({
@@ -28,7 +27,6 @@ export default function RootLayout({
         {children}
         <OrderStatusWidget />
         <Toaster />
-        <ChatWidget />
         <Script
           src="https://js.paystack.co/v1/inline.js"
           strategy="beforeInteractive"
