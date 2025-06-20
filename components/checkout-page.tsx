@@ -119,7 +119,7 @@ export function CheckoutPage({
   const [deliveryFee, setDeliveryFee] = useState(0)
   const [showFeedback, setShowFeedback] = useState(false)
   const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian' | 'pickup'>('rider')
-  const platformFee = 3 // Platform fee of GHC3
+  const platformFee = 0.01 // Platform fee of GHC0.01
 
   const router = useRouter();
 

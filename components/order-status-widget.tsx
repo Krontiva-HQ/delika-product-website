@@ -19,6 +19,7 @@ interface OrderProduct {
 }
 
 interface OrderStatus {
+  id: string;
   orderNumber: number;
   orderStatus: string;
   kitchenStatus: string;
@@ -44,7 +45,6 @@ export function OrderStatusWidget() {
   const { toast } = useToast();
 
   const checkLoginStatus = () => {
-    // Check if there's an auth token in localStorage
     const token = localStorage.getItem('authToken');
     setIsLoggedIn(!!token);
   };
@@ -73,11 +73,18 @@ export function OrderStatusWidget() {
     }
   };
 
-  const fetchOrderStatus = async (orderNumber: string) => {
+  const fetchOrderStatus = async (orderId: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderNumber}`);
-      if (!response.ok) throw new Error('Failed to fetch order status');
+      console.log('Fetching order status for ID:', orderId);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderId}`);
+      
+      if (!response.ok) {
+        console.error('Error response:', response.status, response.statusText);
+        throw new Error('Failed to fetch order status');
+      }
+      
       const data = await response.json();
+      console.log('Order status data:', data);
       setOrderStatus(data);
     } catch (error) {
       console.error('Error fetching order status:', error);
@@ -92,27 +99,44 @@ export function OrderStatusWidget() {
     }
   };
 
+  // Check login status and fetch order status if logged in
   useEffect(() => {
     checkLoginStatus();
     
     if (isLoggedIn) {
-      const activeOrderNumber = localStorage.getItem('activeOrderNumber');
-      if (activeOrderNumber) {
-        fetchOrderStatus(activeOrderNumber);
-        const interval = setInterval(() => fetchOrderStatus(activeOrderNumber), 30000);
+      // Check for active order ID in localStorage
+      const activeOrderId = localStorage.getItem('activeOrderId');
+      console.log('Active order ID from localStorage:', activeOrderId);
+      
+      if (activeOrderId) {
+        fetchOrderStatus(activeOrderId);
+        // Poll for updates every 30 seconds if there's an active order
+        const interval = setInterval(() => fetchOrderStatus(activeOrderId), 30000);
         return () => clearInterval(interval);
       }
     }
   }, [isLoggedIn]);
 
+  // Listen for storage changes (login/logout and order updates)
   useEffect(() => {
-    window.addEventListener('storage', (e) => {
+    const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'authToken') {
         checkLoginStatus();
       }
-    });
+      if (e.key === 'activeOrderId') {
+        const newOrderId = e.newValue;
+        console.log('Order ID changed in storage:', newOrderId);
+        if (newOrderId) {
+          fetchOrderStatus(newOrderId);
+        } else {
+          setOrderStatus(null);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
     return () => {
-      window.removeEventListener('storage', () => {});
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 

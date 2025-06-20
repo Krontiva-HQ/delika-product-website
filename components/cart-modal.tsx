@@ -63,7 +63,7 @@ export function CartModal({
   const [riderFee, setRiderFee] = useState(0)
   const [pedestrianFee, setPedestrianFee] = useState(0)
   const [isLoadingDelivery, setIsLoadingDelivery] = useState(false)
-  const platformFee = 3 // Platform fee of GHC3
+  const platformFee = 0.01 // Platform fee of GHC0.01
 
   useEffect(() => {
     console.log('Cart Items in CartModal:', cart.map(item => ({
