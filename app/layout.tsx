@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster"
 import Script from "next/script"
 import { ChatWidget } from "@/components/chat-widget"
+import { OrderStatusWidget } from '@/components/order-status-widget';
 
 const rubik = Rubik({
   subsets: ["latin"],
@@ -25,6 +26,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${rubik.variable} antialiased font-rubik`}>
         {children}
+        <OrderStatusWidget />
         <Toaster />
         <ChatWidget />
         <Script
