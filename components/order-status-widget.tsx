@@ -23,16 +23,18 @@ interface OrderStatus {
   orderNumber: number;
   orderStatus: string;
   kitchenStatus: string;
-  orderAccepted: 'pending' | 'accepted' | 'rejected';
+  orderAccepted: string;
   orderReceivedTime: number;
   orderPickedUpTime: number | null;
   orderOnmywayTime: number | null;
   orderCompletedTime: number | null;
   courierName: string | null;
+  courierPhoneNumber: string | null;
   products: OrderProduct[];
   customerName: string;
   totalPrice: string;
   paymentStatus: string;
+  orderComment: string;
 }
 
 interface FetchError {
@@ -49,10 +51,105 @@ export function OrderStatusWidget() {
     setIsLoggedIn(!!token);
   };
 
-  const formatTime = (timestamp: number | null) => {
-    if (!timestamp) return '';
-    return new Date(timestamp).toLocaleTimeString();
+  const fetchOrderStatus = async (orderNumber: string) => {
+    try {
+      console.log('Fetching order status for number:', orderNumber);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderNumber}`);
+      
+      if (!response.ok) {
+        console.error('Error response:', response.status, response.statusText);
+        throw new Error('Failed to fetch order status');
+      }
+      
+      const data = await response.json();
+      console.log('Order status data:', data);
+      setOrderStatus(data);
+
+      // Store order number if order is not completed
+      if (data.orderStatus !== 'Completed' && data.orderStatus !== 'Cancelled') {
+        localStorage.setItem('activeOrderNumber', orderNumber);
+      } else {
+        localStorage.removeItem('activeOrderNumber');
+      }
+    } catch (error) {
+      console.error('Error fetching order status:', error);
+      const fetchError = error as FetchError;
+      if (fetchError.message !== 'Failed to fetch order status') {
+        toast({
+          title: "Error",
+          description: "Failed to fetch order status",
+          variant: "destructive",
+        });
+      }
+    }
   };
+
+  // Check login status and fetch order status if logged in
+  useEffect(() => {
+    checkLoginStatus();
+    
+    if (isLoggedIn) {
+      // Check for active order number in localStorage
+      const activeOrderNumber = localStorage.getItem('activeOrderNumber');
+      console.log('Active order number from localStorage:', activeOrderNumber);
+      
+      if (activeOrderNumber) {
+        fetchOrderStatus(activeOrderNumber);
+        // Poll for updates every 30 seconds if there's an active order
+        const interval = setInterval(() => fetchOrderStatus(activeOrderNumber), 30000);
+        return () => clearInterval(interval);
+      }
+
+      // Also check for order submission response
+      const orderSubmissionData = localStorage.getItem('orderSubmissionResponse');
+      if (orderSubmissionData) {
+        try {
+          const { response } = JSON.parse(orderSubmissionData);
+          if (response?.result1?.orderNumber) {
+            fetchOrderStatus(response.result1.orderNumber.toString());
+          }
+        } catch (error) {
+          console.error('Error parsing order submission data:', error);
+        }
+      }
+    }
+  }, [isLoggedIn]);
+
+  // Listen for storage changes (login/logout and order updates)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'authToken') {
+        checkLoginStatus();
+      }
+      if (e.key === 'activeOrderNumber') {
+        const newOrderNumber = e.newValue;
+        console.log('Order number changed in storage:', newOrderNumber);
+        if (newOrderNumber) {
+          fetchOrderStatus(newOrderNumber);
+        } else {
+          setOrderStatus(null);
+        }
+      }
+      if (e.key === 'orderSubmissionResponse') {
+        const newData = e.newValue;
+        if (newData) {
+          try {
+            const { response } = JSON.parse(newData);
+            if (response?.result1?.orderNumber) {
+              fetchOrderStatus(response.result1.orderNumber.toString());
+            }
+          } catch (error) {
+            console.error('Error parsing new order submission data:', error);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -72,73 +169,6 @@ export function OrderStatusWidget() {
         return 'bg-gray-400';
     }
   };
-
-  const fetchOrderStatus = async (orderId: string) => {
-    try {
-      console.log('Fetching order status for ID:', orderId);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderId}`);
-      
-      if (!response.ok) {
-        console.error('Error response:', response.status, response.statusText);
-        throw new Error('Failed to fetch order status');
-      }
-      
-      const data = await response.json();
-      console.log('Order status data:', data);
-      setOrderStatus(data);
-    } catch (error) {
-      console.error('Error fetching order status:', error);
-      const fetchError = error as FetchError;
-      if (fetchError.message !== 'Failed to fetch order status') {
-        toast({
-          title: "Error",
-          description: "Failed to fetch order status",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  // Check login status and fetch order status if logged in
-  useEffect(() => {
-    checkLoginStatus();
-    
-    if (isLoggedIn) {
-      // Check for active order ID in localStorage
-      const activeOrderId = localStorage.getItem('activeOrderId');
-      console.log('Active order ID from localStorage:', activeOrderId);
-      
-      if (activeOrderId) {
-        fetchOrderStatus(activeOrderId);
-        // Poll for updates every 30 seconds if there's an active order
-        const interval = setInterval(() => fetchOrderStatus(activeOrderId), 30000);
-        return () => clearInterval(interval);
-      }
-    }
-  }, [isLoggedIn]);
-
-  // Listen for storage changes (login/logout and order updates)
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'authToken') {
-        checkLoginStatus();
-      }
-      if (e.key === 'activeOrderId') {
-        const newOrderId = e.newValue;
-        console.log('Order ID changed in storage:', newOrderId);
-        if (newOrderId) {
-          fetchOrderStatus(newOrderId);
-        } else {
-          setOrderStatus(null);
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
 
   if (!isLoggedIn) return null;
 
@@ -207,6 +237,9 @@ export function OrderStatusWidget() {
                     <div className="mt-2 p-3 bg-gray-50 rounded-lg">
                       <p className="text-sm text-gray-500 mb-1">Courier</p>
                       <p className="font-medium">{orderStatus.courierName}</p>
+                      {orderStatus.courierPhoneNumber && (
+                        <p className="text-sm text-gray-600">{orderStatus.courierPhoneNumber}</p>
+                      )}
                     </div>
                   )}
 
@@ -217,25 +250,25 @@ export function OrderStatusWidget() {
                       {orderStatus.orderReceivedTime && (
                         <p className="flex justify-between">
                           <span>Received:</span>
-                          <span>{formatTime(orderStatus.orderReceivedTime)}</span>
+                          <span>{new Date(orderStatus.orderReceivedTime).toLocaleTimeString()}</span>
                         </p>
                       )}
                       {orderStatus.orderPickedUpTime && (
                         <p className="flex justify-between">
                           <span>Picked up:</span>
-                          <span>{formatTime(orderStatus.orderPickedUpTime)}</span>
+                          <span>{new Date(orderStatus.orderPickedUpTime).toLocaleTimeString()}</span>
                         </p>
                       )}
                       {orderStatus.orderOnmywayTime && (
                         <p className="flex justify-between">
                           <span>On the way:</span>
-                          <span>{formatTime(orderStatus.orderOnmywayTime)}</span>
+                          <span>{new Date(orderStatus.orderOnmywayTime).toLocaleTimeString()}</span>
                         </p>
                       )}
                       {orderStatus.orderCompletedTime && (
                         <p className="flex justify-between">
                           <span>Completed:</span>
-                          <span>{formatTime(orderStatus.orderCompletedTime)}</span>
+                          <span>{new Date(orderStatus.orderCompletedTime).toLocaleTimeString()}</span>
                         </p>
                       )}
                     </div>
@@ -253,6 +286,16 @@ export function OrderStatusWidget() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Order Notes */}
+                  {orderStatus.orderComment && (
+                    <div className="mt-3">
+                      <p className="text-sm text-gray-500 mb-2">Notes</p>
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm">{orderStatus.orderComment}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
