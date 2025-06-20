@@ -6,32 +6,48 @@ interface HorizontalProgressProps {
 }
 
 export function HorizontalProgress({ orderStatus, kitchenStatus }: HorizontalProgressProps) {
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'pending':
-        return 'bg-yellow-400';
-      case 'completed':
-      case 'delivered':
-      case 'ready':
-        return 'bg-green-400';
-      case 'assigned':
-      case 'readyforpickup':
-      case 'ontheway':
-        return 'bg-blue-400';
-      case 'cancelled':
-      case 'failed':
-        return 'bg-red-400';
-      case 'preparing':
-        return 'bg-orange-400';
-      default:
-        return 'bg-gray-400';
+  const getStatusColor = (status: string, isKitchen = false) => {
+    if (isKitchen) {
+      switch (status?.toLowerCase()) {
+        case 'pending':
+          return 'bg-blue-500'; // Blue for received
+        case 'preparing':
+          return 'bg-orange-500'; // Orange for preparing
+        case 'ready':
+          return 'bg-green-500'; // Green for prepared/ready
+        case 'cancelled':
+          return 'bg-red-500'; // Red for cancelled
+        default:
+          return 'bg-violet-500'; // Violet for other states
+      }
+    } else {
+      // Order status colors remain unchanged
+      switch (status?.toLowerCase()) {
+        case 'pending':
+          return 'bg-yellow-400';
+        case 'completed':
+        case 'delivered':
+        case 'ready':
+          return 'bg-green-400';
+        case 'assigned':
+        case 'readyforpickup':
+        case 'ontheway':
+          return 'bg-blue-400';
+        case 'cancelled':
+        case 'failed':
+          return 'bg-red-400';
+        case 'preparing':
+          return 'bg-orange-400';
+        default:
+          return 'bg-gray-400';
+      }
     }
   };
 
   const getOrderStep = () => {
     const orderStatuses = ['ReadyForPickup', 'Assigned', 'OnTheWay', 'Delivered'];
     const currentIndex = orderStatuses.indexOf(orderStatus);
-    const color = getStatusColor(orderStatus);
+    const color = getStatusColor(orderStatus, false);
     
     const totalSteps = orderStatuses.length + 1;
     const progress = orderStatus === 'Pending' ? 
@@ -51,7 +67,7 @@ export function HorizontalProgress({ orderStatus, kitchenStatus }: HorizontalPro
   const getKitchenStep = () => {
     const kitchenStatuses = ['Pending', 'Preparing', 'Ready'];
     const currentIndex = kitchenStatuses.indexOf(kitchenStatus);
-    const color = getStatusColor(kitchenStatus);
+    const color = getStatusColor(kitchenStatus, true);
     
     return {
       text: kitchenStatus === 'Pending' ? 'Order Pending' :

@@ -232,29 +232,41 @@ export function OrderStatusWidget() {
     };
   }, []);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, isKitchen = false) => {
+    if (isKitchen) {
+      switch (status?.toLowerCase()) {
+        case 'pending':
+          return 'bg-yellow-500'; // Blue for received
+        case 'preparing':
+          return 'bg-orange-500'; // Orange for preparing
+        case 'ready':
+          return 'bg-green-500'; // Green for prepared/ready
+        case 'cancelled':
+          return 'bg-red-500'; // Red for cancelled
+        default:
+          return 'bg-violet-500'; // Violet for other states
+      }
+    }
+    
+    // Order status colors
     switch (status?.toLowerCase()) {
       case 'pending':
         return 'bg-yellow-400';
       case 'completed':
+      case 'delivered':
+      case 'ready':
         return 'bg-green-400';
       case 'assigned':
+      case 'readyforpickup':
+      case 'ontheway':
         return 'bg-blue-400';
       case 'cancelled':
       case 'failed':
         return 'bg-red-400';
       case 'preparing':
         return 'bg-orange-400';
-      case 'ready':
-        return 'bg-green-400';
-      case 'readyforpickup':
-        return 'bg-blue-400';
-      case 'ontheway':
-        return 'bg-blue-400';
-      case 'delivered':
-        return 'bg-green-400';
       default:
-        return 'bg-gray-400';
+        return 'bg-violet-400';
     }
   };
 
@@ -324,7 +336,7 @@ export function OrderStatusWidget() {
               {orderStatus ? (
                 <div className="flex items-center gap-1">
                   <div className={`w-2 h-2 rounded-full ${getStatusColor(orderStatus.orderStatus)} animate-pulse`} />
-                  <div className={`w-2 h-2 rounded-full ${getStatusColor(orderStatus.kitchenStatus)} animate-pulse`} />
+                  <div className={`w-2 h-2 rounded-full ${getStatusColor(orderStatus.kitchenStatus, true)} animate-pulse`} />
                 </div>
               ) : (
                 <div className="w-2 h-2 rounded-full bg-gray-400" />
@@ -370,7 +382,7 @@ export function OrderStatusWidget() {
                   <div className="bg-gray-50 p-3 rounded-lg space-y-1">
                     <p className="text-sm text-gray-500">Kitchen Status</p>
                     <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${getStatusColor(orderStatus.kitchenStatus)}`} />
+                      <div className={`w-3 h-3 rounded-full ${getStatusColor(orderStatus.kitchenStatus, true)}`} />
                       <p className="font-medium">{orderStatus.kitchenStatus || 'Pending'}</p>
                     </div>
                     {orderStatus.orderPickedUpTime && (
