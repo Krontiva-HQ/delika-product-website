@@ -2,14 +2,36 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle 
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 
+interface OrderProduct {
+  name: string;
+  price: string;
+  quantity: string;
+  extras: any[];
+}
+
 interface OrderStatus {
-  orderNumber: string;
-  isAccepted: boolean;
-  preparationStatus: string;
-  estimatedTime?: string;
+  orderNumber: number;
+  orderStatus: string;
+  kitchenStatus: string;
+  orderAccepted: 'pending' | 'accepted' | 'rejected';
+  orderReceivedTime: number;
+  orderPickedUpTime: number | null;
+  orderOnmywayTime: number | null;
+  orderCompletedTime: number | null;
+  courierName: string | null;
+  products: OrderProduct[];
+  customerName: string;
+  totalPrice: string;
+  paymentStatus: string;
 }
 
 interface FetchError {
@@ -27,6 +49,30 @@ export function OrderStatusWidget() {
     setIsLoggedIn(!!token);
   };
 
+  const formatTime = (timestamp: number | null) => {
+    if (!timestamp) return '';
+    return new Date(timestamp).toLocaleTimeString();
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return 'bg-yellow-400';
+      case 'completed':
+        return 'bg-green-400';
+      case 'assigned':
+        return 'bg-blue-400';
+      case 'cancelled':
+        return 'bg-red-400';
+      case 'preparing':
+        return 'bg-orange-400';
+      case 'ready':
+        return 'bg-green-400';
+      default:
+        return 'bg-gray-400';
+    }
+  };
+
   const fetchOrderStatus = async (orderNumber: string) => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderNumber}`);
@@ -35,7 +81,6 @@ export function OrderStatusWidget() {
       setOrderStatus(data);
     } catch (error) {
       console.error('Error fetching order status:', error);
-      // Don't show error toast for 404 (no active order)
       const fetchError = error as FetchError;
       if (fetchError.message !== 'Failed to fetch order status') {
         toast({
@@ -47,7 +92,6 @@ export function OrderStatusWidget() {
     }
   };
 
-  // Check login status and fetch order status if logged in
   useEffect(() => {
     checkLoginStatus();
     
@@ -55,14 +99,12 @@ export function OrderStatusWidget() {
       const activeOrderNumber = localStorage.getItem('activeOrderNumber');
       if (activeOrderNumber) {
         fetchOrderStatus(activeOrderNumber);
-        // Poll for updates every 30 seconds if there's an active order
         const interval = setInterval(() => fetchOrderStatus(activeOrderNumber), 30000);
         return () => clearInterval(interval);
       }
     }
   }, [isLoggedIn]);
 
-  // Listen for login/logout events
   useEffect(() => {
     window.addEventListener('storage', (e) => {
       if (e.key === 'authToken') {
@@ -86,7 +128,10 @@ export function OrderStatusWidget() {
           >
             <span className="flex items-center gap-2">
               {orderStatus ? (
-                <div className={`w-2 h-2 rounded-full ${orderStatus.isAccepted ? 'bg-green-400' : 'bg-yellow-400'} animate-pulse`} />
+                <div className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full ${getStatusColor(orderStatus.orderStatus)} animate-pulse`} />
+                  <div className={`w-2 h-2 rounded-full ${getStatusColor(orderStatus.kitchenStatus)} animate-pulse`} />
+                </div>
               ) : (
                 <div className="w-2 h-2 rounded-full bg-gray-400" />
               )}
@@ -94,29 +139,96 @@ export function OrderStatusWidget() {
             </span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="h-auto max-h-[30vh] rounded-t-xl">
+        <SheetContent side="bottom" className="h-auto max-h-[50vh] rounded-t-xl">
+          <SheetHeader>
+            <SheetTitle>Order Status</SheetTitle>
+          </SheetHeader>
           <div className="space-y-4 p-4">
             {orderStatus ? (
               <>
-                <h3 className="text-lg font-semibold">Order #{orderStatus.orderNumber}</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${orderStatus.isAccepted ? 'bg-green-400' : 'bg-yellow-400'}`} />
-                    <p>{orderStatus.isAccepted ? 'Order Accepted' : 'Pending Acceptance'}</p>
+                <div className="flex justify-between items-start">
+                  <h3 className="text-lg font-semibold">Order #{orderStatus.orderNumber}</h3>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">Total: ₵{orderStatus.totalPrice}</p>
+                    <p className={`text-sm ${orderStatus.paymentStatus.toLowerCase() === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
+                      {orderStatus.paymentStatus}
+                    </p>
                   </div>
-                  {orderStatus.isAccepted && (
-                    <>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Status Section */}
+                  <div className="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded-lg">
+                    {/* Order Status */}
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">Order Status</p>
                       <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${orderStatus.preparationStatus === 'completed' ? 'bg-green-400' : 'bg-blue-400'}`} />
-                        <p>Preparation Status: {orderStatus.preparationStatus}</p>
+                        <div className={`w-3 h-3 rounded-full ${getStatusColor(orderStatus.orderStatus)}`} />
+                        <p className="font-medium">{orderStatus.orderStatus || 'Pending'}</p>
                       </div>
-                      {orderStatus.estimatedTime && (
-                        <p className="text-sm text-muted-foreground">
-                          Estimated completion: {orderStatus.estimatedTime}
+                    </div>
+
+                    {/* Kitchen Status */}
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">Kitchen Status</p>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${getStatusColor(orderStatus.kitchenStatus)}`} />
+                        <p className="font-medium">{orderStatus.kitchenStatus || 'Pending'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Courier Info */}
+                  {orderStatus.courierName && (
+                    <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                      <p className="text-sm text-gray-500 mb-1">Courier</p>
+                      <p className="font-medium">{orderStatus.courierName}</p>
+                    </div>
+                  )}
+
+                  {/* Order Timeline */}
+                  <div className="mt-3 space-y-2">
+                    <p className="text-sm text-gray-500">Timeline</p>
+                    <div className="space-y-1 text-sm bg-gray-50 p-3 rounded-lg">
+                      {orderStatus.orderReceivedTime && (
+                        <p className="flex justify-between">
+                          <span>Received:</span>
+                          <span>{formatTime(orderStatus.orderReceivedTime)}</span>
                         </p>
                       )}
-                    </>
-                  )}
+                      {orderStatus.orderPickedUpTime && (
+                        <p className="flex justify-between">
+                          <span>Picked up:</span>
+                          <span>{formatTime(orderStatus.orderPickedUpTime)}</span>
+                        </p>
+                      )}
+                      {orderStatus.orderOnmywayTime && (
+                        <p className="flex justify-between">
+                          <span>On the way:</span>
+                          <span>{formatTime(orderStatus.orderOnmywayTime)}</span>
+                        </p>
+                      )}
+                      {orderStatus.orderCompletedTime && (
+                        <p className="flex justify-between">
+                          <span>Completed:</span>
+                          <span>{formatTime(orderStatus.orderCompletedTime)}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Order Items */}
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-500 mb-2">Order Items</p>
+                    <div className="space-y-1 bg-gray-50 p-3 rounded-lg">
+                      {orderStatus.products.map((product, index) => (
+                        <div key={index} className="flex justify-between text-sm">
+                          <span>{product.quantity}x {product.name}</span>
+                          <span>₵{product.price}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </>
             ) : (
