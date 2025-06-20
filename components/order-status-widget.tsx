@@ -106,13 +106,21 @@ export function OrderStatusWidget() {
       
       const data = await response.json();
       console.log('Order status data:', data);
-      setOrderStatus(data);
-
-      // Store order number if order is not completed
+      
+      // Only update if the order is still active
       if (!data.completed && data.orderStatus !== 'Cancelled') {
+        setOrderStatus(data);
         localStorage.setItem('activeOrderNumber', orderNumber);
+        localStorage.setItem('lastOrderDetails', JSON.stringify(data));
       } else {
+        // If order is completed or cancelled, clean up
         localStorage.removeItem('activeOrderNumber');
+        localStorage.removeItem('lastOrderDetails');
+        setOrderStatus(null);
+        toast({
+          title: "Order Complete",
+          description: "Your order has been completed or cancelled.",
+        });
       }
     } catch (error) {
       console.error('Error fetching order status:', error);
@@ -126,6 +134,19 @@ export function OrderStatusWidget() {
       }
     }
   };
+
+  // Initialize order status from localStorage
+  useEffect(() => {
+    const lastOrderDetails = localStorage.getItem('lastOrderDetails');
+    if (lastOrderDetails) {
+      try {
+        const parsedDetails = JSON.parse(lastOrderDetails);
+        setOrderStatus(parsedDetails);
+      } catch (error) {
+        console.error('Error parsing last order details:', error);
+      }
+    }
+  }, []);
 
   // Check login status and fetch order status if logged in
   useEffect(() => {
@@ -149,7 +170,9 @@ export function OrderStatusWidget() {
         try {
           const { response } = JSON.parse(orderSubmissionData);
           if (response?.result1?.orderNumber) {
-            fetchOrderStatus(response.result1.orderNumber.toString());
+            const orderNumber = response.result1.orderNumber.toString();
+            localStorage.setItem('activeOrderNumber', orderNumber);
+            fetchOrderStatus(orderNumber);
           }
         } catch (error) {
           console.error('Error parsing order submission data:', error);
@@ -179,10 +202,23 @@ export function OrderStatusWidget() {
           try {
             const { response } = JSON.parse(newData);
             if (response?.result1?.orderNumber) {
-              fetchOrderStatus(response.result1.orderNumber.toString());
+              const orderNumber = response.result1.orderNumber.toString();
+              localStorage.setItem('activeOrderNumber', orderNumber);
+              fetchOrderStatus(orderNumber);
             }
           } catch (error) {
             console.error('Error parsing new order submission data:', error);
+          }
+        }
+      }
+      if (e.key === 'lastOrderDetails') {
+        const newData = e.newValue;
+        if (newData) {
+          try {
+            const parsedDetails = JSON.parse(newData);
+            setOrderStatus(parsedDetails);
+          } catch (error) {
+            console.error('Error parsing last order details:', error);
           }
         }
       }
@@ -203,10 +239,17 @@ export function OrderStatusWidget() {
       case 'assigned':
         return 'bg-blue-400';
       case 'cancelled':
+      case 'failed':
         return 'bg-red-400';
       case 'preparing':
         return 'bg-orange-400';
       case 'ready':
+        return 'bg-green-400';
+      case 'readyforpickup':
+        return 'bg-blue-400';
+      case 'ontheway':
+        return 'bg-blue-400';
+      case 'delivered':
         return 'bg-green-400';
       default:
         return 'bg-gray-400';
@@ -236,11 +279,11 @@ export function OrderStatusWidget() {
             </span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="h-auto max-h-[50vh] rounded-t-xl">
+        <SheetContent side="bottom" className="h-[96vh] rounded-t-xl">
           <SheetHeader>
             <SheetTitle>Order Status</SheetTitle>
           </SheetHeader>
-          <div className="space-y-4 p-4">
+          <div className="space-y-4 p-4 overflow-y-auto max-h-[calc(96vh-80px)]">
             {orderStatus ? (
               <>
                 <div className="flex justify-between items-start">
@@ -253,87 +296,95 @@ export function OrderStatusWidget() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  {/* Status Section */}
-                  <div className="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded-lg">
-                    {/* Order Status */}
-                    <div className="space-y-1">
-                      <p className="text-sm text-gray-500">Order Status</p>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${getStatusColor(orderStatus.orderStatus)}`} />
-                        <p className="font-medium">{orderStatus.orderStatus || 'Pending'}</p>
-                      </div>
+                {/* Status Section */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Order Status */}
+                  <div className="bg-gray-50 p-3 rounded-lg space-y-1">
+                    <p className="text-sm text-gray-500">Order Status</p>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${getStatusColor(orderStatus.orderStatus)}`} />
+                      <p className="font-medium">{orderStatus.orderStatus || 'Pending'}</p>
                     </div>
-
-                    {/* Kitchen Status */}
-                    <div className="space-y-1">
-                      <p className="text-sm text-gray-500">Kitchen Status</p>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${getStatusColor(orderStatus.kitchenStatus)}`} />
-                        <p className="font-medium">{orderStatus.kitchenStatus || 'Pending'}</p>
-                      </div>
-                    </div>
+                    {orderStatus.orderReceivedTime && (
+                      <p className="text-xs text-gray-500">
+                        Received: {new Date(orderStatus.orderReceivedTime).toLocaleTimeString()}
+                      </p>
+                    )}
                   </div>
 
-                  {/* Delivery Info */}
-                  <div className="mt-2 p-3 bg-gray-50 rounded-lg space-y-3">
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Pickup</p>
-                      <p className="font-medium">{orderStatus.pickupName}</p>
+                  {/* Kitchen Status */}
+                  <div className="bg-gray-50 p-3 rounded-lg space-y-1">
+                    <p className="text-sm text-gray-500">Kitchen Status</p>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${getStatusColor(orderStatus.kitchenStatus)}`} />
+                      <p className="font-medium">{orderStatus.kitchenStatus || 'Pending'}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Delivery To</p>
-                      <p className="font-medium">{orderStatus.dropoffName}</p>
-                      {orderStatus.dropOffCity && (
-                        <p className="text-sm text-gray-600">{orderStatus.dropOffCity}</p>
-                      )}
-                    </div>
+                    {orderStatus.orderPickedUpTime && (
+                      <p className="text-xs text-gray-500">
+                        Picked up: {new Date(orderStatus.orderPickedUpTime).toLocaleTimeString()}
+                      </p>
+                    )}
                   </div>
-
-                  {/* Courier Info */}
-                  {orderStatus.courierName && (
-                    <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-500 mb-1">Courier</p>
-                      <p className="font-medium">{orderStatus.courierName}</p>
-                      {orderStatus.courierPhoneNumber && (
-                        <p className="text-sm text-gray-600">{orderStatus.courierPhoneNumber}</p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Order Items */}
-                  <div className="mt-3">
-                    <p className="text-sm text-gray-500 mb-2">Order Items</p>
-                    <div className="space-y-1 bg-gray-50 p-3 rounded-lg">
-                      {orderStatus.products.map((product, index) => (
-                        <div key={index} className="flex justify-between text-sm">
-                          <span>{product.quantity}x {product.name}</span>
-                          <span>₵{product.price}</span>
-                        </div>
-                      ))}
-                      <div className="mt-2 pt-2 border-t border-gray-200">
-                        <div className="flex justify-between text-sm">
-                          <span>Order Price:</span>
-                          <span>₵{orderStatus.orderPrice}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Delivery Fee:</span>
-                          <span>₵{orderStatus.deliveryPrice}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Order Notes */}
-                  {orderStatus.orderComment && (
-                    <div className="mt-3">
-                      <p className="text-sm text-gray-500 mb-2">Notes</p>
-                      <div className="bg-gray-50 p-3 rounded-lg">
-                        <p className="text-sm">{orderStatus.orderComment}</p>
-                      </div>
-                    </div>
-                  )}
                 </div>
+
+                {/* Delivery Info */}
+                <div className="mt-2 p-3 bg-gray-50 rounded-lg space-y-3">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Pickup</p>
+                    <p className="font-medium">{orderStatus.pickupName}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Delivery To</p>
+                    <p className="font-medium">{orderStatus.dropoffName}</p>
+                    {orderStatus.dropOffCity && (
+                      <p className="text-sm text-gray-600">{orderStatus.dropOffCity}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Courier Info */}
+                {orderStatus.courierName && (
+                  <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-500 mb-1">Courier</p>
+                    <p className="font-medium">{orderStatus.courierName}</p>
+                    {orderStatus.courierPhoneNumber && (
+                      <p className="text-sm text-gray-600">{orderStatus.courierPhoneNumber}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Order Items */}
+                <div className="mt-3">
+                  <p className="text-sm text-gray-500 mb-2">Order Items</p>
+                  <div className="space-y-1 bg-gray-50 p-3 rounded-lg">
+                    {orderStatus.products.map((product, index) => (
+                      <div key={index} className="flex justify-between text-sm">
+                        <span>{product.quantity}x {product.name}</span>
+                        <span>₵{product.price}</span>
+                      </div>
+                    ))}
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="flex justify-between text-sm">
+                        <span>Order Price:</span>
+                        <span>₵{orderStatus.orderPrice}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Delivery Fee:</span>
+                        <span>₵{orderStatus.deliveryPrice}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Notes */}
+                {orderStatus.orderComment && (
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-500 mb-2">Notes</p>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-sm">{orderStatus.orderComment}</p>
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <div className="text-center py-4">

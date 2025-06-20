@@ -83,6 +83,8 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
              // Store order number for tracking
             if (data.paymentVerification.orderNumber) {
               localStorage.setItem('activeOrderNumber', data.paymentVerification.orderNumber.toString())
+              // Also store the full order details
+              localStorage.setItem('lastOrderDetails', JSON.stringify(data.paymentVerification))
             }
           }
         } 
