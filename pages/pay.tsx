@@ -8,20 +8,15 @@ export default function PayPage() {
   const orderId = searchParams?.get("orderId") || "";
   const customerId = searchParams?.get("customerId") || "";
 
-  // Retrieve and log the order response
-  useEffect(() => {
-    const orderResponse = localStorage.getItem('orderSubmissionResponse');
-    if (orderResponse) {
-      localStorage.removeItem('orderSubmissionResponse'); // Clean up after reading
-    }
-  }, []);
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <PaystackModal
         open={true}
         onClose={() => { /* Optionally redirect to home or order summary */ }}
-        onComplete={() => { /* Optionally redirect to thank you or order summary */ }}
+        onComplete={() => {
+          // Only remove orderSubmissionResponse after payment is complete
+          localStorage.removeItem('orderSubmissionResponse');
+        }}
         amount={amount}
         orderId={orderId}
         customerId={customerId}

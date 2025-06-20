@@ -18,23 +18,66 @@ interface OrderProduct {
   extras: any[];
 }
 
+interface PickupLocation {
+  fromLatitude: string;
+  fromLongitude: string;
+  fromAddress: string;
+}
+
+interface DropOffLocation {
+  toLatitude: string;
+  toLongitude: string;
+  toAddress: string;
+}
+
 interface OrderStatus {
   id: string;
+  created_at: number;
+  orderDate: string;
+  orderOTP: number;
   orderNumber: number;
+  orderChannel: string;
+  restaurantId: string;
+  branchId: string;
+  customerName: string;
+  customerPhoneNumber: string;
+  courierId: string;
+  courierName: string | null;
+  courierPhoneNumber: string | null;
+  batchID: string;
+  orderPrice: string;
+  deliveryPrice: string;
+  totalPrice: string;
   orderStatus: string;
+  paymentStatus: string;
+  paystackReferenceCode: string;
   kitchenStatus: string;
-  orderAccepted: string;
+  deliveryDistance: string;
+  trackingUrl: string;
+  pickupName: string;
+  dropoffName: string;
+  foodAndDeliveryFee: boolean;
+  onlyDeliveryFee: boolean;
+  payNow: boolean;
+  payLater: boolean;
+  dropOffCity: string;
+  orderComment: string;
   orderReceivedTime: number;
   orderPickedUpTime: number | null;
   orderOnmywayTime: number | null;
   orderCompletedTime: number | null;
-  courierName: string | null;
-  courierPhoneNumber: string | null;
+  orderCancelledTime: number | null;
+  scheduledTime: number | null;
+  completed: boolean;
+  Walkin: boolean;
+  payVisaCard: boolean;
+  rider: boolean;
+  pedestrian: boolean;
+  orderAccepted: string;
+  riderAssignmentStatus: string;
   products: OrderProduct[];
-  customerName: string;
-  totalPrice: string;
-  paymentStatus: string;
-  orderComment: string;
+  pickup: PickupLocation[];
+  dropOff: DropOffLocation[];
 }
 
 interface FetchError {
@@ -66,7 +109,7 @@ export function OrderStatusWidget() {
       setOrderStatus(data);
 
       // Store order number if order is not completed
-      if (data.orderStatus !== 'Completed' && data.orderStatus !== 'Cancelled') {
+      if (!data.completed && data.orderStatus !== 'Cancelled') {
         localStorage.setItem('activeOrderNumber', orderNumber);
       } else {
         localStorage.removeItem('activeOrderNumber');
@@ -115,7 +158,7 @@ export function OrderStatusWidget() {
     }
   }, [isLoggedIn]);
 
-  // Listen for storage changes (login/logout and order updates)
+  // Listen for storage changes
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'authToken') {
@@ -232,6 +275,21 @@ export function OrderStatusWidget() {
                     </div>
                   </div>
 
+                  {/* Delivery Info */}
+                  <div className="mt-2 p-3 bg-gray-50 rounded-lg space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Pickup</p>
+                      <p className="font-medium">{orderStatus.pickupName}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Delivery To</p>
+                      <p className="font-medium">{orderStatus.dropoffName}</p>
+                      {orderStatus.dropOffCity && (
+                        <p className="text-sm text-gray-600">{orderStatus.dropOffCity}</p>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Courier Info */}
                   {orderStatus.courierName && (
                     <div className="mt-2 p-3 bg-gray-50 rounded-lg">
@@ -243,37 +301,6 @@ export function OrderStatusWidget() {
                     </div>
                   )}
 
-                  {/* Order Timeline */}
-                  <div className="mt-3 space-y-2">
-                    <p className="text-sm text-gray-500">Timeline</p>
-                    <div className="space-y-1 text-sm bg-gray-50 p-3 rounded-lg">
-                      {orderStatus.orderReceivedTime && (
-                        <p className="flex justify-between">
-                          <span>Received:</span>
-                          <span>{new Date(orderStatus.orderReceivedTime).toLocaleTimeString()}</span>
-                        </p>
-                      )}
-                      {orderStatus.orderPickedUpTime && (
-                        <p className="flex justify-between">
-                          <span>Picked up:</span>
-                          <span>{new Date(orderStatus.orderPickedUpTime).toLocaleTimeString()}</span>
-                        </p>
-                      )}
-                      {orderStatus.orderOnmywayTime && (
-                        <p className="flex justify-between">
-                          <span>On the way:</span>
-                          <span>{new Date(orderStatus.orderOnmywayTime).toLocaleTimeString()}</span>
-                        </p>
-                      )}
-                      {orderStatus.orderCompletedTime && (
-                        <p className="flex justify-between">
-                          <span>Completed:</span>
-                          <span>{new Date(orderStatus.orderCompletedTime).toLocaleTimeString()}</span>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
                   {/* Order Items */}
                   <div className="mt-3">
                     <p className="text-sm text-gray-500 mb-2">Order Items</p>
@@ -284,6 +311,16 @@ export function OrderStatusWidget() {
                           <span>₵{product.price}</span>
                         </div>
                       ))}
+                      <div className="mt-2 pt-2 border-t border-gray-200">
+                        <div className="flex justify-between text-sm">
+                          <span>Order Price:</span>
+                          <span>₵{orderStatus.orderPrice}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Delivery Fee:</span>
+                          <span>₵{orderStatus.deliveryPrice}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 

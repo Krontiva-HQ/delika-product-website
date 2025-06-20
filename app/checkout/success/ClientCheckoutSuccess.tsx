@@ -80,6 +80,10 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
             }, 3000)
           } else {
             setOrderDetails(data.paymentVerification)
+             // Store order number for tracking
+            if (data.paymentVerification.orderNumber) {
+              localStorage.setItem('activeOrderNumber', data.paymentVerification.orderNumber.toString())
+            }
           }
         } 
         // If we have an orderId, fetch order details
