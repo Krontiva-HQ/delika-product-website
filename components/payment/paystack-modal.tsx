@@ -30,29 +30,23 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
   const [countdown, setCountdown] = useState(0)
   const router = useRouter()
 
-  // Countdown effect
+  // Reset all states when modal closes
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    
-    if (countdown > 0) {
-      interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            setCanVerify(true);
-            setVerifyError("");
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    if (!open) {
+      setStep(1);
+      setPhone("");
+      setProvider("");
+      setOtp("");
+      setOtpError("");
+      setOtpMessage("");
+      setReference("");
+      setVerifyError("");
+      setCanVerify(true);
+      setCountdown(0);
+      setIsLoading(false);
+      setIsVerifying(false);
     }
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [countdown]);
+  }, [open]);
 
   const providers = [
     { value: "MTN", label: "MTN", apiValue: "mtn" },
@@ -60,14 +54,25 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
     { value: "Telecel", label: "Telecel", apiValue: "vod" },
   ]
 
-  const handleConfirm = async () => {
-    if (!phone.match(/^0\d{9}$/)) return
-    if (!provider) return
+  const handleClose = () => {
+    // Show confirmation if in the middle of a payment
+    if (step > 1 && !isVerifying) {
+      if (window.confirm("Are you sure you want to cancel this payment?")) {
+        router.back(); // Go to previous page
+      }
+    } else {
+      router.back(); // Go to previous page
+    }
+  };
 
-    setIsLoading(true)
+  const handleConfirm = async () => {
+    if (!phone.match(/^0\d{9}$/)) return;
+    if (!provider) return;
+
+    setIsLoading(true);
     try {
-      const selectedProvider = providers.find(p => p.value === provider)
-      const response = await fetch(process.env.NEXT_PUBLIC_CHARGE_API || "https://api-server.krontiva.africa/api:uEBBwbSs/charge/api/paystack", {
+      const selectedProvider = providers.find(p => p.value === provider);
+      const response = await fetch(process.env.NEXT_PUBLIC_CHARGE_API || "", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,43 +86,47 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
           customerId: customerId,
           orderId: orderId,
         }),
-      })
-
-      const paystackResponse = await response.clone().json().catch(() => null);
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to initialize payment')
+        throw new Error('Failed to initialize payment');
       }
 
-      // Handle different response statuses
-      const paymentStatus = paystackResponse?.result1?.response?.result?.data?.status;
-      const displayText = paystackResponse?.result1?.response?.result?.data?.display_text;
-      const paymentReference = paystackResponse?.result1?.response?.result?.data?.reference;
-      setReference(paymentReference || "");
+      const paystackResponse = await response.json();
+      
+      if (!paystackResponse?.result1?.response?.result?.data) {
+        throw new Error('Invalid response from payment server');
+      }
 
-      if (paymentStatus === 'send_otp') {
+      const { status, display_text, reference } = paystackResponse.result1.response.result.data;
+      setReference(reference || "");
+
+      if (status === 'send_otp') {
         setStep(2);
-        setOtpMessage(displayText || 'Please enter the one-time password sent to your phone');
-      } else if (paymentStatus === 'pay_offline') {
+        setOtpMessage(display_text || 'Please enter the one-time password sent to your phone');
+      } else if (status === 'pay_offline') {
         setStep(3);
-        setOtpMessage(displayText || 'Please complete the authorization on your mobile device');
-        // Enable verification after 15 seconds
+        setOtpMessage(display_text || 'Please complete the authorization on your mobile device');
         setCanVerify(false);
         setCountdown(15);
       } else {
-        throw new Error('Unexpected payment status');
+        throw new Error('Unexpected payment status: ' + status);
       }
-
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to initialize payment. Please try again.",
+        title: "Payment Error",
+        description: error instanceof Error ? error.message : "Failed to initialize payment. Please try again.",
         variant: "destructive",
-      })
+      });
+      // Reset to initial state after error
+      setStep(1);
+      setIsLoading(false);
+      // Optional: close modal after error
+      // onClose();
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleVerifyOtp = async () => {
     if (!otp.match(/^[0-9]{6}$/)) {
@@ -198,8 +207,22 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
     }
   };
 
+  // Add a cancel button to the modal
+  const renderCancelButton = () => (
+    <button
+      className="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg transition-all text-lg"
+      onClick={handleClose}
+      type="button"
+      disabled={isLoading || isVerifying}
+    >
+      Cancel Payment
+    </button>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) handleClose();
+    }}>
       <DialogContent 
         className="sm:max-w-md"
         style={{ 
@@ -272,6 +295,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                   )}
                 </button>
               </div>
+              {renderCancelButton()}
             </div>
           )}
 
@@ -317,6 +341,15 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                   )}
                 </button>
               </div>
+              {renderCancelButton()}
+              <button
+                className="w-full text-gray-500 hover:text-gray-700 font-medium py-2 text-sm"
+                onClick={() => setStep(1)}
+                type="button"
+                disabled={isLoading}
+              >
+                Change Phone Number
+              </button>
             </div>
           )}
 
@@ -349,14 +382,25 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                 </button>
 
                 {verifyError && (
-                  <div className="text-red-500 text-sm text-center">
-                    {countdown > 0 
-                      ? verifyError.replace("15 seconds", `${countdown} second${countdown !== 1 ? 's' : ''}`)
-                      : verifyError
-                    }
+                  <div className="text-center space-y-2">
+                    <div className="text-red-500 text-sm">
+                      {countdown > 0 
+                        ? verifyError.replace("15 seconds", `${countdown} second${countdown !== 1 ? 's' : ''}`)
+                        : verifyError
+                      }
+                    </div>
+                    <button
+                      className="text-orange-500 hover:text-orange-600 font-medium text-sm"
+                      onClick={() => setStep(1)}
+                      type="button"
+                      disabled={isVerifying}
+                    >
+                      Try Different Number
+                    </button>
                   </div>
                 )}
               </div>
+              {renderCancelButton()}
             </div>
           )}
         </div>
