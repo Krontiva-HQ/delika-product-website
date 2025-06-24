@@ -19,6 +19,23 @@ interface DemoFormData {
   message: string
 }
 
+const combineDateAndTime = (date: string, time: string): string => {
+  if (!date || !time) return '';
+  
+  // Convert 12-hour format to 24-hour format
+  const [hours, minutes] = time.replace(/\s/g, '').split(':');
+  let hour = parseInt(hours);
+  const isPM = time.toLowerCase().includes('pm');
+  
+  if (isPM && hour < 12) hour += 12;
+  if (!isPM && hour === 12) hour = 0;
+  
+  const formattedHour = hour.toString().padStart(2, '0');
+  const formattedTime = `${formattedHour}:${minutes.replace(/[APM]/gi, '')}:00`;
+  
+  return `${date}T${formattedTime}`;
+}
+
 export function DemoRequestForm() {
   const [formData, setFormData] = useState<DemoFormData>({
     full_name: "",
@@ -108,7 +125,14 @@ export function DemoRequestForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
+          full_name: formData.full_name,
+          email: formData.email,
+          phone_number: formData.phone,
+          restaurant_name: formData.company,
+          restaurant_type: formData.restaurant_type,
+          preferred_date: formData.preferred_date,
+          preferred_time: formData.preferred_time ? combineDateAndTime(formData.preferred_date, formData.preferred_time) : null,
+          message: formData.message,
           created_at: new Date().toISOString(),
           status: 'pending'
         }),
