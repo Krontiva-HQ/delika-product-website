@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Mail, Phone, User, Building, Calendar, Clock } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
 
 interface DemoFormData {
   full_name: string
@@ -101,9 +102,21 @@ export function DemoRequestForm() {
         return
       }
 
-      // Here you would typically send the form data to your API
-      // For now, we'll simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const response = await fetch(process.env.NEXT_PUBLIC_DEMO_REQUESTS_API || '', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          created_at: new Date().toISOString(),
+          status: 'pending'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit demo request');
+      }
 
       setIsSuccess(true)
       setFormData({
@@ -119,6 +132,11 @@ export function DemoRequestForm() {
       
     } catch (error) {
       setError('Failed to submit demo request. Please try again.')
+      toast({
+        title: "Error",
+        description: "Failed to submit demo request. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }

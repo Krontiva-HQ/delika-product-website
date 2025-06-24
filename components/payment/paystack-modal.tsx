@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useRouter } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
 import Image from "next/image"
+import { Dialog as ConfirmationDialog, DialogContent as ConfirmationDialogContent, DialogHeader as ConfirmationDialogHeader, DialogTitle as ConfirmationDialogTitle, DialogFooter as ConfirmationDialogFooter } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 
 interface PaystackModalProps {
   open: boolean
@@ -28,6 +30,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
   const [verifyError, setVerifyError] = useState("")
   const [canVerify, setCanVerify] = useState(true)
   const [countdown, setCountdown] = useState(0)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const router = useRouter()
 
   // Reset all states when modal closes
@@ -57,9 +60,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
   const handleClose = () => {
     // Show confirmation if in the middle of a payment
     if (step > 1 && !isVerifying) {
-      if (window.confirm("Are you sure you want to cancel this payment?")) {
-        router.back(); // Go to previous page
-      }
+      setShowCancelConfirm(true);
     } else {
       router.back(); // Go to previous page
     }
@@ -207,18 +208,6 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
     }
   };
 
-  // Add a cancel button to the modal
-  const renderCancelButton = () => (
-    <button
-      className="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg transition-all text-lg"
-      onClick={handleClose}
-      type="button"
-      disabled={isLoading || isVerifying}
-    >
-      Cancel Payment
-    </button>
-  );
-
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
       if (!isOpen) handleClose();
@@ -295,7 +284,6 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                   )}
                 </button>
               </div>
-              {renderCancelButton()}
             </div>
           )}
 
@@ -341,7 +329,6 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                   )}
                 </button>
               </div>
-              {renderCancelButton()}
               <button
                 className="w-full text-gray-500 hover:text-gray-700 font-medium py-2 text-sm"
                 onClick={() => setStep(1)}
@@ -400,11 +387,29 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                   </div>
                 )}
               </div>
-              {renderCancelButton()}
             </div>
           )}
         </div>
       </DialogContent>
+      {/* Confirmation Dialog for Cancel Payment */}
+      <ConfirmationDialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <ConfirmationDialogContent>
+          <ConfirmationDialogHeader>
+            <ConfirmationDialogTitle>Cancel Payment?</ConfirmationDialogTitle>
+          </ConfirmationDialogHeader>
+          <div className="py-4 text-center text-gray-700">
+            Are you sure you want to cancel this payment? Your progress will be lost.
+          </div>
+          <ConfirmationDialogFooter>
+            <Button variant="outline" onClick={() => setShowCancelConfirm(false)}>
+              No, go back
+            </Button>
+            <Button variant="destructive" onClick={() => { setShowCancelConfirm(false); router.back(); }}>
+              Yes, cancel payment
+            </Button>
+          </ConfirmationDialogFooter>
+        </ConfirmationDialogContent>
+      </ConfirmationDialog>
     </Dialog>
   )
 } 
