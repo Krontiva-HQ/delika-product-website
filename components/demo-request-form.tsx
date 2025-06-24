@@ -142,6 +142,46 @@ export function DemoRequestForm() {
         throw new Error('Failed to submit demo request');
       }
 
+      // Send confirmation email
+      try {
+        const emailResponse = await fetch('/api/send-demo-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            full_name: formData.full_name,
+            email: formData.email,
+            phone_number: formData.phone,
+            restaurant_name: formData.company,
+            restaurant_type: formData.restaurant_type,
+            preferred_date: formData.preferred_date,
+            preferred_time: formData.preferred_time ? combineDateAndTime(formData.preferred_date, formData.preferred_time) : null,
+            message: formData.message
+          }),
+        });
+
+        const emailData = await emailResponse.json();
+
+        if (!emailResponse.ok) {
+          console.error('Email API Error:', emailData);
+          toast({
+            title: "Note",
+            description: "Your demo request was submitted, but we couldn't send you a confirmation email. We'll contact you soon!",
+            variant: "default",
+          });
+        } else {
+          console.log('Email sent successfully:', emailData);
+        }
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+        toast({
+          title: "Note",
+          description: "Your demo request was submitted, but we couldn't send you a confirmation email. We'll contact you soon!",
+          variant: "default",
+        });
+      }
+
       setIsSuccess(true)
       setFormData({
         full_name: "",
