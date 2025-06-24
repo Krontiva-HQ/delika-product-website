@@ -33,6 +33,19 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const router = useRouter()
 
+  // Add countdown timer effect
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(prev => prev - 1);
+        if (countdown === 1) {
+          setCanVerify(true);
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
   // Reset all states when modal closes
   useEffect(() => {
     if (!open) {
@@ -195,14 +208,12 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
         onComplete();
         onClose();
       } else {
-        setVerifyError("Payment not confirmed yet. Please try again in 15 seconds.");
-        setCanVerify(false);
-        setCountdown(15);
+        setVerifyError("Payment not confirmed yet. Please try again in a few seconds.");
+        setCanVerify(true); // Allow retry immediately
       }
     } catch (error) {
       setVerifyError("Failed to verify payment. Please try again.");
-      setCanVerify(false);
-      setCountdown(15);
+      setCanVerify(true); // Allow retry immediately
     } finally {
       setIsVerifying(false);
     }
@@ -347,15 +358,20 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                 <p className="text-gray-700 font-medium">
                   {otpMessage}
                 </p>
+                {countdown > 0 && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    You can verify again in {countdown} second{countdown !== 1 ? 's' : ''}
+                  </p>
+                )}
               </div>
               
               <div className="space-y-4">
                 <button
                   className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg ${
-                    !canVerify ? 'opacity-50 cursor-not-allowed' : ''
+                    (!canVerify && countdown > 0) ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                   onClick={handleDone}
-                  disabled={!canVerify || isVerifying}
+                  disabled={!canVerify && countdown > 0}
                   type="button"
                 >
                   {isVerifying ? (
@@ -371,10 +387,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                 {verifyError && (
                   <div className="text-center space-y-2">
                     <div className="text-red-500 text-sm">
-                      {countdown > 0 
-                        ? verifyError.replace("15 seconds", `${countdown} second${countdown !== 1 ? 's' : ''}`)
-                        : verifyError
-                      }
+                      {verifyError}
                     </div>
                     <button
                       className="text-orange-500 hover:text-orange-600 font-medium text-sm"
