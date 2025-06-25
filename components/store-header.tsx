@@ -40,9 +40,11 @@ interface Branch {
   branchCity: string
   branchLatitude: string
   branchLongitude: string
+  branchUrl: string
   _restaurantTable: Restaurant[]
   created_at: number
   active: boolean
+  slug: string
 }
 
 type Libraries = ("places" | "geocoding")[]
@@ -227,18 +229,12 @@ export function StoreHeader() {
     // Check if we're on a restaurant page by examining the URL
     const path = pathname || ''
     
-    if (path.startsWith('/restaurant/')) {
-      const slug = path.split('/').pop() || ''
+    if (path.startsWith('/restaurants/')) {
+      const branchUrl = path.split('/').pop() || ''
       
-      if (slug) {
-        // Find the branch ID from the slug
-        const branch = branches.find(b => {
-          // Add null checks for _restaurantTable
-          if (!b._restaurantTable || !b._restaurantTable[0] || !b._restaurantTable[0].restaurantName) {
-            return false;
-          }
-          return slugify(b._restaurantTable[0].restaurantName, b.branchName) === slug;
-        });
+      if (branchUrl) {
+        // Find the branch by branchUrl
+        const branch = branches.find(b => b.branchUrl === branchUrl);
         
         if (branch) {
           setSelectedBranchId(branch.id)
@@ -368,9 +364,6 @@ export function StoreHeader() {
       setIsLoading(true)
       setIsBranchPageLoaded(false)
       
-      // Debug logging
-      console.log('Branch data:', branch)
-      
       // Validate branch data with more specific checks
       if (!branch) {
         throw new Error('Branch is undefined')
@@ -389,33 +382,50 @@ export function StoreHeader() {
         throw new Error('Restaurant name is missing')
       }
 
-      // Generate a URL-friendly slug from the restaurant name and branch name
-      const restaurantName = restaurant.restaurantName
-      const branchName = branch.branchName
-      
-      if (!branchName) {
-        throw new Error('Branch name is missing')
+      // First get the actual branch ID
+      const branchResponse = await fetch(
+        `https://api-server.krontiva.africa/api:uEBBwbSs/delikaquickshipper_branches_table`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+
+      if (!branchResponse.ok) {
+        throw new Error('Failed to fetch branch data');
       }
 
-      const slug = slugify(restaurantName, branchName)
-      
-      // Set state first
-      setSelectedBranchId(branch.id)
+      const branchesData = await branchResponse.json();
+      const matchingBranch = branchesData.find((b: any) => b.slug === branch.slug);
+
+      if (!matchingBranch || !matchingBranch.id) {
+        throw new Error('Branch ID not found');
+      }
+
+      const actualBranchId = matchingBranch.id;
+
+      // Set state with actual branch ID
+      setSelectedBranchId(actualBranchId)
       setCurrentView('branch')
       
-      // Update localStorage
-      localStorage.setItem('selectedBranchId', branch.id)
+      // Store both the ID and slug in localStorage
+      localStorage.setItem('selectedBranchId', actualBranchId)
+      localStorage.setItem('branchSlug', branch.slug)
       localStorage.setItem('currentView', 'branch')
       
-      // Navigate to the branch page using replace instead of push
-      await router.replace(`/restaurant/${slug}`)
+      // Navigate using the slug for display but keep ID in state
+      await router.replace(`/restaurants/${branch.slug}?id=${actualBranchId}`)
+      
+      setIsLoading(false)
+      setIsBranchPageLoaded(true)
     } catch (error) {
       console.error('Navigation error:', error)
-      // Reset states on error
       setCurrentView('stores')
       setSelectedBranchId(null)
       setIsLoading(false)
-      // Show error to user (you might want to add a toast notification here)
     }
   }
 
@@ -616,28 +626,6 @@ export function StoreHeader() {
     setShowExpandedSearch(false);
   };
 
-  // Helper function to create URL-friendly slugs
-  // Now using both restaurant name and branch name to ensure uniqueness
-  function slugify(text: string, branchName?: string): string {
-    if (!text) return '';
-    
-    // If branch name is provided, combine restaurant name and branch name
-    const slugText = branchName 
-      ? `${text}-${branchName}`
-      : text;
-      
-    return slugText
-      .toString()
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '-')     // Replace spaces with -
-      .replace(/[^\w\-]+/g, '') // Remove all non-word chars
-      .replace(/\-\-+/g, '-')   // Replace multiple - with single -
-      .replace(/^-+/, '')       // Trim - from start of text
-      .replace(/-+$/, '')       // Trim - from end of text
-      || 'restaurant';          // Fallback if empty after processing
-  }
-
   const fetchOrderHistory = useCallback(async () => {
     localStorage.removeItem('orders');
     if (!user?.id) return;
@@ -683,6 +671,7 @@ export function StoreHeader() {
 
     switch (currentView) {
       case 'branch':
+        const currentBranch = branches.find(b => b.id === selectedBranchId);
         return (
           <div className="container mx-auto px-4 py-8">
             <Link 
@@ -696,7 +685,7 @@ export function StoreHeader() {
               <ChevronLeft className="w-4 h-4" />
               Back to Restaurants
             </Link>
-            <BranchPage params={{ id: selectedBranchId! }} />
+            {currentBranch && <BranchPage params={{ id: currentBranch.branchUrl }} />}
           </div>
         )
       case 'orders':
@@ -886,7 +875,7 @@ export function StoreHeader() {
                   {searchResults.map((branch) => (
                     <Link
                       key={branch.id}
-                      href={`/restaurant/${slugify(branch._restaurantTable[0].restaurantName, branch.branchName)}`}
+                      href={`/restaurants/${branch.branchUrl}`}
                       onClick={(e) => {
                         e.preventDefault()
                         handleBranchSelect(branch)

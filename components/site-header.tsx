@@ -12,12 +12,12 @@ export function SiteHeader() {
   const pathname = usePathname()
 
   const menuItems = [
-    { href: "/shop", label: "Restaurants" },
+    { href: "/restaurants", label: "Restaurants" },
     { href: "/about", label: "About" },
   ]
 
-  // Don't show header at all on /shop page
-  if (pathname === "/shop") {
+  // Don't show header at all on /restaurants page
+  if (pathname === "/restaurants") {
     return null;
   }
 
@@ -64,18 +64,18 @@ export function SiteHeader() {
             {isDropdownOpen && (
               <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2">
                 <Link
-                  href="/restaurants"
+                  href="/restaurant-partner"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
                   onClick={() => setIsDropdownOpen(false)}
                 >
-                  as Restaurant
+                  as Restaurant Partner
                 </Link>
                 <Link
-                  href="/couriers"
+                  href="/courier-partner"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
                   onClick={() => setIsDropdownOpen(false)}
                 >
-                  as Courier
+                  as Courier Partner
                 </Link>
               </div>
             )}
@@ -117,18 +117,18 @@ export function SiteHeader() {
               <div className="text-lg font-medium text-gray-900">Join Delika</div>
               <div className="pl-4 space-y-2">
                 <Link
-                  href="/restaurant"
+                  href="/restaurant-partner"
                   className="block text-base text-gray-600 hover:text-orange-500 transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  as Restaurant
+                  as Restaurant Partner
                 </Link>
                 <Link
-                  href="/couriers"
+                  href="/courier-partner"
                   className="block text-base text-gray-600 hover:text-orange-500 transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  as Courier
+                  as Courier Partner
                 </Link>
               </div>
             </div>
