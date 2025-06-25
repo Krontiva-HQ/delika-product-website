@@ -296,7 +296,7 @@ export function RestaurantSignupForm() {
                   name="branches.name"
                   render={() => (
                     <FormItem>
-                      <FormLabel>Branch Name</FormLabel>
+                      <FormLabel>Branch Location</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="Enter branch name"
