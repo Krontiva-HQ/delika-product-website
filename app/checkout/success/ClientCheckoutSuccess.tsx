@@ -339,7 +339,7 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
               </Button>
             </div>
             <Button 
-              onClick={() => router.push('/shop')} 
+              onClick={() => router.push('/restaurants')} 
               className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 h-12 text-lg font-semibold shadow-lg"
             >
               Continue Shopping
