@@ -8,7 +8,8 @@ import { usePathname } from "next/navigation"
 
 export function SiteHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isJoinDropdownOpen, setIsJoinDropdownOpen] = useState(false)
+  const [isSignInDropdownOpen, setIsSignInDropdownOpen] = useState(false)
   const pathname = usePathname()
 
   const menuItems = [
@@ -51,31 +52,75 @@ export function SiteHeader() {
           {/* Join Delika Dropdown */}
           <div className="relative">
             <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              onClick={() => setIsJoinDropdownOpen(!isJoinDropdownOpen)}
               className="flex items-center gap-1 text-sm font-medium text-black hover:text-orange-500 transition-colors"
             >
               Join Delika
               <ChevronDown className={cn(
                 "h-4 w-4 transition-transform duration-200",
-                isDropdownOpen ? "rotate-180" : ""
+                isJoinDropdownOpen ? "rotate-180" : ""
               )} />
             </button>
             
-            {isDropdownOpen && (
+            {isJoinDropdownOpen && (
               <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2">
                 <Link
                   href="/restaurant-partner"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
-                  onClick={() => setIsDropdownOpen(false)}
+                  onClick={() => setIsJoinDropdownOpen(false)}
                 >
                   as Restaurant Partner
                 </Link>
                 <Link
                   href="/courier-partner"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
-                  onClick={() => setIsDropdownOpen(false)}
+                  onClick={() => setIsJoinDropdownOpen(false)}
                 >
                   as Courier Partner
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Sign In Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsSignInDropdownOpen(!isSignInDropdownOpen)}
+              className="flex items-center gap-1 text-sm font-medium text-black hover:text-orange-500 transition-colors"
+            >
+              Sign In
+              <ChevronDown className={cn(
+                "h-4 w-4 transition-transform duration-200",
+                isSignInDropdownOpen ? "rotate-180" : ""
+              )} />
+            </button>
+            
+            {isSignInDropdownOpen && (
+              <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2">
+                <Link
+                  href="/restaurants"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+                  onClick={() => setIsSignInDropdownOpen(false)}
+                >
+                  as User
+                </Link>
+                <Link
+                  href="https://manage.delika.app"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+                  onClick={() => setIsSignInDropdownOpen(false)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  as Restaurant
+                </Link>
+                <Link
+                  href="https://web.delika.app"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+                  onClick={() => setIsSignInDropdownOpen(false)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  as Courier
                 </Link>
               </div>
             )}
@@ -113,6 +158,8 @@ export function SiteHeader() {
                 {item.label}
               </Link>
             ))}
+            
+            {/* Mobile Join Delika Section */}
             <div className="space-y-2">
               <div className="text-lg font-medium text-gray-900">Join Delika</div>
               <div className="pl-4 space-y-2">
@@ -129,6 +176,38 @@ export function SiteHeader() {
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   as Courier Partner
+                </Link>
+              </div>
+            </div>
+
+            {/* Mobile Sign In Section */}
+            <div className="space-y-2">
+              <div className="text-lg font-medium text-gray-900">Sign In</div>
+              <div className="pl-4 space-y-2">
+                <Link
+                  href="/restaurants"
+                  className="block text-base text-gray-600 hover:text-orange-500 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  as User
+                </Link>
+                <Link
+                  href="https://manage.delika.app"
+                  className="block text-base text-gray-600 hover:text-orange-500 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  as Restaurant
+                </Link>
+                <Link
+                  href="https://web.delika.app"
+                  className="block text-base text-gray-600 hover:text-orange-500 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  as Courier
                 </Link>
               </div>
             </div>
