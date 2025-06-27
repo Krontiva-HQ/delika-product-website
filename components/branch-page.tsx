@@ -682,12 +682,12 @@ export function BranchPage({ params }: BranchPageProps) {
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                {currentCategory?.foods?.map((item) => {
+                {currentCategory?.foods?.map((item, index) => {
                   const itemInCart = cart.find(cartItem => cartItem.id === item.name);
                   const quantity = itemInCart?.quantity || 0;
                   
                   return (
-                    <div key={item.name} className={`flex flex-col gap-4 p-4 border rounded-lg ${!item.available || !isOpen ? 'opacity-50' : ''}`}>
+                    <div key={`${item.name}-${index}`} className={`flex flex-col gap-4 p-4 border rounded-lg ${!item.available || !isOpen ? 'opacity-50' : ''}`}>
                       <div className="relative w-full h-40 flex-shrink-0">
                         {item.foodImage && (
                           <Image
