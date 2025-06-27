@@ -91,6 +91,36 @@ export function OrderStatusWidget() {
   const [orderStatus, setOrderStatus] = useState<OrderStatus | null>(null);
   const { toast } = useToast();
 
+  // Helper function to format status text for better readability
+  const formatStatusText = (status: string) => {
+    if (!status) return 'Pending';
+    
+    // Handle specific status mappings
+    const statusMappings: { [key: string]: string } = {
+      'ReadyForPickup': 'Ready for Pickup',
+      'OnTheWay': 'On the Way',
+      'InProgress': 'In Progress',
+      'OrderReceived': 'Order Received',
+      'CourierAssigned': 'Courier Assigned',
+      'OutForDelivery': 'Out for Delivery',
+      'PaymentPending': 'Payment Pending',
+      'PaymentFailed': 'Payment Failed',
+      'OrderCancelled': 'Order Cancelled',
+      'OrderCompleted': 'Order Completed'
+    };
+
+    // Check if we have a specific mapping
+    if (statusMappings[status]) {
+      return statusMappings[status];
+    }
+
+    // For other camelCase strings, split and capitalize
+    return status
+      .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+      .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+      .trim(); // Remove any leading/trailing spaces
+  };
+
   const checkLoginStatus = () => {
     const token = localStorage.getItem('authToken');
     setIsLoggedIn(!!token);
@@ -345,11 +375,11 @@ export function OrderStatusWidget() {
             </span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="h-[96vh] rounded-t-xl">
+        <SheetContent side="bottom" className="h-auto max-h-[60vh] rounded-t-xl">
           <SheetHeader>
             <SheetTitle>Order Status</SheetTitle>
           </SheetHeader>
-          <div className="space-y-4 p-4 overflow-y-auto max-h-[calc(96vh-80px)]">
+          <div className="space-y-3 p-4 pb-6 overflow-y-auto max-h-[calc(60vh-80px)]">
             {orderStatus ? (
               <>
                 <div className="flex justify-between items-start">
@@ -357,100 +387,111 @@ export function OrderStatusWidget() {
                   <div className="text-right">
                     <p className="text-sm font-medium">Total: ₵{orderStatus.totalPrice}</p>
                     <p className={`text-sm ${orderStatus.paymentStatus.toLowerCase() === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
-                      {orderStatus.paymentStatus}
+                      {formatStatusText(orderStatus.paymentStatus)}
                     </p>
                   </div>
                 </div>
 
                 {/* Status Section */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   {/* Order Status */}
-                  <div className="bg-gray-50 p-3 rounded-lg space-y-1">
-                    <p className="text-sm text-gray-500">Order Status</p>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${getStatusColor(orderStatus.orderStatus)}`} />
-                      <p className="font-medium">{orderStatus.orderStatus || 'Pending'}</p>
+                  <div className="bg-gray-50 p-2 rounded-lg">
+                    <p className="text-xs text-gray-500">Order Status</p>
+                    <div className="flex items-center gap-1">
+                      <div className={`w-2 h-2 rounded-full ${getStatusColor(orderStatus.orderStatus)}`} />
+                      <p className="text-sm font-medium">{formatStatusText(orderStatus.orderStatus)}</p>
                     </div>
-                    {orderStatus.orderReceivedTime && (
-                      <p className="text-xs text-gray-500">
-                        Received: {new Date(orderStatus.orderReceivedTime).toLocaleTimeString()}
-                      </p>
-                    )}
                   </div>
 
                   {/* Kitchen Status */}
-                  <div className="bg-gray-50 p-3 rounded-lg space-y-1">
-                    <p className="text-sm text-gray-500">Kitchen Status</p>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${getStatusColor(orderStatus.kitchenStatus, true)}`} />
-                      <p className="font-medium">{orderStatus.kitchenStatus || 'Pending'}</p>
+                  <div className="bg-gray-50 p-2 rounded-lg">
+                    <p className="text-xs text-gray-500">Kitchen Status</p>
+                    <div className="flex items-center gap-1">
+                      <div className={`w-2 h-2 rounded-full ${getStatusColor(orderStatus.kitchenStatus, true)}`} />
+                      <p className="text-sm font-medium">{formatStatusText(orderStatus.kitchenStatus)}</p>
                     </div>
-                    {orderStatus.orderPickedUpTime && (
-                      <p className="text-xs text-gray-500">
-                        Picked up: {new Date(orderStatus.orderPickedUpTime).toLocaleTimeString()}
-                      </p>
-                    )}
                   </div>
                 </div>
 
-                {/* Delivery Info */}
-                <div className="mt-2 p-3 bg-gray-50 rounded-lg space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Pickup</p>
-                    <p className="font-medium">{orderStatus.pickupName}</p>
+                {/* 4 Column Section */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                  {/* Pickup Info */}
+                  <div className="bg-gray-50 p-2 rounded-lg">
+                    <p className="text-xs text-gray-500 mb-1">Pickup</p>
+                    <p className="text-sm font-medium truncate" title={orderStatus.pickupName}>{orderStatus.pickupName}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Delivery To</p>
-                    <p className="font-medium">{orderStatus.dropoffName}</p>
-                    {orderStatus.dropOffCity && (
-                      <p className="text-sm text-gray-600">{orderStatus.dropOffCity}</p>
-                    )}
-                  </div>
-                </div>
 
-                {/* Courier Info */}
-                {orderStatus.courierName && (
-                  <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-500 mb-1">Courier</p>
-                    <p className="font-medium">{orderStatus.courierName}</p>
-                    {orderStatus.courierPhoneNumber && (
-                      <p className="text-sm text-gray-600">{orderStatus.courierPhoneNumber}</p>
-                    )}
-                  </div>
-                )}
-
-                {/* Order Items */}
-                <div className="mt-3">
-                  <p className="text-sm text-gray-500 mb-2">Order Items</p>
-                  <div className="space-y-1 bg-gray-50 p-3 rounded-lg">
-                    {orderStatus.products.map((product, index) => (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span>{product.quantity}x {product.name}</span>
-                        <span>₵{product.price}</span>
+                  {/* Courier Info */}
+                  <div className="bg-gray-50 p-2 rounded-lg">
+                    <p className="text-xs text-gray-500 mb-1">Courier</p>
+                    {orderStatus.courierName ? (
+                      <div>
+                        <p className="text-sm font-medium truncate" title={orderStatus.courierName}>{orderStatus.courierName}</p>
+                        {orderStatus.courierPhoneNumber && (
+                          <p className="text-xs text-gray-600 truncate">{orderStatus.courierPhoneNumber}</p>
+                        )}
                       </div>
-                    ))}
-                    <div className="mt-2 pt-2 border-t border-gray-200">
-                      <div className="flex justify-between text-sm">
-                        <span>Order Price:</span>
+                    ) : (
+                      <p className="text-sm text-gray-400">Not assigned</p>
+                    )}
+                  </div>
+
+                  {/* Order Items */}
+                  <div className="bg-gray-50 p-2 rounded-lg">
+                    <p className="text-xs text-gray-500 mb-1">Items ({orderStatus.products.length})</p>
+                    <div className="space-y-1 max-h-16 overflow-y-auto">
+                      {orderStatus.products.slice(0, 3).map((product, index) => (
+                        <div key={index} className="text-xs">
+                          <span>{product.quantity}x {product.name.substring(0, 15)}{product.name.length > 15 ? '...' : ''}</span>
+                        </div>
+                      ))}
+                      {orderStatus.products.length > 3 && (
+                        <p className="text-xs text-gray-500">+{orderStatus.products.length - 3} more</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div className="bg-gray-50 p-2 rounded-lg">
+                    <p className="text-xs text-gray-500 mb-1">Notes</p>
+                    {orderStatus.orderComment ? (
+                      <p className="text-xs text-gray-700 line-clamp-3" title={orderStatus.orderComment}>
+                        {orderStatus.orderComment.substring(0, 50)}{orderStatus.orderComment.length > 50 ? '...' : ''}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-400">No notes</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Delivery & Price Summary */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-gray-50 p-2 rounded-lg">
+                    <p className="text-xs text-gray-500 mb-1">Delivery To</p>
+                    <p className="text-sm font-medium truncate" title={orderStatus.dropoffName}>{orderStatus.dropoffName}</p>
+                    {orderStatus.dropOffCity && (
+                      <p className="text-xs text-gray-600">{orderStatus.dropOffCity}</p>
+                    )}
+                  </div>
+                  
+                  <div className="bg-gray-50 p-2 rounded-lg">
+                    <p className="text-xs text-gray-500 mb-1">Pricing</p>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span>Order:</span>
                         <span>₵{orderStatus.orderPrice}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Delivery Fee:</span>
+                      <div className="flex justify-between text-xs">
+                        <span>Delivery:</span>
                         <span>₵{orderStatus.deliveryPrice}</span>
+                      </div>
+                      <div className="flex justify-between text-sm font-medium border-t pt-1">
+                        <span>Total:</span>
+                        <span>₵{orderStatus.totalPrice}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Order Notes */}
-                {orderStatus.orderComment && (
-                  <div className="mt-3">
-                    <p className="text-sm text-gray-500 mb-2">Notes</p>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <p className="text-sm">{orderStatus.orderComment}</p>
-                    </div>
-                  </div>
-                )}
               </>
             ) : (
               <div className="text-center py-4">
