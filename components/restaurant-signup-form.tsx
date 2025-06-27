@@ -158,7 +158,16 @@ export function RestaurantSignupForm() {
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className={`space-y-6 relative ${isSubmitting ? 'pointer-events-none' : ''}`}>
+            {isSubmitting && (
+              <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 rounded-lg flex items-center justify-center">
+                <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+                  <p className="text-sm font-medium text-gray-700">Processing your application...</p>
+                  <p className="text-xs text-gray-500">Please wait while we submit your details</p>
+                </div>
+              </div>
+            )}
             <FormField
               control={form.control}
               name="business_name"
@@ -332,12 +341,14 @@ export function RestaurantSignupForm() {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+              className={`w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white transition-all duration-200 ${
+                isSubmitting ? 'opacity-80 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'
+              }`}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
+                  Submitting your application...
                 </>
               ) : (
                 "Sign up as Restaurant Partner"
