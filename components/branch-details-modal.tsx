@@ -19,7 +19,7 @@ interface BranchDetailsModalProps {
       day: string
       openingTime: string
       closingTime: string
-      isActive: boolean
+      isActive?: boolean
     }>
     _restaurantTable?: Array<{
       restaurantName?: string
@@ -66,11 +66,11 @@ export function BranchDetailsModal({ isOpen, onClose, branch }: BranchDetailsMod
                 <div className="space-y-1">
                   {branch.activeHours.map((hours) => (
                     <div key={hours.day} className="flex justify-between text-sm">
-                      <span className={`${hours.isActive ? 'text-gray-900' : 'text-gray-400'}`}>
+                      <span className={`${hours.isActive !== false ? 'text-gray-900' : 'text-gray-400'}`}>
                         {hours.day}:
                       </span>
-                      <span className={`${hours.isActive ? 'text-gray-600' : 'text-gray-400'}`}>
-                        {hours.isActive ? `${hours.openingTime} - ${hours.closingTime}` : 'Closed'}
+                      <span className={`${hours.isActive !== false ? 'text-gray-600' : 'text-gray-400'}`}>
+                        {hours.isActive !== false ? `${hours.openingTime} - ${hours.closingTime}` : 'Closed'}
                       </span>
                     </div>
                   ))}
