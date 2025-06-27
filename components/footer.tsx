@@ -14,11 +14,11 @@ export function Footer() {
               <Image
                 src="/Delika-Logo.png"
                 alt="Delika Logo"
-                width={40}
-                height={40}
+                width={100}
+                height={100}
                 className="rounded-lg"
               />
-              <span className="text-xl font-bold">Delika</span>
+              {/* <span className="text-xl font-bold">Delika</span> */}
             </div>
             <p className="text-gray-400 mb-6 max-w-md">
               Empowering restaurants with innovative technology solutions for seamless operations, efficient delivery, and business growth.
@@ -130,16 +130,16 @@ export function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Contact</h3>
             <ul className="space-y-3">
-              <li className="flex items-center space-x-3 text-gray-400">
+              {/* <li className="flex items-center space-x-3 text-gray-400">
                 <Mail size={18} />
                 <a href="mailto:info@delika.app" className="hover:text-white transition-colors">
                   info@delika.app
                 </a>
-              </li>
+              </li> */}
               <li className="flex items-center space-x-3 text-gray-400">
                 <Phone size={18} />
                 <a href="tel:+233000000000" className="hover:text-white transition-colors">
-                  +233 00 000 0000
+                  +233 30 395 5169
                 </a>
               </li>
             </ul>

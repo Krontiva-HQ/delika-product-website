@@ -230,11 +230,11 @@ export function StoreHeader() {
     const path = pathname || ''
     
     if (path.startsWith('/restaurants/')) {
-      const branchUrl = path.split('/').pop() || ''
+      const branchSlug = path.split('/').pop() || ''
       
-      if (branchUrl) {
-        // Find the branch by branchUrl
-        const branch = branches.find(b => b.branchUrl === branchUrl);
+      if (branchSlug) {
+        // Find the branch by slug
+        const branch = branches.find(b => b.slug === branchSlug);
         
         if (branch) {
           setSelectedBranchId(branch.id)
@@ -685,7 +685,7 @@ export function StoreHeader() {
               <ChevronLeft className="w-4 h-4" />
               Back to Restaurants
             </Link>
-            {currentBranch && <BranchPage params={{ id: currentBranch.branchUrl }} />}
+            {currentBranch && <BranchPage params={{ id: currentBranch.id }} />}
           </div>
         )
       case 'orders':
@@ -875,7 +875,7 @@ export function StoreHeader() {
                   {searchResults.map((branch) => (
                     <Link
                       key={branch.id}
-                      href={`/restaurants/${branch.branchUrl}`}
+                      href={`/restaurants/${branch.slug}`}
                       onClick={(e) => {
                         e.preventDefault()
                         handleBranchSelect(branch)

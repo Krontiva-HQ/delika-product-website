@@ -2,29 +2,9 @@
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { useEffect, useState } from "react"
+
 
 export function HeroSection() {
-  const [text, setText] = useState("")
-  const fullText = "Delika"
-
-  useEffect(() => {
-    setText("")
-    const timeout = 100 // Faster typing speed
-    let currentIndex = 0
-    
-    const typeText = () => {
-      if (currentIndex <= fullText.length) {
-        setText(fullText.slice(0, currentIndex))
-        currentIndex++
-        setTimeout(typeText, timeout)
-      }
-    }
-
-    setTimeout(typeText, 500) // Slight delay before starting
-
-    return () => setText("")
-  }, [])
 
   return (
     <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden">
@@ -62,25 +42,10 @@ export function HeroSection() {
             />
           </motion.div>
         </div>
-        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl px-4 relative">
-          Choose{" "}
-          <span className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 bg-clip-text text-transparent inline-flex items-center">
-            {text}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [1, 0] }}
-              transition={{
-                duration: 0.7,
-                repeat: Infinity,
-                repeatType: "reverse",
-                ease: "easeInOut"
-              }}
-              className="inline-block ml-1 w-[4px] md:w-[6px] h-[1em] bg-orange-500 rounded-full"
-            />
-          </span>{" "}
-          for
-          <br className="hidden sm:block" />
-          your restaurant
+        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl px-4 relative text-black">
+          <span className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 bg-clip-text text-transparent">
+            Delika,
+          </span> the easiest <br /> way to order
         </h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -88,7 +53,7 @@ export function HeroSection() {
           transition={{ duration: 0.8, delay: 1 }}
           className="max-w-[800px] text-base sm:text-lg md:text-xl text-muted-foreground px-4"
         >
-          Streamlining restaurants management with our comprehensive platform.
+          Driven by you, delivered for all.
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -100,13 +65,13 @@ export function HeroSection() {
             href="/restaurants" 
             className="rounded-full px-6 md:px-8 py-3 w-full sm:w-auto bg-black text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 focus:ring-2 focus:ring-black focus:ring-offset-2 focus:outline-none hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 relative overflow-hidden group"
           >
-            <span className="relative z-10 group-hover:text-white">Sign up as restaurant</span>
+            <span className="relative z-10 group-hover:text-white">Browse Shops</span>
           </Link>
           <Link 
-            href="/couriers" 
+            href="/restaurant-partner" 
             className="rounded-full px-6 md:px-8 py-3 w-full sm:w-auto border-2 border-black text-black font-medium transition-all duration-300 hover:scale-105 focus:ring-2 focus:ring-black focus:ring-offset-2 focus:outline-none hover:border-transparent hover:bg-gradient-to-r hover:from-orange-500 hover:to-pink-500 hover:text-white relative overflow-hidden group"
           >
-            <span className="relative z-10 group-hover:text-white">Sign up as courier</span>
+            <span className="relative z-10 group-hover:text-white">Sign up as vendor</span>
           </Link>
         </motion.div>
       </div>

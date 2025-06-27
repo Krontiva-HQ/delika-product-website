@@ -82,11 +82,11 @@ export function MainCTA() {
           {/* Left content */}
           <div className="space-y-6 relative z-10">
             <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight">Get started with Delika today</h2>
-            <p className="text-lg md:text-xl text-white/80">
+            <p className="text-sm md:text-base text-white/80">
               Your favorite meals, one tap away.
             </p>
             <button
-              className="bg-white text-orange-500 px-6 py-3 rounded text-lg font-semibold hover:bg-orange-100 transition-colors disabled:opacity-60"
+              className="bg-white text-orange-500 px-6 py-3 rounded text-sm font-semibold hover:bg-orange-100 transition-colors disabled:opacity-60"
               onClick={() => setModalOpen(true)}
               disabled={submitted}
             >
