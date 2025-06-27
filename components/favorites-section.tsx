@@ -239,7 +239,8 @@ export function FavoritesSection() {
       setTimeout(() => document.body.removeChild(feedbackElem), 2000);
       
     } catch (error) {
-
+      console.error('Error removing favorite:', error);
+      
       // Show error feedback
       const feedbackElem = document.createElement('div');
       feedbackElem.textContent = 'Failed to remove from favorites';

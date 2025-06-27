@@ -495,6 +495,7 @@ export function StoreHeader() {
         localStorage.setItem('filteredFavoritesCount', '0');
       }
     } catch (error) {
+      console.error('Error fetching user favorites:', error);
 
       // Clear favorites on error to prevent stale data
       setLikedBranches(new Set<string>());
@@ -536,6 +537,7 @@ export function StoreHeader() {
       // Small delay to ensure state updates are processed
       await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
+      console.error('Error during logout:', error);
     }
   }
 
@@ -609,6 +611,7 @@ export function StoreHeader() {
       await fetchUserFavorites(user.id);
       
     } catch (error) {
+      console.error('Error toggling like:', error);
       // Revert UI if error occurred
       const revertedLikedBranches = new Set(likedBranches);
       setLikedBranches(revertedLikedBranches);
@@ -646,6 +649,7 @@ export function StoreHeader() {
       localStorage.setItem('orders', JSON.stringify(data));
       setCurrentView('orders');
     } catch (error) {
+      console.error('Error fetching order history:', error);
     } finally {
       setIsLoading(false);
     }

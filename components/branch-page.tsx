@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Star, MapPin, Clock, Plus, Minus, Share2 } from "lucide-react"
+import { Star, MapPin, Clock, Plus, Minus, Share2, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BranchDetailsModal } from "@/components/branch-details-modal"
 import { EmptyState } from "@/components/empty-state"
@@ -11,6 +11,7 @@ import { CartModal } from "@/components/cart-modal"
 import { LoginModal } from "@/components/login-modal"
 import { SignupModal } from "@/components/signup-modal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { getCustomerDetails } from "@/lib/api"
 
 interface BranchDetails {
   _menutable?: Array<{
@@ -74,6 +75,10 @@ interface UserData {
       branchName: string;
     }>;
   }>;
+}
+
+interface FavoriteRestaurant {
+  branchName: string;
 }
 
 interface BranchPageProps {
@@ -378,6 +383,7 @@ export function BranchPage({ params }: BranchPageProps) {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
   const [user, setUser] = useState<UserData | null>(null)
   const [isOpen, setIsOpen] = useState(false)
+  const [isLiked, setIsLiked] = useState(false)
   const [selectedItem, setSelectedItem] = useState<{
     name: string
     price: string
@@ -401,8 +407,20 @@ export function BranchPage({ params }: BranchPageProps) {
   useEffect(() => {
     const checkAuth = () => {
       const userData = localStorage.getItem('userData')
-      if (userData) {
-        setUser(JSON.parse(userData))
+      const authToken = localStorage.getItem('authToken')
+      console.log('checkAuth called:', { hasUserData: !!userData, hasAuthToken: !!authToken })
+      
+      if (userData && authToken) {
+        const user = JSON.parse(userData)
+        console.log('Setting user from localStorage:', user)
+        setUser(user)
+        // Check if this branch is liked when user data is loaded
+        if (user.id && branch) {
+          checkIfBranchIsLiked(user.id)
+        }
+      } else {
+        console.log('No user data or auth token found')
+        setUser(null)
       }
     }
 
@@ -417,7 +435,31 @@ export function BranchPage({ params }: BranchPageProps) {
       window.removeEventListener('userDataUpdated', checkAuth)
       window.removeEventListener('storage', checkAuth)
     }
-  }, [])
+  }, [branch])
+
+  // Check if current branch is in user's favorites
+  const checkIfBranchIsLiked = async (userId: string) => {
+    if (!userId || !branch) return
+
+    try {
+      const customerData = await getCustomerDetails(userId)
+      if (customerData?.favoriteRestaurants) {
+        const isCurrentBranchLiked = customerData.favoriteRestaurants.some(
+          (fav: FavoriteRestaurant) => fav.branchName === params.id
+        )
+        setIsLiked(isCurrentBranchLiked)
+      }
+    } catch (error) {
+      console.error('Error checking if branch is liked:', error)
+    }
+  }
+
+  // Check favorites when branch data is loaded
+  useEffect(() => {
+    if (user?.id && branch) {
+      checkIfBranchIsLiked(user.id)
+    }
+  }, [user, branch])
 
   // Load cart from localStorage on initial render
   useEffect(() => {
@@ -525,6 +567,121 @@ export function BranchPage({ params }: BranchPageProps) {
 
   const deleteFromCart = (itemId: string) => {
     setCart(prevCart => prevCart.filter(item => item.id !== itemId))
+  }
+
+  // Handle like/unlike toggle
+  const handleLikeToggle = async () => {
+    console.log('handleLikeToggle called with user:', user)
+    
+    if (!user) {
+      console.log('No user found, opening login modal')
+      setIsLoginModalOpen(true)
+      return
+    }
+
+    if (!branch) {
+      console.log('No branch data available')
+      return
+    }
+
+    // Check if user has auth token
+    const authToken = localStorage.getItem('authToken')
+    if (!authToken) {
+      console.error('No auth token found, user needs to login again')
+      setIsLoginModalOpen(true)
+      return
+    }
+
+    const branchId = params.id
+    const currentlyLiked = isLiked
+
+    try {
+      // Optimistically update UI
+      setIsLiked(!currentlyLiked)
+
+      // Call the favorites API using the environment variable
+      const favoritesApiUrl = process.env.NEXT_PUBLIC_CUSTOMER_FAVORITES_API || 'https://api-server.krontiva.africa/api:uEBBwbSs/customer/favorites/add/remove/restaurant';
+      
+      console.log('Favorites API Debug Info:', {
+        url: favoritesApiUrl,
+        envVar: process.env.NEXT_PUBLIC_CUSTOMER_FAVORITES_API,
+        userId: user.id,
+        branchId,
+        currentlyLiked,
+        newLikedState: !currentlyLiked,
+        hasAuthToken: !!authToken,
+        authTokenLength: authToken?.length,
+        requestPayload: {
+          userId: user.id,
+          branchName: branchId,
+          liked: !currentlyLiked,
+          field_value: user.id
+        }
+      })
+      
+      const response = await fetch(favoritesApiUrl, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          branchName: branchId,
+          liked: !currentlyLiked,
+          field_value: user.id
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText,
+          url: favoritesApiUrl,
+          requestBody: {
+            userId: user.id,
+            branchName: branchId,
+            liked: !currentlyLiked,
+            field_value: user.id
+          }
+        })
+        throw new Error(`Failed to update favorites: ${response.status} - ${errorText}`)
+      }
+
+      // Show feedback
+      const feedbackElem = document.createElement('div')
+      feedbackElem.textContent = !currentlyLiked ? 'Added to favorites!' : 'Removed from favorites'
+      feedbackElem.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md shadow-md z-50'
+      document.body.appendChild(feedbackElem)
+      setTimeout(() => {
+        if (document.body.contains(feedbackElem)) {
+          document.body.removeChild(feedbackElem)
+        }
+      }, 2000)
+
+      // Update localStorage favorites count for other components
+      const currentCount = parseInt(localStorage.getItem('filteredFavoritesCount') || '0', 10)
+      const newCount = !currentlyLiked ? currentCount + 1 : Math.max(0, currentCount - 1)
+      localStorage.setItem('filteredFavoritesCount', newCount.toString())
+
+    } catch (error) {
+      console.error('Error updating favorites:', error)
+      // Revert UI if error occurred
+      setIsLiked(currentlyLiked)
+      
+      // Show error feedback
+      const feedbackElem = document.createElement('div')
+      feedbackElem.textContent = 'Failed to update favorites'
+      feedbackElem.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-md shadow-md z-50'
+      document.body.appendChild(feedbackElem)
+      setTimeout(() => {
+        if (document.body.contains(feedbackElem)) {
+          document.body.removeChild(feedbackElem)
+        }
+      }, 2000)
+    }
   }
 
   if (error || !branch) {
@@ -636,6 +793,19 @@ export function BranchPage({ params }: BranchPageProps) {
                   >
                     View Details
                   </button>
+                  {user && (
+                    <button 
+                      onClick={handleLikeToggle}
+                      className={`text-sm flex items-center gap-1 px-3 py-1 rounded-full border transition-all duration-200 ${
+                        isLiked 
+                          ? 'text-orange-500 border-orange-200 bg-orange-50 hover:bg-orange-100' 
+                          : 'text-gray-600 hover:text-orange-500 border-gray-200 hover:border-orange-300'
+                      }`}
+                    >
+                      <Heart className={`w-3.5 h-3.5 transition-all duration-200 ${isLiked ? 'fill-current' : ''}`} />
+                      {isLiked ? 'Liked' : 'Like'}
+                    </button>
+                  )}
                   <button 
                     onClick={() => {
                       // Create a slugified name combining restaurant and branch names

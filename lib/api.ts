@@ -277,7 +277,7 @@ export async function getCustomerDetails<T = any>(userId?: string): Promise<T> {
     const data = await response.json();
     return data as T;
   } catch (error) {
-
+    console.error('Error fetching customer details:', error);
     throw error;
   }
 }
@@ -309,7 +309,7 @@ export async function updateFavorites<T = any>(data: {
     
     return responseData as T;
   } catch (error) {
-
+    console.error('Error updating favorites:', error);
     throw error;
   }
 }
@@ -391,7 +391,7 @@ export const submitOrder = async (orderData: any) => {
 
     return responseData;
   } catch (error) {
-
+    console.error('Error submitting order:', error);
     throw error;
   }
 };
