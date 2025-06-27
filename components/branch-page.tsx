@@ -369,7 +369,6 @@ function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsMod
 
 export function BranchPage({ params }: BranchPageProps) {
   const [branch, setBranch] = useState<BranchDetails | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -443,7 +442,6 @@ export function BranchPage({ params }: BranchPageProps) {
   useEffect(() => {
     async function fetchBranch() {
       try {
-        setIsLoading(true)
         setError(null)
         
         const detailsResponse = await fetch(
@@ -470,8 +468,6 @@ export function BranchPage({ params }: BranchPageProps) {
         }
       } catch (error) {
         setError("Failed to load branch details")
-      } finally {
-        setIsLoading(false)
       }
     }
 
@@ -529,10 +525,6 @@ export function BranchPage({ params }: BranchPageProps) {
 
   const deleteFromCart = (itemId: string) => {
     setCart(prevCart => prevCart.filter(item => item.id !== itemId))
-  }
-
-  if (isLoading) {
-    return <div>Loading...</div>
   }
 
   if (error || !branch) {
