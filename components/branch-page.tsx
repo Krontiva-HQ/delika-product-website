@@ -51,6 +51,12 @@ interface BranchDetails {
   branchLongitude: string
   openTime?: string
   closeTime?: string
+  activeHours?: Array<{
+    day: string
+    openingTime: string
+    closingTime: string
+    isActive?: boolean
+  }>
 }
 
 interface UserData {
@@ -135,20 +141,74 @@ function parseTimeToMinutes(timeStr?: string): number | null {
   return hour * 60 + minute;
 }
 
-const isRestaurantOpen = (openTime?: string, closeTime?: string): boolean => {
-  if (!openTime || !closeTime) return false;
+const isRestaurantOpen = (activeHours?: Array<{day: string, openingTime: string, closingTime: string, isActive?: boolean}>): boolean => {
+  if (!activeHours || activeHours.length === 0) {
+    console.log('No activeHours data available');
+    return false;
+  }
 
-  // Get current GMT time in minutes
+  console.log('ActiveHours data:', activeHours);
+
   const now = new Date();
-  const currentHour = now.getUTCHours();
-  const currentMinute = now.getUTCMinutes();
+  const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const currentDayName = dayNames[currentDay];
+
+  console.log('Current day:', currentDayName, 'Day index:', currentDay);
+
+  // Find today's hours - try multiple matching strategies
+  let todayHours = activeHours.find(hour => 
+    hour.day.toLowerCase() === currentDayName.toLowerCase()
+  );
+
+  // If not found, try matching just the first 3 characters (Mon, Tue, etc.)
+  if (!todayHours) {
+    todayHours = activeHours.find(hour => 
+      hour.day.toLowerCase().substring(0, 3) === currentDayName.toLowerCase().substring(0, 3)
+    );
+  }
+
+  console.log('Found today hours:', todayHours);
+
+  if (!todayHours) {
+    console.log('No hours found for today');
+    return false;
+  }
+
+  // Check if isActive field exists and is false
+  if (todayHours.hasOwnProperty('isActive') && !todayHours.isActive) {
+    console.log('Restaurant is not active today (isActive: false)');
+    return false;
+  }
+
+  // Get current time in minutes
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
   const currentTimeInMinutes = currentHour * 60 + currentMinute;
 
-  const openTimeInMinutes = parseTimeToMinutes(openTime);
-  const closeTimeInMinutes = parseTimeToMinutes(closeTime);
-  if (openTimeInMinutes === null || closeTimeInMinutes === null) return false;
+  console.log('Current time:', `${currentHour}:${currentMinute}`, 'Minutes:', currentTimeInMinutes);
 
-  return currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes <= closeTimeInMinutes;
+  const openTimeInMinutes = parseTimeToMinutes(todayHours.openingTime);
+  const closeTimeInMinutes = parseTimeToMinutes(todayHours.closingTime);
+  
+  console.log('Opening time:', todayHours.openingTime, 'Minutes:', openTimeInMinutes);
+  console.log('Closing time:', todayHours.closingTime, 'Minutes:', closeTimeInMinutes);
+  
+  if (openTimeInMinutes === null || closeTimeInMinutes === null) {
+    console.log('Failed to parse opening/closing times');
+    return false;
+  }
+
+  // Handle cases where closing time is next day (e.g., open until 2 AM)
+  if (closeTimeInMinutes < openTimeInMinutes) {
+    const isOpen = currentTimeInMinutes >= openTimeInMinutes || currentTimeInMinutes <= closeTimeInMinutes;
+    console.log('Cross-midnight hours - Is open:', isOpen);
+    return isOpen;
+  }
+
+  const isOpen = currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes <= closeTimeInMinutes;
+  console.log('Regular hours - Is open:', isOpen);
+  return isOpen;
 };
 
 function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsModalProps) {
@@ -421,7 +481,7 @@ export function BranchPage({ params }: BranchPageProps) {
   // Add this effect to check restaurant status
   useEffect(() => {
     if (branch) {
-      setIsOpen(isRestaurantOpen(branch.openTime, branch.closeTime));
+      setIsOpen(isRestaurantOpen(branch.activeHours));
     }
   }, [branch]);
 
@@ -544,9 +604,26 @@ export function BranchPage({ params }: BranchPageProps) {
                   <div className="flex items-center gap-1">
                     <Clock className="w-4 h-4 flex-shrink-0" />
                     <span>
-                      {branch.openTime && branch.closeTime 
-                        ? `Open ${branch.openTime} - ${branch.closeTime}`
-                        : 'Hours not available'}
+                      {(() => {
+                        if (!branch.activeHours || branch.activeHours.length === 0) {
+                          return 'Hours not available';
+                        }
+                        
+                        const now = new Date();
+                        const currentDay = now.getDay();
+                        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                        const currentDayName = dayNames[currentDay];
+                        
+                        const todayHours = branch.activeHours.find(hour => 
+                          hour.day.toLowerCase() === currentDayName.toLowerCase()
+                        );
+                        
+                        if (todayHours) {
+                          return `Today: ${todayHours.openingTime} - ${todayHours.closingTime}`;
+                        } else {
+                          return 'Closed today';
+                        }
+                      })()}
                     </span>
                   </div>
                   <div className={`flex items-center gap-1 ${isOpen ? 'text-green-600' : 'text-red-600'}`}>
@@ -775,6 +852,7 @@ export function BranchPage({ params }: BranchPageProps) {
             branchCity: branch.branchCity,
             openTime: branch.openTime,
             closeTime: branch.closeTime,
+            activeHours: branch.activeHours,
             branchLatitude: branch.branchLatitude,
             branchLongitude: branch.branchLongitude,
             _restaurantTable: branch.restaurant
