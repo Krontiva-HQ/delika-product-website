@@ -20,7 +20,7 @@ export default function RestaurantPage({ params }: PageProps) {
   const [showSignupModal, setShowSignupModal] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const branchId = searchParams?.get('id')
+  const branchId = searchParams?.get('id') || localStorage.getItem('selectedBranchId')
 
   useEffect(() => {
     // Check for user data in localStorage on component mount

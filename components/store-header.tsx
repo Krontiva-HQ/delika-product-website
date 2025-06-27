@@ -416,8 +416,8 @@ export function StoreHeader() {
       localStorage.setItem('branchSlug', branch.slug)
       localStorage.setItem('currentView', 'branch')
       
-      // Navigate using the slug for display but keep ID in state
-      await router.replace(`/restaurants/${branch.slug}?id=${actualBranchId}`)
+      // Navigate using only the slug (no ID in URL)
+      await router.replace(`/restaurants/${branch.slug}`)
       
       setIsLoading(false)
       setIsBranchPageLoaded(true)
