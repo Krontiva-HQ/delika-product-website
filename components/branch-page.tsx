@@ -569,7 +569,12 @@ export function BranchPage({ params }: BranchPageProps) {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-4 left-4 right-4">
-                  <h1 className="text-lg sm:text-xl font-bold text-white mb-2">{branch.branchName}</h1>
+                  <h1 className="text-lg sm:text-xl font-bold text-white mb-2">
+                    {branch.restaurant?.[0]?.restaurantName ? 
+                      `${branch.restaurant[0].restaurantName} - ${branch.branchName}` : 
+                      branch.branchName
+                    }
+                  </h1>
                   <div className="flex flex-wrap items-center gap-2 text-sm text-white">
                     <div className="flex items-center">
                       <Star className="w-4 h-4 fill-current text-yellow-400" />
