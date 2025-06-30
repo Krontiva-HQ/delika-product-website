@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
@@ -42,6 +43,8 @@ export function RestaurantSignupForm() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [emailError, setEmailError] = useState(false)
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
+  const [submittedEmail, setSubmittedEmail] = useState('')
   const [locationData, setLocationData] = useState<DeliveryLocationData | undefined>(undefined)
   const [branchData, setBranchData] = useState<{ 
     name: string, 
@@ -114,13 +117,11 @@ export function RestaurantSignupForm() {
         throw new Error(data.error || 'Failed to submit form')
       }
 
-      toast({
-        title: "Success!",
-        description: "Your application has been submitted successfully. We'll be in touch soon!",
-        variant: "default",
-      })
-      
+      setSubmittedEmail(values.email)
+      setIsSuccessModalOpen(true)
       form.reset()
+      setLocationData(undefined)
+      setBranchData({ name: '', phone_number: '' })
     } catch (error) {
       toast({
         title: "Error",
@@ -357,6 +358,23 @@ export function RestaurantSignupForm() {
           </form>
         </Form>
       </div>
+
+      <Dialog open={isSuccessModalOpen} onOpenChange={setIsSuccessModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-bold text-green-600">
+              Application Submitted Successfully!
+            </DialogTitle>
+            <DialogDescription className="text-center mt-4 space-y-3">
+              <p>Thank you for applying to become a Delika restaurant partner.</p>
+              <p>We will review your application and get back to you soon.</p>
+              <p className="font-semibold text-gray-700">
+                A confirmation email has been sent to <span className="text-orange-600">{submittedEmail}</span>
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

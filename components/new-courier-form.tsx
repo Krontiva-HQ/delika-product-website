@@ -685,11 +685,15 @@ export function NewCourierForm() {
       }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-bold text-black-600">
+            <DialogTitle className="text-center text-2xl font-bold text-green-600">
               Application Submitted Successfully!
             </DialogTitle>
-            <DialogDescription className="text-center mt-4">
-              Thank you for applying to become a Delika courier. We will review your application and get back to you soon.
+            <DialogDescription className="text-center mt-4 space-y-3">
+              <p>Thank you for applying to become a Delika courier.</p>
+              <p>We will review your application and get back to you soon.</p>
+              <p className="font-semibold text-gray-700">
+                A confirmation email has been sent to <span className="text-orange-600">{formData.email_address}</span>
+              </p>
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
