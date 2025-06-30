@@ -13,7 +13,7 @@ export function SiteHeader() {
   const pathname = usePathname()
 
   const menuItems = [
-    { href: "/restaurants", label: "Restaurants" },
+    { href: "/restaurants", label: "Vendors" },
     { href: "/about", label: "About" },
   ]
 
@@ -69,14 +69,14 @@ export function SiteHeader() {
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
                   onClick={() => setIsJoinDropdownOpen(false)}
                 >
-                  as Restaurant Partner
+                  as Vendor
                 </Link>
                 <Link
                   href="/courier-partner"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
                   onClick={() => setIsJoinDropdownOpen(false)}
                 >
-                  as Courier Partner
+                  as Courier
                 </Link>
               </div>
             )}
@@ -111,7 +111,7 @@ export function SiteHeader() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  as Restaurant
+                  as Vendor
                 </Link>
                 <Link
                   href="https://web.delika.app"
@@ -168,14 +168,14 @@ export function SiteHeader() {
                   className="block text-base text-gray-600 hover:text-orange-500 transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  as Restaurant Partner
+                  as Vendor
                 </Link>
                 <Link
                   href="/courier-partner"
                   className="block text-base text-gray-600 hover:text-orange-500 transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  as Courier Partner
+                  as Courier
                 </Link>
               </div>
             </div>
@@ -198,7 +198,7 @@ export function SiteHeader() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  as Restaurant
+                  as Vendor
                 </Link>
                 <Link
                   href="https://web.delika.app"
@@ -207,7 +207,7 @@ export function SiteHeader() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  as Courier
+                  as Courier Partner
                 </Link>
               </div>
             </div>
