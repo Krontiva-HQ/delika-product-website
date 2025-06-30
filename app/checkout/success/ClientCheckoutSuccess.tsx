@@ -146,9 +146,9 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 px-4">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center border border-green-100">
-          <div className="animate-spin h-12 w-12 border-4 border-green-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-orange-50 to-orange-50 px-4">
+        <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center border border-orange-100">
+          <div className="animate-spin h-12 w-12 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Verifying Payment</h2>
           <p className="text-gray-600">Please wait while we verify your payment...</p>
         </div>
@@ -177,13 +177,13 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-orange-50 to-orange-50 px-4 py-8">
       <div className="max-w-lg mx-auto">
         {/* Header with success animation */}
         <div className="text-center mb-8">
           <div className="relative inline-block">
-            <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-20"></div>
-            <div className="relative w-24 h-24 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+            <div className="absolute inset-0 bg-orange-400 rounded-full animate-ping opacity-20"></div>
+            <div className="relative w-24 h-24 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
               <Check className="h-12 w-12 text-white animate-bounce" />
             </div>
           </div>
@@ -192,9 +192,9 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
         </div>
 
         {/* Receipt Card */}
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-green-100">
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-orange-100">
           {/* Receipt Header */}
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white">
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <Image
@@ -248,7 +248,7 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
                 <h3 className="font-semibold text-gray-900 mb-3">Delivery Details</h3>
                 <div className="space-y-2">
                   <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">From</p>
                       <p className="text-gray-700 font-medium">{orderDetails.pickup[0]?.fromAddress}</p>
