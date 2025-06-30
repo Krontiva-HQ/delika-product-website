@@ -375,7 +375,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                     <ul className="text-blue-700 space-y-1 list-none">
                       <li className="flex items-start gap-2">
                         <span className="text-blue-500 font-bold">1.</span>
-                        <span>Dial *170# and select My Account</span>
+                        <span>Dial {provider === "MTN" ? "*170#" : "*110#"} and select My Account</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-blue-500 font-bold">2.</span>
