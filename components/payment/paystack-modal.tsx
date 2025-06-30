@@ -355,7 +355,6 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
           {step === 3 && (
             <div className="space-y-4">
               <div className="text-center">
-                <div className="text-4xl mb-2">📱</div>
                 <p className="text-gray-700 font-medium">
                   {otpMessage}
                 </p>
