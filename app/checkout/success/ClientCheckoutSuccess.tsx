@@ -287,7 +287,7 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
             </div>
 
             {/* Order Summary */}
-            <div className="bg-green-50 rounded-2xl p-4 space-y-3">
+            <div className="bg-orange-50 rounded-2xl p-4 space-y-3">
               <h3 className="font-semibold text-gray-900">Order Summary</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
@@ -298,9 +298,9 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
                   <span className="text-gray-600">Delivery Fee</span>
                   <span className="font-medium">GH₵{orderDetails.deliveryPrice}</span>
                 </div>
-                <div className="border-t border-green-200 pt-2 flex justify-between">
+                <div className="border-t border-orange-200 pt-2 flex justify-between">
                   <span className="font-semibold text-lg">Total</span>
-                  <span className="font-bold text-lg text-green-600">GH₵{orderDetails.totalPrice}</span>
+                  <span className="font-bold text-lg text-orange-600">GH₵{orderDetails.totalPrice}</span>
                 </div>
               </div>
             </div>
@@ -324,7 +324,7 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
               <Button 
                 onClick={handleShare}
                 variant="outline"
-                className="flex-1 border-green-200 hover:bg-green-50"
+                className="flex-1 border-orange-200 hover:bg-orange-50"
               >
                 <Share2 className="h-4 w-4 mr-2" />
                 Share Receipt
@@ -332,7 +332,7 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
               <Button 
                 onClick={() => window.print()}
                 variant="outline"
-                className="flex-1 border-green-200 hover:bg-green-50"
+                className="flex-1 border-orange-200 hover:bg-orange-50"
               >
                 <Download className="h-4 w-4 mr-2" />
                 Print/Save
@@ -340,7 +340,7 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
             </div>
             <Button 
               onClick={() => router.push('/restaurants')} 
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 h-12 text-lg font-semibold shadow-lg"
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 h-12 text-lg font-semibold shadow-lg"
             >
               Back to Restaurants
             </Button>
