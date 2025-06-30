@@ -364,6 +364,35 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
                   </p>
                 )}
               </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-2">
+                  <div className="text-blue-500 text-lg">ℹ️</div>
+                  <div className="text-sm">
+                    <p className="font-medium text-blue-800 mb-2">
+                      Don't see a payment prompt? Check your MOMO wallet approvals:
+                    </p>
+                    <ul className="text-blue-700 space-y-1 list-none">
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-500 font-bold">1.</span>
+                        <span>Dial *170# and select My Account</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-500 font-bold">2.</span>
+                        <span>Select My Approvals</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-500 font-bold">3.</span>
+                        <span>Dial your MOMO PIN to approve transaction</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-500 font-bold">4.</span>
+                        <span>Wait for verification before proceeding</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
               
               <div className="space-y-4">
                 <button
