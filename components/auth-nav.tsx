@@ -214,7 +214,7 @@ export function AuthNav({
                 onClick={onHomeClick}
                 className={`font-semibold ${currentView === 'stores' ? 'text-orange-500' : 'text-gray-600 hover:text-gray-900'}`}
               >
-                Restaurants
+                Vendors
               </button>
               {userName && (
                 <>
@@ -254,7 +254,10 @@ export function AuthNav({
                         <div className="text-sm font-medium">{userData?.email}</div>
                         <div className="text-xs text-gray-500">{userData?.phoneNumber}</div>
                       </div>
-                     
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={() => onViewChange('settings')}>
+                        Settings
+                      </DropdownMenuItem>
                       <DropdownMenuItem className="text-red-600" onSelect={handleLogoutClick}>
                         Logout
                       </DropdownMenuItem>

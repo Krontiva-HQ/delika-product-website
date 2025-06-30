@@ -19,6 +19,7 @@ import { AuthNav } from "@/components/auth-nav"
 import { BranchPage } from "@/components/branch-page"
 import { calculateDistance } from "@/utils/distance"
 import { FavoritesSection } from "@/components/favorites-section"
+import { SettingsSection } from "@/components/settings-section"
 import { getBranches, getCustomerDetails, updateFavorites } from "@/lib/api"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -822,7 +823,7 @@ export function StoreHeader() {
       case 'profile':
         return <div>Profile content here</div>
       case 'settings':
-        return <div>Settings content here</div>
+        return <SettingsSection userData={user} onUserDataUpdate={(userData) => setUser(userData)} />
       default:
         return (
           <div>
