@@ -139,6 +139,18 @@ export function CartModal({
     if (isOpen) {
       calculateFee()
     }
+
+    // Listen for location updates
+    const handleLocationUpdate = () => {
+      if (isOpen) {
+        calculateFee()
+      }
+    }
+
+    window.addEventListener('locationUpdated', handleLocationUpdate)
+    return () => {
+      window.removeEventListener('locationUpdated', handleLocationUpdate)
+    }
   }, [isOpen, branchLocation, deliveryType])
 
   // Check authentication status whenever the modal opens

@@ -124,29 +124,39 @@ export function CheckoutPage({
   const router = useRouter();
 
   useEffect(() => {
-    // Try to get the saved location first
-    const savedLocation = localStorage.getItem('userLocation');
-    
-    if (savedLocation) {
-      try {
-        const locationData = JSON.parse(savedLocation);
-        
-        if (locationData.address) {
-          setCustomerInfo(prev => {
-            const updated = {
+    const loadLocationData = () => {
+      // Load the saved location from localStorage when component mounts
+      const savedLocationData = localStorage.getItem('userLocationData')
+      if (savedLocationData) {
+        const { address } = JSON.parse(savedLocationData)
+        setCustomerInfo(prev => ({
+          ...prev,
+          address: address
+        }))
+      }
+
+      // Try to get the saved location first (fallback)
+      const savedLocation = localStorage.getItem('userLocation');
+      if (savedLocation && !savedLocationData) {
+        try {
+          const locationData = JSON.parse(savedLocation);
+          if (locationData.address) {
+            setCustomerInfo(prev => ({
               ...prev,
               address: locationData.address
-            };
-            return updated;
-          });
+            }));
+          }
+        } catch (e) {
+          // Handle error silently
         }
-      } catch (e) {
       }
     }
+
+    // Initial load
+    loadLocationData()
     
     // Then try to load saved customer info
     const savedInfo = localStorage.getItem('customerInfo');
-    
     if (savedInfo) {
       try {
         const parsedInfo = JSON.parse(savedInfo);
@@ -155,23 +165,30 @@ export function CheckoutPage({
           ...parsedInfo
         }));
       } catch (e) {
+        // Handle error silently
       }
-    }
-
-    // Load the saved location from localStorage when component mounts
-    const savedLocationData = localStorage.getItem('userLocationData')
-    if (savedLocationData) {
-      const { address } = JSON.parse(savedLocationData)
-      setCustomerInfo(prev => ({
-        ...prev,
-        address: address
-      }))
     }
 
     // Load the selected delivery type from localStorage
     const savedDeliveryType = localStorage.getItem('selectedDeliveryType')
     if (savedDeliveryType) {
       setDeliveryType(savedDeliveryType as 'rider' | 'pedestrian' | 'pickup')
+    }
+
+    // Listen for location updates
+    const handleLocationUpdate = (event: CustomEvent) => {
+      const locationData = event.detail
+      if (locationData && locationData.address) {
+        setCustomerInfo(prev => ({
+          ...prev,
+          address: locationData.address
+        }))
+      }
+    }
+
+    window.addEventListener('locationUpdated', handleLocationUpdate as EventListener)
+    return () => {
+      window.removeEventListener('locationUpdated', handleLocationUpdate as EventListener)
     }
   }, []);
 
@@ -221,6 +238,21 @@ export function CheckoutPage({
       setDeliveryFee(Number(storedFee))
       setDeliveryType(storedType as 'rider' | 'pedestrian' | 'pickup')
       // DO NOT clear here! Only clear after payment success.
+    }
+
+    // Listen for location updates to recalculate delivery fees
+    const handleLocationUpdateForFees = () => {
+      // Clear stored fees when location changes so they get recalculated
+      localStorage.removeItem('checkoutDeliveryFee')
+      localStorage.removeItem('selectedDeliveryType')
+      // Reset to default values - the cart modal will recalculate
+      setDeliveryFee(0)
+      setDeliveryType('rider')
+    }
+
+    window.addEventListener('locationUpdated', handleLocationUpdateForFees)
+    return () => {
+      window.removeEventListener('locationUpdated', handleLocationUpdateForFees)
     }
   }, [])
 
