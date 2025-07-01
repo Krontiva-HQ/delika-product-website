@@ -173,56 +173,40 @@ export function StoreHeader() {
 
   useEffect(() => {
     // Load saved location on mount
-    const savedLocationData = localStorage.getItem('userLocationData')
-    if (savedLocationData) {
-      const { address, lat, lng } = JSON.parse(savedLocationData)
-      setUserLocation(address)
-      setUserCoordinates({ lat, lng })
-    } else {
-      // Fall back to geolocation if no saved location
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const { latitude, longitude } = position.coords
-            setUserCoordinates({ lat: latitude, lng: longitude })
-
-            // Convert coordinates to address using Google Geocoding
-            try {
-              const response = await fetch(
-                `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
-              )
-              const data = await response.json()
-              if (data.results[0]) {
-                // Get city and area from address components
-                const addressComponents = data.results[0].address_components as AddressComponent[]
-                const city = addressComponents.find(
-                  (component) => 
-                    component.types.includes("locality") || 
-                    component.types.includes("administrative_area_level_2")
-                )
-                const area = addressComponents.find(
-                  (component) => component.types.includes("sublocality")
-                )
-                
-                setUserLocation(
-                  area 
-                    ? `${area.short_name}, ${city?.short_name || ''}`
-                    : city?.short_name || 'Location not found'
-                )
-              }
-            } catch (error) {
-
-              setUserLocation("Location not found")
-            }
-          },
-          (error) => {
-
-            setUserLocation("Location access denied")
-          }
-        )
+    const loadLocationData = () => {
+      const savedLocationData = localStorage.getItem('userLocationData')
+      if (savedLocationData) {
+        const { address, lat, lng } = JSON.parse(savedLocationData)
+        setUserLocation(address)
+        setUserCoordinates({ lat, lng })
+        console.log('Loaded saved location:', { address, lat, lng })
       } else {
-        setUserLocation("Geolocation not supported")
+        // First visit - prompt user to select location
+        console.log('First visit detected - prompting for location selection...')
+        setUserLocation("Select delivery location")
+        // Small delay to ensure component is mounted before showing modal
+        setTimeout(() => {
+          setIsLocationModalOpen(true)
+        }, 1500)
       }
+    }
+
+    // Initial load
+    loadLocationData()
+
+    // Listen for location updates
+    const handleLocationUpdate = (event: CustomEvent) => {
+      const locationData = event.detail
+      if (locationData && locationData.address) {
+        console.log('StoreHeader received location update:', locationData)
+        setUserLocation(locationData.address)
+        setUserCoordinates({ lat: locationData.lat, lng: locationData.lng })
+      }
+    }
+
+    window.addEventListener('locationUpdated', handleLocationUpdate as EventListener)
+    return () => {
+      window.removeEventListener('locationUpdated', handleLocationUpdate as EventListener)
     }
   }, [])
 
@@ -353,10 +337,20 @@ export function StoreHeader() {
       )
 
   const handleLocationSelect = ({ address, lat, lng }: { address: string; lat: number; lng: number }) => {
+    console.log('StoreHeader location selected:', { address, lat, lng })
     setUserLocation(address)
     setUserCoordinates({ lat, lng })
-    // Save to localStorage
+    
+    // Save location data in the format expected by other components
     localStorage.setItem('userLocationData', JSON.stringify({ address, lat, lng }))
+    
+    // Also save in the format used by the user location display (fallback)
+    localStorage.setItem('userLocation', JSON.stringify({ address }))
+    
+    // Trigger event to notify other components
+    window.dispatchEvent(new CustomEvent('locationUpdated', { detail: { address, lat, lng } }))
+    
+    setIsLocationModalOpen(false)
   }
 
   // Modify handleBranchSelect to handle loading state
