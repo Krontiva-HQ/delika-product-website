@@ -424,11 +424,11 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
         <div className="container mx-auto px-4 py-4 max-w-6xl">
           <div className="flex items-center justify-between">
             <button 
-              onClick={onBackToCart}
+              onClick={() => router.back()}
               className="flex items-center text-gray-600 hover:text-orange-500 font-medium transition-colors group"
             >
               <ArrowLeft className="mr-2 h-5 w-5 transition-transform group-hover:-translate-x-1" />
-              Back to Cart
+              Back
             </button>
             <h1 className="text-xl font-semibold text-gray-900">Complete Your Order</h1>
             <div className="w-24" />
