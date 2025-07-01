@@ -85,7 +85,7 @@ export default function RestaurantPage({ params }: PageProps) {
               className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
-              Back to Restaurants
+              Back to Vendors
             </button>
           </div>
           <BranchPage params={{ id: storedId }} />
@@ -111,7 +111,7 @@ export default function RestaurantPage({ params }: PageProps) {
             className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
           >
             <ChevronLeft className="w-4 h-4 mr-1" />
-            Back to Restaurants
+            Back to Vendors
           </button>
         </div>
         <BranchPage params={{ id: branchId }} />
@@ -142,7 +142,7 @@ export default function RestaurantPage({ params }: PageProps) {
               onClick={handleBackToRestaurants}
               className="text-orange-500 hover:text-orange-600 text-sm"
             >
-              Back to Restaurants
+              Back to Vendors
             </button>
             <button 
               onClick={handleHomeClick}
