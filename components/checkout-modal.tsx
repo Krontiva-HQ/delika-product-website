@@ -52,6 +52,7 @@ export function CheckoutModal({
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const platformFee = 3.00 // Platform fee of GHC3.00
 
   useEffect(() => {
     console.log('CheckoutModal received cart:', cart);
@@ -140,9 +141,13 @@ export function CheckoutModal({
                 <span>Delivery Fee</span>
                 <span>GH₵ {deliveryFee.toFixed(2)}</span>
               </div>
+              <div className="flex justify-between text-sm">
+                <span>Platform Fee</span>
+                <span>GH₵ {platformFee.toFixed(2)}</span>
+              </div>
               <div className="border-t pt-2 flex justify-between font-medium">
                 <span>Total</span>
-                <span>GH₵ {(cartTotal + deliveryFee).toFixed(2)}</span>
+                <span>GH₵ {(cartTotal + deliveryFee + platformFee).toFixed(2)}</span>
               </div>
             </div>
             
