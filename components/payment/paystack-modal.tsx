@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { useRouter } from "next/navigation"
 import { toast } from "@/components/ui/use-toast"
 import Image from "next/image"
@@ -32,6 +32,8 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
   const [canVerify, setCanVerify] = useState(true)
   const [countdown, setCountdown] = useState(0)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [cancelTimeoutId, setCancelTimeoutId] = useState<NodeJS.Timeout | null>(null)
+  const [cancelMessage, setCancelMessage] = useState("")
   const router = useRouter()
 
   // Add countdown timer effect
@@ -62,6 +64,36 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
       setCountdown(0);
       setIsLoading(false);
       setIsVerifying(false);
+    }
+  }, [open]);
+
+  // Start 10-minute auto-cancel timer when modal opens
+  useEffect(() => {
+    if (open) {
+      // Clear any previous timer
+      if (cancelTimeoutId) clearTimeout(cancelTimeoutId);
+      const timeoutId = setTimeout(async () => {
+        // Only cancel if payment not completed
+        setCancelMessage("Order was automatically cancelled because payment was not made within 10 minutes.");
+        try {
+          await fetch(`/api/orders/${orderId}/cancel`, { method: 'POST' });
+        } catch (e) {}
+        setTimeout(() => {
+          setCancelMessage("");
+          onClose();
+        }, 4000);
+      }, 10 * 60 * 1000); // 10 minutes
+      setCancelTimeoutId(timeoutId);
+    }
+    return () => {
+      if (cancelTimeoutId) clearTimeout(cancelTimeoutId);
+    };
+  }, [open, orderId]);
+
+  // Clear timer if payment completes
+  useEffect(() => {
+    if (!open && cancelTimeoutId) {
+      clearTimeout(cancelTimeoutId);
     }
   }, [open]);
 
@@ -230,6 +262,11 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
           fontFamily: '"Rubik", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
         }}
       >
+        {cancelMessage && (
+          <div className="bg-red-100 text-red-700 rounded-lg px-4 py-3 mb-4 text-center font-semibold">
+            {cancelMessage}
+          </div>
+        )}
         <DialogHeader className="text-center">
           <DialogTitle className="flex flex-col items-center gap-2">
             <Image
@@ -435,21 +472,32 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
       </DialogContent>
       {/* Confirmation Dialog for Cancel Payment */}
       <ConfirmationDialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
-        <ConfirmationDialogContent>
-          <ConfirmationDialogHeader>
-            <ConfirmationDialogTitle>Cancel Payment?</ConfirmationDialogTitle>
-          </ConfirmationDialogHeader>
-          <div className="py-4 text-center text-gray-700">
-            Are you sure you want to cancel this payment? Your progress will be lost.
+        <ConfirmationDialogContent className="max-w-sm px-6 py-5 rounded-2xl bg-white shadow-xl flex flex-col items-center" style={{ fontFamily: 'Rubik, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif' }}>
+          <div className="flex flex-col items-center w-full">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
+              <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </div>
+            <DialogTitle className="text-lg font-bold text-gray-900 mb-1">Cancel Payment?</DialogTitle>
+            <DialogDescription className="text-sm text-gray-600 mb-5 text-center">
+              Are you sure you want to cancel this payment?<br/>Your progress will be lost.
+            </DialogDescription>
           </div>
-          <ConfirmationDialogFooter>
-            <Button variant="outline" onClick={() => setShowCancelConfirm(false)}>
+          <DialogFooter className="w-full flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-3 mt-1">
+            <Button
+              className="rounded-full px-4 py-2 text-base font-semibold w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-900 border-none shadow-none"
+              onClick={() => setShowCancelConfirm(false)}
+              type="button"
+            >
               No, go back
             </Button>
-            <Button variant="destructive" onClick={() => { setShowCancelConfirm(false); router.back(); }}>
+            <Button
+              className="rounded-full px-4 py-2 text-base font-semibold w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white border-none shadow-none"
+              onClick={() => { setShowCancelConfirm(false); router.back(); }}
+              type="button"
+            >
               Yes, cancel payment
             </Button>
-          </ConfirmationDialogFooter>
+          </DialogFooter>
         </ConfirmationDialogContent>
       </ConfirmationDialog>
     </Dialog>

@@ -76,15 +76,24 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
       } else {
         // Handle specific error messages
         if (data.message) {
-          setError(data.message)
+          // Map common backend error messages to user-friendly ones
+          if (
+            data.message.toLowerCase().includes('invalid') ||
+            data.message.toLowerCase().includes('not found') ||
+            data.message.toLowerCase().includes('incorrect')
+          ) {
+            setError("Incorrect email or password. Please check your credentials and try again.");
+          } else {
+            setError(data.message);
+          }
         } else if (isEmailMode) {
-          setError("Invalid email or password")
+          setError("Incorrect email or password. Please check your credentials and try again.");
         } else {
-          setError("Invalid phone number")
+          setError("Incorrect phone number or password. Please check your credentials and try again.");
         }
       }
     } catch (error) {
-      setError("An error occurred. Please try again.")
+      setError("Please check your credentials and try again.");
     } finally {
       setIsLoading(false)
     }

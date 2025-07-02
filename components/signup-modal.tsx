@@ -107,10 +107,23 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
         setUserData(userData)
         setShowOTP(true)
       } else {
-        console.error('Signup failed')
+        if (data.message) {
+          if (
+            data.message.toLowerCase().includes('invalid') ||
+            data.message.toLowerCase().includes('already exists') ||
+            data.message.toLowerCase().includes('not found') ||
+            data.message.toLowerCase().includes('incorrect')
+          ) {
+            alert("Signup failed: Please check your details or use a different email/phone number.");
+          } else {
+            alert(data.message);
+          }
+        } else {
+          alert("Signup failed. Please check your details and try again.");
+        }
       }
     } catch (error) {
-      console.error('Signup error:', error)
+      alert("Can't sign up. Please check your details or try again later.");
     } finally {
       setIsLoading(false)
     }
