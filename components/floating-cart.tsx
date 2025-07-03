@@ -1,4 +1,5 @@
 import { calculateDeliveryPrices } from "@/lib/api"
+import { useEffect } from "react"
 
 interface FloatingCartProps {
   total: number
@@ -8,9 +9,31 @@ interface FloatingCartProps {
     latitude: string
     longitude: string
   }
+  branchId: string
 }
 
-export function FloatingCart({ total, itemCount, onClick, branchLocation }: FloatingCartProps) {
+export function FloatingCart({ total, itemCount, onClick, branchLocation, branchId }: FloatingCartProps) {
+  useEffect(() => {
+    // Clear other restaurant carts when mounting
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('cart-') && key !== `cart-${branchId}`) {
+        localStorage.removeItem(key);
+      }
+    }
+
+    // Listen for successful payment event
+    const handlePaymentSuccess = () => {
+      localStorage.removeItem(`cart-${branchId}`);
+    };
+
+    window.addEventListener('paymentSuccess', handlePaymentSuccess);
+    
+    return () => {
+      window.removeEventListener('paymentSuccess', handlePaymentSuccess);
+    };
+  }, [branchId]);
+
   if (itemCount === 0) return null
 
   const handleClick = async () => {

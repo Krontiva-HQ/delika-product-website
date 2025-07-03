@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Star, MapPin, Clock, Plus, Minus, Share2, Heart } from "lucide-react"
+import { Star, MapPin, Clock, Plus, Minus, Share2, Heart, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BranchDetailsModal } from "@/components/branch-details-modal"
 import { EmptyState } from "@/components/empty-state"
@@ -377,6 +377,7 @@ export function BranchPage({ params }: BranchPageProps) {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [cart, setCart] = useState<(CartItem & { available: boolean })[]>([])
   const [isCartModalOpen, setIsCartModalOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
@@ -485,6 +486,7 @@ export function BranchPage({ params }: BranchPageProps) {
     async function fetchBranch() {
       try {
         setError(null)
+        setIsLoading(true)
         
         const detailsResponse = await fetch(
           `https://api-server.krontiva.africa/api:uEBBwbSs/get/branch/details?branchId=${params.id}`,
@@ -510,6 +512,8 @@ export function BranchPage({ params }: BranchPageProps) {
         }
       } catch (error) {
         setError("Failed to load branch details")
+      } finally {
+        setIsLoading(false)
       }
     }
 
@@ -684,8 +688,33 @@ export function BranchPage({ params }: BranchPageProps) {
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading restaurant details...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (error || !branch) {
-    return <EmptyState title={error || "Branch not found"} description="We couldn't find the branch you're looking for." icon="store" />
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Store className="w-8 h-8 text-orange-500" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Restaurant</h2>
+            <p className="text-gray-600">Please wait while we fetch the latest information...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const currentCategory = branch._menutable?.find((cat: { foodType: string }) => cat.foodType === selectedCategory)
@@ -936,6 +965,7 @@ export function BranchPage({ params }: BranchPageProps) {
           latitude: branch.branchLatitude,
           longitude: branch.branchLongitude
         }}
+        branchId={params.id}
       />
 
       <CartModal

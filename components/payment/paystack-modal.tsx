@@ -236,6 +236,8 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
       const paymentStatus = verifyData.response?.result?.data?.status;
 
       if (paymentStatus === 'success') {
+        // Dispatch payment success event
+        window.dispatchEvent(new Event('paymentSuccess'));
         // Navigate to the success page
         router.push(`/checkout/success?reference=${reference}`);
         onComplete();
