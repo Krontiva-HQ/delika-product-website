@@ -132,8 +132,8 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
   const handleOTPVerification = async (otp: string) => {
     try {
       const endpoint = signupMethod === 'email'
-        ? 'verify/otp/code'
-        : 'verify/otp/code/phoneNumber'
+        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code'
+        : 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code/phoneNumber';
 
       const payload = signupMethod === 'email'
         ? {
@@ -144,11 +144,21 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
         : {
             OTP: parseInt(otp),
             contact: phone
-          }
+          };
 
-      const otpData = await authRequest<OTPResponse>(endpoint, payload);
+      // Make direct API call
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify(payload)
+      });
 
-      if (otpData.otpValidate === 'otpFound' && userData) {
+      const data = await response.json();
+
+      if (data.otpValidate === 'otpFound' && userData) {
         localStorage.setItem('authToken', authToken);
         localStorage.setItem('userData', JSON.stringify(userData));
         

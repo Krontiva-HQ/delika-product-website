@@ -76,24 +76,15 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
       } else {
         // Handle specific error messages
         if (data.message) {
-          // Map common backend error messages to user-friendly ones
-          if (
-            data.message.toLowerCase().includes('invalid') ||
-            data.message.toLowerCase().includes('not found') ||
-            data.message.toLowerCase().includes('incorrect')
-          ) {
-            setError("Incorrect email or password. Please check your credentials and try again.");
-          } else {
-            setError(data.message);
-          }
+          setError(data.message)
         } else if (isEmailMode) {
-          setError("Incorrect email or password. Please check your credentials and try again.");
+          setError("Invalid email or password")
         } else {
-          setError("Incorrect phone number or password. Please check your credentials and try again.");
+          setError("Invalid phone number")
         }
       }
     } catch (error) {
-      setError("Please check your credentials and try again.");
+      setError("An error occurred. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -101,23 +92,27 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
 
   const handleOTPVerification = async (otp: string) => {
     try {
-      
-      // Prepare the verification payload
-      const payload = {
-        OTP: parseInt(otp),
-        contact: loginMethod === 'email' ? email : phone
-      };
-      
-
-      // Make the API call to verify OTP
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
       const endpoint = loginMethod === 'email'
-        ? `${apiBaseUrl}/verify/otp/code`
-        : `${apiBaseUrl}/verify/otp/code/phoneNumber`;
+        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code'
+        : 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code/phoneNumber';
+
+      const payload = loginMethod === 'email'
+        ? {
+            OTP: parseInt(otp),
+            type: true,
+            contact: email
+          }
+        : {
+            OTP: parseInt(otp),
+            contact: phone
+          };
+
+      // Make direct API call
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify(payload)
       });
@@ -128,13 +123,11 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         // Store auth token in localStorage
         localStorage.setItem('authToken', authToken);
         
-        // If we don't have userData yet, try to fetch it again
+        // If we don't have userData yet, try to fetch it
         let finalUserData = userData;
         if (!finalUserData && authToken) {
           try {
-            
-            // Use direct fetch instead of authRequest to avoid potential issues
-            const response = await fetch('/api/auth/me', {
+            const userResponse = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/me', {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -142,35 +135,19 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
               }
             });
             
-            if (response.ok) {
-              finalUserData = await response.json();
-            } else {
+            if (userResponse.ok) {
+              finalUserData = await userResponse.json();
             }
           } catch (userDataError) {
+            console.error('Failed to fetch user data:', userDataError);
           }
         }
         
         if (finalUserData) {
-          // Store user data in localStorage and trigger a custom event
           localStorage.setItem('userData', JSON.stringify(finalUserData));
-          window.dispatchEvent(new Event('userDataUpdated'));
-          
-          // Call the success handler with full user data
           onLoginSuccess(finalUserData);
-        } else {
-          // If we still don't have user data, create a minimal user object
-          const minimalUserData = {
-            id: 'temp-id',
-            fullName: loginMethod === 'email' ? email : phone,
-            email: loginMethod === 'email' ? email : '',
-            phoneNumber: loginMethod === 'phone' ? phone : '',
-          } as UserData;
-          
-          localStorage.setItem('userData', JSON.stringify(minimalUserData));
-          onLoginSuccess(minimalUserData);
         }
         
-        // Close the modal
         setShowOTP(false);
         onClose();
 
@@ -180,14 +157,12 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
           localStorage.removeItem('loginRedirectUrl');
           window.location.href = redirectUrl;
         }
-      } else if (data.otpValidate === 'otpNotExist') {
-        setOtpError('Invalid verification code. Please try again.');
-        // Don't close the modal, let the user try again
       } else {
         setOtpError('Invalid verification code. Please try again.');
       }
     } catch (error) {
-      setOtpError('An error occurred during verification. Please try again.');
+      console.error('OTP verification error:', error);
+      setOtpError('Failed to verify code. Please try again.');
     }
   };
 

@@ -57,14 +57,37 @@ export function OTPInputModal({
     setErrorMessage(null)
     try {
       if (signupMethod === 'phone' || (!signupMethod && phone)) {
-        await authRequest('login/phoneNumber/customer', { phoneNumber: phone });
+        const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/auth/signup/phoneNumber/customer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ phoneNumber: phone })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to resend OTP');
+        }
       } else {
-        await login({ email: email || '', password: '' });
+        const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/auth/signup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password: '' })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to resend OTP');
+        }
       }
 
+      // Reset countdown and disable resend button
       setCountdown(30)
       setCanResend(false)
+      setErrorMessage('New verification code sent!')
     } catch (error) {
+      console.error('Failed to resend OTP:', error);
       setErrorMessage('Failed to resend code. Please try again.')
     } finally {
       setIsLoading(false)
