@@ -51,13 +51,31 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
             )
             const data = await response.json()
             if (data.results[0]) {
-              const address = data.results[0].formatted_address
+              const result = data.results[0]
+              // Try to get a more readable place name from the address components
+              const addressComponents = result.address_components || []
+              
+              // Look for a business/point of interest name first
+              const placeName = addressComponents.find((component: any) => 
+                component.types.includes('establishment') || 
+                component.types.includes('point_of_interest')
+              )?.long_name ||
+              // Fall back to route + sublocality
+              `${addressComponents.find((component: any) => component.types.includes('route'))?.long_name || ''} ${
+                addressComponents.find((component: any) => component.types.includes('sublocality'))?.long_name || ''
+              }`.trim() ||
+              // Finally fall back to formatted address first part
+              result.formatted_address.split(',')[0] ||
+              'Current Location'
+
               const locationData = {
-                address,
+                address: placeName,
                 lat: latitude,
                 lng: longitude
               }
               console.log('Current location selected:', locationData)
+              // Save to localStorage with consistent key
+              localStorage.setItem('userLocationData', JSON.stringify(locationData))
               onLocationSelect(locationData)
               onClose()
             }
@@ -100,15 +118,16 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
     }
   }
 
-  const handleSelect = async (description: string) => {
+  const handleSelect = async (description: string, placeName?: string) => {
     try {
       const response = await fetch(`/api/places/geocode?address=${encodeURIComponent(description)}`)
       const data = await response.json()
       
       if (data.result) {
         const address = data.result.formatted_address
+        const name = placeName || description.split(',')[0] || ''
         const locationData = {
-          address,
+          address: name, // Use place name for display
           lat: data.result.geometry.location.lat,
           lng: data.result.geometry.location.lng
         }
@@ -176,16 +195,27 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
 
             {suggestions.length > 0 && (
               <ul className="mt-4 space-y-2">
-                {suggestions.map((suggestion) => (
-                  <li 
-                    key={suggestion.place_id}
-                    className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md cursor-pointer"
-                    onClick={() => handleSelect(suggestion.description)}
-                  >
-                    <MapPin className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm">{suggestion.description}</span>
-                  </li>
-                ))}
+                {suggestions.map((suggestion) => {
+                  const parts = suggestion.description.split(',');
+                  const placeName = parts[0];
+                  const location = parts.slice(1).join(',').trim();
+                  
+                  return (
+                    <li 
+                      key={suggestion.place_id}
+                      className="flex items-start gap-2 p-2 hover:bg-gray-100 rounded-md cursor-pointer"
+                      onClick={() => handleSelect(suggestion.description, placeName)}
+                    >
+                      <MapPin className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">{placeName}</div>
+                        {location && (
+                          <div className="text-xs text-gray-500 mt-1">{location}</div>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

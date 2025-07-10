@@ -15,11 +15,12 @@ interface GooglePlace {
 }
 
 const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, prefillData, disabled }) => {
-    const [address, setAddress] = useState(prefillData?.address || '');
+    const [address, setAddress] = useState(prefillData?.name || prefillData?.address || '');
     const [suggestions, setSuggestions] = useState<GooglePlace[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [autocompleteService, setAutocompleteService] = useState<google.maps.places.AutocompleteService | null>(null);
     const [placesService, setPlacesService] = useState<google.maps.places.PlacesService | null>(null);
+    const [isInitialized, setIsInitialized] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<HTMLDivElement>(null);
 
@@ -35,40 +36,47 @@ const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, 
     }, []);
 
     useEffect(() => {
-        if (prefillData) {
-            setAddress(prefillData.address);
-            onLocationSelect(prefillData);
+        if (prefillData && (prefillData.name || prefillData.address)) {
+            const newAddress = prefillData.name || prefillData.address;
+            // Only update if the address is actually different
+            if (newAddress !== address) {
+                setAddress(newAddress);
+                onLocationSelect(prefillData);
+            }
         }
-    }, [prefillData, onLocationSelect]);
+    }, [prefillData]); // Removed onLocationSelect to prevent loops
 
     useEffect(() => {
-        loadGoogleMaps().then(() => {
-            if (!window.google || !window.google.maps || !window.google.maps.places) {
-                console.error('Google Maps not loaded properly');
-                return;
-            }
+        if (!isInitialized) {
+            loadGoogleMaps().then(() => {
+                if (!window.google || !window.google.maps || !window.google.maps.places) {
+                    console.error('Google Maps not loaded properly');
+                    return;
+                }
 
-            if (!mapRef.current) {
-                console.error('Map div not found');
-                return;
-            }
+                if (!mapRef.current) {
+                    console.error('Map div not found');
+                    return;
+                }
 
-            try {
-                setAutocompleteService(new window.google.maps.places.AutocompleteService());
-                const mapDiv = mapRef.current;
-                const map = new window.google.maps.Map(mapDiv, {
-                    center: { lat: 5.6037, lng: -0.1870 },
-                    zoom: 13,
-                    disableDefaultUI: true
-                });
-                setPlacesService(new window.google.maps.places.PlacesService(map));
-            } catch (error) {
-                console.error('Error initializing Google Maps services:', error);
-            }
-        }).catch(error => {
-            console.error('Error loading Google Maps:', error);
-        });
-    }, []);
+                try {
+                    setAutocompleteService(new window.google.maps.places.AutocompleteService());
+                    const mapDiv = mapRef.current;
+                    const map = new window.google.maps.Map(mapDiv, {
+                        center: { lat: 5.6037, lng: -0.1870 },
+                        zoom: 13,
+                        disableDefaultUI: true
+                    });
+                    setPlacesService(new window.google.maps.places.PlacesService(map));
+                    setIsInitialized(true);
+                } catch (error) {
+                    console.error('Error initializing Google Maps services:', error);
+                }
+            }).catch(error => {
+                console.error('Error loading Google Maps:', error);
+            });
+        }
+    }, [isInitialized]);
 
     const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
@@ -104,15 +112,17 @@ const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, 
                 { placeId: place.place_id },
                 (result, status) => {
                     if (status === google.maps.places.PlacesServiceStatus.OK && result) {
+                        const placeName = result.name || place.description.split(',')[0] || '';
                         const locationData: DeliveryLocationData = {
                             longitude: result.geometry?.location?.lng() || 0,
                             latitude: result.geometry?.location?.lat() || 0,
-                            name: result.name || '',
+                            name: placeName,
                             address: result.formatted_address || '',
                             city: result.address_components?.find(component => component.types.includes('administrative_area_level_2'))?.long_name || ''
                         };
 
-                        setAddress(result.formatted_address || '');
+                        // Show the place name instead of formatted address in the input
+                        setAddress(placeName);
                         setSuggestions([]);
                         setShowSuggestions(false);
                         onLocationSelect(locationData);
@@ -143,15 +153,24 @@ const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, 
                 {showSuggestions && suggestions.length > 0 && (
                     <div className="font-sans absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg"
                         style={{ width: '100%' }}>
-                        {suggestions.map((suggestion, index) => (
-                            <div
-                                key={index}
-                                className="font-sans px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                                onClick={() => handleSelect(suggestion)}
-                            >
-                                {suggestion.description}
-                            </div>
-                        ))}
+                        {suggestions.map((suggestion, index) => {
+                            const parts = suggestion.description.split(',');
+                            const placeName = parts[0];
+                            const location = parts.slice(1).join(',').trim();
+                            
+                            return (
+                                <div
+                                    key={index}
+                                    className="font-sans px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                                    onClick={() => handleSelect(suggestion)}
+                                >
+                                    <div className="font-medium text-gray-900">{placeName}</div>
+                                    {location && (
+                                        <div className="text-xs text-gray-500 mt-1">{location}</div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>
