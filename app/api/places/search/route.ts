@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getBaseHeaders } from '@/app/utils/api'
 
-interface GooglePlacesResult {
-  formatted_address: string
+interface GooglePlacesPrediction {
+  description: string
   place_id: string
-  geometry: {
-    location: {
-      lat: number
-      lng: number
-    }
+  types: string[]
+  structured_formatting?: {
+    main_text: string
+    secondary_text: string
   }
 }
 
@@ -21,20 +20,27 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Use Autocomplete API instead of Text Search for better predictions with types
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&region=gh&key=${process.env.GOOGLE_MAPS_API_KEY}`,
+      `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&components=country:gh&location=5.6037,-0.1870&radius=50000&key=${process.env.GOOGLE_MAPS_API_KEY}`,
       {
         headers: getBaseHeaders()
       }
     )
     const data = await response.json()
     
-    return NextResponse.json({
-      predictions: data.results.map((result: GooglePlacesResult) => ({
-        description: result.formatted_address,
-        place_id: result.place_id
-      }))
-    })
+    if (data.status === 'OK' && data.predictions) {
+      return NextResponse.json({
+        predictions: data.predictions.map((prediction: GooglePlacesPrediction) => ({
+          description: prediction.description,
+          place_id: prediction.place_id,
+          types: prediction.types || [],
+          structured_formatting: prediction.structured_formatting
+        }))
+      })
+    } else {
+      return NextResponse.json({ predictions: [] })
+    }
   } catch (error) {
     console.error('Error:', error)
     return NextResponse.json({ predictions: [] })

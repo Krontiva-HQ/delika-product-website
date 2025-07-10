@@ -15,7 +15,12 @@ interface LocationSearchModalProps {
 
 export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: LocationSearchModalProps) {
   const [searchValue, setSearchValue] = useState("")
-  const [suggestions, setSuggestions] = useState<Array<{ description: string; place_id: string }>>([])
+  const [suggestions, setSuggestions] = useState<Array<{ 
+    description: string; 
+    place_id: string; 
+    enhanced_name: string;
+    types: string[];
+  }>>([])
   const [isLoading, setIsLoading] = useState(false)
   const [mapsLoaded, setMapsLoaded] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -107,10 +112,40 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
       
       if (data.predictions) {
         setSuggestions(
-          data.predictions.slice(0, 10).map((prediction: { description: string; place_id: string }) => ({
-            description: prediction.description,
-            place_id: prediction.place_id
-          }))
+          data.predictions.slice(0, 10).map((prediction: any) => {
+            // Enhanced place name extraction for display
+            const description = prediction.description
+            const parts = description.split(',')
+            
+            // Check if this is likely a business/establishment
+            const types = prediction.types || []
+            const isEstablishment = types.includes('establishment') || 
+                                   types.includes('point_of_interest') ||
+                                   types.includes('premise')
+            
+            let placeName = parts[0].trim()
+            
+            // If it's not an establishment, try to create a more meaningful name
+            if (!isEstablishment && parts.length > 1) {
+              // Look for patterns like "Street Name, Area" or "Area, City"
+              const firstPart = parts[0].trim()
+              const secondPart = parts[1].trim()
+              
+              // If first part looks like a street number + name, use first two parts
+              if (/^\d+/.test(firstPart) && parts.length > 2) {
+                placeName = `${firstPart}, ${secondPart}`
+              } else if (firstPart.length < 30) { // Keep concise place names
+                placeName = firstPart
+              }
+            }
+            
+            return {
+              description: prediction.description,
+              place_id: prediction.place_id,
+              enhanced_name: placeName,
+              types: types
+            }
+          })
         )
       }
     } catch (error) {
@@ -125,9 +160,55 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
       
       if (data.result) {
         const address = data.result.formatted_address
-        const name = placeName || description.split(',')[0] || ''
+        const addressComponents = data.result.address_components || []
+        
+        // Enhanced place name extraction - prioritize meaningful location names
+        let displayName = placeName || description.split(',')[0] || ''
+        
+        // Try to get better place names from address components
+        const establishment = addressComponents.find((component: any) => 
+          component.types.includes('establishment') || 
+          component.types.includes('point_of_interest')
+        )?.long_name
+        
+        const premise = addressComponents.find((component: any) => 
+          component.types.includes('premise')
+        )?.long_name
+        
+        const subpremise = addressComponents.find((component: any) => 
+          component.types.includes('subpremise')
+        )?.long_name
+        
+        const route = addressComponents.find((component: any) => 
+          component.types.includes('route')
+        )?.long_name
+        
+        const sublocality = addressComponents.find((component: any) => 
+          component.types.includes('sublocality') || 
+          component.types.includes('sublocality_level_1')
+        )?.long_name
+        
+        const locality = addressComponents.find((component: any) => 
+          component.types.includes('locality')
+        )?.long_name
+        
+        // Priority order for display name
+        if (establishment) {
+          displayName = establishment
+        } else if (premise) {
+          displayName = premise
+        } else if (route && sublocality) {
+          displayName = `${route}, ${sublocality}`
+        } else if (route) {
+          displayName = route
+        } else if (sublocality) {
+          displayName = sublocality
+        } else if (locality) {
+          displayName = locality
+        }
+        
         const locationData = {
-          address: name, // Use place name for display
+          address: displayName, // Use enhanced place name for display
           lat: data.result.geometry.location.lat,
           lng: data.result.geometry.location.lng
         }
@@ -197,18 +278,34 @@ export function LocationSearchModal({ isOpen, onClose, onLocationSelect }: Locat
               <ul className="mt-4 space-y-2">
                 {suggestions.map((suggestion) => {
                   const parts = suggestion.description.split(',');
-                  const placeName = parts[0];
+                  // Use enhanced name for better display
+                  const placeName = suggestion.enhanced_name;
                   const location = parts.slice(1).join(',').trim();
+                  
+                  // Show a pin icon for businesses/establishments, different icon for addresses
+                  const isEstablishment = suggestion.types?.includes('establishment') || 
+                                         suggestion.types?.includes('point_of_interest');
                   
                   return (
                     <li 
                       key={suggestion.place_id}
                       className="flex items-start gap-2 p-2 hover:bg-gray-100 rounded-md cursor-pointer"
-                      onClick={() => handleSelect(suggestion.description, placeName)}
+                      onClick={() => handleSelect(suggestion.description, suggestion.enhanced_name)}
                     >
-                      <MapPin className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <MapPin className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                        isEstablishment ? 'text-orange-500' : 'text-gray-500'
+                      }`} />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-gray-900 truncate">{placeName}</div>
+                        <div className={`text-sm font-medium truncate ${
+                          isEstablishment ? 'text-orange-600' : 'text-gray-900'
+                        }`}>
+                          {placeName}
+                          {isEstablishment && (
+                            <span className="ml-1 text-xs bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded">
+                              Business
+                            </span>
+                          )}
+                        </div>
                         {location && (
                           <div className="text-xs text-gray-500 mt-1">{location}</div>
                         )}
