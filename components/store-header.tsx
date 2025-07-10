@@ -149,6 +149,7 @@ export function StoreHeader() {
   const [filteredOutResults, setFilteredOutResults] = useState<Branch[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isLoadingRestaurants, setIsLoadingRestaurants] = useState<boolean>(true)
   const [currentPage, setCurrentPage] = useState(1)
   const ORDERS_PER_PAGE = 10
   const [isBranchPageLoaded, setIsBranchPageLoaded] = useState(false)
@@ -161,10 +162,13 @@ export function StoreHeader() {
   useEffect(() => {
     async function fetchBranchesData() {
       try {
+        setIsLoadingRestaurants(true);
         const data = await getBranches<Branch[]>();
         setBranches(data);
       } catch (error) {
         console.error('Error fetching branches:', error);
+      } finally {
+        setIsLoadingRestaurants(false);
       }
     }
 
@@ -664,8 +668,8 @@ export function StoreHeader() {
   }, [currentView, user?.id, fetchOrderHistory]);
 
   const renderContent = () => {
-    if (isLoading) {
-      return null // Don't render content while loading
+    if (isLoading && currentView === 'branch') {
+      return null // Don't render content while loading branch page
     }
 
     switch (currentView) {
@@ -867,7 +871,15 @@ export function StoreHeader() {
 
             {/* Store Listings */}
             <div className="container mx-auto px-4 py-6">
-              {searchResults.length > 0 ? (
+              {isLoadingRestaurants ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <LoadingSpinner 
+                    size="lg"
+                    color="orange"
+                    text="Loading restaurants..."
+                  />
+                </div>
+              ) : searchResults.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {searchResults.map((branch) => (
                     <Link
@@ -957,7 +969,7 @@ export function StoreHeader() {
         onLogout={handleLogout}
         onHomeClick={handleHomeClick}
       />
-      {isLoading && (
+      {isLoading && currentView === 'branch' && (
         <LoadingSpinner 
           size="md"
           color="orange"
