@@ -144,8 +144,9 @@ export function RestaurantSignupForm() {
   }
 
   const handleBranchPhoneChange = (phone: string) => {
-    setBranchData(prev => ({ ...prev, phone_number: phone }))
-    form.setValue('branches.phone_number', phone)
+    const phoneWithoutSpaces = phone.replace(/\s/g, '');
+    setBranchData(prev => ({ ...prev, phone_number: phoneWithoutSpaces }))
+    form.setValue('branches.phone_number', phoneWithoutSpaces)
   }
 
   return (
@@ -290,7 +291,14 @@ export function RestaurantSignupForm() {
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="Your phone number" {...field} />
+                      <Input 
+                        placeholder="Your phone number" 
+                        {...field}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\s/g, '');
+                          field.onChange(value);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
