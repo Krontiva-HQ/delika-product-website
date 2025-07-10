@@ -928,28 +928,7 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
                     )}
                   </div>
                   
-                  {/* Debug info - remove this later */}
-                  <div className="text-xs text-gray-500 mb-2 p-2 bg-gray-100 rounded">
-                    <div>Debug: Distance: {distance}, Rider: {riderFee}, Pedestrian: {pedestrianFee}</div>
-                    <div>Loading: {isLoadingDelivery ? 'Yes' : 'No'}, BranchLoc: {branchLocation ? 'Yes' : 'No'}</div>
-                    <div>LocationData: {localStorage.getItem('userLocationData') ? 'Yes' : 'No'}</div>
-                    <button 
-                      onClick={() => {
-                        const locationData = localStorage.getItem('userLocationData');
-                        if (locationData) {
-                          const { lat, lng } = JSON.parse(locationData);
-                          console.log('Manual trigger - Location data:', { lat, lng });
-                          // Trigger the location update event to recalculate fees
-                          window.dispatchEvent(new CustomEvent('locationUpdated', { detail: { lat, lng } }));
-                        } else {
-                          console.log('Manual trigger - No location data found');
-                        }
-                      }}
-                      className="bg-blue-500 text-white px-2 py-1 rounded text-xs mt-1"
-                    >
-                      Manual Calculate
-                    </button>
-                  </div>
+
                   <RadioGroup
                     value={deliveryType}
                     onValueChange={(value) => handleDeliveryTypeChange(value as 'rider' | 'pedestrian')}
