@@ -3,17 +3,22 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ShoppingBag, Plus, Minus, ArrowLeft, MapPin, Phone, User, FileText, ArrowRight } from "lucide-react"
+import { ShoppingBag, Plus, Minus, ArrowLeft, MapPin, Phone, User, FileText, ArrowRight, Edit3, Bike } from "lucide-react"
 import Image from "next/image"
 import { CartItem as BaseCartItem } from "@/types/cart"
 import { OrderFeedback } from "@/components/order-feedback"
-import { submitOrder } from '@/lib/api'
+import { submitOrder, calculateDeliveryPrices } from '@/lib/api'
 import { toast } from "@/components/ui/use-toast"
 import { Dialog } from "@/components/ui/dialog"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
 import { BranchPage } from "@/components/branch-page"
+import { LocationSearchModal } from "@/components/location-search-modal"
+import { calculateDistance } from "@/lib/distance"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 
 interface CartItem extends Omit<BaseCartItem, 'available'> {
   id: string
@@ -118,10 +123,56 @@ export function CheckoutPage({
   const [menuError, setMenuError] = useState<string | null>(null);
   const [deliveryFee, setDeliveryFee] = useState(0)
   const [showFeedback, setShowFeedback] = useState(false)
-  const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian' | 'pickup'>('rider')
+  const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian'>('rider')
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
+  const [riderFee, setRiderFee] = useState(0)
+  const [pedestrianFee, setPedestrianFee] = useState(0)
+  const [distance, setDistance] = useState(0)
+  const [isLoadingDelivery, setIsLoadingDelivery] = useState(false)
   const platformFee = 3.00 // Platform fee of GHC3.00
 
   const router = useRouter();
+
+  // Debug log to check if branchLocation is available
+  useEffect(() => {
+    console.log('CheckoutPage mounted with branchLocation:', branchLocation);
+  }, [branchLocation]);
+
+
+
+  // Handle location selection
+  const handleLocationSelect = async ({ address, lat, lng }: { address: string; lat: number; lng: number }) => {
+    // Update customer info with new address
+    const updatedInfo = { ...customerInfo, address };
+    setCustomerInfo(updatedInfo);
+    localStorage.setItem('customerInfo', JSON.stringify(updatedInfo));
+    
+    // Save to localStorage with consistent key
+    localStorage.setItem('userLocationData', JSON.stringify({ address, lat, lng }));
+    
+    // Trigger event to notify other components and trigger calculation
+    window.dispatchEvent(new CustomEvent('locationUpdated', { detail: { address, lat, lng } }));
+    
+    setIsLocationModalOpen(false);
+  };
+
+  // Handle delivery type change
+  const handleDeliveryTypeChange = (type: 'rider' | 'pedestrian') => {
+    // Prevent changing to pedestrian if distance > 2km
+    if (type === 'pedestrian' && distance > 2) {
+      return;
+    }
+    
+    setDeliveryType(type);
+    
+    // Update delivery fee based on selected type
+    const currentFee = type === 'rider' ? riderFee : pedestrianFee;
+    setDeliveryFee(currentFee);
+    
+    // Store the selected delivery type
+    localStorage.setItem('selectedDeliveryType', type);
+    localStorage.setItem('checkoutDeliveryFee', currentFee.toString());
+  };
 
   useEffect(() => {
     const loadLocationData = () => {
@@ -171,8 +222,8 @@ export function CheckoutPage({
 
     // Load the selected delivery type from localStorage
     const savedDeliveryType = localStorage.getItem('selectedDeliveryType')
-    if (savedDeliveryType) {
-      setDeliveryType(savedDeliveryType as 'rider' | 'pedestrian' | 'pickup')
+    if (savedDeliveryType && (savedDeliveryType === 'rider' || savedDeliveryType === 'pedestrian')) {
+      setDeliveryType(savedDeliveryType as 'rider' | 'pedestrian')
     }
 
     // Listen for location updates
@@ -234,27 +285,102 @@ export function CheckoutPage({
   useEffect(() => {
     const storedFee = localStorage.getItem('checkoutDeliveryFee')
     const storedType = localStorage.getItem('selectedDeliveryType')
-    if (storedFee && storedType) {
+    const storedRiderFee = localStorage.getItem('checkoutRiderFee')
+    const storedPedestrianFee = localStorage.getItem('checkoutPedestrianFee')
+    
+    console.log('Loading stored delivery data:', { 
+      storedFee, 
+      storedType, 
+      storedRiderFee, 
+      storedPedestrianFee 
+    });
+    
+    if (storedFee && storedType && (storedType === 'rider' || storedType === 'pedestrian')) {
       setDeliveryFee(Number(storedFee))
-      setDeliveryType(storedType as 'rider' | 'pedestrian' | 'pickup')
-      // DO NOT clear here! Only clear after payment success.
-    }
-
-    // Listen for location updates to recalculate delivery fees
-    const handleLocationUpdateForFees = () => {
-      // Clear stored fees when location changes so they get recalculated
-      localStorage.removeItem('checkoutDeliveryFee')
-      localStorage.removeItem('selectedDeliveryType')
-      // Reset to default values - the cart modal will recalculate
-      setDeliveryFee(0)
-      setDeliveryType('rider')
-    }
-
-    window.addEventListener('locationUpdated', handleLocationUpdateForFees)
-    return () => {
-      window.removeEventListener('locationUpdated', handleLocationUpdateForFees)
+      setDeliveryType(storedType as 'rider' | 'pedestrian')
+      
+      // Also load individual fees if available
+      if (storedRiderFee) setRiderFee(Number(storedRiderFee));
+      if (storedPedestrianFee) setPedestrianFee(Number(storedPedestrianFee));
     }
   }, [])
+
+  // Calculate delivery fees using exact same logic as cart modal
+  useEffect(() => {
+    const calculateFee = async () => {
+      try {
+        setIsLoadingDelivery(true)
+        const locationData = localStorage.getItem('userLocationData')
+        
+        if (!locationData || !branchLocation) {
+          console.log('Missing data - locationData:', !!locationData, 'branchLocation:', !!branchLocation)
+          setIsLoadingDelivery(false)
+          return
+        }
+
+        const { lat, lng } = JSON.parse(locationData)
+        const branchLat = parseFloat(branchLocation.latitude.toString())
+        const branchLng = parseFloat(branchLocation.longitude.toString())
+        
+        console.log('Calculating distance between:', { userLat: lat, userLng: lng, branchLat, branchLng })
+        
+        const distance = await calculateDistance(
+          { latitude: lat, longitude: lng },
+          { latitude: branchLat, longitude: branchLng }
+        )
+        
+        console.log('Distance calculated:', distance)
+        setDistance(distance)
+
+        // Get delivery prices from API
+        const { riderFee: newRiderFee, pedestrianFee: newPedestrianFee } = await calculateDeliveryPrices({
+          pickup: {
+            fromLatitude: branchLat.toString(),
+            fromLongitude: branchLng.toString(),
+          },
+          dropOff: {
+            toLatitude: lat.toString(),
+            toLongitude: lng.toString(),
+          },
+          rider: true,
+          pedestrian: true
+        });
+
+        console.log('API returned fees:', { riderFee: newRiderFee, pedestrianFee: newPedestrianFee })
+
+        setRiderFee(newRiderFee)
+        setPedestrianFee(newPedestrianFee)
+        
+        // If distance > 2km and pedestrian is selected, switch to rider
+        if (distance > 2 && deliveryType === 'pedestrian') {
+          setDeliveryType('rider')
+          setDeliveryFee(newRiderFee)
+        } else {
+          // Set the fee based on the selected delivery type
+          const currentFee = deliveryType === 'rider' ? newRiderFee : newPedestrianFee
+          setDeliveryFee(currentFee)
+        }
+      } catch (error) {
+        console.error('Error calculating delivery fee:', error)
+      } finally {
+        setIsLoadingDelivery(false)
+      }
+    }
+
+    // Calculate fees on mount and when dependencies change
+    calculateFee()
+
+    // Listen for location updates - same as cart modal
+    const handleLocationUpdate = () => {
+      console.log('Location update event received')
+      calculateFee()
+    }
+
+    window.addEventListener('locationUpdated', handleLocationUpdate)
+    return () => {
+      window.removeEventListener('locationUpdated', handleLocationUpdate)
+    }
+  }, [branchLocation, deliveryType]) // Same dependencies as cart modal
 
   // Sync customerInfo with initialFullName and initialPhoneNumber if they change
   useEffect(() => {
@@ -766,19 +892,19 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
                     </div>
                   </label>
                   <div className="relative">
-                    <Input
-                      name="address"
-                      value={customerInfo.address}
-                      readOnly
-                      placeholder="Your delivery address will be shown here"
-                      required
-                      aria-invalid={!!formErrors.address}
+                    <div
+                      onClick={() => setIsLocationModalOpen(true)}
                       className={`${
                         formErrors.address 
                           ? "border-red-300 bg-red-50" 
-                          : "border-gray-200 bg-gray-50"
-                      } h-12 rounded-xl cursor-not-allowed`}
-                    />
+                          : "border-gray-200 bg-white hover:bg-gray-50"
+                      } h-12 rounded-xl cursor-pointer flex items-center justify-between px-4 border transition-colors group`}
+                    >
+                      <span className={customerInfo.address ? "text-gray-900" : "text-gray-500"}>
+                        {customerInfo.address || "Select your delivery address"}
+                      </span>
+                      <Edit3 className="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" />
+                    </div>
                   </div>
                   {formErrors.address && (
                     <p className="text-red-500 text-sm mt-1.5 flex items-center gap-1">
@@ -786,9 +912,113 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
                       {formErrors.address}
                     </p>
                   )}
-                  <p className="text-sm text-gray-500 mt-2 italic">
-                    To change delivery address, please select a different location from the main page
+                  <p className="text-sm text-gray-500 mt-2">
+                    Click to change your delivery location
                   </p>
+                </div>
+
+                {/* Delivery Type Selection - Using existing cart modal implementation */}
+                <div>
+                  <div className="flex justify-between items-center text-sm mb-3">
+                    <span className="text-gray-600 font-medium">Choose Delivery Type</span>
+                    {distance > 0 && (
+                      <span className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                        {distance.toFixed(1)}km
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Debug info - remove this later */}
+                  <div className="text-xs text-gray-500 mb-2 p-2 bg-gray-100 rounded">
+                    <div>Debug: Distance: {distance}, Rider: {riderFee}, Pedestrian: {pedestrianFee}</div>
+                    <div>Loading: {isLoadingDelivery ? 'Yes' : 'No'}, BranchLoc: {branchLocation ? 'Yes' : 'No'}</div>
+                    <div>LocationData: {localStorage.getItem('userLocationData') ? 'Yes' : 'No'}</div>
+                    <button 
+                      onClick={() => {
+                        const locationData = localStorage.getItem('userLocationData');
+                        if (locationData) {
+                          const { lat, lng } = JSON.parse(locationData);
+                          console.log('Manual trigger - Location data:', { lat, lng });
+                          // Trigger the location update event to recalculate fees
+                          window.dispatchEvent(new CustomEvent('locationUpdated', { detail: { lat, lng } }));
+                        } else {
+                          console.log('Manual trigger - No location data found');
+                        }
+                      }}
+                      className="bg-blue-500 text-white px-2 py-1 rounded text-xs mt-1"
+                    >
+                      Manual Calculate
+                    </button>
+                  </div>
+                  <RadioGroup
+                    value={deliveryType}
+                    onValueChange={(value) => handleDeliveryTypeChange(value as 'rider' | 'pedestrian')}
+                    className="grid grid-cols-2 gap-2"
+                  >
+                    <div>
+                      <RadioGroupItem
+                        value="rider"
+                        id="rider"
+                        className="peer sr-only"
+                      />
+                      <Label
+                        htmlFor="rider"
+                        className={cn(
+                          "flex items-center gap-2 rounded-md border border-gray-200 p-2 hover:bg-gray-50 cursor-pointer",
+                          "peer-data-[state=checked]:border-orange-500 peer-data-[state=checked]:bg-orange-50",
+                          "transition-all duration-200"
+                        )}
+                      >
+                        <Bike className="h-4 w-4 text-gray-600" />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">Rider</div>
+                          <div className="text-xs text-gray-500">
+                            {isLoadingDelivery ? 'Calculating...' : `GH₵ ${riderFee.toFixed(2)}`}
+                          </div>
+                        </div>
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem
+                        value="pedestrian"
+                        id="pedestrian"
+                        className="peer sr-only"
+                        disabled={distance > 2}
+                      />
+                      <Label
+                        htmlFor="pedestrian"
+                        className={cn(
+                          "flex items-center gap-2 rounded-md border border-gray-200 p-2 cursor-pointer transition-all duration-200",
+                          distance > 2 
+                            ? "opacity-50 cursor-not-allowed bg-gray-100 border-gray-300" 
+                            : "hover:bg-gray-50 peer-data-[state=checked]:border-orange-500 peer-data-[state=checked]:bg-orange-50"
+                        )}
+                      >
+                        <User className={cn(
+                          "h-4 w-4",
+                          distance > 2 ? "text-gray-400" : "text-gray-600"
+                        )} />
+                        <div>
+                          <div className={cn(
+                            "text-sm font-medium",
+                            distance > 2 ? "text-gray-400" : "text-gray-900"
+                          )}>
+                            Pedestrian
+                            {distance > 2 && (
+                              <span className="ml-1 text-xs text-red-500">(Not available)</span>
+                            )}
+                          </div>
+                          <div className={cn(
+                            "text-xs",
+                            distance > 2 ? "text-gray-400" : "text-gray-500"
+                          )}>
+                            {distance > 2 ? "Distance too far" : 
+                             isLoadingDelivery ? 'Calculating...' : `GH₵ ${pedestrianFee.toFixed(2)}`}
+                          </div>
+                        </div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
 
                 <div>
@@ -837,6 +1067,13 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
           </div>
         </div>
       </div>
+
+      {/* Location Search Modal */}
+      <LocationSearchModal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+        onLocationSelect={handleLocationSelect}
+      />
     </div>
   )
 }
