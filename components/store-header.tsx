@@ -24,6 +24,7 @@ import { getBranches, getCustomerDetails, updateFavorites } from "@/lib/api"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { LoadingSpinner } from "@/components/loading-spinner"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 interface Restaurant {
   restaurantName: string
@@ -153,6 +154,14 @@ export function StoreHeader() {
   const [currentPage, setCurrentPage] = useState(1)
   const ORDERS_PER_PAGE = 10
   const [isBranchPageLoaded, setIsBranchPageLoaded] = useState(false)
+  // For filter modal state
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [filterCity, setFilterCity] = useState(selectedCity);
+  const [filterRating, setFilterRating] = useState('all');
+  const [filterCategories, setFilterCategories] = useState<string[]>([]);
+
+  // Get all unique menu categories from branches
+  const allCategories = Array.from(new Set(branches.flatMap(branch => branch._restaurantTable?.[0]?.restaurantName ? branch._restaurantTable[0].restaurantName.split(',') : [])));
 
   useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -845,30 +854,100 @@ export function StoreHeader() {
                       value={searchQuery}
                       onChange={handleSearchChange}
                     />
-                    {/* Filter button inside search bar, right-aligned */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-full flex items-center gap-2 flex-shrink-0">
-                          <Settings2 className="w-5 h-5" />
-                          <ChevronDown className="w-4 h-4" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56">
-                        <DropdownMenuLabel>Filter by</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => setSelectedCity('all')}>
-                          All Locations
-                        </DropdownMenuItem>
-                        {cities.map((city) => (
-                          <DropdownMenuItem key={city} onClick={() => setSelectedCity(city)}>
-                            {city}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {/* Filter button opens modal */}
+                    <button
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-full flex items-center gap-2 flex-shrink-0"
+                      onClick={() => setIsFilterModalOpen(true)}
+                      aria-label="Open filter options"
+                    >
+                      <Settings2 className="w-5 h-5" />
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
+          {/* Filter Modal */}
+          <Dialog open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
+            <DialogContent className="max-w-md">
+              <DialogTitle>Filter Restaurants</DialogTitle>
+              <div className="mt-4 space-y-6">
+                {/* Location */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">City</label>
+                  <select
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                    value={filterCity}
+                    onChange={e => setFilterCity(e.target.value)}
+                  >
+                    <option value="all">All Locations</option>
+                    {cities.map(city => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                </div>
+                {/* Rating */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Minimum Rating</label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-1">
+                      <input type="radio" name="rating" value="all" checked={filterRating === 'all'} onChange={() => setFilterRating('all')} />
+                      <span>All</span>
+                    </label>
+                    <label className="flex items-center gap-1">
+                      <input type="radio" name="rating" value="4" checked={filterRating === '4'} onChange={() => setFilterRating('4')} />
+                      <span>4+ stars</span>
+                    </label>
+                    <label className="flex items-center gap-1">
+                      <input type="radio" name="rating" value="3" checked={filterRating === '3'} onChange={() => setFilterRating('3')} />
+                      <span>3+ stars</span>
+                    </label>
+                  </div>
+                </div>
+                {/* Menu Categories */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Menu Categories</label>
+                  <div className="flex flex-wrap gap-2">
+                    {allCategories.map(category => (
+                      <label key={category} className="flex items-center gap-1 border rounded px-2 py-1">
+                        <input
+                          type="checkbox"
+                          checked={filterCategories.includes(category)}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setFilterCategories([...filterCategories, category]);
+                            } else {
+                              setFilterCategories(filterCategories.filter(c => c !== category));
+                            }
+                          }}
+                        />
+                        <span>{category}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium"
+                  onClick={() => setIsFilterModalOpen(false)}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 text-sm font-medium"
+                  onClick={() => {
+                    setSelectedCity(filterCity);
+                    setIsFilterModalOpen(false);
+                  }}
+                  type="button"
+                >
+                  Apply
+                </button>
+              </div>
+            </DialogContent>
+          </Dialog>
 
             {/* Store Listings */}
             <div className="container mx-auto px-4 py-6">
