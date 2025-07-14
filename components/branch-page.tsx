@@ -786,138 +786,141 @@ export function BranchPage({ params }: BranchPageProps) {
   return (
     <div className="min-h-screen pb-24">
       <div className="container mx-auto px-4 py-8">
+        {/* Restaurant Header and Details */}
+        <div className="mb-6">
+          <div className="relative h-[220px] sm:h-[320px]">
+            <Image
+              src={branch.restaurant?.[0]?.restaurantLogo?.url || '/placeholder-image.jpg'}
+              alt={branch.restaurant?.[0]?.restaurantName || 'Restaurant'}
+              fill
+              priority
+              className="object-cover rounded-2xl"
+            />
+            <button
+              onClick={handleLikeToggle}
+              className={`absolute top-3 right-3 z-10 rounded-full p-2 shadow-md transition-all duration-200 ${
+                isLiked
+                  ? 'bg-orange-100 text-orange-500 border border-orange-200 hover:bg-orange-200'
+                  : 'bg-white text-gray-400 border border-gray-200 hover:bg-gray-100'
+              }`}
+              aria-label={isLiked ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              <Heart className={`w-6 h-6 transition-all duration-200 ${isLiked ? 'fill-current' : ''}`} />
+            </button>
+          </div>
+          <div className="text-center py-4">
+            <h1 className="text-4xl font-bold text-gray-900 mb-1">
+              {branch.restaurant?.[0]?.restaurantName || branch.branchName}
+            </h1>
+            <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-gray-600">
+              <div className="flex items-center">
+                <Star className="w-4 h-4 fill-current text-yellow-400" />
+                <span className="ml-1">4.4</span>
+                <span className="ml-1">(500+)</span>
+              </div>
+              <span>•</span>
+              <span>Delivery</span>
+              <span>•</span>
+              <span>{branch.branchCity}</span>
+              <span>•</span>
+              <span className={isOpen ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                {isOpen ? 'Open Now' : 'Closed'}
+              </span>
+            </div>
+            <div className="mt-3 flex justify-center">
+              <button
+                onClick={() => setIsDetailsModalOpen(true)}
+                className="px-4 py-1 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium shadow-sm transition"
+              >
+                View Details
+              </button>
+            </div>
+          </div>
+        </div>
+        {/* Mobile Menu Categories - below details, outside grid */}
+        <div className="bg-white rounded-lg p-4 mb-6 block lg:hidden">
+          <h2 className="font-semibold mb-4">Menu Categories</h2>
+          <div className="flex overflow-x-auto whitespace-nowrap pb-2 gap-2">
+            {branch._menutable?.map((category) => (
+              <button 
+                key={category.foodType}
+                onClick={() => setSelectedCategory(category.foodType)}
+                className={`px-3 py-2 rounded-md hover:bg-gray-100 text-sm flex-shrink-0 ${
+                  selectedCategory === category.foodType ? 'bg-gray-100' : ''
+                }`}
+              >
+                {category.foodType}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
-          {/* Menu Categories - Left Sidebar */}
-          <div className="lg:col-span-3 bg-white rounded-lg p-4 h-fit sticky top-4 z-10">
-            <h2 className="font-semibold mb-4">Menu Categories</h2>
-            <div className="flex lg:block overflow-x-auto whitespace-nowrap lg:whitespace-normal pb-2 lg:pb-0 gap-2 lg:gap-0 lg:space-y-2">
-              {branch._menutable?.map((category) => (
-                <button 
-                  key={category.foodType}
-                  onClick={() => setSelectedCategory(category.foodType)}
-                  className={`px-3 py-2 rounded-md hover:bg-gray-100 text-sm flex-shrink-0 lg:w-full text-left ${
-                    selectedCategory === category.foodType ? 'bg-gray-100' : ''
-                  }`}
-                >
-                  {category.foodType}
-                </button>
-              ))}
+          {/* Menu Categories - Sidebar on lg */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-lg p-4 h-fit sticky top-4 z-10 hidden lg:block">
+              <h2 className="font-semibold mb-4">Menu Categories</h2>
+              <div className="block overflow-x-auto whitespace-nowrap lg:whitespace-normal pb-2 lg:pb-0 gap-2 lg:gap-0 lg:space-y-2">
+                {branch._menutable?.map((category) => (
+                  <button 
+                    key={category.foodType}
+                    onClick={() => setSelectedCategory(category.foodType)}
+                    className={`px-3 py-2 rounded-md hover:bg-gray-100 text-sm flex-shrink-0 lg:w-full text-left ${
+                      selectedCategory === category.foodType ? 'bg-gray-100' : ''
+                    }`}
+                  >
+                    {category.foodType}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Main Content Column */}
+          {/* Menu Items */}
           <div className="lg:col-span-9">
-            {/* Restaurant Header */}
-            <div className="bg-white rounded-xl overflow-hidden mb-6">
-              <div className="mb-6">
-                <div className="relative h-[220px] sm:h-[320px]">
-                  <Image
-                    src={branch.restaurant?.[0]?.restaurantLogo?.url || '/placeholder-image.jpg'}
-                    alt={branch.restaurant?.[0]?.restaurantName || 'Restaurant'}
-                    fill
-                    priority
-                    className="object-cover rounded-2xl"
-                  />
-                  <button
-                    onClick={handleLikeToggle}
-                    className={`absolute top-3 right-3 z-10 rounded-full p-2 shadow-md transition-all duration-200 ${
-                      isLiked
-                        ? 'bg-orange-100 text-orange-500 border border-orange-200 hover:bg-orange-200'
-                        : 'bg-white text-gray-400 border border-gray-200 hover:bg-gray-100'
-                    }`}
-                    aria-label={isLiked ? 'Remove from favorites' : 'Add to favorites'}
-                  >
-                    <Heart className={`w-6 h-6 transition-all duration-200 ${isLiked ? 'fill-current' : ''}`} />
-                  </button>
+            {/* Menu Items */}
+            <div className="bg-white rounded-lg p-4 sm:p-6">
+              <h2 className="font-semibold mb-4 sm:mb-6">{selectedCategory}</h2>
+              {!isOpen && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+                  This restaurant is currently closed. Orders can only be placed during operating hours.
                 </div>
-                <div className="text-center py-4">
-                  <h1 className="text-4xl font-bold text-gray-900 mb-1">
-                    {branch.restaurant?.[0]?.restaurantName || branch.branchName}
-                  </h1>
-                  <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-gray-600">
-                    <div className="flex items-center">
-                      <Star className="w-4 h-4 fill-current text-yellow-400" />
-                      <span className="ml-1">4.4</span>
-                      <span className="ml-1">(500+)</span>
-                    </div>
-                    <span>•</span>
-                    <span>Delivery</span>
-                    <span>•</span>
-                    <span>{branch.branchCity}</span>
-                    <span>•</span>
-                    <span className={isOpen ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                      {isOpen ? 'Open Now' : 'Closed'}
-                    </span>
-                  </div>
-                  <div className="mt-3 flex justify-center">
-                    <button
-                      onClick={() => setIsDetailsModalOpen(true)}
-                      className="px-4 py-1 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium shadow-sm transition"
-                    >
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Menu Items */}
-              <div className="bg-white rounded-lg p-4 sm:p-6">
-                <h2 className="font-semibold mb-4 sm:mb-6">{selectedCategory}</h2>
-                {!isOpen && (
-                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
-                    This restaurant is currently closed. Orders can only be placed during operating hours.
-                  </div>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                  {currentCategory?.foods?.map((item, index) => {
-                    const itemInCart = cart.find(cartItem => getCartItemKey(cartItem) === getCartItemKey({ id: item.name, name: item.name, price: item.price, quantity: 0 }));
-                    const quantity = itemInCart?.quantity || 0;
-                    
-                    return (
-                      <div key={`${item.name}-${index}`} className={`flex flex-col gap-4 p-4 border rounded-lg ${!item.available || !isOpen ? 'opacity-50' : ''}`}>
-                        <div className="relative w-full h-40 flex-shrink-0">
-                          {item.foodImage && (
-                            <Image
-                              src={item.foodImage.url}
-                              alt={item.name}
-                              fill
-                              className={`object-cover rounded-lg ${!item.available ? 'grayscale' : ''}`}
-                            />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">{item.name}</h3>
-                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.description}</p>
-                          
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="font-medium text-gray-900">GH₵ {item.price}</span>
-                            <div className="flex items-center gap-2">
-                              {item.available && isOpen ? (
-                                quantity > 0 ? (
-                                  <div className="flex items-center gap-2">
-                                    <Button 
-                                      size="icon"
-                                      className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
-                                      onClick={() => removeFromCart(getCartItemKey({ id: item.name, name: item.name, price: item.price, quantity: 0 }))}
-                                    >
-                                      <Minus className="h-4 w-4" />
-                                    </Button>
-                                    <span className="w-5 text-center font-medium">{quantity}</span>
-                                    <Button 
-                                      size="icon"
-                                      className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
-                                      onClick={() => setSelectedItem({
-                                        name: item.name,
-                                        price: item.price,
-                                        description: item.description,
-                                        foodImage: item.foodImage,
-                                        extras: item.extras
-                                      })}
-                                    >
-                                      <Plus className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                ) : (
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                {currentCategory?.foods?.map((item, index) => {
+                  const itemInCart = cart.find(cartItem => getCartItemKey(cartItem) === getCartItemKey({ id: item.name, name: item.name, price: item.price, quantity: 0 }));
+                  const quantity = itemInCart?.quantity || 0;
+                  
+                  return (
+                    <div key={`${item.name}-${index}`} className={`flex flex-col gap-4 p-4 border rounded-lg ${!item.available || !isOpen ? 'opacity-50' : ''}`}>
+                      <div className="relative w-full h-40 flex-shrink-0">
+                        {item.foodImage && (
+                          <Image
+                            src={item.foodImage.url}
+                            alt={item.name}
+                            fill
+                            className={`object-cover rounded-lg ${!item.available ? 'grayscale' : ''}`}
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">{item.name}</h3>
+                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.description}</p>
+                        
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="font-medium text-gray-900">GH₵ {item.price}</span>
+                          <div className="flex items-center gap-2">
+                            {item.available && isOpen ? (
+                              quantity > 0 ? (
+                                <div className="flex items-center gap-2">
+                                  <Button 
+                                    size="icon"
+                                    className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
+                                    onClick={() => removeFromCart(getCartItemKey({ id: item.name, name: item.name, price: item.price, quantity: 0 }))}
+                                  >
+                                    <Minus className="h-4 w-4" />
+                                  </Button>
+                                  <span className="w-5 text-center font-medium">{quantity}</span>
                                   <Button 
                                     size="icon"
                                     className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
@@ -931,17 +934,31 @@ export function BranchPage({ params }: BranchPageProps) {
                                   >
                                     <Plus className="h-4 w-4" />
                                   </Button>
-                                )
+                                </div>
                               ) : (
-                                <span className="text-sm text-gray-500">Not Available</span>
-                              )}
-                            </div>
+                                <Button 
+                                  size="icon"
+                                  className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
+                                  onClick={() => setSelectedItem({
+                                    name: item.name,
+                                    price: item.price,
+                                    description: item.description,
+                                    foodImage: item.foodImage,
+                                    extras: item.extras
+                                  })}
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              )
+                            ) : (
+                              <span className="text-sm text-gray-500">Not Available</span>
+                            )}
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
