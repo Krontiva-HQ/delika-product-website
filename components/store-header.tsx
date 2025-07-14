@@ -854,7 +854,6 @@ export function StoreHeader() {
                       aria-label="Open filter options"
                     >
                       <Settings2 className="w-5 h-5" />
-                      <ChevronDown className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
