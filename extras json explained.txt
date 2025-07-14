@@ -1,0 +1,451 @@
+{
+  "id": "09af0378-9997-40da-812f-b71e2feb8490",
+  "created_at": 1751281599033,
+  "branchName": "Lakeside Estate",
+  "restaurantID": "2e0db073-7261-4a5f-86c7-8c201eae9e91",
+  "branchLocation": "No.4 Greenstreet, New, Adenta Municipality, Ghana",
+  "branchPhoneNumber": "0597201332",
+  "branchCity": "",
+  "branchLatitude": "5.7045124",
+  "branchLongitude": "-0.1368188",
+  "openTime": "",
+  "closeTime": "",
+  "active": false,
+  "slug": "sancomat-restaurant-lakeside-estate",
+  "paystackInitializeTransactionReference": "",
+  "activeHours": [
+    {
+      "day": "Monday",
+      "openingTime": "8:00 AM",
+      "closingTime": "8:00 PM",
+      "opened": false
+    },
+    {
+      "day": "Tuesday",
+      "openingTime": "8:00 AM",
+      "closingTime": "8:00 PM",
+      "opened": false
+    },
+    {
+      "day": "Wednesday",
+      "openingTime": "8:00 AM",
+      "closingTime": "8:00 PM",
+      "opened": false
+    },
+    {
+      "day": "Thursday",
+      "openingTime": "8:00 AM",
+      "closingTime": "8:00 PM",
+      "opened": false
+    },
+    {
+      "day": "Friday",
+      "openingTime": "8:00 AM",
+      "closingTime": "8:00 PM",
+      "opened": false
+    },
+    {
+      "day": "Saturday",
+      "openingTime": "8:00 AM",
+      "closingTime": "8:00 PM",
+      "opened": false
+    },
+    {
+      "day": "Sunday",
+      "openingTime": "8:00 AM",
+      "closingTime": "8:00 PM",
+      "opened": false
+    }
+  ],
+  "_menutable": [
+    {
+      "id": "ac557f7c-21ab-4a5b-bdbf-5888881191f2",
+      "created_at": 1751473948406,
+      "categoryId": "d00cba7e-8afd-42d6-8a8e-7b0fd8ea45e6",
+      "foodType": "Test Foods",
+      "restaurantName": "2e0db073-7261-4a5f-86c7-8c201eae9e91",
+      "branchName": "09af0378-9997-40da-812f-b71e2feb8490",
+      "foods": [
+        {
+          "name": "test",
+          "price": "7",
+          "description": "test",
+          "quantity": 0,
+          "available": true,
+          "foodImage": {
+            "access": "public",
+            "path": "/vault/w6Li8XBA/175z6N7CGDrBmWBJIRcrUxTRvBw/ozCY0w../Easy-meals-to-make-at-home-collage.jpg",
+            "name": "Easy-meals-to-make-at-home-collage.jpg",
+            "type": "image",
+            "size": 83950,
+            "mime": "image/jpeg",
+            "meta": {
+              "width": 700,
+              "height": 1100
+            },
+            "url": "https://api-server.krontiva.africa/vault/w6Li8XBA/175z6N7CGDrBmWBJIRcrUxTRvBw/ozCY0w../Easy-meals-to-make-at-home-collage.jpg"
+          },
+          "extras": [
+            {
+              "delika_extras_table_id": "1a8eb334-90b0-4f15-b76a-5ccdc000e3b2",
+              "extrasTable": {
+                "id": "1a8eb334-90b0-4f15-b76a-5ccdc000e3b2",
+                "extrasTitle": "Proteinsss",
+                "extrasType": "multiple",
+                "required": true,
+                "extrasDetails": [
+                  {
+                    "delika_inventory_table_id": "9c6d678c-6c77-4c1d-9256-439793f18d50",
+                    "minSelection": "2",
+                    "maxSelection": "12",
+                    "inventoryTable": [
+                      {
+                        "foodName": "egg",
+                        "foodPrice": "7",
+                        "foodDescription": "test"
+                      }
+                    ]
+                  },
+                  {
+                    "delika_inventory_table_id": "59955c9b-4dda-4aa8-93a7-65ae77073cd9",
+                    "minSelection": "2",
+                    "maxSelection": "12",
+                    "inventoryTable": [
+                      {
+                        "foodName": "Goat meat",
+                        "foodPrice": "12",
+                        "foodDescription": "TEST"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "foodTypeImage": {
+        "access": "public",
+        "path": "/vault/w6Li8XBA/jB09jRIJbAsN1lPTKfAzAbXW_ug/SDLtzQ../Screenshot%2B2025-07-02%2Bat%2B3.28.27%25E2%2580%25AFPM.png",
+        "name": "Screenshot+2025-07-02+at+3.28.27%E2%80%AFPM.png",
+        "type": "image",
+        "size": 1161784,
+        "mime": "image/png",
+        "meta": {
+          "width": 774,
+          "height": 810
+        },
+        "url": "https://api-server.krontiva.africa/vault/w6Li8XBA/jB09jRIJbAsN1lPTKfAzAbXW_ug/SDLtzQ../Screenshot%2B2025-07-02%2Bat%2B3.28.27%25E2%2580%25AFPM.png"
+      }
+    },
+    {
+      "id": "a24b8635-118f-41b4-8691-4d73b4b13b52",
+      "created_at": 1751552265807,
+      "categoryId": "",
+      "foodType": "Water (Still & Sparkling)",
+      "restaurantName": "2e0db073-7261-4a5f-86c7-8c201eae9e91",
+      "branchName": "09af0378-9997-40da-812f-b71e2feb8490",
+      "foods": [
+        {
+          "name": "",
+          "price": "",
+          "description": "",
+          "quantity": 0,
+          "available": false,
+          "foodImage": null,
+          "extras": []
+        },
+        {
+          "name": "wer",
+          "price": "34",
+          "description": "werwe",
+          "quantity": 1,
+          "available": true,
+          "foodImage": {
+            "access": "public",
+            "path": "/vault/w6Li8XBA/bl9hmpmZoF3jwt-sEdxw2Kf8pVU/H5CbYg../kei-food-6.jpg",
+            "name": "kei-food-6.jpg",
+            "type": "image",
+            "size": 136428,
+            "mime": "image/jpeg",
+            "meta": {
+              "width": 1080,
+              "height": 1080
+            },
+            "url": "https://api-server.krontiva.africa/vault/w6Li8XBA/bl9hmpmZoF3jwt-sEdxw2Kf8pVU/H5CbYg../kei-food-6.jpg"
+          },
+          "extras": []
+        }
+      ],
+      "foodTypeImage": {
+        "access": "public",
+        "path": "/vault/w6Li8XBA/0FxwcJjRF0KmENh2TeIezHbtOHg/DMuZDA../category-image.jpg",
+        "name": "category-image.jpg",
+        "type": "image",
+        "size": 1161784,
+        "mime": "image/jpeg",
+        "meta": {
+          "width": 774,
+          "height": 810
+        },
+        "url": "https://api-server.krontiva.africa/vault/w6Li8XBA/0FxwcJjRF0KmENh2TeIezHbtOHg/DMuZDA../category-image.jpg"
+      }
+    },
+    {
+      "id": "ef5d944d-540e-4734-960a-8eda0c630909",
+      "created_at": 1752063111261,
+      "categoryId": "d00cba7e-8afd-42d6-8a8e-7b0fd8ea45e6",
+      "foodType": "Water (Still & Sparkling)",
+      "restaurantName": "2e0db073-7261-4a5f-86c7-8c201eae9e91",
+      "branchName": "09af0378-9997-40da-812f-b71e2feb8490",
+      "foods": [
+        {
+          "name": "Test",
+          "price": "12",
+          "description": "TEST",
+          "quantity": 0,
+          "available": true,
+          "foodImage": {
+            "access": "public",
+            "path": "/vault/w6Li8XBA/al3gKGhXZ5A5O7ksCiqrxtyBykw/XC-TMA../okro-soup-1.jpg",
+            "name": "okro-soup-1.jpg",
+            "type": "image",
+            "size": 292883,
+            "mime": "image/jpeg",
+            "meta": {
+              "width": 1024,
+              "height": 1024
+            },
+            "url": "https://api-server.krontiva.africa/vault/w6Li8XBA/al3gKGhXZ5A5O7ksCiqrxtyBykw/XC-TMA../okro-soup-1.jpg"
+          },
+          "extras": []
+        }
+      ],
+      "foodTypeImage": {
+        "access": "public",
+        "path": "/vault/w6Li8XBA/-Z9q7kmxTeThOcgaQfAagyFriQo/wOjyPQ../category-image.jpg",
+        "name": "category-image.jpg",
+        "type": "image",
+        "size": 1161784,
+        "mime": "image/jpeg",
+        "meta": {
+          "width": 774,
+          "height": 810
+        },
+        "url": "https://api-server.krontiva.africa/vault/w6Li8XBA/-Z9q7kmxTeThOcgaQfAagyFriQo/wOjyPQ../category-image.jpg"
+      }
+    },
+    {
+      "id": "958c77ea-d26b-447e-844d-77e1f889db11",
+      "created_at": 1751301921036,
+      "categoryId": "",
+      "foodType": "Rice",
+      "restaurantName": "2e0db073-7261-4a5f-86c7-8c201eae9e91",
+      "branchName": "09af0378-9997-40da-812f-b71e2feb8490",
+      "foods": [
+        {
+          "name": "Banku",
+          "price": "1234",
+          "description": "ada",
+          "quantity": 1,
+          "available": true,
+          "foodImage": {
+            "access": "public",
+            "path": "/vault/w6Li8XBA/kZQ-wABh7Y-usnc-czbG524d230/6ZkFqw../7cdd095d-8946-4348-b1c0-4e3f4de91d50.jpeg",
+            "name": "7cdd095d-8946-4348-b1c0-4e3f4de91d50.jpeg",
+            "type": "image",
+            "size": 70027,
+            "mime": "image/jpeg",
+            "meta": {
+              "width": 1260,
+              "height": 708
+            },
+            "url": "https://api-server.krontiva.africa/vault/w6Li8XBA/kZQ-wABh7Y-usnc-czbG524d230/6ZkFqw../7cdd095d-8946-4348-b1c0-4e3f4de91d50.jpeg"
+          },
+          "extras": [
+            {
+              "delika_extras_table_id": "1a8eb334-90b0-4f15-b76a-5ccdc000e3b2",
+              "extrasTable": {
+                "id": "1a8eb334-90b0-4f15-b76a-5ccdc000e3b2",
+                "extrasTitle": "Proteinsss",
+                "extrasType": "multiple",
+                "required": true,
+                "extrasDetails": [
+                  {
+                    "delika_inventory_table_id": "9c6d678c-6c77-4c1d-9256-439793f18d50",
+                    "minSelection": "2",
+                    "maxSelection": "12",
+                    "inventoryTable": [
+                      {
+                        "foodName": "egg",
+                        "foodPrice": "7",
+                        "foodDescription": "test"
+                      }
+                    ]
+                  },
+                  {
+                    "delika_inventory_table_id": "59955c9b-4dda-4aa8-93a7-65ae77073cd9",
+                    "minSelection": "2",
+                    "maxSelection": "12",
+                    "inventoryTable": [
+                      {
+                        "foodName": "Goat meat",
+                        "foodPrice": "12",
+                        "foodDescription": "TEST"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "foodTypeImage": {
+        "access": "public",
+        "path": "/vault/w6Li8XBA/OwglWI_hajK7iamrA4pU-WwsXdY/8W-RBg../ET5B8958-4-500x375.jpeg",
+        "name": "ET5B8958-4-500x375.jpeg",
+        "type": "image",
+        "size": 116338,
+        "mime": "image/jpeg",
+        "meta": {
+          "width": 500,
+          "height": 375
+        },
+        "url": "https://api-server.krontiva.africa/vault/w6Li8XBA/OwglWI_hajK7iamrA4pU-WwsXdY/8W-RBg../ET5B8958-4-500x375.jpeg"
+      }
+    },
+    {
+      "id": "f48b3b6b-3e90-4150-b037-0c9048095840",
+      "created_at": 1751302036152,
+      "categoryId": "",
+      "foodType": "Soups",
+      "restaurantName": "2e0db073-7261-4a5f-86c7-8c201eae9e91",
+      "branchName": "09af0378-9997-40da-812f-b71e2feb8490",
+      "foods": [
+        {
+          "name": "Groundut Soup",
+          "price": "20",
+          "description": "with pepper",
+          "quantity": 0,
+          "available": true,
+          "foodImage": {
+            "access": "public",
+            "path": "/vault/w6Li8XBA/KJH1YXpQE5hFgnzXI1HA65JzsIE/G0R1Og../groundnut-soup-with-chicken-720x1080.jpg",
+            "name": "groundnut-soup-with-chicken-720x1080.jpg",
+            "type": "image",
+            "size": 49864,
+            "mime": "image/jpeg",
+            "meta": {
+              "width": 720,
+              "height": 1080
+            },
+            "url": "https://api-server.krontiva.africa/vault/w6Li8XBA/KJH1YXpQE5hFgnzXI1HA65JzsIE/G0R1Og../groundnut-soup-with-chicken-720x1080.jpg"
+          },
+          "extras": []
+        },
+        {
+          "name": "Ground Nut",
+          "price": "7",
+          "description": "dw",
+          "quantity": 1,
+          "available": true,
+          "foodImage": {
+            "access": "public",
+            "path": "/vault/w6Li8XBA/MsitjB3eVyzWG_RlB3eGfhzxPtE/GGYzXA../closeup-spicy-cooked-rice-with-meat-vegetables-chips-plate-table.jpg",
+            "name": "closeup-spicy-cooked-rice-with-meat-vegetables-chips-plate-table.jpg",
+            "type": "image",
+            "size": 22250513,
+            "mime": "image/jpeg",
+            "meta": {
+              "width": 6720,
+              "height": 4480
+            },
+            "url": "https://api-server.krontiva.africa/vault/w6Li8XBA/MsitjB3eVyzWG_RlB3eGfhzxPtE/GGYzXA../closeup-spicy-cooked-rice-with-meat-vegetables-chips-plate-table.jpg"
+          },
+          "extras": [
+            {
+              "delika_extras_table_id": "1a8eb334-90b0-4f15-b76a-5ccdc000e3b2",
+              "extrasTable": {
+                "id": "1a8eb334-90b0-4f15-b76a-5ccdc000e3b2",
+                "extrasTitle": "Proteinsss",
+                "extrasType": "multiple",
+                "required": true,
+                "extrasDetails": [
+                  {
+                    "delika_inventory_table_id": "9c6d678c-6c77-4c1d-9256-439793f18d50",
+                    "minSelection": "2",
+                    "maxSelection": "12",
+                    "inventoryTable": [
+                      {
+                        "foodName": "egg",
+                        "foodPrice": "7",
+                        "foodDescription": "test"
+                      }
+                    ]
+                  },
+                  {
+                    "delika_inventory_table_id": "59955c9b-4dda-4aa8-93a7-65ae77073cd9",
+                    "minSelection": "2",
+                    "maxSelection": "12",
+                    "inventoryTable": [
+                      {
+                        "foodName": "Goat meat",
+                        "foodPrice": "12",
+                        "foodDescription": "TEST"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "foodTypeImage": {
+        "access": "public",
+        "path": "/vault/w6Li8XBA/_5rlubIvP21qCvjkr5DxlZ9q5bQ/jRSCyg../groundnut-soup-with-chicken-720x1080.jpg",
+        "name": "groundnut-soup-with-chicken-720x1080.jpg",
+        "type": "image",
+        "size": 49864,
+        "mime": "image/jpeg",
+        "meta": {
+          "width": 720,
+          "height": 1080
+        },
+        "url": "https://api-server.krontiva.africa/vault/w6Li8XBA/_5rlubIvP21qCvjkr5DxlZ9q5bQ/jRSCyg../groundnut-soup-with-chicken-720x1080.jpg"
+      }
+    }
+  ],
+  "restaurant": [
+    {
+      "id": "2e0db073-7261-4a5f-86c7-8c201eae9e91",
+      "restaurantName": "Sancomat Restaurant",
+      "restaurantEmail": "kjudas012@gmail.com",
+      "restaurantPhoneNumber": "0560571530",
+      "restaurantLogo": {
+        "access": "public",
+        "path": "/vault/w6Li8XBA/OGmBWpDaKI909nYRI4F1ouFA03Y/4l3u3Q../Easy-meals-to-make-at-home-collage.jpg",
+        "name": "Easy-meals-to-make-at-home-collage.jpg",
+        "type": "image",
+        "size": 83950,
+        "mime": "image/jpeg",
+        "meta": {
+          "width": 700,
+          "height": 1100
+        },
+        "url": "https://api-server.krontiva.africa/vault/w6Li8XBA/OGmBWpDaKI909nYRI4F1ouFA03Y/4l3u3Q../Easy-meals-to-make-at-home-collage.jpg"
+      }
+    }
+  ]
+}
+
+
+
+extras → list of all extras for the food
+
+extrasTable → tells you what the extra is (like "Proteinsss")
+
+extrasDetails → holds the real data
+
+inventoryTable → inside each detail, this is where the real foodName lives

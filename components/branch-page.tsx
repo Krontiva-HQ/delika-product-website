@@ -12,6 +12,7 @@ import { LoginModal } from "@/components/login-modal"
 import { SignupModal } from "@/components/signup-modal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getCustomerDetails } from "@/lib/api"
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface BranchDetails {
   _menutable?: Array<{
@@ -217,52 +218,115 @@ const isRestaurantOpen = (activeHours?: Array<{day: string, openingTime: string,
 };
 
 function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsModalProps) {
-  const [extrasQuantities, setExtrasQuantities] = useState<Record<string, number>>({})
-  const [quantity, setQuantity] = useState(1)
+  // --- NEW STATE FOR EXTRAS SELECTION ---
+  // extrasSelection: { [groupId]: Set of selected inventoryTable keys (foodName or unique id) }
+  const [extrasSelection, setExtrasSelection] = useState<Record<string, string[]>>({});
+  const [quantity, setQuantity] = useState(1);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Group extras by extrasTitle
-  const groupedExtras: Record<string, Array<any>> = {};
-  if (item.extras) {
-    item.extras.forEach(extra => {
-      if (!groupedExtras[extra.extrasTitle]) {
-        groupedExtras[extra.extrasTitle] = [];
-      }
-      groupedExtras[extra.extrasTitle].push(...extra.inventoryDetails);
-    });
-  }
-
-  const handleAddToCart = () => {
-    // Build selectedExtras array with quantity > 0
-    const selectedExtras = Object.entries(extrasQuantities)
-      .filter(([_, qty]) => qty > 0)
-      .map(([id, qty]) => {
-        // Find the extra detail by id
-        let found: any = undefined;
-        (Object.values(groupedExtras) as any[][]).forEach((details: any[]) => {
-          const match = details.find((d: any) => d.id === id);
-          if (match) found = match;
+  // --- FLATTENED EXTRAS GROUPS ---
+  // Each group: { groupId, title, type, min, max, options: [{ id, name, price, description }] }
+  const extrasGroups = (item.extras || []).map((extra, idx) => {
+    // Support both new and old structure
+    const table = (extra as any).extrasTable || extra;
+    const groupId = table.id || table.extrasTitle || `group-${idx}`;
+    const title = table.extrasTitle;
+    const type = table.extrasType;
+    // Flatten all inventoryTable items in all extrasDetails
+    let options: Array<{ id: string, name: string, price: string, description: string }> = [];
+    (table.extrasDetails || []).forEach((detail: any, dIdx: number) => {
+      (detail.inventoryTable || []).forEach((inv: any, iIdx: number) => {
+        options.push({
+          id: `${groupId}-${dIdx}-${iIdx}-${inv.foodName}`,
+          name: inv.foodName,
+          price: inv.foodPrice,
+          description: inv.foodDescription || '',
         });
-        return found ? {
-          id: found.id,
-          name: found.foodName,
-          price: found.foodPrice,
-          quantity: qty
-        } : undefined;
-      })
-      .filter((e): e is { id: string; name: string; price: string; quantity: number } => !!e);
-
-    console.log('Adding item to cart with extras:', {
-      item: {
-        id: item.name,
-        name: item.name,
-        price: item.price,
-        quantity: quantity,
-        image: item.foodImage?.url,
-        selectedExtras: selectedExtras
-      },
-      selectedExtras
+      });
     });
+    // min/max: take from first detail (assume same for all)
+    const min = parseInt(table.extrasDetails?.[0]?.minSelection || '0', 10);
+    const max = parseInt(table.extrasDetails?.[0]?.maxSelection || `${options.length}`, 10);
+    return { groupId, title, type, min, max, options };
+  });
 
+  // --- HANDLE SELECTION ---
+  const handleSelect = (groupId: string, optionId: string, checked: boolean) => {
+    setExtrasSelection(prev => {
+      const current = prev[groupId] || [];
+      let next: string[];
+      const group = extrasGroups.find(g => g.groupId === groupId);
+      if (!group) return prev;
+      if (group.type === 'single') {
+        next = checked ? [optionId] : [];
+      } else {
+        // multiple
+        if (checked) {
+          if (current.length < group.max) {
+            next = [...current, optionId];
+          } else {
+            next = current; // don't add more than max
+          }
+        } else {
+          next = current.filter(id => id !== optionId);
+        }
+      }
+      return { ...prev, [groupId]: next };
+    });
+  };
+
+  // --- VALIDATE SELECTIONS ---
+  useEffect(() => {
+    for (const group of extrasGroups) {
+      const selected = extrasSelection[group.groupId] || [];
+      if (selected.length < group.min) {
+        setValidationError(`Select at least ${group.min} option(s) for ${group.title}`);
+        return;
+      }
+      if (selected.length > group.max) {
+        setValidationError(`You can select up to ${group.max} option(s) for ${group.title}`);
+        return;
+      }
+    }
+    setValidationError(null);
+  }, [extrasSelection, extrasGroups]);
+
+  // --- CALCULATE TOTAL PRICE ---
+  let extrasTotal = 0;
+  extrasGroups.forEach(group => {
+    const selected = extrasSelection[group.groupId] || [];
+    selected.forEach(optionId => {
+      const opt = group.options.find(o => o.id === optionId);
+      if (opt) extrasTotal += parseFloat(opt.price);
+    });
+  });
+  const totalPrice = (parseFloat(item.price) + extrasTotal) * quantity;
+
+  // --- BUILD SELECTED EXTRAS FOR CART ---
+  const selectedExtras = extrasGroups.flatMap(group => {
+    const selected = extrasSelection[group.groupId] || [];
+    return selected.map(optionId => {
+      const opt = group.options.find(o => o.id === optionId);
+      return opt ? {
+        id: optionId,
+        name: opt.name,
+        price: opt.price,
+        quantity: 1,
+      } : null;
+    }).filter((e): e is { id: string; name: string; price: string; quantity: number } => !!e);
+  });
+
+  // --- HANDLE ADD TO CART ---
+  const handleAddToCart = () => {
+    // Validate all groups
+    for (const group of extrasGroups) {
+      const selected = extrasSelection[group.groupId] || [];
+      if (selected.length < group.min) {
+        setValidationError(`Select at least ${group.min} option(s) for ${group.title}`);
+        return;
+      }
+    }
+    setValidationError(null);
     onAddToCart({
       id: item.name,
       name: item.name,
@@ -271,20 +335,9 @@ function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsMod
       image: item.foodImage?.url,
       available: true,
       selectedExtras: selectedExtras
-    })
-    onClose()
-  }
-
-  // Calculate total price
-  const extrasTotal = Object.entries(extrasQuantities).reduce((sum, [id, qty]) => {
-    let price = 0;
-    Object.values(groupedExtras).forEach(details => {
-      const match = details.find((d: any) => d.id === id);
-      if (match) price = parseFloat(match.foodPrice) * qty;
     });
-    return sum + price;
-  }, 0);
-  const totalPrice = (parseFloat(item.price) + extrasTotal) * quantity;
+    onClose();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -293,7 +346,7 @@ function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsMod
         {item.foodImage && (
           <div className="relative w-full h-48 sm:h-56 md:h-64">
             <Image
-              src={item.foodImage.url}
+              src={item.foodImage.url || (item.foodImage as any).path || "/placeholder-image.jpg"}
               alt={item.name}
               fill
               className="object-cover w-full h-full"
@@ -308,48 +361,55 @@ function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsMod
             {item.description && <div className="text-gray-500 text-sm mb-2">{item.description}</div>}
           </div>
 
+          {/* --- EXTRAS GROUPS --- */}
           <div className="max-h-72 pr-2 mb-4 overflow-y-auto">
-            {/* Grouped Extras Section */}
-            {Object.keys(groupedExtras).length > 0 && (
-              <div className="mb-4">
-                {Object.entries(groupedExtras).map(([title, details], groupIdx) => (
-                  <div key={title} className="mb-2">
-                    <div className="text-sm font-medium text-gray-700 mb-1">{title}</div>
-                    <div className="divide-y divide-gray-100">
-                      {details.map((detail: any) => (
-                        <div key={detail.id} className="flex items-center py-2 gap-3">
-                          {detail.foodImage && (
-                            <div className="relative w-12 h-12 flex-shrink-0">
-                              <Image
-                                src={detail.foodImage.url}
-                                alt={detail.foodName}
-                                fill
-                                className="object-cover rounded-md"
-                              />
-                            </div>
-                          )}
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-gray-900">{detail.foodName}</span>
-                              <span className="ml-2 text-gray-500 text-sm">+GH₵{parseFloat(detail.foodPrice).toFixed(2)}</span>
-                            </div>
-                            {detail.foodDescription && (
-                              <p className="text-xs text-gray-500 mt-1">{detail.foodDescription}</p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button size="icon" variant="outline" onClick={() => setExtrasQuantities(q => ({ ...q, [detail.id]: Math.max(0, (q[detail.id] || 0) - 1) }))}>-</Button>
-                            <span className="w-6 text-center">{extrasQuantities[detail.id] || 0}</span>
-                            <Button size="icon" variant="outline" onClick={() => setExtrasQuantities(q => ({ ...q, [detail.id]: (q[detail.id] || 0) + 1 }))}>+</Button>
-                          </div>
+            {extrasGroups.map(group => (
+              <div key={group.groupId} className="mb-4">
+                <div className="text-sm font-medium text-gray-700 mb-1 flex items-center justify-between">
+                  <span>{group.title}</span>
+                  <span className="text-xs text-gray-400">{group.type === 'multiple' ? 'Choose ' : 'Select '}min {group.min}, max {group.max}</span>
+                </div>
+                <div className="divide-y divide-gray-100">
+                  {group.options.map(opt => (
+                    <label key={opt.id} className="flex items-center py-2 gap-3 cursor-pointer">
+                      {group.type === 'multiple' ? (
+                        <Checkbox
+                          name={group.groupId}
+                          checked={(extrasSelection[group.groupId] || []).includes(opt.id)}
+                          onCheckedChange={checked => handleSelect(group.groupId, opt.id, !!checked)}
+                          disabled={
+                            !((extrasSelection[group.groupId] || []).includes(opt.id)) &&
+                            (extrasSelection[group.groupId]?.length || 0) >= group.max
+                          }
+                        />
+                      ) : (
+                        <input
+                          type="radio"
+                          name={group.groupId}
+                          value={opt.id}
+                          checked={(extrasSelection[group.groupId] || []).includes(opt.id)}
+                          onChange={e => handleSelect(group.groupId, opt.id, e.target.checked)}
+                          className="form-radio h-4 w-4 text-orange-500 border-gray-300"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-900">{opt.name}</span>
+                          <span className="ml-2 text-gray-500 text-sm">+GH₵{parseFloat(opt.price).toFixed(2)}</span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                        {opt.description && (
+                          <p className="text-xs text-gray-500 mt-1">{opt.description}</p>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
               </div>
-            )}
+            ))}
           </div>
+
+          {/* Validation error */}
+          {validationError && <div className="text-red-500 text-xs mb-2">{validationError}</div>}
 
           {/* Quantity and Add Button */}
           <div className="flex items-center justify-between border-t pt-4 mt-4">
@@ -361,6 +421,7 @@ function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsMod
             <Button 
               className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-2 rounded-full font-semibold text-base"
               onClick={handleAddToCart}
+              disabled={!!validationError}
             >
               Add
               <span className="ml-2">GH₵{totalPrice.toFixed(2)}</span>
@@ -369,7 +430,7 @@ function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsMod
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 export function BranchPage({ params }: BranchPageProps) {
