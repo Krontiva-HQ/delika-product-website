@@ -588,51 +588,54 @@ export function BranchPage({ params }: BranchPageProps) {
     }
   }, [branch]);
 
-  const addToCart = (item: CartItem & { available: boolean }) => {
-    console.log('addToCart called with item:', item);
-    setCart(prevCart => {
-      const existingItem = prevCart.find(cartItem => cartItem.id === item.id)
-      if (existingItem) {
-        console.log('Updating existing item in cart:', {
-          before: existingItem,
-          after: { ...existingItem, quantity: existingItem.quantity + 1, selectedExtras: item.selectedExtras }
-        });
-        return prevCart.map(cartItem =>
-          cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1, selectedExtras: item.selectedExtras }
-            : cartItem
-        )
-      }
-      console.log('Adding new item to cart:', item);
-      return [...prevCart, { ...item, quantity: 1, available: item.available }]
-    })
+  // Helper to generate a unique key for a cart item based on id and selectedExtras
+  function getCartItemKey(item: CartItem) {
+    const extrasKey = item.selectedExtras && item.selectedExtras.length > 0
+      ? JSON.stringify([...item.selectedExtras].sort((a, b) => a.id.localeCompare(b.id)))
+      : '';
+    return `${item.id}__${extrasKey}`;
   }
 
-  const removeFromCart = (itemId: string) => {
+  const addToCart = (item: CartItem & { available: boolean }) => {
     setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === itemId)
-      if (existingItem && existingItem.quantity > 1) {
-        return prevCart.map(item =>
-          item.id === itemId
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
-        )
+      const itemKey = getCartItemKey(item);
+      const existingIndex = prevCart.findIndex(cartItem => getCartItemKey(cartItem) === itemKey);
+      if (existingIndex !== -1) {
+        // Increase quantity for the exact same item+extras combo
+        return prevCart.map((cartItem, idx) =>
+          idx === existingIndex
+            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+            : cartItem
+        );
       }
-      return prevCart.filter(item => item.id !== itemId)
-    })
+      // Add new unique item+extras combo
+      return [...prevCart, { ...item, quantity: 1, available: item.available }];
+    });
+  }
+
+  const removeFromCart = (itemKey: string) => {
+    setCart(prevCart => {
+      const existingIndex = prevCart.findIndex(cartItem => getCartItemKey(cartItem) === itemKey);
+      if (existingIndex !== -1 && prevCart[existingIndex].quantity > 1) {
+        return prevCart.map((cartItem, idx) =>
+          idx === existingIndex
+            ? { ...cartItem, quantity: cartItem.quantity - 1 }
+            : cartItem
+        );
+      }
+      return prevCart.filter((cartItem, idx) => getCartItemKey(cartItem) !== itemKey);
+    });
+  }
+
+  const deleteFromCart = (itemKey: string) => {
+    setCart(prevCart => prevCart.filter(cartItem => getCartItemKey(cartItem) !== itemKey));
   }
 
   const cartTotal = cart.reduce((total, item) => {
-    const itemTotal = parseFloat(item.price) * item.quantity;
-    const extrasTotal = item.selectedExtras?.reduce((extrasSum, extra) => {
-      return extrasSum + (parseFloat(extra.price) * extra.quantity);
-    }, 0) || 0;
-    return total + itemTotal + extrasTotal;
-  }, 0)
-
-  const deleteFromCart = (itemId: string) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== itemId))
-  }
+    const base = parseFloat(item.price);
+    const extras = (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0);
+    return total + (base + extras) * item.quantity;
+  }, 0);
 
   // Handle like/unlike toggle
   const handleLikeToggle = async () => {
@@ -940,7 +943,7 @@ export function BranchPage({ params }: BranchPageProps) {
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 {currentCategory?.foods?.map((item, index) => {
-                  const itemInCart = cart.find(cartItem => cartItem.id === item.name);
+                  const itemInCart = cart.find(cartItem => getCartItemKey(cartItem) === getCartItemKey({ id: item.name, name: item.name, price: item.price, quantity: 0 }));
                   const quantity = itemInCart?.quantity || 0;
                   
                   return (
@@ -968,7 +971,7 @@ export function BranchPage({ params }: BranchPageProps) {
                                   <Button 
                                     size="icon"
                                     className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
-                                    onClick={() => removeFromCart(item.name)}
+                                    onClick={() => removeFromCart(getCartItemKey({ id: item.name, name: item.name, price: item.price, quantity: 0 }))}
                                   >
                                     <Minus className="h-4 w-4" />
                                   </Button>
@@ -1035,7 +1038,7 @@ export function BranchPage({ params }: BranchPageProps) {
         cart={cart}
         onAddItem={(itemId) => {
           console.log('CartModal onAddItem called with itemId:', itemId);
-          const item = cart.find(i => i.id === itemId)
+          const item = cart.find(i => getCartItemKey(i) === itemId)
           if (item) {
             console.log('Found item to add:', item);
             addToCart({

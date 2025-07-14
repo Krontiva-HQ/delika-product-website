@@ -281,21 +281,13 @@ export function CartModal({
                             ))}
                             <div className="flex justify-between text-sm font-medium text-gray-700 pt-1 border-t border-gray-100">
                               <span>Item Total</span>
-                              <span>GH₵ {(
-                                (parseFloat(item.price) * item.quantity) + 
-                                (item.selectedExtras.reduce((sum, extra) => 
-                                  sum + (parseFloat(extra.price) * extra.quantity), 0))
-                              ).toFixed(2)}</span>
+                              <span>GH₵ {((parseFloat(item.price) + (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0)) * item.quantity).toFixed(2)}</span>
                             </div>
                           </div>
                         )}
 
                         <div className="flex items-center justify-between mt-3">
-                          <span className="font-medium">GH₵ {(
-                            (parseFloat(item.price) * item.quantity) + 
-                            (item.selectedExtras?.reduce((sum, extra) => 
-                              sum + (parseFloat(extra.price) * extra.quantity), 0) || 0)
-                          ).toFixed(2)}</span>
+                          <span className="font-medium">GH₵ {((parseFloat(item.price) + (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0)) * item.quantity).toFixed(2)}</span>
                           <div className="flex items-center gap-3 bg-gray-50 rounded-full p-1">
                             <Button
                               size="icon"
@@ -329,7 +321,11 @@ export function CartModal({
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">GH₵ {cartTotal.toFixed(2)}</span>
+                  <span className="font-medium">GH₵ {cart.reduce((total, item) => {
+                    const base = parseFloat(item.price) * item.quantity;
+                    const extrasTotal = (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0) * item.quantity;
+                    return total + base + extrasTotal;
+                  }, 0).toFixed(2)}</span>
                 </div>
 
                 <div className="space-y-2">

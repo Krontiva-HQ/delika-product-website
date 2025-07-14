@@ -111,7 +111,7 @@ export function CheckoutModal({
                   <div key={item.id} className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>{item.quantity} × {item.name}</span>
-                      <span>GH₵ {(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
+                      <span>GH₵ {((parseFloat(item.price) + (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0)) * item.quantity).toFixed(2)}</span>
                     </div>
                     {item.selectedExtras && item.selectedExtras.length > 0 && (
                       <div className="pl-4 space-y-2 border-l-2 border-gray-200">
@@ -147,7 +147,11 @@ export function CheckoutModal({
               </div>
               <div className="border-t pt-2 flex justify-between font-medium">
                 <span>Total</span>
-                <span>GH₵ {(cartTotal + deliveryFee + platformFee).toFixed(2)}</span>
+                <span>GH₵ {cart.reduce((total, item) => {
+                  const base = parseFloat(item.price) * item.quantity;
+                  const extrasTotal = (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0) * item.quantity;
+                  return total + base + extrasTotal;
+                }, 0).toFixed(2)}</span>
               </div>
             </div>
             

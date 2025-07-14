@@ -33,17 +33,43 @@ interface BranchDetailsModalProps {
 export function BranchDetailsModal({ isOpen, onClose, branch }: BranchDetailsModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] p-6">
-        <DialogTitle className="text-2xl font-bold mb-6">
+      <DialogContent className="sm:max-w-[500px] p-0">
+        <DialogTitle className="text-2xl font-bold mb-6 px-6 pt-6">
           {branch.branchName || 'Branch Details'}
         </DialogTitle>
         
-        <div className="space-y-4">
+        <div className="space-y-4 px-6 pb-6">
           <div className="flex items-start gap-3">
             <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
-            <div>
+            <div className="w-full">
               <h4 className="font-medium text-gray-900">Location</h4>
-              <p className="text-gray-600">{branch.branchLocation || 'Location not available'}</p>
+              {(branch.branchLatitude && branch.branchLongitude) ? (
+                <div className="mt-2 -mx-6">
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${branch.branchLatitude},${branch.branchLongitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block overflow-hidden w-full"
+                    title="Open in Google Maps"
+                  >
+                    <iframe
+                      src={`https://www.google.com/maps?q=${branch.branchLatitude},${branch.branchLongitude}&z=16&output=embed`}
+                      className="w-full"
+                      height="220"
+                      style={{ border: 0, width: '100%', borderRadius: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="Branch Location Map"
+                    />
+                  </a>
+                  <p className="text-xs text-gray-500 mt-1 px-6">
+                    Click the map to open a larger view
+                  </p>
+                </div>
+              ) : (
+                <p className="text-gray-600">{branch.branchLocation || 'Location not available'}</p>
+              )}
               {(branch.branchLatitude && branch.branchLongitude) && (
                 <p className="text-sm text-gray-500 mt-1">
                   Coordinates: {branch.branchLatitude}, {branch.branchLongitude}
