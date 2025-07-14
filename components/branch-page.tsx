@@ -809,23 +809,32 @@ export function BranchPage({ params }: BranchPageProps) {
           <div className="lg:col-span-9">
             {/* Restaurant Header */}
             <div className="bg-white rounded-xl overflow-hidden mb-6">
-              <div className="relative h-[150px] sm:h-[200px]">
-                <Image
-                  src={branch.restaurant?.[0]?.restaurantLogo?.url || '/placeholder-image.jpg'}
-                  alt={branch.restaurant?.[0]?.restaurantName || 'Restaurant'}
-                  fill
-                  priority
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4">
-                  <h1 className="text-lg sm:text-xl font-bold text-white mb-2">
-                    {branch.restaurant?.[0]?.restaurantName ? 
-                      `${branch.restaurant[0].restaurantName} - ${branch.branchName}` : 
-                      branch.branchName
-                    }
+              <div className="mb-6">
+                <div className="relative h-[220px] sm:h-[320px]">
+                  <Image
+                    src={branch.restaurant?.[0]?.restaurantLogo?.url || '/placeholder-image.jpg'}
+                    alt={branch.restaurant?.[0]?.restaurantName || 'Restaurant'}
+                    fill
+                    priority
+                    className="object-cover rounded-2xl"
+                  />
+                  <button
+                    onClick={handleLikeToggle}
+                    className={`absolute top-3 right-3 z-10 rounded-full p-2 shadow-md transition-all duration-200 ${
+                      isLiked
+                        ? 'bg-orange-100 text-orange-500 border border-orange-200 hover:bg-orange-200'
+                        : 'bg-white text-gray-400 border border-gray-200 hover:bg-gray-100'
+                    }`}
+                    aria-label={isLiked ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    <Heart className={`w-6 h-6 transition-all duration-200 ${isLiked ? 'fill-current' : ''}`} />
+                  </button>
+                </div>
+                <div className="text-center py-4">
+                  <h1 className="text-4xl font-bold text-gray-900 mb-1">
+                    {branch.restaurant?.[0]?.restaurantName || branch.branchName}
                   </h1>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-white">
+                  <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-gray-600">
                     <div className="flex items-center">
                       <Star className="w-4 h-4 fill-current text-yellow-400" />
                       <span className="ml-1">4.4</span>
@@ -835,147 +844,173 @@ export function BranchPage({ params }: BranchPageProps) {
                     <span>Delivery</span>
                     <span>•</span>
                     <span>{branch.branchCity}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Restaurant Quick Info */}
-            <div className="p-4 border-t border-gray-100">
-              <div className="flex flex-wrap items-center justify-between">
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-gray-600">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{branch.branchLocation}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4 flex-shrink-0" />
-                    <span>
-                      {(() => {
-                        if (!branch.activeHours || branch.activeHours.length === 0) {
-                          return 'Hours not available';
-                        }
-                        
-                        const now = new Date();
-                        const currentDay = now.getDay();
-                        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                        const currentDayName = dayNames[currentDay];
-                        
-                        const todayHours = branch.activeHours.find(hour => 
-                          hour.day.toLowerCase() === currentDayName.toLowerCase()
-                        );
-                        
-                        if (todayHours) {
-                          return `Today: ${todayHours.openingTime} - ${todayHours.closingTime}`;
-                        } else {
-                          return 'Closed today';
-                        }
-                      })()}
+                    <span>•</span>
+                    <span className={isOpen ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                      {isOpen ? 'Open Now' : 'Closed'}
                     </span>
                   </div>
-                  <div className={`flex items-center gap-1 ${isOpen ? 'text-green-600' : 'text-red-600'}`}>
-                    <span className="w-2 h-2 rounded-full bg-current"></span>
-                    <span>{isOpen ? 'Open Now' : 'Closed'}</span>
+                  <div className="mt-3 flex justify-center">
+                    <button
+                      onClick={() => setIsDetailsModalOpen(true)}
+                      className="px-4 py-1 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium shadow-sm transition"
+                    >
+                      View Details
+                    </button>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-3 mt-2 sm:mt-0">
-                  <button 
-                    onClick={() => setIsDetailsModalOpen(true)}
-                    className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1 px-3 py-1 rounded-full border border-gray-200 hover:border-gray-300"
-                  >
-                    View Details
-                  </button>
-                  {user && (
+              </div>
+
+              {/* Restaurant Quick Info */}
+              <div className="p-4 border-t border-gray-100">
+                <div className="flex flex-wrap items-center justify-between">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{branch.branchLocation}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4 flex-shrink-0" />
+                      <span>
+                        {(() => {
+                          if (!branch.activeHours || branch.activeHours.length === 0) {
+                            return 'Hours not available';
+                          }
+                          
+                          const now = new Date();
+                          const currentDay = now.getDay();
+                          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                          const currentDayName = dayNames[currentDay];
+                          
+                          const todayHours = branch.activeHours.find(hour => 
+                            hour.day.toLowerCase() === currentDayName.toLowerCase()
+                          );
+                          
+                          if (todayHours) {
+                            return `Today: ${todayHours.openingTime} - ${todayHours.closingTime}`;
+                          } else {
+                            return 'Closed today';
+                          }
+                        })()}
+                      </span>
+                    </div>
+                    <div className={`flex items-center gap-1 ${isOpen ? 'text-green-600' : 'text-red-600'}`}>
+                      <span className="w-2 h-2 rounded-full bg-current"></span>
+                      <span>{isOpen ? 'Open Now' : 'Closed'}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 mt-2 sm:mt-0">
                     <button 
-                      onClick={handleLikeToggle}
-                      className={`text-sm flex items-center gap-1 px-3 py-1 rounded-full border transition-all duration-200 ${
-                        isLiked 
-                          ? 'text-orange-500 border-orange-200 bg-orange-50 hover:bg-orange-100' 
-                          : 'text-gray-600 hover:text-orange-500 border-gray-200 hover:border-orange-300'
-                      }`}
+                      onClick={() => setIsDetailsModalOpen(true)}
+                      className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1 px-3 py-1 rounded-full border border-gray-200 hover:border-gray-300"
                     >
-                      <Heart className={`w-3.5 h-3.5 transition-all duration-200 ${isLiked ? 'fill-current' : ''}`} />
-                      {isLiked ? 'Liked' : 'Like'}
+                      View Details
                     </button>
-                  )}
-                  <button 
-                    onClick={() => {
-                      // Create a slugified name combining restaurant and branch names
-                      const restaurantName = branch.restaurant?.[0]?.restaurantName || '';
-                      const branchName = branch.branchName || '';
-                      
-                      const combinedName = `${restaurantName}-${branchName}`;
-                      const slug = combinedName
-                        .toString()
-                        .toLowerCase()
-                        .replace(/\s+/g, '-')
-                        .replace(/[^\w\-]+/g, '')
-                        .replace(/\-\-+/g, '-')
-                        .replace(/^-+/, '')
-                        .replace(/-+$/, '');
+                    {user && (
+                      <button 
+                        onClick={handleLikeToggle}
+                        className={`text-sm flex items-center gap-1 px-3 py-1 rounded-full border transition-all duration-200 ${
+                          isLiked 
+                            ? 'text-orange-500 border-orange-200 bg-orange-50 hover:bg-orange-100' 
+                            : 'text-gray-600 hover:text-orange-500 border-gray-200 hover:border-orange-300'
+                        }`}
+                      >
+                        <Heart className={`w-3.5 h-3.5 transition-all duration-200 ${isLiked ? 'fill-current' : ''}`} />
+                        {isLiked ? 'Liked' : 'Like'}
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => {
+                        // Create a slugified name combining restaurant and branch names
+                        const restaurantName = branch.restaurant?.[0]?.restaurantName || '';
+                        const branchName = branch.branchName || '';
                         
-                      const url = `${window.location.origin}/restaurant/${slug}`;
-                      navigator.clipboard.writeText(url);
-                      // Show temporary feedback
-                      const feedbackElem = document.createElement('div');
-                      feedbackElem.textContent = 'Link copied!';
-                      feedbackElem.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md shadow-md z-50';
-                      document.body.appendChild(feedbackElem);
-                      setTimeout(() => document.body.removeChild(feedbackElem), 2000);
-                    }}
-                    className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1 px-3 py-1 rounded-full border border-gray-200 hover:border-gray-300"
-                  >
-                    <Share2 className="w-3.5 h-3.5" />
-                    Share
-                  </button>
+                        const combinedName = `${restaurantName}-${branchName}`;
+                        const slug = combinedName
+                          .toString()
+                          .toLowerCase()
+                          .replace(/\s+/g, '-')
+                          .replace(/[^\w\-]+/g, '')
+                          .replace(/\-\-+/g, '-')
+                          .replace(/^-+/, '')
+                          .replace(/-+$/, '');
+                          
+                        const url = `${window.location.origin}/restaurant/${slug}`;
+                        navigator.clipboard.writeText(url);
+                        // Show temporary feedback
+                        const feedbackElem = document.createElement('div');
+                        feedbackElem.textContent = 'Link copied!';
+                        feedbackElem.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md shadow-md z-50';
+                        document.body.appendChild(feedbackElem);
+                        setTimeout(() => document.body.removeChild(feedbackElem), 2000);
+                      }}
+                      className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1 px-3 py-1 rounded-full border border-gray-200 hover:border-gray-300"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      Share
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Menu Items */}
-            <div className="bg-white rounded-lg p-4 sm:p-6">
-              <h2 className="font-semibold mb-4 sm:mb-6">{selectedCategory}</h2>
-              {!isOpen && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
-                  This restaurant is currently closed. Orders can only be placed during operating hours.
-                </div>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                {currentCategory?.foods?.map((item, index) => {
-                  const itemInCart = cart.find(cartItem => getCartItemKey(cartItem) === getCartItemKey({ id: item.name, name: item.name, price: item.price, quantity: 0 }));
-                  const quantity = itemInCart?.quantity || 0;
-                  
-                  return (
-                    <div key={`${item.name}-${index}`} className={`flex flex-col gap-4 p-4 border rounded-lg ${!item.available || !isOpen ? 'opacity-50' : ''}`}>
-                      <div className="relative w-full h-40 flex-shrink-0">
-                        {item.foodImage && (
-                          <Image
-                            src={item.foodImage.url}
-                            alt={item.name}
-                            fill
-                            className={`object-cover rounded-lg ${!item.available ? 'grayscale' : ''}`}
-                          />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">{item.name}</h3>
-                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.description}</p>
-                        
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="font-medium text-gray-900">GH₵ {item.price}</span>
-                          <div className="flex items-center gap-2">
-                            {item.available && isOpen ? (
-                              quantity > 0 ? (
-                                <div className="flex items-center gap-2">
-                                  <Button 
-                                    size="icon"
-                                    className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
-                                    onClick={() => removeFromCart(getCartItemKey({ id: item.name, name: item.name, price: item.price, quantity: 0 }))}
-                                  >
-                                    <Minus className="h-4 w-4" />
-                                  </Button>
-                                  <span className="w-5 text-center font-medium">{quantity}</span>
+              {/* Menu Items */}
+              <div className="bg-white rounded-lg p-4 sm:p-6">
+                <h2 className="font-semibold mb-4 sm:mb-6">{selectedCategory}</h2>
+                {!isOpen && (
+                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+                    This restaurant is currently closed. Orders can only be placed during operating hours.
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                  {currentCategory?.foods?.map((item, index) => {
+                    const itemInCart = cart.find(cartItem => getCartItemKey(cartItem) === getCartItemKey({ id: item.name, name: item.name, price: item.price, quantity: 0 }));
+                    const quantity = itemInCart?.quantity || 0;
+                    
+                    return (
+                      <div key={`${item.name}-${index}`} className={`flex flex-col gap-4 p-4 border rounded-lg ${!item.available || !isOpen ? 'opacity-50' : ''}`}>
+                        <div className="relative w-full h-40 flex-shrink-0">
+                          {item.foodImage && (
+                            <Image
+                              src={item.foodImage.url}
+                              alt={item.name}
+                              fill
+                              className={`object-cover rounded-lg ${!item.available ? 'grayscale' : ''}`}
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-900">{item.name}</h3>
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.description}</p>
+                          
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="font-medium text-gray-900">GH₵ {item.price}</span>
+                            <div className="flex items-center gap-2">
+                              {item.available && isOpen ? (
+                                quantity > 0 ? (
+                                  <div className="flex items-center gap-2">
+                                    <Button 
+                                      size="icon"
+                                      className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
+                                      onClick={() => removeFromCart(getCartItemKey({ id: item.name, name: item.name, price: item.price, quantity: 0 }))}
+                                    >
+                                      <Minus className="h-4 w-4" />
+                                    </Button>
+                                    <span className="w-5 text-center font-medium">{quantity}</span>
+                                    <Button 
+                                      size="icon"
+                                      className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
+                                      onClick={() => setSelectedItem({
+                                        name: item.name,
+                                        price: item.price,
+                                        description: item.description,
+                                        foodImage: item.foodImage,
+                                        extras: item.extras
+                                      })}
+                                    >
+                                      <Plus className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ) : (
                                   <Button 
                                     size="icon"
                                     className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
@@ -989,31 +1024,17 @@ export function BranchPage({ params }: BranchPageProps) {
                                   >
                                     <Plus className="h-4 w-4" />
                                   </Button>
-                                </div>
+                                )
                               ) : (
-                                <Button 
-                                  size="icon"
-                                  className="bg-orange-500 hover:bg-orange-600 h-8 w-8 rounded-full text-white"
-                                  onClick={() => setSelectedItem({
-                                    name: item.name,
-                                    price: item.price,
-                                    description: item.description,
-                                    foodImage: item.foodImage,
-                                    extras: item.extras
-                                  })}
-                                >
-                                  <Plus className="h-4 w-4" />
-                                </Button>
-                              )
-                            ) : (
-                              <span className="text-sm text-gray-500">Not Available</span>
-                            )}
+                                <span className="text-sm text-gray-500">Not Available</span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
