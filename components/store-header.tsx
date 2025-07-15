@@ -25,6 +25,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 
 interface Restaurant {
   restaurantName: string
@@ -47,6 +48,14 @@ interface Branch {
   created_at: number
   active: boolean
   slug: string
+  _menutable?: {
+    name: string;
+    foods: {
+      name: string;
+      price: number;
+      quantity: number;
+    }[];
+  }[];
 }
 
 type Libraries = ("places" | "geocoding")[]
@@ -155,6 +164,12 @@ export function StoreHeader() {
   const ORDERS_PER_PAGE = 10
   const [isBranchPageLoaded, setIsBranchPageLoaded] = useState(false)
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [filterRating, setFilterRating] = useState('all');
+  const [filterCategories, setFilterCategories] = useState<string[]>([]);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filterOpenNow, setFilterOpenNow] = useState(false);
+  const [filterDeliveryType, setFilterDeliveryType] = useState('all');
+  const [filterSortBy, setFilterSortBy] = useState('best');
 
   useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -669,6 +684,13 @@ export function StoreHeader() {
     }
   }, [currentView, user?.id, fetchOrderHistory]);
 
+  // Get all unique menu categories from all branches
+  const allCategories = Array.from(new Set(
+    branches.flatMap(branch =>
+      branch._menutable?.flatMap(menu => menu.foods?.map(food => food.name) || []) || []
+    )
+  )).sort();
+
   const renderContent = () => {
     if (isLoading && currentView === 'branch') {
       return null // Don't render content while loading branch page
@@ -862,36 +884,128 @@ export function StoreHeader() {
 
             {/* Filter Modal */}
             <Dialog open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
-              <DialogContent className="max-w-md">
-                <DialogTitle>Filter Restaurants</DialogTitle>
-                <div className="mt-4">
-                  <label className="block text-sm font-medium mb-2">City</label>
-                  <select
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                    value={selectedCity}
-                    onChange={e => setSelectedCity(e.target.value)}
-                  >
-                    <option value="all">All Locations</option>
-                    {cities.map(city => (
-                      <option key={city} value={city}>{city}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="mt-6 flex justify-end gap-2">
-                  <button
-                    className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium"
-                    onClick={() => setIsFilterModalOpen(false)}
-                    type="button"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="px-4 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 text-sm font-medium"
-                    onClick={() => setIsFilterModalOpen(false)}
-                    type="button"
-                  >
-                    Apply
-                  </button>
+              <DialogContent className="max-w-2xl p-0">
+                <div className="p-6">
+                  <DialogTitle className="mb-4">Filter Restaurants</DialogTitle>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Location */}
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
+                      <label className="block text-sm font-medium mb-1">City</label>
+                      <select
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                        value={selectedCity}
+                        onChange={e => setSelectedCity(e.target.value)}
+                      >
+                        <option value="all">All Locations</option>
+                        {cities.map(city => (
+                          <option key={city} value={city}>{city}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {/* Rating */}
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
+                      <label className="block text-sm font-medium mb-1">Minimum Rating</label>
+                      <select
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                        value={filterRating}
+                        onChange={e => setFilterRating(e.target.value)}
+                      >
+                        <option value="all">All</option>
+                        <option value="4">4+ stars</option>
+                        <option value="3">3+ stars</option>
+                      </select>
+                    </div>
+                    {/* Menu Categories */}
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2 md:col-span-2">
+                      <label className="block text-sm font-medium mb-1">Menu Categories</label>
+                      <div className="flex flex-wrap gap-2">
+                        {allCategories.map(category => (
+                          <button
+                            key={category}
+                            type="button"
+                            className={`px-3 py-1 rounded-full border text-sm ${filterCategories.includes(category) ? 'bg-orange-100 border-orange-400 text-orange-700' : 'bg-white border-gray-300 text-gray-700'}`}
+                            onClick={() => {
+                              if (filterCategories.includes(category)) {
+                                setFilterCategories(filterCategories.filter(c => c !== category));
+                              } else {
+                                setFilterCategories([...filterCategories, category]);
+                              }
+                            }}
+                          >
+                            {category}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Open Now Toggle */}
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex items-center gap-3 md:col-span-2">
+                      <Switch checked={filterOpenNow} onCheckedChange={setFilterOpenNow} id="open-now-switch" />
+                      <label htmlFor="open-now-switch" className="text-sm font-medium">Open Now</label>
+                    </div>
+                  </div>
+                  {/* Show More Filters */}
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      type="button"
+                      className="text-orange-600 hover:underline text-sm font-medium"
+                      onClick={() => setShowAdvancedFilters(v => !v)}
+                    >
+                      {showAdvancedFilters ? 'Hide Advanced Filters' : 'Show More Filters'}
+                    </button>
+                  </div>
+                  {/* Advanced Filters */}
+                  {showAdvancedFilters && (
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Delivery Type */}
+                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
+                        <label className="block text-sm font-medium mb-1">Delivery Type</label>
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-1">
+                            <input type="radio" name="deliveryType" value="all" checked={filterDeliveryType === 'all'} onChange={() => setFilterDeliveryType('all')} />
+                            <span>All</span>
+                          </label>
+                          <label className="flex items-center gap-1">
+                            <input type="radio" name="deliveryType" value="delivery" checked={filterDeliveryType === 'delivery'} onChange={() => setFilterDeliveryType('delivery')} />
+                            <span>Delivery</span>
+                          </label>
+                          <label className="flex items-center gap-1">
+                            <input type="radio" name="deliveryType" value="pickup" checked={filterDeliveryType === 'pickup'} onChange={() => setFilterDeliveryType('pickup')} />
+                            <span>Pickup</span>
+                          </label>
+                        </div>
+                      </div>
+                      {/* Sort By */}
+                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
+                        <label className="block text-sm font-medium mb-1">Sort By</label>
+                        <select
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                          value={filterSortBy}
+                          onChange={e => setFilterSortBy(e.target.value)}
+                        >
+                          <option value="best">Best Match</option>
+                          <option value="rating">Rating</option>
+                          <option value="distance">Distance</option>
+                          <option value="delivery">Delivery Time</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-6 flex justify-end gap-2">
+                    <button
+                      className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium"
+                      onClick={() => setIsFilterModalOpen(false)}
+                      type="button"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="px-4 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 text-sm font-medium"
+                      onClick={() => setIsFilterModalOpen(false)}
+                      type="button"
+                    >
+                      Apply
+                    </button>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
