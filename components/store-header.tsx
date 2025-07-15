@@ -26,6 +26,7 @@ import Link from "next/link"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 
 interface Restaurant {
   restaurantName: string
@@ -691,6 +692,9 @@ export function StoreHeader() {
     )
   )).sort();
 
+  // Helper to filter out empty strings
+  const nonEmpty = (arr: string[]) => arr.filter(Boolean);
+
   const renderContent = () => {
     if (isLoading && currentView === 'branch') {
       return null // Don't render content while loading branch page
@@ -891,29 +895,31 @@ export function StoreHeader() {
                     {/* Location */}
                     <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
                       <label className="block text-sm font-medium mb-1">City</label>
-                      <select
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                        value={selectedCity}
-                        onChange={e => setSelectedCity(e.target.value)}
-                      >
-                        <option value="all">All Locations</option>
-                        {cities.map(city => (
-                          <option key={city} value={city}>{city}</option>
-                        ))}
-                      </select>
+                      <Select value={selectedCity} onValueChange={setSelectedCity}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Locations" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Locations</SelectItem>
+                          {nonEmpty(cities).map(city => (
+                            <SelectItem key={city} value={city}>{city}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     {/* Rating */}
                     <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
                       <label className="block text-sm font-medium mb-1">Minimum Rating</label>
-                      <select
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                        value={filterRating}
-                        onChange={e => setFilterRating(e.target.value)}
-                      >
-                        <option value="all">All</option>
-                        <option value="4">4+ stars</option>
-                        <option value="3">3+ stars</option>
-                      </select>
+                      <Select value={filterRating} onValueChange={setFilterRating}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="All" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All</SelectItem>
+                          <SelectItem value="4">4+ stars</SelectItem>
+                          <SelectItem value="3">3+ stars</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     {/* Menu Categories */}
                     <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2 md:col-span-2">
@@ -977,16 +983,17 @@ export function StoreHeader() {
                       {/* Sort By */}
                       <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
                         <label className="block text-sm font-medium mb-1">Sort By</label>
-                        <select
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                          value={filterSortBy}
-                          onChange={e => setFilterSortBy(e.target.value)}
-                        >
-                          <option value="best">Best Match</option>
-                          <option value="rating">Rating</option>
-                          <option value="distance">Distance</option>
-                          <option value="delivery">Delivery Time</option>
-                        </select>
+                        <Select value={filterSortBy} onValueChange={setFilterSortBy}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Best Match" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="best">Best Match</SelectItem>
+                            <SelectItem value="rating">Rating</SelectItem>
+                            <SelectItem value="distance">Distance</SelectItem>
+                            <SelectItem value="delivery">Delivery Time</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   )}
