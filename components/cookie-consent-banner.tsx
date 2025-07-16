@@ -27,7 +27,7 @@ export function CookieConsentBanner() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-orange-500 border border-orange-500 rounded-full px-3 py-2 z-50 shadow-md flex items-center gap-2 w-auto min-w-[0]"
+          className="fixed bottom-6 inset-x-0 mx-auto bg-orange-500 border border-orange-500 rounded-full px-3 py-2 z-50 shadow-md flex items-center gap-2 w-fit"
         >
           <Cookie className="h-4 w-4 text-white flex-shrink-0" />
           <span className="text-xs text-white">This website uses cookies.</span>
