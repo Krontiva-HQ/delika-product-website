@@ -71,9 +71,7 @@ export function BranchDetailsModal({ isOpen, onClose, branch }: BranchDetailsMod
                 <p className="text-gray-600">{branch.branchLocation || 'Location not available'}</p>
               )}
               {(branch.branchLatitude && branch.branchLongitude) && (
-                <p className="text-sm text-gray-500 mt-1">
-                  Coordinates: {branch.branchLatitude}, {branch.branchLongitude}
-                </p>
+                null
               )}
             </div>
           </div>

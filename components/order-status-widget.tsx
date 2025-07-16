@@ -96,6 +96,7 @@ export function OrderStatusWidget() {
     localStorage.removeItem('activeOrderNumber');
     localStorage.removeItem('lastOrderDetails');
     localStorage.removeItem('orderSubmissionResponse');
+    localStorage.removeItem('orderTrackingStartedAt');
     setOrderStatus(null);
     console.log('Order tracking data cleared');
   };
@@ -148,30 +149,20 @@ export function OrderStatusWidget() {
       const data = await response.json();
       console.log('Order status data:', data);
       
-      // Check if order should be considered inactive (completed, cancelled, or paid)
-      const isOrderInactive = data.completed || 
-                              data.orderStatus === 'Cancelled' || 
-                              data.orderStatus === 'Delivered' ||
-                              data.paymentStatus?.toLowerCase() === 'paid';
-
-      if (!isOrderInactive) {
-        // Order is still active - keep tracking
+      // Only track and display if paymentStatus is 'paid'
+      if (data.paymentStatus?.toLowerCase() === 'paid') {
         setOrderStatus(data);
         localStorage.setItem('activeOrderNumber', orderNumber);
         localStorage.setItem('lastOrderDetails', JSON.stringify(data));
+        // Set or update the tracking start timestamp
+        if (!localStorage.getItem('orderTrackingStartedAt')) {
+          localStorage.setItem('orderTrackingStartedAt', Date.now().toString());
+        }
       } else {
-        // Order is inactive - clean up all tracking
+        // If not paid, clear all tracking and do not show
         clearOrderTracking();
-        
-        // Show appropriate completion message
-        const completionReason = data.paymentStatus?.toLowerCase() === 'paid' ? 'Payment completed' :
-                                data.orderStatus === 'Delivered' ? 'Order delivered' :
-                                data.orderStatus === 'Cancelled' ? 'Order cancelled' : 'Order completed';
-        
-        toast({
-          title: "Order Complete",
-          description: `${completionReason}. Your order tracking has been cleared.`,
-        });
+        setOrderStatus(null);
+        return;
       }
     } catch (error) {
       console.error('Error fetching order status:', error);
@@ -242,7 +233,7 @@ export function OrderStatusWidget() {
           const { response } = JSON.parse(orderSubmissionData);
           if (response?.result1?.orderNumber) {
             const orderNumber = response.result1.orderNumber.toString();
-            localStorage.setItem('activeOrderNumber', orderNumber);
+            // Only fetch if paymentStatus is 'paid' (will be checked in fetchOrderStatus)
             fetchOrderStatus(orderNumber);
           }
         } catch (error) {
@@ -251,6 +242,48 @@ export function OrderStatusWidget() {
       }
     }
   }, [isLoggedIn]);
+
+  // Periodic cleanup to ensure no stale order data persists
+  useEffect(() => {
+    // 20-minute auto-clear logic
+    const autoClear = setInterval(() => {
+      const startedAt = localStorage.getItem('orderTrackingStartedAt');
+      if (startedAt) {
+        const now = Date.now();
+        const elapsed = now - parseInt(startedAt, 10);
+        if (elapsed > 20 * 60 * 1000) { // 20 minutes
+          console.log('20 minutes passed, clearing order tracking');
+          clearOrderTracking();
+        }
+      }
+    }, 60000); // Check every minute
+
+    // Existing periodic cleanup for corrupted/stale data
+    const cleanup = setInterval(() => {
+      const lastOrderDetails = localStorage.getItem('lastOrderDetails');
+      if (lastOrderDetails) {
+        try {
+          const parsedDetails = JSON.parse(lastOrderDetails);
+          const isOrderInactive = parsedDetails.completed || 
+                                  parsedDetails.orderStatus === 'Cancelled' || 
+                                  parsedDetails.orderStatus === 'Delivered' ||
+                                  parsedDetails.paymentStatus?.toLowerCase() !== 'paid';
+          if (isOrderInactive) {
+            console.log('Periodic cleanup: removing stale order data');
+            clearOrderTracking();
+          }
+        } catch (error) {
+          console.error('Periodic cleanup: corrupted order data found, cleaning up');
+          clearOrderTracking();
+        }
+      }
+    }, 60000); // Check every minute
+
+    return () => {
+      clearInterval(autoClear);
+      clearInterval(cleanup);
+    };
+  }, []);
 
   // Listen for storage changes
   useEffect(() => {
@@ -262,6 +295,8 @@ export function OrderStatusWidget() {
         const newOrderNumber = e.newValue;
         console.log('Order number changed in storage:', newOrderNumber);
         if (newOrderNumber) {
+          // New order detected, clear old tracking timestamp
+          localStorage.removeItem('orderTrackingStartedAt');
           fetchOrderStatus(newOrderNumber);
         } else {
           setOrderStatus(null);
@@ -274,7 +309,8 @@ export function OrderStatusWidget() {
             const { response } = JSON.parse(newData);
             if (response?.result1?.orderNumber) {
               const orderNumber = response.result1.orderNumber.toString();
-              localStorage.setItem('activeOrderNumber', orderNumber);
+              // New order detected, clear old tracking timestamp
+              localStorage.removeItem('orderTrackingStartedAt');
               fetchOrderStatus(orderNumber);
             }
           } catch (error) {
@@ -287,17 +323,10 @@ export function OrderStatusWidget() {
         if (newData) {
           try {
             const parsedDetails = JSON.parse(newData);
-            
-            // Check if the order is still active before setting it
-            const isOrderInactive = parsedDetails.completed || 
-                                    parsedDetails.orderStatus === 'Cancelled' || 
-                                    parsedDetails.orderStatus === 'Delivered' ||
-                                    parsedDetails.paymentStatus?.toLowerCase() === 'paid';
-            
-            if (!isOrderInactive) {
+            // Only set if paymentStatus is 'paid'
+            if (parsedDetails.paymentStatus?.toLowerCase() === 'paid') {
               setOrderStatus(parsedDetails);
             } else {
-              // Don't track inactive orders
               setOrderStatus(null);
             }
           } catch (error) {
@@ -314,32 +343,6 @@ export function OrderStatusWidget() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
-
-  // Periodic cleanup to ensure no stale order data persists
-  useEffect(() => {
-    const cleanup = setInterval(() => {
-      const lastOrderDetails = localStorage.getItem('lastOrderDetails');
-      if (lastOrderDetails) {
-        try {
-          const parsedDetails = JSON.parse(lastOrderDetails);
-          const isOrderInactive = parsedDetails.completed || 
-                                  parsedDetails.orderStatus === 'Cancelled' || 
-                                  parsedDetails.orderStatus === 'Delivered' ||
-                                  parsedDetails.paymentStatus?.toLowerCase() === 'paid';
-          
-          if (isOrderInactive) {
-            console.log('Periodic cleanup: removing stale order data');
-            clearOrderTracking();
-          }
-        } catch (error) {
-          console.error('Periodic cleanup: corrupted order data found, cleaning up');
-          clearOrderTracking();
-        }
-      }
-    }, 60000); // Check every minute
-
-    return () => clearInterval(cleanup);
   }, []);
 
   const getStatusColor = (status: string, isKitchen = false) => {
