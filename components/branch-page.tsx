@@ -982,23 +982,23 @@ export function BranchPage({ params }: BranchPageProps) {
         onClose={() => setIsCartModalOpen(false)}
         cart={cart}
         onAddItem={(itemId) => {
-          console.log('CartModal onAddItem called with itemId:', itemId);
+          // Find the cart item by key and increment its quantity
           const item = cart.find(i => getCartItemKey(i) === itemId)
           if (item) {
-            console.log('Found item to add:', item);
             addToCart({
-              id: item.id,
-              name: item.name,
-              price: item.price,
-              quantity: 1,
-              image: item.image,
-              available: item.available,
-              selectedExtras: item.selectedExtras
+              ...item,
+              quantity: 1 // addToCart always increments by 1
             })
           }
         }}
-        onRemoveItem={removeFromCart}
-        onDeleteItem={deleteFromCart}
+        onRemoveItem={(itemId) => {
+          // Remove or decrement item by key
+          removeFromCart(itemId)
+        }}
+        onDeleteItem={(itemId) => {
+          // Delete item by key
+          deleteFromCart(itemId)
+        }}
         cartTotal={cartTotal}
         branchId={params.id}
         branchName={branch.branchName || ''}
@@ -1014,7 +1014,6 @@ export function BranchPage({ params }: BranchPageProps) {
           }))
         })) || []}
         isAuthenticated={!!user}
-        onLoginClick={() => setIsLoginModalOpen(true)}
         branchLocation={{
           latitude: parseFloat(branch.branchLatitude),
           longitude: parseFloat(branch.branchLongitude)
