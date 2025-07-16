@@ -595,9 +595,10 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
       </div>
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Order Details */}
-          <div className="lg:col-span-2">
+        {/* Remove grid layout, use single column */}
+        <div className="flex flex-col gap-8">
+          {/* Order Details */}
+          <div>
             <div className="bg-white rounded-3xl shadow-sm p-6 hover:shadow-md transition-all duration-300 border border-orange-100/50">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
@@ -712,136 +713,11 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
                 </div>
               </div>
             </div>
-
-            {/* Add More Items Section */}
-            <div className="bg-white rounded-3xl shadow-sm p-6 hover:shadow-md transition-all duration-300 border border-orange-100/50 mt-8">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                    <Plus className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <h2 className="text-xl font-semibold">Add More Items</h2>
-                </div>
-                {!isLoadingMenu && !menuError && (
-                  <div className="flex gap-2 overflow-x-auto py-1 scrollbar-hide">
-                    {branchDetails?._menutable?.map(category => (
-                      <button
-                        key={category.foodType}
-                        onClick={() => setSelectedCategory(category.foodType)}
-                        className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
-                          selectedCategory === category.foodType
-                            ? 'bg-orange-500 text-white shadow-md shadow-orange-200'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {category.foodType}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              {isLoadingMenu ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin h-10 w-10 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-gray-500">Loading menu items...</p>
-                </div>
-              ) : menuError ? (
-                <div className="text-center py-12 text-red-500">{menuError}</div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {currentCategory?.foods.map(item => {
-                    const itemInCart = cart.find(cartItem => cartItem.id === item.name);
-                    const quantity = itemInCart?.quantity || 0;
-
-                    return (
-                      <div
-                        key={item.name}
-                        className={`flex gap-4 p-4 rounded-2xl border group transition-all duration-300 ${
-                          !item.available 
-                            ? 'opacity-60 bg-gray-50' 
-                            : 'hover:border-orange-200 hover:shadow-sm hover:bg-orange-50/30'
-                        }`}
-                      >
-                        <div className="relative w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 group-hover:shadow-lg transition-shadow">
-                          {item.foodImage?.url ? (
-                            <Image
-                              src={item.foodImage.url}
-                              alt={item.name}
-                              fill
-                              sizes="96px"
-                              className={`object-cover ${!item.available ? 'grayscale' : ''} transition-transform group-hover:scale-110`}
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center">
-                              <ShoppingBag className="w-8 h-8 text-gray-400" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
-                          <div className="flex items-center justify-between mt-3">
-                            <span className="font-medium text-gray-900">GH₵ {item.price}</span>
-                            {item.available ? (
-                              quantity > 0 ? (
-                                <div className="flex items-center gap-3 bg-orange-100/50 rounded-full p-1">
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-8 w-8 rounded-full hover:bg-orange-200/50"
-                                    onClick={() => onRemoveItem(item.name)}
-                                  >
-                                    <Minus className="h-4 w-4" />
-                                  </Button>
-                                  <span className="w-6 text-center font-medium">{quantity}</span>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-8 w-8 rounded-full hover:bg-orange-200/50"
-                                    onClick={() => onAddItem({
-                                      id: item.name,
-                                      name: item.name,
-                                      price: item.price,
-                                      quantity: 1,
-                                      image: item.foodImage?.url,
-                                      available: item.available
-                                    })}
-                                  >
-                                    <Plus className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  className="bg-orange-500 hover:bg-orange-600 shadow-sm hover:shadow-md transition-all"
-                                  onClick={() => onAddItem({
-                                    id: item.name,
-                                    name: item.name,
-                                    price: item.price,
-                                    quantity: 1,
-                                    image: item.foodImage?.url,
-                                    available: item.available
-                                  })}
-                                >
-                                  Add to Order
-                                </Button>
-                              )
-                            ) : (
-                              <span className="text-sm text-red-500 font-medium">Not Available</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Right Column - Delivery Details */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-3xl shadow-sm p-6 sticky top-36 border border-orange-100/50">
+          {/* Delivery Details - moved here, no sidebar/sticky */}
+          <div>
+            <div className="bg-white rounded-3xl shadow-sm p-6 border border-orange-100/50">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
                   <MapPin className="w-5 h-5 text-orange-600" />
@@ -1042,6 +918,133 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
                   )}
                 </Button>
               </form>
+            </div>
+          </div>
+
+          {/* Add More Items Section */}
+          <div>
+            <div className="bg-white rounded-3xl shadow-sm p-6 hover:shadow-md transition-all duration-300 border border-orange-100/50">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                    <Plus className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <h2 className="text-xl font-semibold">Add More Items</h2>
+                </div>
+                {!isLoadingMenu && !menuError && (
+                  <div className="flex gap-2 overflow-x-auto py-1 scrollbar-hide">
+                    {branchDetails?._menutable?.map(category => (
+                      <button
+                        key={category.foodType}
+                        onClick={() => setSelectedCategory(category.foodType)}
+                        className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
+                          selectedCategory === category.foodType
+                            ? 'bg-orange-500 text-white shadow-md shadow-orange-200'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {category.foodType}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {isLoadingMenu ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin h-10 w-10 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading menu items...</p>
+                </div>
+              ) : menuError ? (
+                <div className="text-center py-12 text-red-500">{menuError}</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {currentCategory?.foods.map(item => {
+                    const itemInCart = cart.find(cartItem => cartItem.id === item.name);
+                    const quantity = itemInCart?.quantity || 0;
+
+                    return (
+                      <div
+                        key={item.name}
+                        className={`flex gap-4 p-4 rounded-2xl border group transition-all duration-300 ${
+                          !item.available 
+                            ? 'opacity-60 bg-gray-50' 
+                            : 'hover:border-orange-200 hover:shadow-sm hover:bg-orange-50/30'
+                        }`}
+                      >
+                        <div className="relative w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 group-hover:shadow-lg transition-shadow">
+                          {item.foodImage?.url ? (
+                            <Image
+                              src={item.foodImage.url}
+                              alt={item.name}
+                              fill
+                              sizes="96px"
+                              className={`object-cover ${!item.available ? 'grayscale' : ''} transition-transform group-hover:scale-110`}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-100 rounded-xl flex items-center justify-center">
+                              <ShoppingBag className="w-8 h-8 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
+                          <div className="flex items-center justify-between mt-3">
+                            <span className="font-medium text-gray-900">GH₵ {item.price}</span>
+                            {item.available ? (
+                              quantity > 0 ? (
+                                <div className="flex items-center gap-3 bg-orange-100/50 rounded-full p-1">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 rounded-full hover:bg-orange-200/50"
+                                    onClick={() => onRemoveItem(item.name)}
+                                  >
+                                    <Minus className="h-4 w-4" />
+                                  </Button>
+                                  <span className="w-6 text-center font-medium">{quantity}</span>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 rounded-full hover:bg-orange-200/50"
+                                    onClick={() => onAddItem({
+                                      id: item.name,
+                                      name: item.name,
+                                      price: item.price,
+                                      quantity: 1,
+                                      image: item.foodImage?.url,
+                                      available: item.available
+                                    })}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  className="bg-orange-500 hover:bg-orange-600 shadow-sm hover:shadow-md transition-all"
+                                  onClick={() => onAddItem({
+                                    id: item.name,
+                                    name: item.name,
+                                    price: item.price,
+                                    quantity: 1,
+                                    image: item.foodImage?.url,
+                                    available: item.available
+                                  })}
+                                >
+                                  Add to Order
+                                </Button>
+                              )
+                            ) : (
+                              <span className="text-sm text-red-500 font-medium">Not Available</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

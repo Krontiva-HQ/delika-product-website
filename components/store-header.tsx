@@ -559,15 +559,11 @@ export function StoreHeader() {
   }
 
   const handleLoginClick = () => {
-    // Ensure modals are in correct state before opening
-    setIsSignupModalOpen(false)
-    setIsLoginModalOpen(true)
+    router.push('/login')
   }
 
   const handleSignupClick = () => {
-    // Ensure modals are in correct state before opening
-    setIsLoginModalOpen(false)
-    setIsSignupModalOpen(true)
+    router.push('/signup')
   }
 
   const handleHomeClick = () => {
@@ -1134,23 +1130,17 @@ export function StoreHeader() {
       />
 
       <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onSwitchToSignup={() => {
-          setIsLoginModalOpen(false)
-          setIsSignupModalOpen(true)
-        }}
-        onLoginSuccess={handleLoginSuccess}
+        isOpen={false}
+        onClose={() => {}}
+        onSwitchToSignup={() => {}}
+        onLoginSuccess={() => {}}
       />
 
       <SignupModal
-        isOpen={isSignupModalOpen}
-        onClose={() => setIsSignupModalOpen(false)}
-        onLoginClick={() => {
-          setIsSignupModalOpen(false)
-          setIsLoginModalOpen(true)
-        }}
-        onSignupSuccess={handleLoginSuccess}
+        isOpen={false}
+        onClose={() => {}}
+        onLoginClick={() => {}}
+        onSignupSuccess={() => {}}
       />
     </div>
   )

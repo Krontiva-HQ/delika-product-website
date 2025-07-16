@@ -1,59 +1,26 @@
 "use client"
 
 import Image from "next/image"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ShoppingCart, Minus, Plus, Trash2, AlertCircle, Bike, User, Store } from "lucide-react"
+import { ShoppingCart, Minus, Plus, Trash2, AlertCircle, Bike, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
-import { CartItem } from "@/types/cart"
-import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"
 import { calculateDistance } from "@/lib/distance"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { calculateDeliveryPrices } from "@/lib/api"
+import { CartItem } from "@/types/cart"
+import { motion, AnimatePresence } from "framer-motion"
 
-interface CartModalProps {
-  isOpen: boolean
-  onClose: () => void
-  cart: (CartItem & {
-    selectedExtras?: Array<{
-      id: string
-      name: string
-      price: string
-      quantity: number
-    }>
-  })[]
-  onAddItem: (itemId: string) => void
-  onRemoveItem: (itemId: string) => void
-  onDeleteItem: (itemId: string) => void
-  cartTotal: number
-  branchId: string
-  branchName: string
-  menuCategories: Array<{
-    foodType: string
-    foods: Array<CartItem>
-  }>
-  isAuthenticated: boolean
-  branchLocation?: { latitude: number; longitude: number }
-}
-
-export function CartModal({
-  isOpen,
-  onClose,
-  cart,
-  onAddItem,
-  onRemoveItem,
-  onDeleteItem,
-  cartTotal,
-  branchId,
-  branchName,
-  menuCategories,
-  isAuthenticated,
-  branchLocation
-}: CartModalProps) {
+export default function CartPage() {
   const router = useRouter()
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [branchId, setBranchId] = useState<string>("")
+  const [branchName, setBranchName] = useState<string>("")
+  const [menuCategories, setMenuCategories] = useState<any[]>([])
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [branchLocation, setBranchLocation] = useState<{ latitude: number; longitude: number } | undefined>(undefined)
   const [isProcessingAuth, setIsProcessingAuth] = useState(false)
   const [deliveryFee, setDeliveryFee] = useState(20)
   const [distance, setDistance] = useState(0)
@@ -63,45 +30,53 @@ export function CartModal({
   const [isLoadingDelivery, setIsLoadingDelivery] = useState(false)
   const platformFee = 3.00 // Platform fee of GHC3.00
 
+  // Load cart and branch info from localStorage on mount
   useEffect(() => {
-    console.log('Cart Items in CartModal:', cart.map(item => ({
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-      selectedExtras: item.selectedExtras,
-      total: (parseFloat(item.price) * item.quantity) + 
-        (item.selectedExtras?.reduce((sum, extra) => 
-          sum + (parseFloat(extra.price) * extra.quantity), 0) || 0)
-    })));
-  }, [cart]);
+    const savedBranchId = localStorage.getItem('selectedBranchId')
+    if (savedBranchId) {
+      setBranchId(savedBranchId)
+      const savedCart = localStorage.getItem(`cart-${savedBranchId}`)
+      if (savedCart) {
+        try {
+          setCart(JSON.parse(savedCart))
+        } catch {}
+      }
+      const savedBranchName = localStorage.getItem('selectedBranchName')
+      if (savedBranchName) setBranchName(savedBranchName)
+      const savedMenuCategories = localStorage.getItem('selectedMenuCategories')
+      if (savedMenuCategories) setMenuCategories(JSON.parse(savedMenuCategories))
+      const savedBranchLocation = localStorage.getItem('selectedBranchLocation')
+      if (savedBranchLocation) setBranchLocation(JSON.parse(savedBranchLocation))
+    }
+    const userData = localStorage.getItem('userData')
+    setIsAuthenticated(!!userData)
+  }, [])
 
   useEffect(() => {
-  }, [deliveryType])
+    if (branchId) {
+      localStorage.setItem(`cart-${branchId}` , JSON.stringify(cart))
+    }
+  }, [cart, branchId])
+
+  useEffect(() => {}, [deliveryType])
 
   useEffect(() => {
     const calculateFee = async () => {
       try {
         setIsLoadingDelivery(true)
         const locationData = localStorage.getItem('userLocationData')
-        
         if (!locationData || !branchLocation) {
           setIsLoadingDelivery(false)
           return
         }
-
         const { lat, lng } = JSON.parse(locationData)
         const branchLat = parseFloat(branchLocation.latitude.toString())
         const branchLng = parseFloat(branchLocation.longitude.toString())
-        
         const distance = await calculateDistance(
           { latitude: lat, longitude: lng },
           { latitude: branchLat, longitude: branchLng }
         )
-        
         setDistance(distance)
-
-        // Get delivery prices from API
         const { riderFee: newRiderFee, pedestrianFee: newPedestrianFee } = await calculateDeliveryPrices({
           pickup: {
             fromLatitude: branchLat.toString(),
@@ -114,53 +89,74 @@ export function CartModal({
           rider: true,
           pedestrian: true
         });
-
         setRiderFee(newRiderFee)
         setPedestrianFee(newPedestrianFee)
-        
-        // If distance > 2km and pedestrian is selected, switch to rider
         if (distance > 2 && deliveryType === 'pedestrian') {
           setDeliveryType('rider')
           setDeliveryFee(newRiderFee)
         } else {
-          // Set the fee based on the selected delivery type
           const currentFee = deliveryType === 'rider' ? newRiderFee : newPedestrianFee
           setDeliveryFee(currentFee)
         }
       } catch (error) {
-        // Handle error silently
       } finally {
         setIsLoadingDelivery(false)
       }
     }
-
-    if (isOpen) {
+    calculateFee()
+    const handleLocationUpdate = () => {
       calculateFee()
     }
-
-    // Listen for location updates
-    const handleLocationUpdate = () => {
-      if (isOpen) {
-        calculateFee()
-      }
-    }
-
     window.addEventListener('locationUpdated', handleLocationUpdate)
     return () => {
       window.removeEventListener('locationUpdated', handleLocationUpdate)
     }
-  }, [isOpen, branchLocation, deliveryType])
+  }, [branchLocation, deliveryType])
 
-  // Check authentication status whenever the modal opens
   useEffect(() => {
-    if (isOpen) {
+    // Check authentication status whenever the page is loaded
+    if (isProcessingAuth) {
       const userData = localStorage.getItem('userData')
-      if (userData && isProcessingAuth) {
+      if (userData) {
         setIsProcessingAuth(false)
         router.push(`/checkout/${branchId}`)
       }
     }
-  }, [isOpen, branchId, isProcessingAuth, router])
+  }, [isProcessingAuth, branchId, router])
+
+  const onAddItem = (itemId: string) => {
+    setCart(prevCart => {
+      const existingItem = prevCart.find(item => item.id === itemId)
+      if (existingItem) {
+        return prevCart.map(item =>
+          item.id === itemId ? { ...item, quantity: item.quantity + 1 } : item
+        )
+      }
+      return prevCart
+    })
+  }
+  const onRemoveItem = (itemId: string) => {
+    setCart(prevCart => {
+      const existingItem = prevCart.find(item => item.id === itemId)
+      if (existingItem && existingItem.quantity > 1) {
+        return prevCart.map(item =>
+          item.id === itemId ? { ...item, quantity: item.quantity - 1 } : item
+        )
+      }
+      return prevCart.filter(item => item.id !== itemId)
+    })
+  }
+  const onDeleteItem = (itemId: string) => {
+    setCart(prevCart => prevCart.filter(item => item.id !== itemId))
+  }
+
+  const cartTotal = cart.reduce((total: number, item: CartItem) => {
+    const itemTotal = parseFloat(item.price) * item.quantity;
+    const extrasTotal = item.selectedExtras?.reduce((extrasSum: number, extra: { price: string; quantity: number }) => {
+      return extrasSum + (parseFloat(extra.price) * extra.quantity);
+    }, 0) || 0;
+    return total + itemTotal + extrasTotal;
+  }, 0)
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
@@ -169,47 +165,39 @@ export function CartModal({
       localStorage.setItem('selectedDeliveryType', deliveryType)
       localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
       localStorage.setItem('checkoutPlatformFee', platformFee.toString())
-      // Store cart items with extras in localStorage
       localStorage.setItem('checkoutCartItems', JSON.stringify(cart))
-      onClose()
       router.push('/login')
       return
     }
-    // Store delivery type, delivery fee, and platform fee
     localStorage.setItem('selectedDeliveryType', deliveryType)
     localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
     localStorage.setItem('checkoutPlatformFee', platformFee.toString())
-    // Store cart items with extras in localStorage
     localStorage.setItem('checkoutCartItems', JSON.stringify(cart))
     router.push(`/checkout/${branchId}`)
-    onClose()
   }
 
   const hasUnavailableItems = cart.some(item => {
     const menuItem = menuCategories
-      .flatMap(cat => cat.foods)
-      .find(food => food.name === item.name)
+      .flatMap((cat: any) => cat.foods)
+      .find((food: any) => food.name === item.name)
     return !menuItem?.available
   })
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[450px] p-0 gap-0 bg-white overflow-hidden max-h-[90vh] flex flex-col">
-        <DialogHeader className="px-6 py-4 border-b sticky top-0 bg-white z-10">
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-              <ShoppingCart className="w-5 h-5 text-orange-600" />
-            </div>
-            <div>
-              <div className="font-semibold">{branchName}</div>
-              <div className="text-sm text-gray-500 font-normal">Your Cart</div>
-            </div>
-          </DialogTitle>
-        </DialogHeader>
-
+    <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+      <div className="w-full max-w-lg bg-white rounded-lg shadow p-6 mt-8">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+            <ShoppingCart className="w-5 h-5 text-orange-600" />
+          </div>
+          <div>
+            <div className="font-semibold">{branchName || 'Your Cart'}</div>
+            <div className="text-sm text-gray-500 font-normal">Your Cart</div>
+          </div>
+        </div>
         {cart.length > 0 ? (
           <>
-            <div className="px-6 space-y-4 overflow-y-auto flex-1 py-6">
+            <div className="space-y-4 overflow-y-auto flex-1 py-2">
               {hasUnavailableItems && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
@@ -218,13 +206,11 @@ export function CartModal({
                   </div>
                 </div>
               )}
-              
               <AnimatePresence>
                 {cart.map((item, index) => {
                   const menuItem = menuCategories
-                    .flatMap(cat => cat.foods)
-                    .find(food => food.name === item.name);
-
+                    .flatMap((cat: any) => cat.foods)
+                    .find((food: any) => food.name === item.name)
                   return (
                     <motion.div
                       key={`${item.id}-${index}`}
@@ -264,7 +250,6 @@ export function CartModal({
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                        
                         {/* Extras Section */}
                         {item.selectedExtras && item.selectedExtras.length > 0 && (
                           <div className="mt-2 pl-2 space-y-1 border-l-2 border-gray-200">
@@ -283,7 +268,6 @@ export function CartModal({
                             </div>
                           </div>
                         )}
-
                         <div className="flex items-center justify-between mt-3">
                           <span className="font-medium">GH₵ {((parseFloat(item.price) + (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0)) * item.quantity).toFixed(2)}</span>
                           <div className="flex items-center gap-3 bg-gray-50 rounded-full p-1">
@@ -310,12 +294,11 @@ export function CartModal({
                         </div>
                       </div>
                     </motion.div>
-                  );
+                  )
                 })}
               </AnimatePresence>
             </div>
-
-            <div className="border-t bg-white px-6 py-4 sticky bottom-0">
+            <div className="border-t bg-white py-4 sticky bottom-0">
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-600">Subtotal</span>
@@ -325,7 +308,6 @@ export function CartModal({
                     return total + base + extrasTotal;
                   }, 0).toFixed(2)}</span>
                 </div>
-
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-600 font-medium">Choose Delivery Type</span>
@@ -397,7 +379,6 @@ export function CartModal({
                     </div>
                   </RadioGroup>
                 </div>
-
                 <div className="flex justify-between items-center text-sm">
                   <div className="flex items-center gap-2">
                     <span className="text-gray-600">Delivery Fee</span>
@@ -409,12 +390,10 @@ export function CartModal({
                   </div>
                   <span className="font-medium">GH₵ {deliveryFee.toFixed(2)}</span>
                 </div>
-
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-600">Platform Fee</span>
                   <span className="font-medium">GH₵ {platformFee.toFixed(2)}</span>
                 </div>
-
                 <div className="flex justify-between items-center pt-3 border-t">
                   <span className="font-medium">Total</span>
                   <span className="font-semibold text-lg">GH₵ {(cartTotal + deliveryFee + platformFee).toFixed(2)}</span>
@@ -439,7 +418,7 @@ export function CartModal({
             </div>
           </>
         ) : (
-          <div className="py-12 px-6 text-center">
+          <div className="py-12 text-center">
             <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
               <ShoppingCart className="w-8 h-8 text-gray-400" />
             </div>
@@ -449,7 +428,7 @@ export function CartModal({
             </p>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </div>
+    </main>
   )
 } 
