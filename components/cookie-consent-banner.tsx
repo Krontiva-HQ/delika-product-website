@@ -32,7 +32,7 @@ export function CookieConsentBanner() {
           <div className="flex items-center gap-3">
             <Cookie className="h-6 w-6 text-gray-600 flex-shrink-0" />
             <p className="text-gray-700 text-sm">
-              This website uses cookies to ensure you get the best experience.
+              This website uses cookies.
             </p>
             <button
               onClick={handleAccept}
