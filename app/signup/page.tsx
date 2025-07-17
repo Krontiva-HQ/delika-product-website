@@ -110,7 +110,16 @@ export default function SignupPage() {
         }
       }
     } catch (error) {
-      alert("Can't sign up. Please check your details or try again later.");
+      // Check for error message from the server
+      if (error instanceof Error && error.message) {
+        if (error.message.toLowerCase().includes('invalid') || error.message.toLowerCase().includes('not found') || error.message.toLowerCase().includes('incorrect')) {
+          alert("Invalid email, phone, or password. Please check your details and try again.");
+        } else {
+          alert(error.message);
+        }
+      } else {
+        alert("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setIsLoading(false)
     }

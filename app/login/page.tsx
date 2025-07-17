@@ -66,7 +66,16 @@ export default function LoginPage() {
         }
       }
     } catch (error) {
-      setError("An error occurred. Please try again.")
+      // Check for error message from the server
+      if (error instanceof Error && error.message) {
+        if (error.message.toLowerCase().includes('invalid') || error.message.toLowerCase().includes('not found') || error.message.toLowerCase().includes('incorrect')) {
+          setError("Invalid email or password");
+        } else {
+          setError(error.message);
+        }
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setIsLoading(false)
     }
