@@ -48,15 +48,29 @@ export async function POST(request: NextRequest) {
       console.log('Response data:', JSON.stringify(responseData));
       // If the response is not OK, forward the most specific error message
       if (!response.ok) {
-        const errorMsg = responseData?.error || responseData?.message || response.statusText || 'Login failed';
+        let errorMsg = responseData?.error || responseData?.message || response.statusText || 'Login failed';
+        // User-friendly error for phone login
+        if (errorMsg.toLowerCase().includes('phone') && (errorMsg.toLowerCase().includes('not found') || errorMsg.toLowerCase().includes('no user') || errorMsg.toLowerCase().includes('does not exist'))) {
+          errorMsg = 'Account with this phone number does not exist.';
+        }
+        if (errorMsg.toLowerCase().includes('email') && (errorMsg.toLowerCase().includes('not found') || errorMsg.toLowerCase().includes('no user') || errorMsg.toLowerCase().includes('does not exist'))) {
+          errorMsg = 'Account with this email does not exist.';
+        }
         return NextResponse.json({ error: errorMsg }, { status: response.status });
       }
     } else {
       // If the response is not JSON, return the status text or response text
       const text = await response.text();
       console.log('Non-JSON response from login:', text);
+      let errorMsg = text || response.statusText || 'Authentication failed';
+      if (errorMsg.toLowerCase().includes('phone') && (errorMsg.toLowerCase().includes('not found') || errorMsg.toLowerCase().includes('no user') || errorMsg.toLowerCase().includes('does not exist'))) {
+        errorMsg = 'Account with this phone number does not exist.';
+      }
+      if (errorMsg.toLowerCase().includes('email') && (errorMsg.toLowerCase().includes('not found') || errorMsg.toLowerCase().includes('no user') || errorMsg.toLowerCase().includes('does not exist'))) {
+        errorMsg = 'Account with this email does not exist.';
+      }
       return NextResponse.json(
-        { error: text || response.statusText || 'Authentication failed' },
+        { error: errorMsg },
         { status: response.status }
       );
     }
