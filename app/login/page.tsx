@@ -65,16 +65,19 @@ export default function LoginPage() {
           setError("Invalid phone number")
         }
       }
-    } catch (error) {
-      // Check for error message from the server
-      if (error instanceof Error && error.message) {
-        if (error.message.toLowerCase().includes('invalid') || error.message.toLowerCase().includes('not found') || error.message.toLowerCase().includes('incorrect')) {
-          setError("Invalid email or password");
+    } catch (error: any) {
+      // Try to parse error response for more specific messages
+      if (error && error.message) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes('not found') || msg.includes('no user') || msg.includes('account does not exist')) {
+          setError('Account does not exist. Please check your email or phone.');
+        } else if (msg.includes('unauthorized') || msg.includes('invalid') || msg.includes('incorrect') || msg.includes('wrong password')) {
+          setError('Incorrect email or password. Please try again.');
         } else {
           setError(error.message);
         }
       } else {
-        setError("An unexpected error occurred. Please try again.");
+        setError('An unexpected error occurred. Please try again.');
       }
     } finally {
       setIsLoading(false)
