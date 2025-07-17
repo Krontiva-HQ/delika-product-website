@@ -46,12 +46,17 @@ export async function POST(request: NextRequest) {
     if (contentType && contentType.includes('application/json')) {
       responseData = await response.json();
       console.log('Response data:', JSON.stringify(responseData));
+      // If the response is not OK, forward the most specific error message
+      if (!response.ok) {
+        const errorMsg = responseData?.error || responseData?.message || response.statusText || 'Login failed';
+        return NextResponse.json({ error: errorMsg }, { status: response.status });
+      }
     } else {
-      // If the response is not JSON, return the status text
+      // If the response is not JSON, return the status text or response text
       const text = await response.text();
       console.log('Non-JSON response from login:', text);
       return NextResponse.json(
-        { error: response.statusText || 'Authentication failed' },
+        { error: text || response.statusText || 'Authentication failed' },
         { status: response.status }
       );
     }
