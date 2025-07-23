@@ -76,9 +76,6 @@ export function GroceriesList() {
             <div className="p-4">
               <h3 className="font-bold text-gray-900 truncate">{shop.groceryshopName}</h3>
               <span className="text-xs text-gray-600 truncate block">{shop.groceryshopAddress}</span>
-              <div className="flex items-center gap-1 mt-2 text-sm text-gray-600">
-                <span className="truncate">{shop.groceryshopPhoneNumber}</span>
-              </div>
             </div>
           </div>
         ))}
