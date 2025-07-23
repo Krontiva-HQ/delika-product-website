@@ -168,20 +168,6 @@ export default function GroceryDetailsPage() {
                   }}
                 />
               </PaginationItem>
-              {Array.from({ length: totalPages }, (_, i) => (
-                <PaginationItem key={i}>
-                  <PaginationLink
-                    href="#"
-                    isActive={currentPage === i + 1}
-                    onClick={e => {
-                      e.preventDefault();
-                      setCurrentPage(i + 1);
-                    }}
-                  >
-                    {i + 1}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
               <PaginationItem>
                 <PaginationNext
                   href="#"
