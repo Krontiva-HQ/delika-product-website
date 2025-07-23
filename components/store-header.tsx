@@ -27,6 +27,7 @@ import { LoadingSpinner } from "@/components/loading-spinner"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
 interface Restaurant {
   restaurantName: string
@@ -171,6 +172,7 @@ export function StoreHeader() {
   const [filterOpenNow, setFilterOpenNow] = useState(false);
   const [filterDeliveryType, setFilterDeliveryType] = useState('all');
   const [filterSortBy, setFilterSortBy] = useState('best');
+  const [activeTab, setActiveTab] = useState("restaurants")
 
   useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -691,6 +693,92 @@ export function StoreHeader() {
   // Helper to filter out empty strings
   const nonEmpty = (arr: string[]) => arr.filter(Boolean);
 
+  const renderRestaurantList = () => (
+    <div className="container mx-auto px-4 py-6">
+      {isLoadingRestaurants ? (
+        <div className="flex flex-col items-center justify-center py-16">
+          <LoadingSpinner 
+            size="lg"
+            color="orange"
+            text="Loading restaurants..."
+          />
+        </div>
+      ) : searchResults.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {searchResults.map((branch) => (
+            <Link
+              key={branch.id}
+              href={`/restaurants/${branch.slug}`}
+              onClick={(e) => {
+                e.preventDefault()
+                handleBranchSelect(branch)
+              }}
+              className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+            >
+              <button 
+                className={`absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
+                  likedBranches.has(branch.id) 
+                    ? 'text-orange-500 scale-110 hover:scale-105' 
+                    : 'text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105'
+                }`}
+                onClick={(e) => handleLikeToggle(branch.id, e)}
+                aria-label={likedBranches.has(branch.id) ? "Unlike restaurant" : "Like restaurant"}
+              >
+                <Heart className={`w-5 h-5 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
+              </button>
+              <div className="relative h-36">
+                <Image
+                  src={branch._restaurantTable[0].restaurantLogo.url}
+                  alt={branch._restaurantTable[0].restaurantName}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div className="p-4">
+                <h3 className="font-bold text-gray-900 truncate">
+                  {branch._restaurantTable[0].restaurantName}
+                </h3>
+                <span className="text-xs text-gray-600 truncate block">
+                  {branch.branchName}
+                </span>
+                <div className="flex items-center gap-1 mt-2 text-sm text-gray-600">
+                  <MapPin className="w-4 h-4" />
+                  <span className="truncate">{branch.branchLocation}</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-8">
+          {showExpandedSearch ? (
+            <div className="text-center">
+              <div className="mb-4">
+                <Search className="w-12 h-12 text-gray-400 mx-auto" />
+              </div>
+              <p className="text-gray-600 mb-4">
+                We found {filteredOutResults.length} {filteredOutResults.length === 1 ? 'restaurant' : 'restaurants'} matching your search, but they're a bit far from your location.
+              </p>
+              <button
+                onClick={handleExpandSearch}
+                className="text-orange-600 hover:text-orange-700 font-medium inline-flex items-center gap-2 border border-orange-600 rounded-md px-4 py-2 hover:bg-orange-50 transition-colors"
+              >
+                Click here to expand your search
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <EmptyState
+              title="No restaurants found"
+              description={searchQuery ? `We couldn't find any restaurants matching "${searchQuery}"` : "No restaurants available"}
+              icon="search"
+            />
+          )}
+        </div>
+      )}
+    </div>
+  )
+
   const renderContent = () => {
     if (isLoading && currentView === 'branch') {
       return null // Don't render content while loading branch page
@@ -1013,90 +1101,25 @@ export function StoreHeader() {
               </DialogContent>
             </Dialog>
 
-            {/* Store Listings */}
-            <div className="container mx-auto px-4 py-6">
-              {isLoadingRestaurants ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <LoadingSpinner 
-                    size="lg"
-                    color="orange"
-                    text="Loading restaurants..."
-                  />
-                </div>
-              ) : searchResults.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {searchResults.map((branch) => (
-                    <Link
-                      key={branch.id}
-                      href={`/restaurants/${branch.slug}`}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        handleBranchSelect(branch)
-                      }}
-                      className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
-                    >
-                      <button 
-                        className={`absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
-                          likedBranches.has(branch.id) 
-                            ? 'text-orange-500 scale-110 hover:scale-105' 
-                            : 'text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105'
-                        }`}
-                        onClick={(e) => handleLikeToggle(branch.id, e)}
-                        aria-label={likedBranches.has(branch.id) ? "Unlike restaurant" : "Like restaurant"}
-                      >
-                        <Heart className={`w-5 h-5 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
-                      </button>
-                      <div className="relative h-36">
-                        <Image
-                          src={branch._restaurantTable[0].restaurantLogo.url}
-                          alt={branch._restaurantTable[0].restaurantName}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-bold text-gray-900 truncate">
-                          {branch._restaurantTable[0].restaurantName}
-                        </h3>
-                        <span className="text-xs text-gray-600 truncate block">
-                          {branch.branchName}
-                        </span>
-                        <div className="flex items-center gap-1 mt-2 text-sm text-gray-600">
-                          <MapPin className="w-4 h-4" />
-                          <span className="truncate">{branch.branchLocation}</span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8">
-                  {showExpandedSearch ? (
-                    <div className="text-center">
-                      <div className="mb-4">
-                        <Search className="w-12 h-12 text-gray-400 mx-auto" />
-                      </div>
-                      <p className="text-gray-600 mb-4">
-                        We found {filteredOutResults.length} {filteredOutResults.length === 1 ? 'restaurant' : 'restaurants'} matching your search, but they're a bit far from your location.
-                      </p>
-                      <button
-                        onClick={handleExpandSearch}
-                        className="text-orange-600 hover:text-orange-700 font-medium inline-flex items-center gap-2 border border-orange-600 rounded-md px-4 py-2 hover:bg-orange-50 transition-colors"
-                      >
-                        Click here to expand your search
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <EmptyState
-                      title="No restaurants found"
-                      description={searchQuery ? `We couldn't find any restaurants matching "${searchQuery}"` : "No restaurants available"}
-                      icon="search"
-                    />
-                  )}
-                </div>
-              )}
-            </div>
+            {/* Tabs for categories */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="container mx-auto px-4 py-4">
+              <div className="w-full flex justify-center">
+                <TabsList>
+                  <TabsTrigger value="restaurants">Restaurants</TabsTrigger>
+                  <TabsTrigger value="groceries">Groceries</TabsTrigger>
+                  <TabsTrigger value="pharmacy">Pharmacy</TabsTrigger>
+                </TabsList>
+              </div>
+              <TabsContent value="restaurants">
+                {renderRestaurantList()}
+              </TabsContent>
+              <TabsContent value="groceries">
+                <div className="py-12 text-center text-gray-500">Groceries coming soon!</div>
+              </TabsContent>
+              <TabsContent value="pharmacy">
+                <div className="py-12 text-center text-gray-500">Pharmacy coming soon!</div>
+              </TabsContent>
+            </Tabs>
           </div>
         )
     }
