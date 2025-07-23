@@ -46,6 +46,22 @@ export default function GroceryDetailsPage() {
     currentPage * ITEMS_PER_PAGE
   );
 
+  // Get shop info from localStorage (set when user clicks a grocery branch)
+  const [shopLogo, setShopLogo] = useState<string | null>(null);
+  const [shopName, setShopName] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const shopData = localStorage.getItem("selectedGroceryShopData");
+      if (shopData) {
+        try {
+          const parsed = JSON.parse(shopData);
+          setShopLogo(parsed.groceryshopLogo?.url || null);
+          setShopName(parsed.groceryshopName || null);
+        } catch {}
+      }
+    }
+  }, []);
+
   useEffect(() => {
     async function fetchInventory() {
       try {
@@ -88,6 +104,17 @@ export default function GroceryDetailsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Shop logo and name */}
+      <div className="flex flex-col items-center mb-8">
+        {shopLogo ? (
+          <div className="relative w-24 h-24 mb-2">
+            <img src={shopLogo} alt={shopName || "Grocery Shop"} className="object-cover rounded-full w-full h-full border" />
+          </div>
+        ) : (
+          <div className="w-24 h-24 mb-2 bg-gray-100 flex items-center justify-center text-gray-400 rounded-full border">No Logo</div>
+        )}
+        <h2 className="text-xl font-bold text-gray-900 text-center">{shopName || "Grocery Shop"}</h2>
+      </div>
       <h1 className="text-2xl font-bold mb-6">Grocery Shop Inventory</h1>
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16">
@@ -98,7 +125,7 @@ export default function GroceryDetailsPage() {
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {inventory.map((item) => (
+            {paginatedInventory.map((item) => (
               <div key={item.id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left">
                 <div className="relative h-36">
                   {typeof item.image === 'object' && item.image && 'url' in item.image ? (
@@ -129,6 +156,44 @@ export default function GroceryDetailsPage() {
               </div>
             ))}
           </div>
+        {totalPages > 1 && (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={e => {
+                    e.preventDefault();
+                    setCurrentPage(p => Math.max(1, p - 1));
+                  }}
+                />
+              </PaginationItem>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink
+                    href="#"
+                    isActive={currentPage === i + 1}
+                    onClick={e => {
+                      e.preventDefault();
+                      setCurrentPage(i + 1);
+                    }}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={e => {
+                    e.preventDefault();
+                    setCurrentPage(p => Math.min(totalPages, p + 1));
+                  }}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
         </>
       )}
     </div>
