@@ -2,7 +2,7 @@
 
 import { MapPin, Search, ChevronDown, ChevronLeft, Filter, Heart, Settings2 } from "lucide-react"
 import Image from "next/image"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +28,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { GroceriesList } from "@/components/groceries-list";
 
 interface Restaurant {
   restaurantName: string
@@ -180,19 +181,28 @@ export function StoreHeader() {
   })
 
   useEffect(() => {
-    async function fetchBranchesData() {
+    async function fetchBranchesDirect() {
       try {
         setIsLoadingRestaurants(true);
-        const data = await getBranches<Branch[]>();
+        const apiUrl = process.env.NEXT_PUBLIC_BRANCHES_API;
+        if (!apiUrl) {
+          throw new Error('NEXT_PUBLIC_BRANCHES_API is not defined');
+        }
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        const data = await response.json();
         setBranches(data);
       } catch (error) {
-        console.error('Error fetching branches:', error);
+        console.error('Error fetching branches directly:', error);
       } finally {
         setIsLoadingRestaurants(false);
       }
     }
-
-    fetchBranchesData();
+    fetchBranchesDirect();
   }, []);
 
   useEffect(() => {
@@ -271,17 +281,18 @@ export function StoreHeader() {
   // Get unique cities for filter
   const cities = Array.from(new Set(branches.map(branch => branch.branchCity)))
 
-  // Filter branches by selected city
-  const filteredBranches = selectedCity === 'all' 
-    ? branches.filter(branch => {
-        const isActive = branch.active ?? true;
-        return isActive;
-      })
-    : branches.filter(branch => {
-        const isActive = branch.active ?? true;
-        const matchesCity = branch.branchCity === selectedCity;
-        return matchesCity && isActive;
-      });
+  // Filter branches by selected city and selected menu categories
+  const filteredBranches = useMemo(() => {
+    let result = selectedCity === 'all'
+      ? branches.filter(branch => branch.active ?? true)
+      : branches.filter(branch => (branch.active ?? true) && branch.branchCity === selectedCity);
+    if (filterCategories.length > 0) {
+      result = result.filter(branch =>
+        branch._menutable?.some(menu => filterCategories.includes(menu.name))
+      );
+    }
+    return result;
+  }, [branches, selectedCity, filterCategories]);
 
   // Filter branches by distance
   const filterBranchesByDistance = (branches: Branch[], userLat?: number, userLng?: number) => {
@@ -690,12 +701,22 @@ export function StoreHeader() {
     )
   )).sort();
 
-  // Get all unique menu categories (food types) from all branches
-  const allMenuCategories = Array.from(new Set(
-    branches.flatMap(branch =>
-      branch._menutable?.map(menu => menu.name) || []
-    )
-  )).filter(Boolean);
+  // Efficiently compute all unique menu categories (food types) from all branches
+  const allMenuCategories = useMemo(() => {
+    return Array.from(new Set(
+      branches.flatMap(branch =>
+        branch._menutable?.map(menu => menu.name) || []
+      )
+    )).filter(Boolean);
+  }, [branches]);
+
+  // Debug: Log branches and menu categories
+  useEffect(() => {
+    console.log('Branches:', branches);
+  }, [branches]);
+  useEffect(() => {
+    console.log('All Menu Categories:', allMenuCategories);
+  }, [allMenuCategories]);
 
   // Helper to filter out empty strings
   const nonEmpty = (arr: string[]) => arr.filter(Boolean);
@@ -1068,7 +1089,7 @@ export function StoreHeader() {
                 {renderRestaurantList()}
               </TabsContent>
               <TabsContent value="groceries">
-                <div className="py-12 text-center text-gray-500">Groceries coming soon!</div>
+                <GroceriesList />
               </TabsContent>
               <TabsContent value="pharmacy">
                 <div className="py-12 text-center text-gray-500">Pharmacy coming soon!</div>
