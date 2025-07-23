@@ -29,6 +29,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { GroceriesList } from "@/components/groceries-list";
+import PharmacyPage from "@/app/pharmacy/page";
 
 interface Restaurant {
   restaurantName: string
@@ -1092,7 +1093,7 @@ export function StoreHeader() {
                 <GroceriesList />
               </TabsContent>
               <TabsContent value="pharmacy">
-                <div className="py-12 text-center text-gray-500">Pharmacy coming soon!</div>
+                <PharmacyPage />
               </TabsContent>
             </Tabs>
           </div>
