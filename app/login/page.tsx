@@ -69,7 +69,9 @@ export default function LoginPage() {
       // Try to parse error response for more specific messages
       if (error && error.message) {
         const msg = error.message.toLowerCase();
-        if (msg.includes('not found') || msg.includes('no user') || msg.includes('account does not exist')) {
+        if (msg === 'auth request failed' || (msg.includes('phone') && (msg.includes('not found') || msg.includes('no user') || msg.includes('does not exist')))) {
+          setError('Account with this phone number does not exist.');
+        } else if (msg.includes('not found') || msg.includes('no user') || msg.includes('account does not exist')) {
           setError('Account does not exist. Please check your email or phone.');
         } else if (msg.includes('unauthorized') || msg.includes('invalid') || msg.includes('incorrect') || msg.includes('wrong password')) {
           setError('Incorrect email or password. Please try again.');
