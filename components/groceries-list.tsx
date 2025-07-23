@@ -1,38 +1,44 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import Link from "next/link";
 
-interface GroceryShop {
+interface GroceryBranch {
   id: string;
-  groceryshopName: string;
-  groceryshopAddress: string;
-  groceryshopLogo?: { url: string } | null;
-  groceryshopPhoneNumber: string;
+  grocerybranchName: string;
+  grocerybranchLocation: string;
+  groceryshopID: string;
+  _delika_groceries_shops_table?: {
+    groceryshopName?: string;
+    groceryshopLogo?: { url: string } | null;
+  };
 }
 
 export function GroceriesList() {
-  const [shops, setShops] = useState<GroceryShop[]>([]);
+  const [branches, setBranches] = useState<GroceryBranch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchGroceries() {
+    async function fetchGroceriesBranches() {
       try {
         setIsLoading(true);
         const apiUrl = process.env.NEXT_PUBLIC_GROCERIES_SHOPS_API;
         if (!apiUrl) throw new Error("NEXT_PUBLIC_GROCERIES_SHOPS_API is not defined");
+        console.log("Fetching groceries branches from:", apiUrl);
         const response = await fetch(apiUrl, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
         const data = await response.json();
-        setShops(data);
+        console.log("Groceries branches response:", data);
+        setBranches(Array.isArray(data) ? data : []);
       } catch (error) {
-        setShops([]);
+        setBranches([]);
       } finally {
         setIsLoading(false);
       }
     }
-    fetchGroceries();
+    fetchGroceriesBranches();
   }, []);
 
   if (isLoading) {
@@ -43,10 +49,10 @@ export function GroceriesList() {
     );
   }
 
-  if (!shops.length) {
+  if (!branches.length) {
     return (
       <div className="flex flex-col items-center justify-center py-8">
-        <div className="text-gray-500 text-center">No grocery stores found.</div>
+        <div className="text-gray-500 text-center">No grocery branches found.</div>
       </div>
     );
   }
@@ -54,16 +60,21 @@ export function GroceriesList() {
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        {shops.map((shop) => (
-          <div
-            key={shop.id}
+        {branches.map((branch) => (
+          <Link
+            key={branch.id}
+            href={`/groceries/${branch.groceryshopID}?branchId=${branch.id}`}
+            onClick={() => {
+              localStorage.setItem("selectedGroceryBranchId", branch.id);
+              localStorage.setItem("selectedGroceryShopId", branch.groceryshopID);
+            }}
             className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
           >
             <div className="relative h-36">
-              {shop.groceryshopLogo?.url ? (
+              {branch._delika_groceries_shops_table?.groceryshopLogo?.url ? (
                 <Image
-                  src={shop.groceryshopLogo.url}
-                  alt={shop.groceryshopName}
+                  src={branch._delika_groceries_shops_table.groceryshopLogo.url}
+                  alt={branch._delika_groceries_shops_table.groceryshopName || "Grocery Shop"}
                   fill
                   className="object-cover"
                 />
@@ -74,10 +85,17 @@ export function GroceriesList() {
               )}
             </div>
             <div className="p-4">
-              <h3 className="font-bold text-gray-900 truncate">{shop.groceryshopName}</h3>
-              <span className="text-xs text-gray-600 truncate block">{shop.groceryshopAddress}</span>
+              <h3 className="font-bold text-gray-900 truncate">
+                {branch._delika_groceries_shops_table?.groceryshopName || "No Name"}
+              </h3>
+              <span className="text-xs text-gray-600 truncate block">
+                {branch.grocerybranchName}
+              </span>
+              <span className="text-xs text-gray-500 truncate block">
+                {branch.grocerybranchLocation}
+              </span>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
