@@ -33,7 +33,7 @@ interface BranchDetailsModalProps {
 export function BranchDetailsModal({ isOpen, onClose, branch }: BranchDetailsModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] p-0">
+      <DialogContent className="sm:max-w-[500px] p-0 max-h-[80vh] overflow-y-auto">
         <DialogTitle className="text-2xl font-bold mb-6 px-6 pt-6">
           {branch.branchName || 'Branch Details'}
         </DialogTitle>
