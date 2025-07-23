@@ -690,11 +690,32 @@ export function StoreHeader() {
     )
   )).sort();
 
+  // Get all unique menu categories (food types) from all branches
+  const allMenuCategories = Array.from(new Set(
+    branches.flatMap(branch =>
+      branch._menutable?.map(menu => menu.name) || []
+    )
+  )).filter(Boolean);
+
   // Helper to filter out empty strings
   const nonEmpty = (arr: string[]) => arr.filter(Boolean);
 
   const renderRestaurantList = () => (
     <div className="container mx-auto px-4 py-6">
+      {/* Menu Categories Bar */}
+      {allMenuCategories.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
+          {allMenuCategories.map(category => (
+            <button
+              key={category}
+              className="px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm whitespace-nowrap hover:bg-orange-100 hover:text-orange-600 transition-colors"
+              type="button"
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      )}
       {isLoadingRestaurants ? (
         <div className="flex flex-col items-center justify-center py-16">
           <LoadingSpinner 
@@ -991,20 +1012,6 @@ export function StoreHeader() {
                         </SelectContent>
                       </Select>
                     </div>
-                    {/* Rating */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
-                      <label className="block text-sm font-medium mb-1">Minimum Rating</label>
-                      <Select value={filterRating} onValueChange={setFilterRating}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="All" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All</SelectItem>
-                          <SelectItem value="4">4+ stars</SelectItem>
-                          <SelectItem value="3">3+ stars</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                     {/* Menu Categories */}
                     <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2 md:col-span-2">
                       <label className="block text-sm font-medium mb-1">Menu Categories</label>
@@ -1027,60 +1034,7 @@ export function StoreHeader() {
                         ))}
                       </div>
                     </div>
-                    {/* Open Now Toggle */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex items-center gap-3 md:col-span-2">
-                      <Switch checked={filterOpenNow} onCheckedChange={setFilterOpenNow} id="open-now-switch" />
-                      <label htmlFor="open-now-switch" className="text-sm font-medium">Open Now</label>
-                    </div>
                   </div>
-                  {/* Show More Filters */}
-                  <div className="mt-4 flex justify-end">
-                    <button
-                      type="button"
-                      className="text-orange-600 hover:underline text-sm font-medium"
-                      onClick={() => setShowAdvancedFilters(v => !v)}
-                    >
-                      {showAdvancedFilters ? 'Hide Advanced Filters' : 'Show More Filters'}
-                    </button>
-                  </div>
-                  {/* Advanced Filters */}
-                  {showAdvancedFilters && (
-                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Delivery Type */}
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
-                        <label className="block text-sm font-medium mb-1">Delivery Type</label>
-                        <div className="flex gap-4">
-                          <label className="flex items-center gap-1">
-                            <input type="radio" name="deliveryType" value="all" checked={filterDeliveryType === 'all'} onChange={() => setFilterDeliveryType('all')} />
-                            <span>All</span>
-                          </label>
-                          <label className="flex items-center gap-1">
-                            <input type="radio" name="deliveryType" value="delivery" checked={filterDeliveryType === 'delivery'} onChange={() => setFilterDeliveryType('delivery')} />
-                            <span>Delivery</span>
-                          </label>
-                          <label className="flex items-center gap-1">
-                            <input type="radio" name="deliveryType" value="pickup" checked={filterDeliveryType === 'pickup'} onChange={() => setFilterDeliveryType('pickup')} />
-                            <span>Pickup</span>
-                          </label>
-                        </div>
-                      </div>
-                      {/* Sort By */}
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
-                        <label className="block text-sm font-medium mb-1">Sort By</label>
-                        <Select value={filterSortBy} onValueChange={setFilterSortBy}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Best Match" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="best">Best Match</SelectItem>
-                            <SelectItem value="rating">Rating</SelectItem>
-                            <SelectItem value="distance">Distance</SelectItem>
-                            <SelectItem value="delivery">Delivery Time</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  )}
                   <div className="mt-6 flex justify-end gap-2">
                     <button
                       className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium"
