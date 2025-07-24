@@ -220,9 +220,9 @@ export default function PharmacyDetailsPage() {
                       )}
                     </div>
                     <div className="p-4 flex flex-col flex-1">
-                      <h3 className="font-bold text-gray-900 truncate mb-1">{item.productName || "No Name"}</h3>
+                      <h3 className="font-bold text-gray-900 text-base truncate mb-1">{item.productName || "No Name"}</h3>
                       <div className="flex items-center justify-between mt-auto">
-                        <span className="text-base font-semibold text-gray-800">GH₵ {item.price || "No Price"}</span>
+                        <span className="text-base font-semibold text-gray-800 truncate">GH₵ {item.price || "No Price"}</span>
                         <button
                           className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center ml-2"
                           onClick={() => {
@@ -275,9 +275,9 @@ export default function PharmacyDetailsPage() {
                 )}
               </div>
               <div className="p-4 flex flex-col flex-1">
-                <h3 className="font-bold text-gray-900 truncate mb-1">{item.productName || "No Name"}</h3>
+                <h3 className="font-bold text-gray-900 text-base truncate mb-1">{item.productName || "No Name"}</h3>
                 <div className="flex items-center justify-between mt-auto">
-                  <span className="text-base font-semibold text-gray-800">GH₵ {item.price || "No Price"}</span>
+                  <span className="text-base font-semibold text-gray-800 truncate">GH₵ {item.price || "No Price"}</span>
                   <button
                     className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center ml-2"
                     onClick={() => {
