@@ -784,10 +784,6 @@ export function StoreHeader() {
                 <span className="text-xs text-gray-600 truncate block">
                   {branch.branchName}
                 </span>
-                <div className="flex items-center gap-1 mt-2 text-sm text-gray-600">
-                  <MapPin className="w-4 h-4" />
-                  <span className="truncate">{branch.branchLocation}</span>
-                </div>
               </div>
             </Link>
           ))}
