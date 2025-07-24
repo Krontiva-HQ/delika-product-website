@@ -389,7 +389,12 @@ export default function PharmacyDetailsPage() {
         </div>
       {/* Floating Cart */}
       <FloatingCart
-        total={cart.reduce((total, item) => total + (parseFloat(item.price) || 0), 0)}
+        total={cart.reduce((total, item) => {
+          const basePrice = (parseFloat(item.price) || 0) * (item.quantity || 1);
+          const extrasTotal = (item.selectedExtras?.reduce((sum: number, extra: any) => 
+            sum + (parseFloat(extra.price) || 0) * (extra.quantity || 1), 0) || 0);
+          return total + basePrice + extrasTotal;
+        }, 0)}
         itemCount={cart.length}
         onClick={() => setIsCartModalOpen(true)}
         branchLocation={{ 
@@ -416,7 +421,12 @@ export default function PharmacyDetailsPage() {
         onAddItem={handleAddItem}
         onRemoveItem={handleRemoveItem}
         onDeleteItem={handleDeleteItem}
-        cartTotal={cart.reduce((total, item) => total + (parseFloat(item.price) || 0), 0)}
+        cartTotal={cart.reduce((total, item) => {
+          const basePrice = (parseFloat(item.price) || 0) * (item.quantity || 1);
+          const extrasTotal = (item.selectedExtras?.reduce((sum: number, extra: any) => 
+            sum + (parseFloat(extra.price) || 0) * (extra.quantity || 1), 0) || 0);
+          return total + basePrice + extrasTotal;
+        }, 0)}
         branchId={shopName || "pharmacy"}
         branchName={shopName || "Pharmacy Shop"}
         menuCategories={[]}

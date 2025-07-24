@@ -411,9 +411,17 @@ const transformOrderData = (orderData: any, storeType: string) => {
         finalPharmacyId: pharmacyShopId || baseData.branchId,
         finalPharmacyBranchId: pharmacyBranchId || baseData.branchId
       });
+
+      // Validate that we have required UUIDs
+      if (!pharmacyShopId) {
+        console.error('❌ Missing pharmacyShopId from localStorage!');
+      }
+      if (!pharmacyBranchId) {
+        console.error('❌ Missing pharmacyBranchId from localStorage!');
+      }
       
       // Transform to match pharmacy orders table schema exactly
-      return {
+      const transformedData = {
         id: baseData.id,
         orderDate: baseData.orderDate,
         orderOTP: 0,
@@ -463,6 +471,9 @@ const transformOrderData = (orderData: any, storeType: string) => {
         pickup: baseData.pickup || [],
         dropOff: baseData.dropOff || []
       };
+
+      console.log('🏥 Final pharmacy order payload:', JSON.stringify(transformedData, null, 2));
+      return transformedData;
     
     case 'grocery':
       // For grocery: Get the real UUID from localStorage, not from URL which contains grocery name
