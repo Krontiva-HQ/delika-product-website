@@ -31,14 +31,33 @@ export function PharmacyList() {
 
   // Load user location from localStorage
   useEffect(() => {
-    const savedLocationData = localStorage.getItem('userLocationData');
-    if (savedLocationData) {
-      const { lat, lng } = JSON.parse(savedLocationData);
-      setUserCoordinates({ lat, lng });
-      console.log('[Location] User coordinates loaded:', { lat, lng });
-    } else {
-      console.log('[Location] No user location data found');
-    }
+    const loadLocationData = () => {
+      const savedLocationData = localStorage.getItem('userLocationData');
+      if (savedLocationData) {
+        const { lat, lng } = JSON.parse(savedLocationData);
+        setUserCoordinates({ lat, lng });
+        console.log('[Location] User coordinates loaded:', { lat, lng });
+      } else {
+        console.log('[Location] No user location data found');
+      }
+    };
+
+    // Initial load
+    loadLocationData();
+
+    // Listen for location updates
+    const handleLocationUpdate = (event: CustomEvent) => {
+      const locationData = event.detail;
+      if (locationData && locationData.lat && locationData.lng) {
+        console.log('[Location] Pharmacy received location update:', locationData);
+        setUserCoordinates({ lat: locationData.lat, lng: locationData.lng });
+      }
+    };
+
+    window.addEventListener('locationUpdated', handleLocationUpdate as EventListener);
+    return () => {
+      window.removeEventListener('locationUpdated', handleLocationUpdate as EventListener);
+    };
   }, []);
 
   // Listen for search from store-header main search bar
