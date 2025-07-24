@@ -430,7 +430,7 @@ const transformOrderData = (orderData: any, storeType: string) => {
         deliveryPrice: baseData.deliveryPrice?.toString() || "0",
         totalPrice: baseData.totalPrice?.toString() || "0",
         orderAccepted: "",
-        orderStatus: "Pending", // Use valid pharmacy order status
+        orderStatus: "", // Leave empty - let API set default status
         paymentStatus: baseData.paymentStatus || "",
         paystackReferenceCode: "",
         kitchenStatus: "",
@@ -518,7 +518,7 @@ const transformOrderData = (orderData: any, storeType: string) => {
         pedestrian: baseData.pedestrian || false,
         platformFee: baseData.platformFee?.toString() || "0",
         courierOtp: "",
-        orderStatus: "Pending", // Use valid grocery order status
+        orderStatus: "", // Leave empty - let API set default status
         customerId: baseData.customerId,
         orderCancelationType: "",
         products: baseData.products || [],
