@@ -481,7 +481,7 @@ export function StoreHeader() {
     }
   }, []);
 
-  // Modify search input handler to save to localStorage
+  // Modify search input handler to save to localStorage and emit events for all tabs
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -490,6 +490,14 @@ export function StoreHeader() {
     } else {
       localStorage.removeItem('lastSearchQuery');
     }
+    
+    // Emit search events for grocery and pharmacy components regardless of active tab
+    window.dispatchEvent(new CustomEvent('grocerySearchUpdate', { 
+      detail: { query: value } 
+    }));
+    window.dispatchEvent(new CustomEvent('pharmacySearchUpdate', { 
+      detail: { query: value } 
+    }));
   };
 
   // Modify handleBackToStores to use router navigation

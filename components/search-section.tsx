@@ -52,6 +52,14 @@ export function SearchSection({ onSearch, userLocation, onLocationClick }: Searc
     const value = e.target.value
     setSearchValue(value)
     onSearch(value)
+    
+    // Emit search events for grocery and pharmacy components
+    window.dispatchEvent(new CustomEvent('grocerySearchUpdate', { 
+      detail: { query: value } 
+    }));
+    window.dispatchEvent(new CustomEvent('pharmacySearchUpdate', { 
+      detail: { query: value } 
+    }));
   }
 
   const handleLocationClick = () => {

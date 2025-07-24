@@ -2,12 +2,17 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import Link from "next/link";
+import { calculateDistance } from "@/utils/distance";
+import { ChevronDown, Search } from "lucide-react";
 
 interface GroceryBranch {
   id: string;
   grocerybranchName: string;
   grocerybranchLocation: string;
   groceryshopID: string;
+  grocerybranchLatitude: string | number;
+  grocerybranchLongitude: string | number;
+  active?: boolean;
   _delika_groceries_shops_table?: {
     groceryshopName?: string;
     groceryshopLogo?: { url: string } | null;
@@ -17,6 +22,150 @@ interface GroceryBranch {
 export function GroceriesList() {
   const [branches, setBranches] = useState<GroceryBranch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userCoordinates, setUserCoordinates] = useState<{lat: number, lng: number} | null>(null);
+  const [searchRadius, setSearchRadius] = useState<number>(8); // 8km default radius
+  const [showExpandedSearch, setShowExpandedSearch] = useState<boolean>(false);
+  const [filteredOutResults, setFilteredOutResults] = useState<GroceryBranch[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [hasUserSearched, setHasUserSearched] = useState<boolean>(false);
+
+  // Load user location from localStorage
+  useEffect(() => {
+    const savedLocationData = localStorage.getItem('userLocationData');
+    if (savedLocationData) {
+      const { lat, lng } = JSON.parse(savedLocationData);
+      setUserCoordinates({ lat, lng });
+      console.log('[Location] User coordinates loaded:', { lat, lng });
+    } else {
+      console.log('[Location] No user location data found');
+    }
+  }, []);
+
+  // Listen for search from store-header main search bar
+  useEffect(() => {
+    // Load saved search query on mount
+    const savedSearch = localStorage.getItem('lastSearchQuery');
+    if (savedSearch) {
+      setSearchQuery(savedSearch);
+      setHasUserSearched(true);
+    }
+
+    const handleSearchUpdate = (event: CustomEvent) => {
+      const query = event.detail.query || "";
+      setSearchQuery(query);
+      setHasUserSearched(query.length > 0);
+    };
+
+    window.addEventListener('grocerySearchUpdate', handleSearchUpdate as EventListener);
+    return () => {
+      window.removeEventListener('grocerySearchUpdate', handleSearchUpdate as EventListener);
+    };
+  }, []);
+
+  // Filter branches by search query
+  const searchFilteredBranches = searchQuery
+    ? branches.filter(branch =>
+        branch.grocerybranchName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        branch._delika_groceries_shops_table?.groceryshopName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        branch.grocerybranchLocation.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : branches;
+
+  // Filter branches by distance and activity status
+  const filterBranchesByDistance = (branches: GroceryBranch[], userLat?: number, userLng?: number, radius: number = 8) => {
+    console.log(`\n[Distance Filter] Starting distance calculations for ${branches.length} grocery branches`);
+    console.log(`[Distance Filter] User Location: ${userLat}, ${userLng}`);
+    console.log(`[Distance Filter] Search Radius: ${radius}km\n`);
+
+    if (!userLat || !userLng) {
+      console.log('[Distance Filter] No user coordinates, returning active branches only');
+      return branches.filter(branch => branch.active !== false);
+    }
+
+    return branches.filter(branch => {
+      console.log(`\n[Branch] Processing ${branch.grocerybranchName}`);
+      console.log(`[Branch] Active status:`, branch.active);
+      console.log(`[Branch] Raw coordinates - Lat: ${branch.grocerybranchLatitude}, Lng: ${branch.grocerybranchLongitude}`);
+      
+      // Check active status first
+      const isActive = branch.active !== false;
+      if (!isActive) {
+        console.log('[Branch] Excluded - Branch is inactive');
+        return false;
+      }
+      
+      const branchLat = parseFloat(branch.grocerybranchLatitude.toString());
+      const branchLng = parseFloat(branch.grocerybranchLongitude.toString());
+      
+      console.log(`[Branch] Parsed coordinates - Lat: ${branchLat}, Lng: ${branchLng}`);
+      
+      if (isNaN(branchLat) || isNaN(branchLng)) {
+        console.log('[Branch] Excluded - Invalid coordinates');
+        return false;
+      }
+      
+      const distance = calculateDistance(
+        userLat,
+        userLng,
+        branchLat,
+        branchLng
+      );
+
+      console.log(`[Branch] Calculated distance: ${distance.toFixed(2)}km`);
+      const isWithinRadius = distance <= radius;
+      console.log(`[Branch] Within ${radius}km radius: ${isWithinRadius}`);
+      
+      if (!isWithinRadius) {
+        console.log('[Branch] Excluded - Outside radius');
+      } else {
+        console.log('[Branch] Included - Active and within radius');
+      }
+      
+      return isWithinRadius;
+    });
+  };
+
+  // Get filtered results within radius
+  const filteredBranches = filterBranchesByDistance(
+    searchFilteredBranches,
+    userCoordinates?.lat,
+    userCoordinates?.lng,
+    searchRadius
+  );
+
+  // Handle expanded search for branches outside 8km but within 15km
+  useEffect(() => {
+    if (!userCoordinates || !hasUserSearched) {
+      setFilteredOutResults([]);
+      setShowExpandedSearch(false);
+      return;
+    }
+
+    const outsideRadius = searchFilteredBranches.filter(branch => {
+      // Only consider active branches
+      const isActive = branch.active !== false;
+      if (!isActive) return false;
+
+      const branchLat = parseFloat(branch.grocerybranchLatitude.toString());
+      const branchLng = parseFloat(branch.grocerybranchLongitude.toString());
+      
+      if (isNaN(branchLat) || isNaN(branchLng)) return false;
+
+      const distance = calculateDistance(
+        userCoordinates.lat,
+        userCoordinates.lng,
+        branchLat,
+        branchLng
+      );
+
+      // Only include active branches that are between 8km and 15km
+      return isActive && distance > 8 && distance <= 15;
+    });
+
+    // Only show expanded search if user searched, no results within 8km, but results between 8-15km
+    setFilteredOutResults(outsideRadius);
+    setShowExpandedSearch(outsideRadius.length > 0 && filteredBranches.length === 0 && hasUserSearched);
+  }, [searchFilteredBranches, userCoordinates, filteredBranches.length, hasUserSearched]);
 
   useEffect(() => {
     async function fetchGroceriesBranches() {
@@ -41,6 +190,11 @@ export function GroceriesList() {
     fetchGroceriesBranches();
   }, []);
 
+  const handleExpandSearch = () => {
+    setSearchRadius(15);
+    setShowExpandedSearch(false);
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
@@ -49,10 +203,40 @@ export function GroceriesList() {
     );
   }
 
-  if (!branches.length) {
+  if (!filteredBranches.length) {
     return (
-      <div className="flex flex-col items-center justify-center py-8">
-        <div className="text-gray-500 text-center">No grocery branches found.</div>
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex flex-col items-center justify-center py-8">
+          {showExpandedSearch && filteredOutResults.length > 0 ? (
+            <div className="text-center">
+              <div className="mb-4">
+                <Search className="w-12 h-12 text-gray-400 mx-auto" />
+              </div>
+              <p className="text-gray-600 mb-4">
+                We found {filteredOutResults.length} {filteredOutResults.length === 1 ? 'grocery store' : 'grocery stores'} near you, but they're a bit far from your location.
+              </p>
+              <button
+                onClick={handleExpandSearch}
+                className="text-orange-600 hover:text-orange-700 font-medium inline-flex items-center gap-2 border border-orange-600 rounded-md px-4 py-2 hover:bg-orange-50 transition-colors"
+              >
+                Click here to expand your search
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="text-center">
+              <div className="mb-4">
+                <Search className="w-12 h-12 text-gray-400 mx-auto" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No grocery stores found</h3>
+              <p className="text-gray-500 text-sm">
+                {userCoordinates 
+                  ? "No grocery stores available within 8km of your location" 
+                  : "Please set your delivery location to see nearby grocery stores"}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -60,7 +244,7 @@ export function GroceriesList() {
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        {branches.map((branch) => (
+        {filteredBranches.map((branch) => (
           <Link
             key={branch.id}
             href={`/groceries/${branch.groceryshopID}?branchId=${branch.id}`}
