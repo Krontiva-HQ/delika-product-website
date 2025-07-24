@@ -17,6 +17,7 @@ import { SignupModal } from "@/components/signup-modal"
 import { EmptyState } from "@/components/empty-state"
 import { AuthNav } from "@/components/auth-nav"
 import { BranchPage } from "@/components/branch-page"
+import { SearchSection } from "@/components/search-section"
 import { calculateDistance } from "@/utils/distance"
 import { FavoritesSection } from "@/components/favorites-section"
 import { SettingsSection } from "@/components/settings-section"
@@ -24,12 +25,9 @@ import { getBranches, getCustomerDetails, updateFavorites } from "@/lib/api"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { LoadingSpinner } from "@/components/loading-spinner"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { GroceriesList } from "@/components/groceries-list";
-import PharmacyPage from "@/app/pharmacy/page";
+import { PharmacyList } from "@/components/pharmacy-list";
+import { FilterModal } from "@/components/FilterModal";
 
 interface Restaurant {
   restaurantName: string
@@ -168,13 +166,25 @@ export function StoreHeader() {
   const ORDERS_PER_PAGE = 10
   const [isBranchPageLoaded, setIsBranchPageLoaded] = useState(false)
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [filterRating, setFilterRating] = useState('all');
-  const [filterCategories, setFilterCategories] = useState<string[]>([]);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterOpenNow, setFilterOpenNow] = useState(false);
   const [filterDeliveryType, setFilterDeliveryType] = useState('all');
   const [filterSortBy, setFilterSortBy] = useState('best');
   const [activeTab, setActiveTab] = useState("restaurants")
+
+  // FilterModal state variables
+  const [filterTypes, setFilterTypes] = useState<string[]>(['restaurant']);
+  const [filterCategories, setFilterCategories] = useState<string[]>([]);
+  const [filterRating, setFilterRating] = useState<string>('all');
+  const [filterDeliveryTime, setFilterDeliveryTime] = useState<number | null>(null);
+  const [filterPickup, setFilterPickup] = useState<boolean>(false);
+  const [isFilterLoading, setIsFilterLoading] = useState<boolean>(false);
+
+  // Category constants for FilterModal
+  const RESTAURANT_CATEGORIES = ['Italian', 'Chinese', 'Mexican', 'Indian', 'Thai', 'Japanese', 'American', 'French', 'Mediterranean', 'Korean', 'Vietnamese', 'Greek', 'Spanish', 'Lebanese', 'Turkish'];
+  const GROCERY_CATEGORIES = ['Fresh Produce', 'Dairy & Eggs', 'Meat & Poultry', 'Seafood', 'Bakery', 'Pantry', 'Frozen Foods', 'Beverages', 'Snacks', 'Health & Beauty', 'Household', 'Baby Care'];
+  const PHARMACY_CATEGORIES = ['Prescription', 'Over-the-Counter', 'Vitamins', 'First Aid', 'Personal Care', 'Baby & Child', 'Health Monitoring', 'Pain Relief', 'Allergy', 'Cold & Flu'];
+  const PAGE_SIZE = 5;
 
   // Store and load activeTab from localStorage
   useEffect(() => {
@@ -994,124 +1004,69 @@ export function StoreHeader() {
       default:
         return (
           <div>
-            {/* Search and Store Content */}
-            <div className="border-b">
-              <div className="container mx-auto px-4 h-16 flex items-center justify-center">
-                <div className="flex items-center gap-2 md:gap-4 max-w-3xl w-full">
-                  {/* Location icon and formatted name on the left */}
-                  <button 
-                    onClick={() => setIsLocationModalOpen(true)} 
-                    className="flex items-center gap-1.5 hover:text-gray-600 p-2 rounded-full border border-gray-200 bg-white min-w-0"
-                    aria-label="Select delivery location"
-                  >
-                    <MapPin className="w-5 h-5 flex-shrink-0" />
-                    <span className="font-medium truncate max-w-[100px] md:max-w-[200px] hidden md:inline">{userLocation}</span>
-                  </button>
-                  <div className="flex-1 relative flex items-center">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search restaurants and stores"
-                      className="w-full pl-10 pr-16 py-2 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                      value={searchQuery}
-                      onChange={handleSearchChange}
-                    />
-                    {/* Filter button opens modal */}
-                    <button
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-full flex items-center gap-2 flex-shrink-0"
-                      onClick={() => setIsFilterModalOpen(true)}
-                      aria-label="Open filter options"
-                    >
-                      <Settings2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+            {/* Search Section with Tabs */}
+            <SearchSection
+              onSearch={setSearchQuery}
+              userLocation={userLocation}
+              onLocationClick={() => setIsLocationModalOpen(true)}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onFilterClick={() => setIsFilterModalOpen(true)}
+            />
+
+            {/* Advanced Filter Modal */}
+            <FilterModal
+              open={isFilterModalOpen}
+              onOpenChange={setIsFilterModalOpen}
+              filterTypes={filterTypes}
+              setFilterTypes={setFilterTypes}
+              filterCategories={filterCategories}
+              setFilterCategories={setFilterCategories}
+              filterRating={filterRating}
+              setFilterRating={setFilterRating}
+              filterDeliveryTime={filterDeliveryTime}
+              setFilterDeliveryTime={setFilterDeliveryTime}
+              filterPickup={filterPickup}
+              setFilterPickup={setFilterPickup}
+              foodPage={0}
+              setFoodPage={() => {}}
+              groceryPage={0}
+              setGroceryPage={() => {}}
+              pharmacyPage={0}
+              setPharmacyPage={() => {}}
+              RESTAURANT_CATEGORIES={RESTAURANT_CATEGORIES}
+              GROCERY_CATEGORIES={GROCERY_CATEGORIES}
+              PHARMACY_CATEGORIES={PHARMACY_CATEGORIES}
+              PAGE_SIZE={PAGE_SIZE}
+              isLoading={isFilterLoading}
+              onApply={async () => {
+                setIsFilterLoading(true);
+                try {
+                  // Small delay to show loading state
+                  await new Promise(resolve => setTimeout(resolve, 800));
+                  
+                  const params = new URLSearchParams();
+                  if (filterRating && filterRating !== 'all') params.append('rating', filterRating);
+                  if (filterCategories.length > 0) params.append('category', filterCategories.join(','));
+                  if (filterDeliveryTime) params.append('deliveryTime', filterDeliveryTime.toString());
+                  if (filterTypes.length > 0) params.append('type', filterTypes.join(','));
+                  
+                  router.push(`/results?${params.toString()}`);
+                  setIsFilterModalOpen(false);
+                } catch (error) {
+                  console.error('Error applying filters:', error);
+                } finally {
+                  setIsFilterLoading(false);
+                }
+              }}
+            />
+
+                        {/* Tab Content */}
+            <div className="container mx-auto px-4 py-4">
+              {activeTab === "restaurants" && renderRestaurantList()}
+              {activeTab === "groceries" && <GroceriesList />}
+              {activeTab === "pharmacy" && <PharmacyList />}
             </div>
-
-            {/* Filter Modal */}
-            <Dialog open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
-              <DialogContent className="max-w-2xl p-0">
-                <div className="p-6">
-                  <DialogTitle className="mb-4">Filter Restaurants</DialogTitle>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Location */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
-                      <label className="block text-sm font-medium mb-1">City</label>
-                      <Select value={selectedCity} onValueChange={setSelectedCity}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="All Locations" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Locations</SelectItem>
-                          {nonEmpty(cities).map(city => (
-                            <SelectItem key={city} value={city}>{city}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {/* Menu Categories */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2 md:col-span-2">
-                      <label className="block text-sm font-medium mb-1">Menu Categories</label>
-                      <div className="flex flex-wrap gap-2">
-                        {allCategories.map(category => (
-                          <button
-                            key={category}
-                            type="button"
-                            className={`px-3 py-1 rounded-full border text-sm ${filterCategories.includes(category) ? 'bg-orange-100 border-orange-400 text-orange-700' : 'bg-white border-gray-300 text-gray-700'}`}
-                            onClick={() => {
-                              if (filterCategories.includes(category)) {
-                                setFilterCategories(filterCategories.filter(c => c !== category));
-                              } else {
-                                setFilterCategories([...filterCategories, category]);
-                              }
-                            }}
-                          >
-                            {category}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-6 flex justify-end gap-2">
-                    <button
-                      className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium"
-                      onClick={() => setIsFilterModalOpen(false)}
-                      type="button"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="px-4 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 text-sm font-medium"
-                      onClick={() => setIsFilterModalOpen(false)}
-                      type="button"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            {/* Tabs for categories */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="container mx-auto px-4 py-4">
-              <div className="w-full flex justify-center">
-                <TabsList>
-                  <TabsTrigger value="restaurants">Restaurants</TabsTrigger>
-                  <TabsTrigger value="groceries">Groceries</TabsTrigger>
-                  <TabsTrigger value="pharmacy">Pharmacy</TabsTrigger>
-                </TabsList>
-              </div>
-              <TabsContent value="restaurants">
-                {renderRestaurantList()}
-              </TabsContent>
-              <TabsContent value="groceries">
-                <GroceriesList />
-              </TabsContent>
-              <TabsContent value="pharmacy">
-                <PharmacyPage />
-              </TabsContent>
-            </Tabs>
           </div>
         )
     }
