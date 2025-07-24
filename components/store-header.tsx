@@ -176,6 +176,18 @@ export function StoreHeader() {
   const [filterSortBy, setFilterSortBy] = useState('best');
   const [activeTab, setActiveTab] = useState("restaurants")
 
+  // Store and load activeTab from localStorage
+  useEffect(() => {
+    const savedTab = localStorage.getItem('selectedStoreType');
+    if (savedTab && ['restaurants', 'groceries', 'pharmacy'].includes(savedTab)) {
+      setActiveTab(savedTab);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('selectedStoreType', activeTab);
+  }, [activeTab]);
+
   useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
     libraries: libraries

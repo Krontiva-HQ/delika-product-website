@@ -369,31 +369,226 @@ export async function submitRiderApproval<T = any>(data: any): Promise<T> {
 }
 
 /**
- * Submit a new order
+ * Get the correct order API endpoint based on store type
+ * @param storeType - The type of store (restaurant, pharmacy, grocery)
+ * @returns The API endpoint URL
+ */
+const getOrderEndpoint = (storeType: string) => {
+  switch (storeType) {
+    case 'pharmacy':
+      return process.env.NEXT_PUBLIC_PHARMACY_ORDERS_API || '';
+    case 'grocery':
+      return process.env.NEXT_PUBLIC_GROCERIES_ORDERS_API || '';
+    case 'restaurant':
+    default:
+      return process.env.NEXT_PUBLIC_ORDERS_API || '';
+  }
+};
+
+/**
+ * Transform order data to match the specific table schema
+ * @param orderData - The original order data
+ * @param storeType - The type of store (restaurant, pharmacy, grocery)
+ * @returns Transformed order data
+ */
+const transformOrderData = (orderData: any, storeType: string) => {
+  const baseData = { ...orderData };
+
+  switch (storeType) {
+    case 'pharmacy':
+      // For pharmacy: Get the real UUID from localStorage, not from URL which contains pharmacy name
+      const pharmacyBranchId = typeof window !== 'undefined' 
+        ? localStorage.getItem('selectedPharmacyBranchId') 
+        : null;
+      const pharmacyShopId = typeof window !== 'undefined' 
+        ? localStorage.getItem('selectedPharmacyShopId') 
+        : null;
+      
+      console.log('Pharmacy transformation:', {
+        originalBranchId: baseData.branchId,
+        pharmacyBranchIdFromStorage: pharmacyBranchId,
+        pharmacyShopIdFromStorage: pharmacyShopId,
+        finalPharmacyId: pharmacyShopId || baseData.branchId,
+        finalPharmacyBranchId: pharmacyBranchId || baseData.branchId
+      });
+      
+      // Transform to match pharmacy orders table schema exactly
+      return {
+        id: baseData.id,
+        orderDate: baseData.orderDate,
+        orderOTP: 0,
+        orderNumber: 0,
+        pharmacyId: pharmacyShopId || baseData.branchId, // Use UUID from localStorage, not pharmacy name from URL
+        pharmacyBranchId: pharmacyBranchId || baseData.branchId,
+        customerName: baseData.customerName,
+        customerPhoneNumber: baseData.customerPhoneNumber,
+        courierId: "",
+        courierName: "",
+        courierPhoneNumber: "",
+        batchID: "", // Note: capital ID to match schema
+        orderPrice: baseData.orderPrice?.toString() || "0",
+        deliveryPrice: baseData.deliveryPrice?.toString() || "0",
+        totalPrice: baseData.totalPrice?.toString() || "0",
+        orderAccepted: "",
+        orderStatus: "Pending", // Use valid pharmacy order status
+        paymentStatus: baseData.paymentStatus || "",
+        paystackReferenceCode: "",
+        kitchenStatus: "",
+        deliveryDistance: "",
+        trackingUrl: baseData.trackingUrl || "",
+        pickupName: baseData.pickupName || "",
+        dropoffName: baseData.dropoffName || "",
+        foodAndDeliveryFee: baseData.foodAndDeliveryFee || false,
+        onlyDeliveryFee: false,
+        payNow: baseData.payNow || false,
+        payLater: baseData.payLater || false,
+        dropOffCity: baseData.dropOffCity || "",
+        orderComment: baseData.orderComment || "",
+        orderReceivedTime: baseData.orderReceivedTime || 0,
+        orderPickedUpTime: 0,
+        orderOnmywayTime: 0,
+        orderCompletedTime: 0,
+        orderCancelledTime: 0,
+        scheduledTime: 0,
+        completed: baseData.completed || false,
+        Walkin: baseData.Walkin || false,
+        payVisaCard: baseData.payVisaCard || false,
+        rider: baseData.rider || false,
+        pedestrian: baseData.pedestrian || false,
+        platformFee: baseData.platformFee?.toString() || "0",
+        courierOtp: "",
+        orderCancelationType: "",
+        customerId: baseData.customerId,
+        products: baseData.products || [],
+        pickup: baseData.pickup || [],
+        dropOff: baseData.dropOff || []
+      };
+    
+    case 'grocery':
+      // For grocery: Get the real UUID from localStorage, not from URL which contains grocery name
+      const groceryBranchId = typeof window !== 'undefined' 
+        ? localStorage.getItem('selectedGroceryBranchId') 
+        : null;
+      const groceryShopIdFromStorage = typeof window !== 'undefined' 
+        ? localStorage.getItem('selectedGroceryShopId') 
+        : null;
+      
+      // Transform to match grocery orders table schema exactly
+      return {
+        id: baseData.id,
+        orderDate: baseData.orderDate,
+        orderOTP: 0,
+        orderNumber: 0,
+        orderChannel: "",
+        groceryBranchId: groceryBranchId || baseData.branchId,
+        groceryShopId: groceryShopIdFromStorage || baseData.branchId, // Use UUID from localStorage, not grocery name from URL
+        customerName: baseData.customerName,
+        customerPhoneNumber: baseData.customerPhoneNumber,
+        courierId: null,
+        courierName: "",
+        courierPhoneNumber: "",
+        batchId: "", // Note: lowercase 'd' for grocery (different from pharmacy)
+        orderPrice: baseData.orderPrice?.toString() || "0",
+        deliveryPrice: baseData.deliveryPrice?.toString() || "0",
+        totalPrice: baseData.totalPrice?.toString() || "0",
+        orderAccepted: "",
+        paymentStatus: baseData.paymentStatus || "",
+        paystackReferenceCode: "",
+        kitchenStatus: "",
+        deliveryDistance: "",
+        trackingUrl: baseData.trackingUrl || "",
+        pickupName: baseData.pickupName || "",
+        dropoffName: baseData.dropoffName || "",
+        foodAndDeliveryFee: baseData.foodAndDeliveryFee || false,
+        onlyDeliveryFee: false,
+        payNow: baseData.payNow || false,
+        payLater: baseData.payLater || false,
+        dropOffCity: baseData.dropOffCity || "",
+        orderComment: baseData.orderComment || "",
+        orderReceivedTime: baseData.orderReceivedTime || 0,
+        orderPickedUpTime: 0,
+        orderOnmywayTime: 0,
+        orderCompletedTime: 0,
+        orderCancelledTime: 0,
+        scheduledTime: 0,
+        completed: baseData.completed || false,
+        Walkin: baseData.Walkin || false,
+        payVisaCard: baseData.payVisaCard || false,
+        rider: baseData.rider || false,
+        pedestrian: baseData.pedestrian || false,
+        platformFee: baseData.platformFee?.toString() || "0",
+        courierOtp: "",
+        orderStatus: "Pending", // Use valid grocery order status
+        customerId: baseData.customerId,
+        orderCancelationType: "",
+        products: baseData.products || [],
+        pickUp: baseData.pickup || [], // Note: capital 'U' for grocery
+        dropOff: baseData.dropOff || []
+      };
+    
+    case 'restaurant':
+    default:
+      // No transformation needed for restaurant orders
+      return baseData;
+  }
+};
+
+/**
+ * Submit a new order to the appropriate endpoint based on store type
  * @param orderData - The order data to submit
+ * @param storeType - The type of store (restaurant, pharmacy, grocery)
  * @returns The response data
  */
-export const submitOrder = async (orderData: any) => {
+export const submitOrder = async (orderData: any, storeType: string = 'restaurant') => {
   try {
-    const response = await fetch(process.env.NEXT_PUBLIC_ORDERS_API || '', {
+    const endpoint = getOrderEndpoint(storeType);
+    const transformedData = transformOrderData(orderData, storeType);
+
+    console.log(`Submitting ${storeType} order to:`, endpoint);
+    console.log('Original order data:', JSON.stringify(orderData, null, 2));
+    console.log('Transformed order data:', JSON.stringify(transformedData, null, 2));
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(orderData),
+      body: JSON.stringify(transformedData),
     });
 
-    const responseData = await response.json();
+    console.log(`${storeType} order response status:`, response.status);
+    console.log(`${storeType} order response headers:`, response.headers);
+
+    let responseData;
+    try {
+      responseData = await response.json();
+      console.log(`${storeType} order response data:`, responseData);
+    } catch (parseError) {
+      const responseText = await response.text();
+      console.error(`Failed to parse ${storeType} order response as JSON:`, responseText);
+      throw new Error(`Invalid JSON response from ${storeType} order API`);
+    }
 
     if (!response.ok) {
-      throw new Error('Failed to submit order');
+      console.error(`${storeType} order submission failed with status ${response.status}:`, responseData);
+      throw new Error(`Failed to submit ${storeType} order: ${response.status} - ${JSON.stringify(responseData)}`);
     }
 
     return responseData;
   } catch (error) {
-    console.error('Error submitting order:', error);
+    console.error(`Error submitting ${storeType} order:`, error);
     throw error;
   }
+};
+
+/**
+ * Legacy function for backward compatibility - defaults to restaurant orders
+ * @deprecated Use submitOrder with storeType parameter instead
+ * @param orderData - The order data to submit
+ * @returns The response data
+ */
+export const submitRestaurantOrder = async (orderData: any) => {
+  return submitOrder(orderData, 'restaurant');
 };
 
 /**

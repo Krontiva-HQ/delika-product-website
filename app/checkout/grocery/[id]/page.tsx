@@ -132,6 +132,8 @@ export default function GroceryCheckoutPage() {
       branchPhone=""
       initialFullName={user?.fullName || ""}
       initialPhoneNumber={user?.phoneNumber || ""}
+      inventory={inventory}
+      storeType="grocery"
     />
   )
 } 
