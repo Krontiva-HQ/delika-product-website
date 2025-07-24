@@ -165,12 +165,17 @@ export default function PharmacyDetailsPage() {
   }, [shopId, pharmacyBranchId]);
 
   // Group inventory by category
-  const categories = Array.from(new Set(inventory.map(item => item.category || "Uncategorized")));
-  const [selectedCategory, setSelectedCategory] = useState(categories[0] || "");
+  const categories = ["All Items", ...Array.from(new Set(inventory.map(item => item.category || "Uncategorized")))];
+  const [selectedCategory, setSelectedCategory] = useState("All Items");
   useEffect(() => {
-    if (categories.length && !selectedCategory) setSelectedCategory(categories[0]);
-  }, [categories]);
-  const filteredInventory = inventory.filter(item => (item.category || "Uncategorized") === selectedCategory);
+    if (categories.length && !categories.includes(selectedCategory)) {
+      setSelectedCategory("All Items");
+    }
+  }, [categories, selectedCategory]);
+  
+  const filteredInventory = selectedCategory === "All Items" 
+    ? inventory 
+    : inventory.filter(item => (item.category || "Uncategorized") === selectedCategory);
 
   // Optionally, get a banner image (use logo as fallback)
   const bannerImage = shopLogo;
@@ -319,103 +324,69 @@ export default function PharmacyDetailsPage() {
           <div className="lg:col-span-9">
             <div className="bg-white rounded-lg p-4 sm:p-6">
               <h2 className="text-xl font-bold mb-4 sm:mb-6">{selectedCategory}</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {filteredInventory.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left flex flex-col ${item.available === false ? "opacity-50 grayscale pointer-events-none" : ""}`}
-                  >
-                    <div className="relative h-36 w-full">
-                      {typeof item.image === 'object' && item.image && 'url' in item.image ? (
-                        <Image
-                          src={(item.image as { url: string }).url}
-                          alt={item.productName}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : typeof item.image === 'string' && item.image ? (
-                        <Image
-                          src={item.image}
-                          alt={item.productName}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-                          No Image
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4 flex flex-col flex-1">
-                      <h3 className="font-bold text-gray-900 text-base truncate mb-1">{item.productName || "No Name"}</h3>
-                      <div className="flex items-center justify-between mt-auto">
-                        <span className="text-base font-semibold text-gray-800 truncate">GH₵ {item.price || "No Price"}</span>
-                        {!item.available && (
-                          <span className="ml-2 text-xs text-gray-400 font-semibold">Not Available</span>
-                        )}
-                        {item.available && (
-                          <button
-                            className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center ml-2"
-                            onClick={() => handleAddToCart(item)}
-                          >
-                            <span className="text-xl font-bold">+</span>
-                          </button>
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <LoadingSpinner size="lg" color="orange" text="Loading inventory..." />
+                </div>
+              ) : filteredInventory.length === 0 ? (
+                <div className="text-gray-500 text-center py-16">
+                  {selectedCategory === "All Items" 
+                    ? "No inventory found for this pharmacy."
+                    : `No items found in "${selectedCategory}" category.`
+                  }
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {filteredInventory.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left flex flex-col ${item.available === false ? "opacity-50 grayscale" : ""}`}
+                    >
+                      <div className="relative h-36 w-full">
+                        {typeof item.image === 'object' && item.image && 'url' in item.image ? (
+                          <Image
+                            src={(item.image as { url: string }).url}
+                            alt={item.productName}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : typeof item.image === 'string' && item.image ? (
+                          <Image
+                            src={item.image}
+                            alt={item.productName}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                            No Image
+                          </div>
                         )}
                       </div>
+                      <div className="p-4 flex flex-col flex-1">
+                        <h3 className="font-bold text-gray-900 text-base truncate mb-1">{item.productName || "No Name"}</h3>
+                        <div className="flex items-center justify-between mt-auto">
+                          <span className="text-base font-semibold text-gray-800 truncate">GH₵ {item.price || "No Price"}</span>
+                          {!item.available && (
+                            <span className="ml-2 text-xs text-gray-400 font-semibold">Not Available</span>
+                          )}
+                          {item.available !== false && (
+                            <button
+                              className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center ml-2"
+                              onClick={() => handleAddToCart(item)}
+                            >
+                              <span className="text-xl font-bold">+</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-16">
-          <LoadingSpinner size="lg" color="orange" text="Loading inventory..." />
-        </div>
-      ) : inventory.length === 0 ? (
-        <div className="text-gray-500 text-center">No inventory found for this pharmacy.</div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {inventory.map((item) => (
-            <div key={item.id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left flex flex-col">
-              <div className="relative h-36 w-full">
-                {typeof item.image === 'object' && item.image && 'url' in item.image ? (
-                  <Image
-                    src={(item.image as { url: string }).url}
-                    alt={item.productName}
-                    fill
-                    className="object-cover"
-                  />
-                ) : typeof item.image === 'string' && item.image ? (
-                  <Image
-                    src={item.image}
-                    alt={item.productName}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-                    No Image
-                  </div>
-                )}
-              </div>
-              <div className="p-4 flex flex-col flex-1">
-                <h3 className="font-bold text-gray-900 text-base truncate mb-1">{item.productName || "No Name"}</h3>
-                <div className="flex items-center justify-between mt-auto">
-                  <span className="text-base font-semibold text-gray-800 truncate">GH₵ {item.price || "No Price"}</span>
-                  <button
-                    className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center ml-2"
-                    onClick={() => handleAddToCart(item)}
-                  >
-                    <span className="text-xl font-bold">+</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
       {/* Floating Cart */}
       <FloatingCart
         total={cart.reduce((total, item) => total + (parseFloat(item.price) || 0), 0)}
