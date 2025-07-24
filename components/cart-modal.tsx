@@ -272,11 +272,33 @@ export function CartModal({
           <>
             <div className="px-6 space-y-4 overflow-y-auto flex-1 py-6">
               {hasUnavailableItems && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-800">
-                    Some items in your cart are no longer available. Please remove them to proceed with checkout.
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-amber-800">
+                      Some items in your cart are no longer available. <strong>Click the red trash icon</strong> to remove them and proceed with checkout.
+                    </div>
                   </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-red-600 border-red-200 hover:bg-red-50 flex-shrink-0"
+                    onClick={() => {
+                      // Remove all unavailable items
+                      const unavailableItems = cart.filter(item => {
+                        if (!menuCategories || menuCategories.length === 0) {
+                          return item.available === false;
+                        }
+                        const menuItem = menuCategories
+                          .flatMap(cat => cat.foods)
+                          .find(food => food.name === item.name);
+                        return menuItem ? menuItem.available === false : item.available === false;
+                      });
+                      unavailableItems.forEach(item => onDeleteItem(item.id));
+                    }}
+                  >
+                    Remove All
+                  </Button>
                 </div>
               )}
               
@@ -298,9 +320,9 @@ export function CartModal({
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -100 }}
-                      className={`flex gap-4 p-4 rounded-xl border ${!isAvailable ? 'bg-gray-50 border-gray-200 opacity-50 grayscale pointer-events-none' : 'bg-white border-gray-100'}`}
+                      className={`flex gap-4 p-4 rounded-xl border ${!isAvailable ? 'bg-gray-50 border-gray-200 opacity-75' : 'bg-white border-gray-100'}`}
                     >
-                      <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                                              <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
                         {item.image ? (
                           <Image
                             src={item.image}
@@ -309,7 +331,7 @@ export function CartModal({
                             className={`object-cover ${!isAvailable ? 'grayscale' : ''}`}
                           />
                         ) : (
-                          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                          <div className={`w-full h-full bg-gray-100 flex items-center justify-center ${!isAvailable ? 'grayscale' : ''}`}>
                             <ShoppingCart className="w-6 h-6 text-gray-400" />
                           </div>
                         )}
@@ -325,8 +347,9 @@ export function CartModal({
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                            className={`h-8 w-8 ${!isAvailable ? 'text-red-500 hover:text-red-600 hover:bg-red-100 border border-red-200' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
                             onClick={() => onDeleteItem(item.id)}
+                            title={!isAvailable ? "Remove unavailable item" : "Remove item"}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
