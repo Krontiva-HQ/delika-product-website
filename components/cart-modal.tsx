@@ -294,7 +294,20 @@ export function CartModal({
                           .find(food => food.name === item.name);
                         return menuItem ? menuItem.available === false : item.available === false;
                       });
-                      unavailableItems.forEach(item => onDeleteItem(item.id));
+                      unavailableItems.forEach(item => {
+                        // Use different key formats based on store type
+                        if (storeType === 'restaurant') {
+                          // Generate cart item key for restaurants with extras
+                          const extrasKey = item.selectedExtras && item.selectedExtras.length > 0
+                            ? JSON.stringify([...item.selectedExtras].sort((a, b) => a.id.localeCompare(b.id)))
+                            : '';
+                          const cartItemKey = `${item.id}__${extrasKey}`;
+                          onDeleteItem(cartItemKey);
+                        } else {
+                          // Simple ID for pharmacy and grocery
+                          onDeleteItem(item.id);
+                        }
+                      });
                     }}
                   >
                     Remove All
@@ -348,7 +361,20 @@ export function CartModal({
                             size="icon"
                             variant="ghost"
                             className={`h-8 w-8 ${!isAvailable ? 'text-red-500 hover:text-red-600 hover:bg-red-100 border border-red-200' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
-                            onClick={() => onDeleteItem(item.id)}
+                            onClick={() => {
+                              // Use different key formats based on store type
+                              if (storeType === 'restaurant') {
+                                // Generate cart item key for restaurants with extras
+                                const extrasKey = item.selectedExtras && item.selectedExtras.length > 0
+                                  ? JSON.stringify([...item.selectedExtras].sort((a, b) => a.id.localeCompare(b.id)))
+                                  : '';
+                                const cartItemKey = `${item.id}__${extrasKey}`;
+                                onDeleteItem(cartItemKey);
+                              } else {
+                                // Simple ID for pharmacy and grocery
+                                onDeleteItem(item.id);
+                              }
+                            }}
                             title={!isAvailable ? "Remove unavailable item" : "Remove item"}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -379,7 +405,20 @@ export function CartModal({
                               size="icon"
                               variant="ghost"
                               className="h-7 w-7 rounded-full"
-                              onClick={() => onRemoveItem(item.id)}
+                              onClick={() => {
+                                // Use different key formats based on store type
+                                if (storeType === 'restaurant') {
+                                  // Generate cart item key for restaurants with extras
+                                  const extrasKey = item.selectedExtras && item.selectedExtras.length > 0
+                                    ? JSON.stringify([...item.selectedExtras].sort((a, b) => a.id.localeCompare(b.id)))
+                                    : '';
+                                  const cartItemKey = `${item.id}__${extrasKey}`;
+                                  onRemoveItem(cartItemKey);
+                                } else {
+                                  // Simple ID for pharmacy and grocery
+                                  onRemoveItem(item.id);
+                                }
+                              }}
                               disabled={!isAvailable}
                             >
                               <Minus className="h-4 w-4" />
@@ -389,7 +428,20 @@ export function CartModal({
                               size="icon"
                               variant="ghost"
                               className="h-7 w-7 rounded-full"
-                              onClick={() => onAddItem(item.id)}
+                              onClick={() => {
+                                // Use different key formats based on store type
+                                if (storeType === 'restaurant') {
+                                  // Generate cart item key for restaurants with extras
+                                  const extrasKey = item.selectedExtras && item.selectedExtras.length > 0
+                                    ? JSON.stringify([...item.selectedExtras].sort((a, b) => a.id.localeCompare(b.id)))
+                                    : '';
+                                  const cartItemKey = `${item.id}__${extrasKey}`;
+                                  onAddItem(cartItemKey);
+                                } else {
+                                  // Simple ID for pharmacy and grocery
+                                  onAddItem(item.id);
+                                }
+                              }}
                               disabled={!isAvailable}
                             >
                               <Plus className="h-4 w-4" />
