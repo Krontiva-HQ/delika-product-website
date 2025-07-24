@@ -67,6 +67,11 @@ export function GroceriesList() {
             onClick={() => {
               localStorage.setItem("selectedGroceryBranchId", branch.id);
               localStorage.setItem("selectedGroceryShopId", branch.groceryshopID);
+              // Store grocery shop name and logo for details page
+              localStorage.setItem("selectedGroceryShopData", JSON.stringify({
+                groceryshopName: branch._delika_groceries_shops_table?.groceryshopName || "",
+                groceryshopLogo: branch._delika_groceries_shops_table?.groceryshopLogo || null
+              }));
             }}
             className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
           >

@@ -67,6 +67,11 @@ export function PharmacyList() {
             onClick={() => {
               localStorage.setItem("selectedPharmacyBranchId", branch.id);
               localStorage.setItem("selectedPharmacyShopId", branch._delika_pharmacy_table?.id || "");
+              // Store pharmacy name and logo for details page
+              localStorage.setItem("selectedPharmacyShopData", JSON.stringify({
+                pharmacyshopName: branch._delika_pharmacy_table?.pharmacyName || "",
+                pharmacyshopLogo: branch._delika_pharmacy_table?.pharmacyLogo || null
+              }));
             }}
             className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
           >
