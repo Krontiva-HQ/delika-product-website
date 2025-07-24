@@ -434,6 +434,7 @@ export default function GroceryDetailsPage() {
           longitude: shopCoordinates.lng 
         } : undefined}
         onLoginClick={() => setIsLoginModalOpen(true)}
+        storeType="grocery"
       />
 
       <LoginModal

@@ -455,6 +455,7 @@ export default function PharmacyDetailsPage() {
           longitude: shopCoordinates.lng 
         } : undefined}
         onLoginClick={() => setIsLoginModalOpen(true)}
+        storeType="pharmacy"
       />
 
       <LoginModal

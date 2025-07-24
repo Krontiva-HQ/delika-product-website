@@ -38,6 +38,8 @@ interface CartModalProps {
   isAuthenticated: boolean
   branchLocation?: { latitude: number; longitude: number }
   onLoginClick?: () => void
+  onCheckout?: () => void
+  storeType?: 'restaurant' | 'pharmacy' | 'grocery'
 }
 
 export function CartModal({
@@ -53,7 +55,9 @@ export function CartModal({
   menuCategories,
   isAuthenticated,
   branchLocation,
-  onLoginClick
+  onLoginClick,
+  onCheckout,
+  storeType = 'restaurant'
 }: CartModalProps) {
   const router = useRouter()
   const [isProcessingAuth, setIsProcessingAuth] = useState(false)
@@ -186,7 +190,8 @@ export function CartModal({
   const handleCheckout = () => {
     if (!isAuthenticated) {
       // Store checkout data for after login
-      localStorage.setItem('loginRedirectUrl', `/checkout/${branchId}`)
+      const redirectUrl = getCheckoutUrl()
+      localStorage.setItem('loginRedirectUrl', redirectUrl)
       localStorage.setItem('selectedDeliveryType', deliveryType)
       localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
       localStorage.setItem('checkoutPlatformFee', platformFee.toString())
@@ -204,14 +209,36 @@ export function CartModal({
       }
       return
     }
+    
     // Store delivery type, delivery fee, and platform fee
     localStorage.setItem('selectedDeliveryType', deliveryType)
     localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
     localStorage.setItem('checkoutPlatformFee', platformFee.toString())
     // Store cart items with extras in localStorage
     localStorage.setItem('checkoutCartItems', JSON.stringify(cart))
-    router.push(`/checkout/${branchId}`)
-    onClose()
+    
+    if (onCheckout) {
+      // Use custom checkout handler if provided
+      onClose()
+      onCheckout()
+    } else {
+      // Navigate to appropriate checkout page
+      const checkoutUrl = getCheckoutUrl()
+      router.push(checkoutUrl)
+      onClose()
+    }
+  }
+
+  const getCheckoutUrl = () => {
+    switch (storeType) {
+      case 'pharmacy':
+        return `/checkout/pharmacy/${branchId}`
+      case 'grocery':
+        return `/checkout/grocery/${branchId}`
+      case 'restaurant':
+      default:
+        return `/checkout/${branchId}`
+    }
   }
 
   const hasUnavailableItems = cart.some(item => {
