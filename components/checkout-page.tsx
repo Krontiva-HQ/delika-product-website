@@ -519,7 +519,7 @@ export function CheckoutPage({
         payVisaCard: false
       };
 
-      // Submit order to the appropriate endpoint based on store type
+            // Submit order to the appropriate endpoint based on store type
       const orderResponse = await submitOrder(orderData, actualStoreType);
       
       // Store the full response in localStorage
@@ -528,9 +528,22 @@ export function CheckoutPage({
         timestamp: new Date().toISOString()
       }));
 
-      const backendOrderId = orderResponse?.result1?.id || orderId;
-      // Redirect to /pay page with amount, orderId from backend and customerId
-      router.push(`/pay?amount=${totalAmount}&orderId=${backendOrderId}&customerId=${userData?.id || ''}`);
+      // Extract order ID based on store type and response structure
+      let backendOrderId = orderId; // fallback to generated orderId
+      
+      if (actualStoreType === 'restaurant') {
+        // Restaurant response format: { result1: { id: "..." } }
+        backendOrderId = orderResponse?.result1?.id || orderId;
+      } else {
+        // Pharmacy/Grocery response format: { id: "...", ... }
+        backendOrderId = orderResponse?.id || orderId;
+      }
+
+      console.log(`🆔 ${actualStoreType} order ID:`, backendOrderId);
+      console.log(`📋 ${actualStoreType} order response:`, orderResponse);
+
+      // Redirect to /pay page with amount, orderId from backend, customerId and storeType
+      router.push(`/pay?amount=${totalAmount}&orderId=${backendOrderId}&customerId=${userData?.id || ''}&storeType=${actualStoreType}`);    
     } catch (error) {
       toast({
         title: "Error",

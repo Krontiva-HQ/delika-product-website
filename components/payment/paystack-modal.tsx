@@ -16,9 +16,10 @@ interface PaystackModalProps {
   amount: number
   orderId: string
   customerId: string
+  storeType?: 'restaurant' | 'pharmacy' | 'grocery'
 }
 
-export function PaystackModal({ open, onClose, onComplete, amount, orderId, customerId }: PaystackModalProps) {
+export function PaystackModal({ open, onClose, onComplete, amount, orderId, customerId, storeType = 'restaurant' }: PaystackModalProps) {
   const [step, setStep] = useState(1)
   const [phone, setPhone] = useState("")
   const [provider, setProvider] = useState("")
@@ -132,6 +133,7 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
           },
           customerId: customerId,
           orderId: orderId,
+          storeType: storeType,
         }),
       });
 

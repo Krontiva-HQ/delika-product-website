@@ -439,7 +439,7 @@ const transformOrderData = (orderData: any, storeType: string) => {
         totalPrice: baseData.totalPrice?.toString() || "0",
         orderAccepted: "",
         orderStatus: "", // Leave empty - let API set default status
-        paymentStatus: baseData.paymentStatus || "",
+        paymentStatus: "Pending", // Use valid pharmacy payment status: Pending, Paid, or Abandoned
         paystackReferenceCode: "",
         kitchenStatus: "",
         deliveryDistance: "",
@@ -503,7 +503,7 @@ const transformOrderData = (orderData: any, storeType: string) => {
         deliveryPrice: baseData.deliveryPrice?.toString() || "0",
         totalPrice: baseData.totalPrice?.toString() || "0",
         orderAccepted: "",
-        paymentStatus: baseData.paymentStatus || "",
+        paymentStatus: "Pending", // Use valid grocery payment status
         paystackReferenceCode: "",
         kitchenStatus: "",
         deliveryDistance: "",
