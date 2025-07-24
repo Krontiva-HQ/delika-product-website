@@ -63,6 +63,7 @@ export default function GroceryDetailsPage() {
   // Get shop info from localStorage (set when user clicks a grocery branch)
   const [shopLogo, setShopLogo] = useState<string | null>(null);
   const [shopName, setShopName] = useState<string | null>(null);
+  const [shopCoordinates, setShopCoordinates] = useState<{lat: number, lng: number} | null>(null);
   useEffect(() => {
     if (typeof window !== "undefined") {
       const shopData = localStorage.getItem("selectedGroceryShopData");
@@ -72,6 +73,28 @@ export default function GroceryDetailsPage() {
           setShopLogo(parsed.groceryshopLogo?.url || null);
           setShopName(parsed.groceryshopName || null);
         } catch {}
+      }
+      
+      // Get shop coordinates from the selected branch
+      const branchData = localStorage.getItem("selectedGroceryBranchData");
+      if (branchData) {
+        try {
+          const parsed = JSON.parse(branchData);
+          console.log('[Grocery Coordinates] Branch data loaded:', parsed);
+          const lat = parseFloat(parsed.grocerybranchLatitude);
+          const lng = parseFloat(parsed.grocerybranchLongitude);
+          console.log('[Grocery Coordinates] Parsed coordinates:', { lat, lng });
+          if (!isNaN(lat) && !isNaN(lng)) {
+            setShopCoordinates({ lat, lng });
+            console.log('[Grocery Coordinates] Shop coordinates set:', { lat, lng });
+          } else {
+            console.log('[Grocery Coordinates] Invalid coordinates - NaN values');
+          }
+        } catch (error) {
+          console.log('[Grocery Coordinates] Error parsing branch data:', error);
+        }
+      } else {
+        console.log('[Grocery Coordinates] No branch data found in localStorage');
       }
     }
   }, []);
@@ -141,7 +164,12 @@ export default function GroceryDetailsPage() {
   // Helper to add item to cart, always saving name, price, and image
   const handleAddToCart = (item: any) => {
     if (!item.productName || !item.price) return;
-    const image = item.image || (item.foodImage && item.foodImage.url) || null;
+    const image =
+      typeof item.image === "object" && item.image && "url" in item.image
+        ? item.image.url
+        : typeof item.image === "string"
+        ? item.image
+        : (item.foodImage && item.foodImage.url) || null;
     setCart(prev => {
       const updated = [
         ...prev,
@@ -356,14 +384,27 @@ export default function GroceryDetailsPage() {
         total={cart.reduce((total, item) => total + (parseFloat(item.price) || 0), 0)}
         itemCount={cart.length}
         onClick={() => setIsCartModalOpen(true)}
-        branchLocation={{ latitude: "0", longitude: "0" }}
+        branchLocation={{ 
+          latitude: shopCoordinates?.lat.toString() || "0", 
+          longitude: shopCoordinates?.lng.toString() || "0" 
+        }}
         branchId={shopName || "grocery"}
       />
 
       <CartModal
         isOpen={isCartModalOpen}
         onClose={() => setIsCartModalOpen(false)}
-        cart={cart.map(item => ({ ...item, name: item.productName, price: item.price, image: item.image || (item.foodImage && item.foodImage.url) || null }))}
+        cart={cart.map(item => ({
+          ...item,
+          name: item.productName,
+          price: item.price,
+          image:
+            typeof item.image === "object" && item.image && "url" in item.image
+              ? item.image.url
+              : typeof item.image === "string"
+              ? item.image
+              : (item.foodImage && item.foodImage.url) || null
+        }))}
         onAddItem={handleAddItem}
         onRemoveItem={handleRemoveItem}
         onDeleteItem={handleDeleteItem}
@@ -372,6 +413,10 @@ export default function GroceryDetailsPage() {
         branchName={shopName || "Grocery Shop"}
         menuCategories={[]}
         isAuthenticated={false}
+        branchLocation={shopCoordinates ? { 
+          latitude: shopCoordinates.lat, 
+          longitude: shopCoordinates.lng 
+        } : undefined}
       />
       </div>
     </div>

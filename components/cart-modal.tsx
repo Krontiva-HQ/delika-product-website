@@ -85,7 +85,12 @@ export function CartModal({
         setIsLoadingDelivery(true)
         const locationData = localStorage.getItem('userLocationData')
         
+        console.log('[Delivery Calculation] Starting delivery fee calculation');
+        console.log('[Delivery Calculation] Branch location prop:', branchLocation);
+        console.log('[Delivery Calculation] Raw user location data:', locationData);
+        
         if (!locationData || !branchLocation) {
+          console.log('[Delivery Calculation] Missing location data - locationData:', !!locationData, 'branchLocation:', !!branchLocation);
           setIsLoadingDelivery(false)
           return
         }
@@ -94,15 +99,19 @@ export function CartModal({
         const branchLat = parseFloat(branchLocation.latitude.toString())
         const branchLng = parseFloat(branchLocation.longitude.toString())
         
+        console.log('[Delivery Calculation] User coordinates:', { lat, lng });
+        console.log('[Delivery Calculation] Branch coordinates:', { branchLat, branchLng });
+        
         const distance = await calculateDistance(
           { latitude: lat, longitude: lng },
           { latitude: branchLat, longitude: branchLng }
         )
         
+        console.log('[Delivery Calculation] Calculated distance:', distance, 'km');
         setDistance(distance)
 
-        // Get delivery prices from API
-        const { riderFee: newRiderFee, pedestrianFee: newPedestrianFee } = await calculateDeliveryPrices({
+        // Prepare the payload for delivery price calculation
+        const deliveryPayload = {
           pickup: {
             fromLatitude: branchLat.toString(),
             fromLongitude: branchLng.toString(),
@@ -113,21 +122,31 @@ export function CartModal({
           },
           rider: true,
           pedestrian: true
-        });
+        };
+        
+        console.log('[Delivery Calculation] Payload being sent to delivery API:', JSON.stringify(deliveryPayload, null, 2));
 
+        // Get delivery prices from API
+        const { riderFee: newRiderFee, pedestrianFee: newPedestrianFee } = await calculateDeliveryPrices(deliveryPayload);
+
+        console.log('[Delivery Calculation] API response - Rider fee:', newRiderFee, 'Pedestrian fee:', newPedestrianFee);
+        
         setRiderFee(newRiderFee)
         setPedestrianFee(newPedestrianFee)
         
         // If distance > 2km and pedestrian is selected, switch to rider
         if (distance > 2 && deliveryType === 'pedestrian') {
+          console.log('[Delivery Calculation] Distance > 2km, switching from pedestrian to rider');
           setDeliveryType('rider')
           setDeliveryFee(newRiderFee)
         } else {
           // Set the fee based on the selected delivery type
           const currentFee = deliveryType === 'rider' ? newRiderFee : newPedestrianFee
+          console.log('[Delivery Calculation] Setting delivery fee for', deliveryType, ':', currentFee);
           setDeliveryFee(currentFee)
         }
       } catch (error) {
+        console.error('[Delivery Calculation] Error calculating delivery fee:', error);
         // Handle error silently
       } finally {
         setIsLoadingDelivery(false)

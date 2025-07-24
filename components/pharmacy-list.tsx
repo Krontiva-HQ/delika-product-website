@@ -262,6 +262,13 @@ export function PharmacyList() {
                 pharmacyshopName: branch._delika_pharmacy_table?.pharmacyName || "",
                 pharmacyshopLogo: branch._delika_pharmacy_table?.pharmacyLogo || null
               }));
+              // Store branch coordinates for delivery calculation
+              localStorage.setItem("selectedPharmacyBranchData", JSON.stringify({
+                pharmacybranchLatitude: branch.pharmacybranchLatitude,
+                pharmacybranchLongitude: branch.pharmacybranchLongitude,
+                pharmacybranchName: branch.pharmacybranchName,
+                pharmacybranchLocation: branch.pharmacybranchLocation
+              }));
             }}
             className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
           >

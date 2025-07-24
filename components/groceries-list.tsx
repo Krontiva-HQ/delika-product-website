@@ -275,6 +275,13 @@ export function GroceriesList() {
                 groceryshopName: branch._delika_groceries_shops_table?.groceryshopName || "",
                 groceryshopLogo: branch._delika_groceries_shops_table?.groceryshopLogo || null
               }));
+              // Store branch coordinates for delivery calculation
+              localStorage.setItem("selectedGroceryBranchData", JSON.stringify({
+                grocerybranchLatitude: branch.grocerybranchLatitude,
+                grocerybranchLongitude: branch.grocerybranchLongitude,
+                grocerybranchName: branch.grocerybranchName,
+                grocerybranchLocation: branch.grocerybranchLocation
+              }));
             }}
             className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
           >

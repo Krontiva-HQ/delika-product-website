@@ -61,6 +61,7 @@ export default function PharmacyDetailsPage() {
   // Get shop info from localStorage (set when user clicks a pharmacy branch)
   const [shopLogo, setShopLogo] = useState<string | null>(null);
   const [shopName, setShopName] = useState<string | null>(null);
+  const [shopCoordinates, setShopCoordinates] = useState<{lat: number, lng: number} | null>(null);
   useEffect(() => {
     if (typeof window !== "undefined") {
       const shopData = localStorage.getItem("selectedPharmacyShopData");
@@ -70,6 +71,28 @@ export default function PharmacyDetailsPage() {
           setShopLogo(parsed.pharmacyshopLogo?.url || null);
           setShopName(parsed.pharmacyshopName || null);
         } catch {}
+      }
+      
+      // Get shop coordinates from the selected branch
+      const branchData = localStorage.getItem("selectedPharmacyBranchData");
+      if (branchData) {
+        try {
+          const parsed = JSON.parse(branchData);
+          console.log('[Pharmacy Coordinates] Branch data loaded:', parsed);
+          const lat = parseFloat(parsed.pharmacybranchLatitude);
+          const lng = parseFloat(parsed.pharmacybranchLongitude);
+          console.log('[Pharmacy Coordinates] Parsed coordinates:', { lat, lng });
+          if (!isNaN(lat) && !isNaN(lng)) {
+            setShopCoordinates({ lat, lng });
+            console.log('[Pharmacy Coordinates] Shop coordinates set:', { lat, lng });
+          } else {
+            console.log('[Pharmacy Coordinates] Invalid coordinates - NaN values');
+          }
+        } catch (error) {
+          console.log('[Pharmacy Coordinates] Error parsing branch data:', error);
+        }
+      } else {
+        console.log('[Pharmacy Coordinates] No branch data found in localStorage');
       }
     }
   }, []);
@@ -382,7 +405,10 @@ export default function PharmacyDetailsPage() {
         total={cart.reduce((total, item) => total + (parseFloat(item.price) || 0), 0)}
         itemCount={cart.length}
         onClick={() => setIsCartModalOpen(true)}
-        branchLocation={{ latitude: "0", longitude: "0" }}
+        branchLocation={{ 
+          latitude: shopCoordinates?.lat.toString() || "0", 
+          longitude: shopCoordinates?.lng.toString() || "0" 
+        }}
         branchId={shopName || "pharmacy"}
       />
 
@@ -408,6 +434,10 @@ export default function PharmacyDetailsPage() {
         branchName={shopName || "Pharmacy Shop"}
         menuCategories={[]}
         isAuthenticated={false}
+        branchLocation={shopCoordinates ? { 
+          latitude: shopCoordinates.lat, 
+          longitude: shopCoordinates.lng 
+        } : undefined}
       />
       </div>
     </div>
