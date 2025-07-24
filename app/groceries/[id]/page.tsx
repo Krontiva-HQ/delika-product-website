@@ -24,12 +24,6 @@ interface InventoryItem {
   image: string | null;
   groceryShopId?: string | null;
   groceryShopBranchId?: string | null;
-  groceryshopLogo?: { url: string } | null;
-  groceryshopName?: string | null;
-  _delika_groceries_shops_table?: {
-    groceryshopLogo?: { url: string } | null;
-    groceryshopName?: string | null;
-  };
 }
 
 export default function GroceryDetailsPage() {
@@ -56,16 +50,6 @@ export default function GroceryDetailsPage() {
   const [shopLogo, setShopLogo] = useState<string | null>(null);
   const [shopName, setShopName] = useState<string | null>(null);
   useEffect(() => {
-    if (inventory.length > 0) {
-      // Try to get logo and name from the related shop/restaurant object
-      const shopObj = inventory[0]._delika_groceries_shops_table;
-      const logo = shopObj?.groceryshopLogo?.url || null;
-      const name = shopObj?.groceryshopName || null;
-      setShopLogo(logo);
-      setShopName(name);
-      return;
-    }
-    // Fallback to localStorage if inventory is empty
     if (typeof window !== "undefined") {
       const shopData = localStorage.getItem("selectedGroceryShopData");
       if (shopData) {
@@ -76,7 +60,7 @@ export default function GroceryDetailsPage() {
         } catch {}
       }
     }
-  }, [inventory]);
+  }, []);
 
   useEffect(() => {
     async function fetchInventory() {
@@ -120,23 +104,16 @@ export default function GroceryDetailsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Shop cover image and name */}
-      <div className="relative w-full mb-8 rounded-2xl overflow-hidden" style={{ minHeight: 180 }}>
+      {/* Shop logo and name */}
+      <div className="flex flex-col items-center mb-8">
         {shopLogo ? (
-          <img
-            src={shopLogo}
-            alt={shopName || "Grocery Shop"}
-            className="w-full h-48 object-cover rounded-2xl"
-            style={{ minHeight: 180, maxHeight: 240 }}
-          />
-        ) : (
-          <div className="w-full h-48 bg-gray-100 flex items-center justify-center text-gray-400 text-lg rounded-2xl" style={{ minHeight: 180 }}>
-            No Image
+          <div className="relative w-24 h-24 mb-2">
+            <img src={shopLogo} alt={shopName || "Grocery Shop"} className="object-cover rounded-full w-full h-full border" />
           </div>
+        ) : (
+          <div className="w-24 h-24 mb-2 bg-gray-100 flex items-center justify-center text-gray-400 rounded-full border">No Logo</div>
         )}
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20">
-          <h2 className="text-3xl font-bold text-white drop-shadow mb-2">{shopName || "Grocery Shop"}</h2>
-        </div>
+        <h2 className="text-xl font-bold text-gray-900 text-center">{shopName || "Grocery Shop"}</h2>
       </div>
       <h1 className="text-2xl font-bold mb-6">Grocery Shop Inventory</h1>
       {isLoading ? (
