@@ -553,11 +553,35 @@ const transformOrderData = (orderData: any, storeType: string) => {
 export const submitOrder = async (orderData: any, storeType: string = 'restaurant') => {
   try {
     const endpoint = getOrderEndpoint(storeType);
+    
+    // Additional validation for pharmacy orders
+    if (storeType === 'pharmacy') {
+      const pharmacyShopId = typeof window !== 'undefined' ? localStorage.getItem('selectedPharmacyShopId') : null;
+      const pharmacyBranchId = typeof window !== 'undefined' ? localStorage.getItem('selectedPharmacyBranchId') : null;
+      
+      console.log('🏥 PHARMACY ORDER DEBUG:');
+      console.log('- API Endpoint:', endpoint);
+      console.log('- Environment variable NEXT_PUBLIC_PHARMACY_ORDERS_API:', process.env.NEXT_PUBLIC_PHARMACY_ORDERS_API);
+      console.log('- Pharmacy Shop ID from localStorage:', pharmacyShopId);
+      console.log('- Pharmacy Branch ID from localStorage:', pharmacyBranchId);
+      console.log('- Original branchId from orderData:', orderData.branchId);
+      
+      if (!endpoint) {
+        throw new Error('❌ NEXT_PUBLIC_PHARMACY_ORDERS_API environment variable is not set!');
+      }
+      if (!pharmacyShopId) {
+        throw new Error('❌ Missing pharmacyShopId in localStorage!');
+      }
+      if (!pharmacyBranchId) {
+        throw new Error('❌ Missing pharmacyBranchId in localStorage!');
+      }
+    }
+
     const transformedData = transformOrderData(orderData, storeType);
 
-    console.log(`Submitting ${storeType} order to:`, endpoint);
-    console.log('Original order data:', JSON.stringify(orderData, null, 2));
-    console.log('Transformed order data:', JSON.stringify(transformedData, null, 2));
+    console.log(`📤 Submitting ${storeType} order to:`, endpoint);
+    console.log('📋 Original order data:', JSON.stringify(orderData, null, 2));
+    console.log('🔄 Transformed order data:', JSON.stringify(transformedData, null, 2));
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -567,27 +591,28 @@ export const submitOrder = async (orderData: any, storeType: string = 'restauran
       body: JSON.stringify(transformedData),
     });
 
-    console.log(`${storeType} order response status:`, response.status);
-    console.log(`${storeType} order response headers:`, response.headers);
+    console.log(`📊 ${storeType} order response status:`, response.status);
+    console.log(`📊 ${storeType} order response headers:`, response.headers);
 
     let responseData;
     try {
       responseData = await response.json();
-      console.log(`${storeType} order response data:`, responseData);
+      console.log(`✅ ${storeType} order response data:`, responseData);
     } catch (parseError) {
       const responseText = await response.text();
-      console.error(`Failed to parse ${storeType} order response as JSON:`, responseText);
+      console.error(`❌ Failed to parse ${storeType} order response as JSON:`, responseText);
       throw new Error(`Invalid JSON response from ${storeType} order API`);
     }
 
     if (!response.ok) {
-      console.error(`${storeType} order submission failed with status ${response.status}:`, responseData);
+      console.error(`❌ ${storeType} order submission failed with status ${response.status}:`, responseData);
       throw new Error(`Failed to submit ${storeType} order: ${response.status} - ${JSON.stringify(responseData)}`);
     }
 
+    console.log(`🎉 ${storeType} order submitted successfully!`, responseData);
     return responseData;
   } catch (error) {
-    console.error(`Error submitting ${storeType} order:`, error);
+    console.error(`💥 Error submitting ${storeType} order:`, error);
     throw error;
   }
 };
