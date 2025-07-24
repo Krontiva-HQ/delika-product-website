@@ -2,7 +2,7 @@
 
 import { MapPin, Search, ChevronDown, ChevronLeft, Filter, Heart, Settings2 } from "lucide-react"
 import Image from "next/image"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +27,12 @@ import { LoadingSpinner } from "@/components/loading-spinner"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import banner1 from "@/public/banners/Can you generate restaurant sbanner images, randon food item with random messaging.jpg"
+import banner2 from "@/public/banners/Can you generate restaurant sbanner images for a brand called delika_.jpg"
+import banner3 from "@/public/banners/Can you generate restaurant sbanner images for apizza promo_ Text 30 days of pizza 3d charater.jpg"
+import banner4 from "@/public/banners/Can you generate restaurant sbanner images for a burger promo_ Text FREE BURGER.jpg"
 
 interface Restaurant {
   restaurantName: string
@@ -138,6 +144,64 @@ interface Order {
   // ...add other fields as needed
 }
 
+// Add types for groceries and pharmacy
+interface GroceryShop {
+  id: string;
+  created_at: number;
+  groceryshopName: string;
+  groceryshopEmail: string;
+  groceryshopPhoneNumber: string;
+  groceryshopAddress: string;
+  groceryshopLogo?: {
+    url: string;
+  };
+}
+
+interface PharmacyBranch {
+  id: string;
+  created_at: number;
+  pharmacyName: string;
+  pharmacyEmail: string;
+  pharmacyPhoneNumber: string;
+  pharmacyAddress: string;
+  pharmacyLogo?: {
+    url: string;
+  };
+}
+
+// Simple sliding banner component
+function SlidingBanner() {
+  const banners = [banner1, banner2, banner3, banner4];
+  const [index, setIndex] = useState(0);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    timeoutRef.current = setTimeout(() => {
+      setIndex((prev) => (prev + 1) % banners.length);
+    }, 3500);
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [index]);
+
+  return (
+    <div className="w-full max-w-7xl mx-auto mb-6">
+      <div className="relative w-full h-64 sm:h-40 rounded-xl overflow-hidden shadow">
+        {banners.map((img, i) => (
+          <Image
+            key={i}
+            src={img}
+            alt={`Banner ${i + 1}`}
+            fill
+            className={`object-cover h-full w-full transition-opacity duration-700 ${i === index ? 'opacity-100' : 'opacity-0'}`}
+            priority={i === 0}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function StoreHeader() {
   const router = useRouter()
   const pathname = usePathname()
@@ -171,6 +235,13 @@ export function StoreHeader() {
   const [filterOpenNow, setFilterOpenNow] = useState(false);
   const [filterDeliveryType, setFilterDeliveryType] = useState('all');
   const [filterSortBy, setFilterSortBy] = useState('best');
+  const [vendorType, setVendorType] = useState<'restaurants' | 'groceries' | 'pharmacy'>('restaurants');
+  const [groceries, setGroceries] = useState<GroceryShop[]>([]);
+  const [isLoadingGroceries, setIsLoadingGroceries] = useState(false);
+  const [pharmacies, setPharmacies] = useState<PharmacyBranch[]>([]);
+  const [isLoadingPharmacies, setIsLoadingPharmacies] = useState(false);
+  const [filterDeliveryTime, setFilterDeliveryTime] = useState<number | null>(null);
+  const [filterPickup, setFilterPickup] = useState(false);
 
   useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -691,6 +762,57 @@ export function StoreHeader() {
   // Helper to filter out empty strings
   const nonEmpty = (arr: string[]) => arr.filter(Boolean);
 
+  // Fetch groceries data (updated endpoint and structure)
+  useEffect(() => {
+    if (vendorType !== 'groceries') return;
+    setIsLoadingGroceries(true);
+    fetch('https://api-server.krontiva.africa/api:uEBBwbSs/delika_groceries_shops_table')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setGroceries(data.map((item: any) => ({
+            ...item,
+            groceryshopLogo: item.groceryshopLogo?.url ? { url: item.groceryshopLogo.url } : undefined
+          })));
+        } else {
+          setGroceries([]);
+        }
+      })
+      .catch(() => setGroceries([]))
+      .finally(() => setIsLoadingGroceries(false));
+  }, [vendorType]);
+
+  // Fetch pharmacy data from the new endpoint
+  useEffect(() => {
+    if (vendorType !== 'pharmacy') return;
+    setIsLoadingPharmacies(true);
+    fetch('https://api-server.krontiva.africa/api:uEBBwbSs/delika_pharmacy_table')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setPharmacies(data.map((item: any) => ({
+            ...item,
+            pharmacyLogo: item.pharmacyLogo?.url ? { url: item.pharmacyLogo.url } : undefined
+          })));
+        } else {
+          setPharmacies([]);
+        }
+      })
+      .catch(() => setPharmacies([]))
+      .finally(() => setIsLoadingPharmacies(false));
+  }, [vendorType]);
+
+  // Add new handlers for grocery and pharmacy navigation
+  const handleGrocerySelect = (grocery: GroceryShop) => {
+    // Use id for navigation, include type
+    router.replace(`/restaurants/${grocery.id}?type=grocery`);
+  };
+
+  const handlePharmacySelect = (pharmacy: PharmacyBranch) => {
+    // Use id for pharmacy route, include type
+    router.replace(`/restaurants/${pharmacy.id}?type=pharmacy`);
+  };
+
   const renderContent = () => {
     if (isLoading && currentView === 'branch') {
       return null // Don't render content while loading branch page
@@ -849,8 +971,8 @@ export function StoreHeader() {
           <div>
             {/* Search and Store Content */}
             <div className="border-b">
-              <div className="container mx-auto px-4 h-16 flex items-center justify-center">
-                <div className="flex items-center gap-2 md:gap-4 max-w-3xl w-full">
+              <div className="w-full px-4 h-16 flex items-center">
+                <div className="flex items-center gap-2 md:gap-4 w-full">
                   {/* Location icon and formatted name on the left */}
                   <button 
                     onClick={() => setIsLocationModalOpen(true)} 
@@ -864,7 +986,7 @@ export function StoreHeader() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="text"
-                      placeholder="Search restaurants and stores"
+                      placeholder={`Search ${vendorType}`}
                       className="w-full pl-10 pr-16 py-2 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                       value={searchQuery}
                       onChange={handleSearchChange}
@@ -878,122 +1000,152 @@ export function StoreHeader() {
                       <Settings2 className="w-5 h-5" />
                     </button>
                   </div>
+                  {/* Vendor type toggles (Tabs for md+, segmented control for mobile) */}
+                  <div className="hidden md:flex">
+                    <Tabs value={vendorType} onValueChange={v => setVendorType(v as any)}>
+                      <TabsList>
+                        <TabsTrigger value="restaurants">Restaurants</TabsTrigger>
+                        <TabsTrigger value="groceries">Groceries</TabsTrigger>
+                        <TabsTrigger value="pharmacy">Pharmacy</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Mobile segmented control for vendor type */}
+            <div className="md:hidden w-full py-2 px-4">
+              <div className="flex w-full gap-2">
+                {[
+                  { value: 'restaurants', label: 'Restaurants' },
+                  { value: 'groceries', label: 'Groceries' },
+                  { value: 'pharmacy', label: 'Pharmacy' },
+                ].map(type => (
+                  <button
+                    key={type.value}
+                    className={`flex-1 px-2 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
+                      vendorType === type.value
+                        ? 'bg-orange-500 text-white shadow'
+                        : 'bg-gray-200 text-gray-700 hover:bg-orange-100'
+                    }`}
+                    onClick={() => setVendorType(type.value as any)}
+                  >
+                    {type.label}
+                  </button>
+                ))}
               </div>
             </div>
 
             {/* Filter Modal */}
             <Dialog open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
               <DialogContent className="max-w-2xl p-0">
-                <div className="p-6">
-                  <DialogTitle className="mb-4">Filter Restaurants</DialogTitle>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Location */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
-                      <label className="block text-sm font-medium mb-1">City</label>
-                      <Select value={selectedCity} onValueChange={setSelectedCity}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="All Locations" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Locations</SelectItem>
-                          {nonEmpty(cities).map(city => (
-                            <SelectItem key={city} value={city}>{city}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {/* Rating */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
-                      <label className="block text-sm font-medium mb-1">Minimum Rating</label>
-                      <Select value={filterRating} onValueChange={setFilterRating}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="All" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All</SelectItem>
-                          <SelectItem value="4">4+ stars</SelectItem>
-                          <SelectItem value="3">3+ stars</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {/* Menu Categories */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2 md:col-span-2">
-                      <label className="block text-sm font-medium mb-1">Menu Categories</label>
-                      <div className="flex flex-wrap gap-2">
-                        {allCategories.map(category => (
-                          <button
-                            key={category}
-                            type="button"
-                            className={`px-3 py-1 rounded-full border text-sm ${filterCategories.includes(category) ? 'bg-orange-100 border-orange-400 text-orange-700' : 'bg-white border-gray-300 text-gray-700'}`}
-                            onClick={() => {
-                              if (filterCategories.includes(category)) {
-                                setFilterCategories(filterCategories.filter(c => c !== category));
-                              } else {
-                                setFilterCategories([...filterCategories, category]);
-                              }
-                            }}
-                          >
-                            {category}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    {/* Open Now Toggle */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex items-center gap-3 md:col-span-2">
-                      <Switch checked={filterOpenNow} onCheckedChange={setFilterOpenNow} id="open-now-switch" />
-                      <label htmlFor="open-now-switch" className="text-sm font-medium">Open Now</label>
-                    </div>
-                  </div>
-                  {/* Show More Filters */}
-                  <div className="mt-4 flex justify-end">
+                <div className="p-6 space-y-8">
+                  {/* Top bar: Reset | Filters | X */}
+                  <div className="flex items-center justify-between mb-6">
                     <button
+                      className="text-green-700 font-semibold hover:underline focus:outline-none"
+                      onClick={() => {
+                        setSelectedCity('all');
+                        setFilterRating('all');
+                        setFilterDeliveryTime(null);
+                        setFilterPickup(false);
+                        setFilterCategories([]);
+                        setSearchQuery('');
+                      }}
                       type="button"
-                      className="text-orange-600 hover:underline text-sm font-medium"
-                      onClick={() => setShowAdvancedFilters(v => !v)}
                     >
-                      {showAdvancedFilters ? 'Hide Advanced Filters' : 'Show More Filters'}
+                      Reset
+                    </button>
+                    <div className="text-xl font-bold text-center flex-1 -ml-12">Filters</div>
+                    <button
+                      className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-2xl text-gray-700 focus:outline-none"
+                      onClick={() => setIsFilterModalOpen(false)}
+                      type="button"
+                      aria-label="Close"
+                    >
+                      ×
                     </button>
                   </div>
-                  {/* Advanced Filters */}
-                  {showAdvancedFilters && (
-                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Delivery Type */}
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
-                        <label className="block text-sm font-medium mb-1">Delivery Type</label>
-                        <div className="flex gap-4">
-                          <label className="flex items-center gap-1">
-                            <input type="radio" name="deliveryType" value="all" checked={filterDeliveryType === 'all'} onChange={() => setFilterDeliveryType('all')} />
-                            <span>All</span>
-                          </label>
-                          <label className="flex items-center gap-1">
-                            <input type="radio" name="deliveryType" value="delivery" checked={filterDeliveryType === 'delivery'} onChange={() => setFilterDeliveryType('delivery')} />
-                            <span>Delivery</span>
-                          </label>
-                          <label className="flex items-center gap-1">
-                            <input type="radio" name="deliveryType" value="pickup" checked={filterDeliveryType === 'pickup'} onChange={() => setFilterDeliveryType('pickup')} />
-                            <span>Pickup</span>
-                          </label>
-                        </div>
-                      </div>
-                      {/* Sort By */}
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
-                        <label className="block text-sm font-medium mb-1">Sort By</label>
-                        <Select value={filterSortBy} onValueChange={setFilterSortBy}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Best Match" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="best">Best Match</SelectItem>
-                            <SelectItem value="rating">Rating</SelectItem>
-                            <SelectItem value="distance">Distance</SelectItem>
-                            <SelectItem value="delivery">Delivery Time</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  {/* City Filter */}
+                  <div>
+                    <label className="block text-sm font-medium mb-1">City</label>
+                    <Select value={selectedCity} onValueChange={setSelectedCity}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Locations" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Locations</SelectItem>
+                        {Array.from(new Set(branches.map(b => b.branchCity).filter(Boolean))).map(city => (
+                          <SelectItem key={city} value={city}>{city}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {/* Rating Filter */}
+                  <div>
+                    <div className="font-medium flex items-center gap-2 mb-2"><span>☆</span> Rating</div>
+                    <div className="flex gap-3">
+                      {["4.4", "4.6", "4.8"].map(val => (
+                        <button
+                          key={val}
+                          type="button"
+                          className={`px-5 py-2 rounded-xl font-medium bg-gray-100 ${filterRating === val ? 'ring-2 ring-orange-500 bg-orange-50' : ''}`}
+                          onClick={() => setFilterRating(val)}
+                        >
+                          {val} or more
+                        </button>
+                      ))}
                     </div>
-                  )}
-                  <div className="mt-6 flex justify-end gap-2">
+                  </div>
+                  {/* Delivery Time Filter */}
+                  <div>
+                    <div className="font-medium flex items-center gap-2 mb-2"><span>⏱️</span> Delivery time</div>
+                    <div className="flex gap-3">
+                      {[15, 20, 30].map(val => (
+                        <button
+                          key={val}
+                          type="button"
+                          className={`px-5 py-2 rounded-xl font-medium bg-gray-100 ${filterDeliveryTime === val ? 'ring-2 ring-orange-500 bg-orange-50' : ''}`}
+                          onClick={() => setFilterDeliveryTime(val)}
+                        >
+                          {val} min or less
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Pickup Toggle */}
+                  <div>
+                    <div className="font-medium flex items-center gap-2 mb-2"><span>🚶‍♂️</span> Pickup</div>
+                    <div className="flex items-center gap-3">
+                      <Switch checked={filterPickup} onCheckedChange={setFilterPickup} id="pickup-switch" />
+                      <label htmlFor="pickup-switch" className="text-sm">Only show places with the option to collect orders yourself</label>
+                    </div>
+                  </div>
+                  {/* Menu Categories */}
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Menu Categories</label>
+                    <div className="flex flex-wrap gap-2">
+                      {allCategories.map(category => (
+                        <button
+                          key={category}
+                          type="button"
+                          className={`px-3 py-1 rounded-full border text-sm ${filterCategories.includes(category) ? 'bg-orange-100 border-orange-400 text-orange-700' : 'bg-white border-gray-300 text-gray-700'}`}
+                          onClick={() => {
+                            if (filterCategories.includes(category)) {
+                              setFilterCategories(filterCategories.filter(c => c !== category));
+                            } else {
+                              setFilterCategories([...filterCategories, category]);
+                            }
+                          }}
+                        >
+                          {category}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Apply/Cancel Buttons */}
+                  <div className="flex justify-end gap-2 pt-4">
                     <button
                       className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium"
                       onClick={() => setIsFilterModalOpen(false)}
@@ -1003,7 +1155,17 @@ export function StoreHeader() {
                     </button>
                     <button
                       className="px-4 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 text-sm font-medium"
-                      onClick={() => setIsFilterModalOpen(false)}
+                      onClick={() => {
+                        const params = new URLSearchParams();
+                        if (selectedCity && selectedCity !== 'all') params.append('city', selectedCity);
+                        if (searchQuery) params.append('q', searchQuery);
+                        if (filterRating) params.append('rating', filterRating);
+                        if (filterDeliveryTime) params.append('deliveryTime', filterDeliveryTime.toString());
+                        if (filterPickup) params.append('pickup', 'true');
+                        if (filterCategories.length > 0) params.append('categories', filterCategories.join(','));
+                        router.push(`/search?${params.toString()}`);
+                        setIsFilterModalOpen(false);
+                      }}
                       type="button"
                     >
                       Apply
@@ -1015,7 +1177,10 @@ export function StoreHeader() {
 
             {/* Store Listings */}
             <div className="container mx-auto px-4 py-6">
-              {isLoadingRestaurants ? (
+              <div className="md:hidden">
+                <SlidingBanner />
+              </div>
+              {vendorType === 'restaurants' && (isLoadingRestaurants ? (
                 <div className="flex flex-col items-center justify-center py-16">
                   <LoadingSpinner 
                     size="lg"
@@ -1025,7 +1190,12 @@ export function StoreHeader() {
                 </div>
               ) : searchResults.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {searchResults.map((branch) => (
+                  {searchResults
+                    .filter(branch =>
+                      (branch._restaurantTable[0]?.restaurantName?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+                      (branch.branchLocation?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+                    )
+                    .map((branch) => (
                     <Link
                       key={branch.id}
                       href={`/restaurants/${branch.slug}`}
@@ -1058,9 +1228,6 @@ export function StoreHeader() {
                         <h3 className="font-bold text-gray-900 truncate">
                           {branch._restaurantTable[0].restaurantName}
                         </h3>
-                        <span className="text-xs text-gray-600 truncate block">
-                          {branch.branchName}
-                        </span>
                         <div className="flex items-center gap-1 mt-2 text-sm text-gray-600">
                           <MapPin className="w-4 h-4" />
                           <span className="truncate">{branch.branchLocation}</span>
@@ -1095,7 +1262,93 @@ export function StoreHeader() {
                     />
                   )}
                 </div>
-              )}
+              ))}
+              {vendorType === 'groceries' && (isLoadingGroceries ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <LoadingSpinner 
+                    size="lg"
+                    color="orange"
+                    text="Loading groceries..."
+                  />
+                </div>
+              ) : groceries.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {groceries.filter(g =>
+                    (g.groceryshopName?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+                    (g.groceryshopAddress?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+                  ).map((grocery) => (
+                    <div key={grocery.id} className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block" onClick={() => handleGrocerySelect(grocery)}>
+                      <div className="relative h-36 bg-gray-100 flex items-center justify-center">
+                        {grocery.groceryshopLogo?.url ? (
+                          <Image
+                            src={grocery.groceryshopLogo.url}
+                            alt={grocery.groceryshopName}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <span className="text-4xl text-gray-300">🥦</span>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-bold text-gray-900 truncate">
+                          {grocery.groceryshopName}
+                        </h3>
+                        <span className="text-xs text-gray-600 truncate block">
+                          {grocery.groceryshopAddress}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  title="No groceries found"
+                  description={searchQuery ? `We couldn't find any groceries matching "${searchQuery}"` : "No groceries available"}
+                  icon="search"
+                />
+              ))}
+              {vendorType === 'pharmacy' && (isLoadingPharmacies ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <LoadingSpinner 
+                    size="lg"
+                    color="orange"
+                    text="Loading pharmacies..."
+                  />
+                </div>
+              ) : pharmacies.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {pharmacies.filter(p =>
+                    (p.pharmacyName?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+                    (p.pharmacyAddress?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+                  ).map((pharmacy) => (
+                    <div key={pharmacy.id} className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block" onClick={() => handlePharmacySelect(pharmacy)}>
+                      <div className="relative h-36">
+                        <Image
+                          src={pharmacy.pharmacyLogo?.url || ''}
+                          alt={pharmacy.pharmacyName}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-bold text-gray-900 truncate">
+                          {pharmacy.pharmacyName}
+                        </h3>
+                        <span className="text-xs text-gray-600 truncate block">
+                          {pharmacy.pharmacyAddress}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  title="No pharmacies found"
+                  description={searchQuery ? `We couldn't find any pharmacies matching "${searchQuery}"` : "No pharmacies available"}
+                  icon="search"
+                />
+              ))}
             </div>
           </div>
         )

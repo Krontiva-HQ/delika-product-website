@@ -7,6 +7,89 @@ import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
 import { ChevronLeft } from "lucide-react"
 import { use } from "react"
+import { useState as useClientState } from "react"
+
+function GroceryShopPage({ id }: { id: string }) {
+  const [items, setItems] = useClientState<any[]>([]);
+  const [loading, setLoading] = useClientState(true);
+  const [error, setError] = useClientState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`https://api-server.krontiva.africa/api:uEBBwbSs/get/grocery/shop/${id}/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        setItems(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('Failed to load inventory');
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) return <div className="container mx-auto px-4 py-8">Loading inventory...</div>;
+  if (error) return <div className="container mx-auto px-4 py-8 text-red-600">{error}</div>;
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h2 className="text-2xl font-bold mb-4">Grocery Shop Inventory</h2>
+      {items.length === 0 ? (
+        <div>No items found for this branch.</div>
+      ) : (
+        <ul className="divide-y divide-gray-200">
+          {items.map(item => (
+            <li key={item.id} className="py-2 flex justify-between">
+              <span>{item.productName}</span>
+              <span className="font-semibold">{item.price}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function PharmacyPage({ id }: { id: string }) {
+  const [items, setItems] = useClientState<any[]>([]);
+  const [loading, setLoading] = useClientState(true);
+  const [error, setError] = useClientState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`https://api-server.krontiva.africa/api:uEBBwbSs/delika_pharmacyinventory_table/${id}/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        setItems(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('Failed to load inventory');
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) return <div className="container mx-auto px-4 py-8">Loading inventory...</div>;
+  if (error) return <div className="container mx-auto px-4 py-8 text-red-600">{error}</div>;
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h2 className="text-2xl font-bold mb-4">Pharmacy Inventory</h2>
+      {items.length === 0 ? (
+        <div>No items found for this branch.</div>
+      ) : (
+        <ul className="divide-y divide-gray-200">
+          {items.map(item => (
+            <li key={item.id} className="py-2 flex justify-between">
+              <span>{item.productName}</span>
+              <span className="font-semibold">{item.price}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -20,7 +103,8 @@ export default function RestaurantPage({ params }: PageProps) {
   const [showSignupModal, setShowSignupModal] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const branchId = searchParams?.get('id') || localStorage.getItem('selectedBranchId')
+  const id = searchParams?.get('id') || localStorage.getItem('selectedBranchId')
+  const type = searchParams?.get('type') || 'restaurant' // default to restaurant if not specified
 
   useEffect(() => {
     // Check for user data in localStorage on component mount
@@ -61,13 +145,10 @@ export default function RestaurantPage({ params }: PageProps) {
     router.push('/restaurants')
   }
 
-  try {
-    if (!branchId) {
-      // If no ID in query, try to get it from localStorage
-      const storedId = localStorage.getItem('selectedBranchId')
-      if (!storedId) {
-        throw new Error('Branch ID not found')
-      }
+  if (!id) {
+    // If no ID in query, try to get it from localStorage
+    const storedId = localStorage.getItem('selectedBranchId')
+    if (!storedId) {
       return (
         <div className="flex flex-col min-h-screen">
           <AuthNav
@@ -88,73 +169,47 @@ export default function RestaurantPage({ params }: PageProps) {
               Back to Vendors
             </button>
           </div>
-          <BranchPage params={{ id: storedId }} />
+          <div className="text-center p-8 text-red-600 font-semibold">
+            Vendor not found
+          </div>
         </div>
       )
     }
-    
-    // Pass the actual branch ID to BranchPage
-    return (
-      <div className="flex flex-col min-h-screen">
-        <AuthNav
-          userData={userData}
-          onViewChange={handleViewChange}
-          currentView={currentView}
-          onLoginClick={handleLoginClick}
-          onSignupClick={handleSignupClick}
-          onLogout={handleLogout}
-          onHomeClick={handleHomeClick}
-        />
-        <div className="container mx-auto px-4 py-4">
-          <button
-            onClick={handleBackToRestaurants}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
-          >
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Back to Vendors
-          </button>
-        </div>
-        <BranchPage params={{ id: branchId }} />
-      </div>
-    )
-  } catch (error) {
-    console.error('Error in RestaurantPage:', error)
-    return (
-      <div className="flex flex-col min-h-screen">
-        <AuthNav
-          userData={userData}
-          onViewChange={handleViewChange}
-          currentView={currentView}
-          onLoginClick={handleLoginClick}
-          onSignupClick={handleSignupClick}
-          onLogout={handleLogout}
-          onHomeClick={handleHomeClick}
-        />
-        <div className="flex flex-col items-center justify-center min-h-[50vh] p-8">
-          <div className="text-center p-8 text-red-600 font-semibold">
-            Restaurant not found
-          </div>
-          <p className="text-gray-500 text-sm">
-            The restaurant you're looking for might have been moved or doesn't exist.
-          </p>
-          <div className="mt-4 flex gap-4">
-            <button 
-              onClick={handleBackToRestaurants}
-              className="text-orange-500 hover:text-orange-600 text-sm"
-            >
-              Back to Vendors
-            </button>
-            <button 
-              onClick={handleHomeClick}
-              className="text-orange-500 hover:text-orange-600 text-sm"
-            >
-              Go to Home
-            </button>
-          </div>
-        </div>
-      </div>
-    )
   }
+
+  // Render the correct page based on type
+  let Content: React.ReactNode = null;
+  if (type === 'grocery') {
+    Content = <GroceryShopPage id={id!} />;
+  } else if (type === 'pharmacy') {
+    Content = <PharmacyPage id={id!} />;
+  } else {
+    Content = <BranchPage params={{ id }} />;
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <AuthNav
+        userData={userData}
+        onViewChange={handleViewChange}
+        currentView={currentView}
+        onLoginClick={handleLoginClick}
+        onSignupClick={handleSignupClick}
+        onLogout={handleLogout}
+        onHomeClick={handleHomeClick}
+      />
+      <div className="container mx-auto px-4 py-4">
+        <button
+          onClick={handleBackToRestaurants}
+          className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+        >
+          <ChevronLeft className="w-4 h-4 mr-1" />
+          Back to Vendors
+        </button>
+      </div>
+      {Content}
+    </div>
+  )
 }
 
 // Make the page dynamic since we're fetching fresh data each time
