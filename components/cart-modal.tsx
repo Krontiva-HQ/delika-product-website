@@ -186,10 +186,15 @@ export function CartModal({
   }
 
   const hasUnavailableItems = cart.some(item => {
+    // If menuCategories is empty, fall back to item.available
+    if (!menuCategories || menuCategories.length === 0) {
+      return item.available === false;
+    }
     const menuItem = menuCategories
       .flatMap(cat => cat.foods)
-      .find(food => food.name === item.name)
-    return !menuItem?.available
+      .find(food => food.name === item.name);
+    // If menuItem is found, use its available, else fallback to item.available
+    return menuItem ? menuItem.available === false : item.available === false;
   })
 
   return (
@@ -221,17 +226,23 @@ export function CartModal({
               
               <AnimatePresence>
                 {cart.map((item, index) => {
-                  const menuItem = menuCategories
-                    .flatMap(cat => cat.foods)
-                    .find(food => food.name === item.name);
-
+                  // If menuCategories is empty, use item.available; else use menuItem.available if found, else fallback to item.available
+                  let isAvailable = true;
+                  if (!menuCategories || menuCategories.length === 0) {
+                    isAvailable = item.available !== false;
+                  } else {
+                    const menuItem = menuCategories
+                      .flatMap(cat => cat.foods)
+                      .find(food => food.name === item.name);
+                    isAvailable = menuItem ? menuItem.available !== false : item.available !== false;
+                  }
                   return (
                     <motion.div
                       key={`${item.id}-${index}`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -100 }}
-                      className={`flex gap-4 p-4 rounded-xl border ${!menuItem?.available ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-100'}`}
+                      className={`flex gap-4 p-4 rounded-xl border ${!isAvailable ? 'bg-gray-50 border-gray-200 opacity-50 grayscale pointer-events-none' : 'bg-white border-gray-100'}`}
                     >
                       <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
                         {item.image ? (
@@ -239,7 +250,7 @@ export function CartModal({
                             src={item.image}
                             alt={item.name}
                             fill
-                            className={`object-cover ${!menuItem?.available ? 'grayscale' : ''}`}
+                            className={`object-cover ${!isAvailable ? 'grayscale' : ''}`}
                           />
                         ) : (
                           <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -251,7 +262,7 @@ export function CartModal({
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
-                            {menuItem?.available === false && (
+                            {!isAvailable && (
                               <span className="text-xs text-red-500 font-medium">No longer available</span>
                             )}
                           </div>
@@ -264,7 +275,6 @@ export function CartModal({
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                        
                         {/* Extras Section */}
                         {item.selectedExtras && item.selectedExtras.length > 0 && (
                           <div className="mt-2 pl-2 space-y-1 border-l-2 border-gray-200">
@@ -283,7 +293,6 @@ export function CartModal({
                             </div>
                           </div>
                         )}
-
                         <div className="flex items-center justify-between mt-3">
                           <span className="font-medium">GH₵ {((parseFloat(item.price) + (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0)) * item.quantity).toFixed(2)}</span>
                           <div className="flex items-center gap-3 bg-gray-50 rounded-full p-1">
@@ -292,7 +301,7 @@ export function CartModal({
                               variant="ghost"
                               className="h-7 w-7 rounded-full"
                               onClick={() => onRemoveItem(item.id)}
-                              disabled={!menuItem?.available}
+                              disabled={!isAvailable}
                             >
                               <Minus className="h-4 w-4" />
                             </Button>
@@ -302,7 +311,7 @@ export function CartModal({
                               variant="ghost"
                               className="h-7 w-7 rounded-full"
                               onClick={() => onAddItem(item.id)}
-                              disabled={!menuItem?.available}
+                              disabled={!isAvailable}
                             >
                               <Plus className="h-4 w-4" />
                             </Button>

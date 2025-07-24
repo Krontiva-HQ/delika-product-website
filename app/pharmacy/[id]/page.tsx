@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { FloatingCart } from "@/components/floating-cart";
+import { CartModal } from "@/components/cart-modal";
 
 interface PharmacyInventoryItem {
   id: string;
@@ -16,6 +18,7 @@ interface PharmacyInventoryItem {
   image: string | null;
   pharmacyShopId?: string | null;
   pharmacyShopBranchId?: string | null;
+  available?: boolean;
   _delika_pharmacy_table?: {
     pharmacyLogo?: { url: string };
     pharmacyName?: string;
@@ -38,6 +41,22 @@ export default function PharmacyDetailsPage() {
   const [inventory, setInventory] = useState<PharmacyInventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cart, setCart] = useState<any[]>([]);
+  const [isCartModalOpen, setIsCartModalOpen] = useState(false);
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    const savedCart = localStorage.getItem('pharmacyCart');
+    if (savedCart) {
+      try {
+        setCart(JSON.parse(savedCart));
+      } catch {}
+    }
+  }, []);
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('pharmacyCart', JSON.stringify(cart));
+  }, [cart]);
 
   // Get shop info from localStorage (set when user clicks a pharmacy branch)
   const [shopLogo, setShopLogo] = useState<string | null>(null);
@@ -83,6 +102,7 @@ export default function PharmacyDetailsPage() {
           ...item,
           pharmacyShopId: item.pharmacyShopId ?? pharmacyShopIdParam ?? null,
           pharmacyShopBranchId: item.pharmacyShopBranchId ?? pharmacyBranchId ?? null,
+          available: typeof item.available === "boolean" ? item.available : true,
         });
         if (Array.isArray(data)) {
           const sorted = data.map(normalize).sort((a, b) => {
@@ -119,6 +139,71 @@ export default function PharmacyDetailsPage() {
   const shopAddress = inventory[0]?._delika_pharmacy_table?.pharmacyAddress || "";
   // Modal state for View Details
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  useEffect(() => {
+    console.log('Pharmacy cart state:', cart, 'Item count:', cart.length);
+  }, [cart]);
+
+  // Helper to add item to cart, always saving name, price, and image
+  const handleAddToCart = (item: any) => {
+    if (!item.productName || !item.price) return;
+    const image =
+      typeof item.image === "object" && item.image && "url" in item.image
+        ? item.image.url
+        : typeof item.image === "string"
+        ? item.image
+        : (item.foodImage && item.foodImage.url) || null;
+    setCart(prev => {
+      const updated = [
+        ...prev,
+        {
+          ...item,
+          name: item.productName,
+          price: item.price,
+          image,
+          quantity: 1,
+          available: typeof item.available === "boolean" ? item.available : true
+        }
+      ];
+      localStorage.setItem('pharmacyCart', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Handler to delete item from cart by id
+  const handleDeleteItem = (itemId: string) => {
+    setCart(prev => {
+      const updated = prev.filter(item => item.id !== itemId);
+      localStorage.setItem('pharmacyCart', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleAddItem = (itemId: string) => {
+    setCart(prev => {
+      const updated = prev.map(item =>
+        item.id === itemId
+          ? { ...item, quantity: (item.quantity || 1) + 1 }
+          : item
+      );
+      localStorage.setItem('pharmacyCart', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleRemoveItem = (itemId: string) => {
+    setCart(prev => {
+      const updated = prev
+        .map(item =>
+          item.id === itemId
+            ? { ...item, quantity: Math.max(1, (item.quantity || 1) - 1) }
+            : item
+        )
+        .filter(item => item.quantity > 0);
+      localStorage.setItem('pharmacyCart', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -197,7 +282,10 @@ export default function PharmacyDetailsPage() {
               <h2 className="text-xl font-bold mb-4 sm:mb-6">{selectedCategory}</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {filteredInventory.map((item) => (
-                  <div key={item.id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left flex flex-col">
+                  <div
+                    key={item.id}
+                    className={`bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left flex flex-col ${item.available === false ? "opacity-50 grayscale pointer-events-none" : ""}`}
+                  >
                     <div className="relative h-36 w-full">
                       {typeof item.image === 'object' && item.image && 'url' in item.image ? (
                         <Image
@@ -223,18 +311,17 @@ export default function PharmacyDetailsPage() {
                       <h3 className="font-bold text-gray-900 text-base truncate mb-1">{item.productName || "No Name"}</h3>
                       <div className="flex items-center justify-between mt-auto">
                         <span className="text-base font-semibold text-gray-800 truncate">GH₵ {item.price || "No Price"}</span>
-                        <button
-                          className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center ml-2"
-                          onClick={() => {
-                            setCart(prev => {
-                              const updated = [...prev, item];
-                              localStorage.setItem('pharmacyCart', JSON.stringify(updated));
-                              return updated;
-                            });
-                          }}
-                        >
-                          <span className="text-xl font-bold">+</span>
-                        </button>
+                        {!item.available && (
+                          <span className="ml-2 text-xs text-gray-400 font-semibold">Not Available</span>
+                        )}
+                        {item.available && (
+                          <button
+                            className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center ml-2"
+                            onClick={() => handleAddToCart(item)}
+                          >
+                            <span className="text-xl font-bold">+</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -280,13 +367,7 @@ export default function PharmacyDetailsPage() {
                   <span className="text-base font-semibold text-gray-800 truncate">GH₵ {item.price || "No Price"}</span>
                   <button
                     className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center ml-2"
-                    onClick={() => {
-                      setCart(prev => {
-                        const updated = [...prev, item];
-                        localStorage.setItem('pharmacyCart', JSON.stringify(updated));
-                        return updated;
-                      });
-                    }}
+                    onClick={() => handleAddToCart(item)}
                   >
                     <span className="text-xl font-bold">+</span>
                   </button>
@@ -296,6 +377,38 @@ export default function PharmacyDetailsPage() {
           ))}
         </div>
       )}
+      {/* Floating Cart */}
+      <FloatingCart
+        total={cart.reduce((total, item) => total + (parseFloat(item.price) || 0), 0)}
+        itemCount={cart.length}
+        onClick={() => setIsCartModalOpen(true)}
+        branchLocation={{ latitude: "0", longitude: "0" }}
+        branchId={shopName || "pharmacy"}
+      />
+
+      <CartModal
+        isOpen={isCartModalOpen}
+        onClose={() => setIsCartModalOpen(false)}
+        cart={cart.map(item => ({
+          ...item,
+          name: item.productName,
+          price: item.price,
+          image:
+            typeof item.image === "object" && item.image && "url" in item.image
+              ? item.image.url
+              : typeof item.image === "string"
+              ? item.image
+              : (item.foodImage && item.foodImage.url) || null
+        }))}
+        onAddItem={handleAddItem}
+        onRemoveItem={handleRemoveItem}
+        onDeleteItem={handleDeleteItem}
+        cartTotal={cart.reduce((total, item) => total + (parseFloat(item.price) || 0), 0)}
+        branchId={shopName || "pharmacy"}
+        branchName={shopName || "Pharmacy Shop"}
+        menuCategories={[]}
+        isAuthenticated={false}
+      />
       </div>
     </div>
   );
