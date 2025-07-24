@@ -52,26 +52,81 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         data = await authRequest<AuthResponse>('login/phoneNumber/customer', { phoneNumber: phone });
       }
       
-      if (data.authToken) {
-        setAuthToken(data.authToken)
-        
-        try {
-          // Use our authRequest utility function to get user data
-          const userData = await authRequest<UserData>('me', {}, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${data.authToken}`,
-            }
-          });
+      // Handle different response structures for email vs phone login
+      let authToken: string;
+      let phoneUserData: UserData | null = null;
+      
+      if (isEmailMode) {
+        // Email login returns: { authToken: "...", ... }
+        if (data.authToken) {
+          authToken = data.authToken;
+        } else {
+          if (data.message) {
+            setError(data.message)
+          } else {
+            setError("Invalid email or password")
+          }
+          return;
+        }
+      } else {
+        // Phone login returns: [{ id: "...", OTP: "token...", role: "Customer", ... }]
+        if (Array.isArray(data) && data.length > 0) {
+          const userData = data[0] as UserData;
           
-          setUserData(userData)
+          // Check if user role is Customer
+          if (userData.role !== 'Customer') {
+            setError('Invalid credentials');
+            return;
+          }
+          
+          // Extract token from OTP field
+          authToken = userData.OTP || '';
+          phoneUserData = userData;
+          
+          if (!authToken) {
+            setError('Authentication failed. Please try again.');
+            return;
+          }
+        } else {
+          setError('Sorry, you do not have an account with this phone number as a customer.');
+          return;
+        }
+      }
+      
+      if (authToken) {
+        setAuthToken(authToken)
+        
+        if (phoneUserData) {
+          // For phone login, we already have user data
+          setUserData(phoneUserData)
           setOtpError("")
           setShowOTP(true)
-        } catch (userDataError) {
-          // Even if we can't fetch user data, we can still show OTP
-          // since we have the auth token
-          setOtpError("")
-          setShowOTP(true);
+        } else {
+          // For email login, try to fetch user data
+          try {
+            // Use our authRequest utility function to get user data
+            const userData = await authRequest<UserData>('me', {}, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+              }
+            });
+            
+            // Check if user role is Customer
+            if (userData.role !== 'Customer') {
+              setError('Invalid credentials');
+              return;
+            }
+            
+            setUserData(userData)
+            setOtpError("")
+            setShowOTP(true)
+          } catch (userDataError) {
+            // Even if we can't fetch user data, we can still show OTP
+            // since we have the auth token
+            setOtpError("")
+            setShowOTP(true);
+          }
         }
       } else {
         // Handle specific error messages
@@ -83,8 +138,36 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
           setError("Invalid phone number")
         }
       }
-    } catch (error) {
-      setError("An error occurred. Please try again.")
+    } catch (error: any) {
+      // Try to parse error response for more specific messages
+      if (error && error.message) {
+        const msg = error.message.toLowerCase();
+        if (msg === 'auth request failed' || (msg.includes('phone') && (msg.includes('not found') || msg.includes('no user') || msg.includes('does not exist')))) {
+          setError('Sorry, you do not have an account with this phone number as a customer.');
+        } else if (msg.includes('not found') || msg.includes('no user') || msg.includes('account does not exist')) {
+          setError('Sorry, you do not have an account with this email as a customer.');
+        } else if (msg.includes('unauthorized') || msg.includes('invalid') || msg.includes('incorrect') || msg.includes('wrong password')) {
+          setError('Incorrect email or password. Please try again.');
+        } else if (msg.includes('403') || msg.includes('forbidden')) {
+          // Handle 403 errors specifically for phone login
+          if (loginMethod === 'phone') {
+            setError('Sorry, you do not have an account with this phone number as a customer.');
+          } else {
+            setError('Sorry, you do not have an account with this email as a customer.');
+          }
+        } else {
+          setError(error.message);
+        }
+      } else if (error && error.status === 403) {
+        // Handle HTTP 403 status directly
+        if (loginMethod === 'phone') {
+          setError('Sorry, you do not have an account with this phone number as a customer.');
+        } else {
+          setError('Sorry, you do not have an account with this email as a customer.');
+        }
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setIsLoading(false)
     }
@@ -123,7 +206,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         // Store auth token in localStorage
         localStorage.setItem('authToken', authToken);
         
-        // If we don't have userData yet, try to fetch it
+        // Use userData if available, otherwise try to fetch it
         let finalUserData = userData;
         if (!finalUserData && authToken) {
           try {
