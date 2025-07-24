@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/pagination";
 import { FloatingCart } from "@/components/floating-cart";
 import { CartModal } from "@/components/cart-modal";
+import { LoginModal } from "@/components/login-modal";
+import { SignupModal } from "@/components/signup-modal";
 
 interface InventoryItem {
   id: string;
@@ -229,6 +231,20 @@ export default function GroceryDetailsPage() {
   // Modal state for View Details
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  // Check authentication status
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const userData = localStorage.getItem('userData');
+    if (token && userData) {
+      try {
+        setUser(JSON.parse(userData));
+      } catch {}
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -412,11 +428,38 @@ export default function GroceryDetailsPage() {
         branchId={shopName || "grocery"}
         branchName={shopName || "Grocery Shop"}
         menuCategories={[]}
-        isAuthenticated={false}
+        isAuthenticated={!!user}
         branchLocation={shopCoordinates ? { 
           latitude: shopCoordinates.lat, 
           longitude: shopCoordinates.lng 
         } : undefined}
+        onLoginClick={() => setIsLoginModalOpen(true)}
+      />
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSwitchToSignup={() => {
+          setIsLoginModalOpen(false);
+          setIsSignupModalOpen(true);
+        }}
+        onLoginSuccess={(userData) => {
+          setUser(userData);
+          setIsLoginModalOpen(false);
+        }}
+      />
+
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
+        onLoginClick={() => {
+          setIsSignupModalOpen(false);
+          setIsLoginModalOpen(true);
+        }}
+        onSignupSuccess={(userData) => {
+          setUser(userData);
+          setIsSignupModalOpen(false);
+        }}
       />
       </div>
     </div>

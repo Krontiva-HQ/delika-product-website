@@ -6,6 +6,8 @@ import Image from "next/image";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { FloatingCart } from "@/components/floating-cart";
 import { CartModal } from "@/components/cart-modal";
+import { LoginModal } from "@/components/login-modal";
+import { SignupModal } from "@/components/signup-modal";
 
 interface PharmacyInventoryItem {
   id: string;
@@ -42,6 +44,9 @@ export default function PharmacyDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [cart, setCart] = useState<any[]>([]);
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -49,6 +54,17 @@ export default function PharmacyDetailsPage() {
     if (savedCart) {
       try {
         setCart(JSON.parse(savedCart));
+      } catch {}
+    }
+  }, []);
+
+  // Check authentication status
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const userData = localStorage.getItem('userData');
+    if (token && userData) {
+      try {
+        setUser(JSON.parse(userData));
       } catch {}
     }
   }, []);
@@ -433,11 +449,38 @@ export default function PharmacyDetailsPage() {
         branchId={shopName || "pharmacy"}
         branchName={shopName || "Pharmacy Shop"}
         menuCategories={[]}
-        isAuthenticated={false}
+        isAuthenticated={!!user}
         branchLocation={shopCoordinates ? { 
           latitude: shopCoordinates.lat, 
           longitude: shopCoordinates.lng 
         } : undefined}
+        onLoginClick={() => setIsLoginModalOpen(true)}
+      />
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSwitchToSignup={() => {
+          setIsLoginModalOpen(false);
+          setIsSignupModalOpen(true);
+        }}
+        onLoginSuccess={(userData) => {
+          setUser(userData);
+          setIsLoginModalOpen(false);
+        }}
+      />
+
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
+        onLoginClick={() => {
+          setIsSignupModalOpen(false);
+          setIsLoginModalOpen(true);
+        }}
+        onSignupSuccess={(userData) => {
+          setUser(userData);
+          setIsSignupModalOpen(false);
+        }}
       />
       </div>
     </div>

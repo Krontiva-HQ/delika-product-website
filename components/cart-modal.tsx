@@ -37,6 +37,7 @@ interface CartModalProps {
   }>
   isAuthenticated: boolean
   branchLocation?: { latitude: number; longitude: number }
+  onLoginClick?: () => void
 }
 
 export function CartModal({
@@ -51,7 +52,8 @@ export function CartModal({
   branchName,
   menuCategories,
   isAuthenticated,
-  branchLocation
+  branchLocation,
+  onLoginClick
 }: CartModalProps) {
   const router = useRouter()
   const [isProcessingAuth, setIsProcessingAuth] = useState(false)
@@ -183,15 +185,23 @@ export function CartModal({
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
-      setIsProcessingAuth(true)
+      // Store checkout data for after login
       localStorage.setItem('loginRedirectUrl', `/checkout/${branchId}`)
       localStorage.setItem('selectedDeliveryType', deliveryType)
       localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
       localStorage.setItem('checkoutPlatformFee', platformFee.toString())
       // Store cart items with extras in localStorage
       localStorage.setItem('checkoutCartItems', JSON.stringify(cart))
+      
+      // Close cart modal and open login modal
       onClose()
-      router.push('/login')
+      if (onLoginClick) {
+        onLoginClick()
+      } else {
+        // Fallback to router navigation if onLoginClick is not provided
+        setIsProcessingAuth(true)
+        router.push('/login')
+      }
       return
     }
     // Store delivery type, delivery fee, and platform fee
