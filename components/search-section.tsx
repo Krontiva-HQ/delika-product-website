@@ -7,7 +7,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { loadGoogleMaps } from "@/lib/google-maps"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import debounce from "lodash.debounce"
 import Link from "next/link"
 
 interface SearchSectionProps {
@@ -143,7 +142,15 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
         });
       });
     });
-    setDropdownResults(results)
+    // Deduplicate results by id+type
+    const uniqueResultsMap = new Map();
+    results.forEach((item) => {
+      const key = item.id + '-' + item.type;
+      if (!uniqueResultsMap.has(key)) {
+        uniqueResultsMap.set(key, item);
+      }
+    });
+    setDropdownResults(Array.from(uniqueResultsMap.values()));
     setShowDropdown(true)
   }
 

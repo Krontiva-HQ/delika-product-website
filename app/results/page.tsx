@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { MapPin, ChevronLeft } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 function capitalize(word: string) {
     return word.charAt(0).toUpperCase() + word.slice(1);
@@ -11,28 +12,21 @@ function capitalize(word: string) {
 export default function ResultsPage() {
     const [results, setResults] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const searchParams = useSearchParams();
+    const type = searchParams.get("type") || "restaurant";
+    const router = useRouter();
 
     useEffect(() => {
-        async function fetchResults() {
-            setLoading(true);
-            try {
-                const response = await fetch(
-                    "https://api-server.krontiva.africa/api:uEBBwbSs/filterWindow",
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({}), // No filters, fetch all
-                    }
-                );
-                const data = await response.json();
-                setResults(data.filltered || []);
-            } catch (error) {
-                setResults([]);
-            } finally {
-                setLoading(false);
-            }
+        setLoading(true);
+        // Only use results from localStorage (set by filter modal)
+        const localResults = typeof window !== 'undefined' ? localStorage.getItem('delikaResults') : null;
+        if (localResults) {
+            setResults(JSON.parse(localResults));
+            localStorage.removeItem('delikaResults');
+        } else {
+            setResults([]); // No results available
         }
-        fetchResults();
+        setLoading(false);
     }, []); // Only run once on mount
 
     // Extraction logic for each type
@@ -107,12 +101,12 @@ export default function ResultsPage() {
         });
     }
 
-    // Filter chips
-    const filterChips = [
-        rating && { label: `Rating: ${rating}+` },
-        deliveryTime && { label: `≤ ${deliveryTime} min` },
-        ...categories.map((cat) => ({ label: cat })),
-    ].filter(Boolean);
+    // Filter chips (removed due to undefined variables)
+    // const filterChips = [
+    //     rating && { label: `Rating: ${rating}+` },
+    //     deliveryTime && { label: `≤ ${deliveryTime} min` },
+    //     ...categories.map((cat) => ({ label: cat })),
+    // ].filter(Boolean);
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -129,16 +123,7 @@ export default function ResultsPage() {
                     Results for {capitalize(type)}
                     <span className="text-base font-medium text-gray-500">({displayResults.length})</span>
                 </h1>
-                <div className="flex flex-wrap gap-2 ml-2">
-                    {filterChips.map((chip, idx) => (
-                        <span
-                            key={idx}
-                            className="inline-flex items-center px-3 py-1 rounded-full bg-gray-200 text-sm text-gray-700 font-medium"
-                        >
-                            {chip.label}
-                        </span>
-                    ))}
-                </div>
+                {/* Removed filter chips rendering due to undefined variables */}
             </div>
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-8">

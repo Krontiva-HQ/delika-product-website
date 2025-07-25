@@ -1034,11 +1034,11 @@ export function StoreHeader() {
               filterPickup={filterPickup}
               setFilterPickup={setFilterPickup}
               foodPage={0}
-              setFoodPage={() => {}}
+              setFoodPage={() => undefined}
               groceryPage={0}
-              setGroceryPage={() => {}}
+              setGroceryPage={() => undefined}
               pharmacyPage={0}
-              setPharmacyPage={() => {}}
+              setPharmacyPage={() => undefined}
               RESTAURANT_CATEGORIES={RESTAURANT_CATEGORIES}
               GROCERY_CATEGORIES={GROCERY_CATEGORIES}
               PHARMACY_CATEGORIES={PHARMACY_CATEGORIES}
@@ -1047,17 +1047,34 @@ export function StoreHeader() {
               onApply={async () => {
                 setIsFilterLoading(true);
                 try {
-                  // Small delay to show loading state
-                  await new Promise(resolve => setTimeout(resolve, 800));
-                  
-                  const params = new URLSearchParams();
-                  if (filterRating && filterRating !== 'all') params.append('rating', filterRating);
-                  if (filterCategories.length > 0) params.append('category', filterCategories.join(','));
-                  if (filterDeliveryTime) params.append('deliveryTime', filterDeliveryTime.toString());
-                  if (filterTypes.length > 0) params.append('type', filterTypes.join(','));
-                  
-                  router.push(`/results?${params.toString()}`);
+                  // Only include non-empty filters
+                  const postData: Record<string, any> = {};
+                  if (filterTypes[0]) postData.category = filterTypes[0];
+                  if (filterCategories.length > 0) postData.categories = filterCategories.join(",");
+                  if (filterRating && filterRating !== "all") postData.rating = filterRating;
+                  if (filterDeliveryTime != null) postData.deliverTime = filterDeliveryTime;
+                  if (filterPickup) postData.pickup = filterPickup;
+
+                  console.log('POSTING to API:', postData);
+
+                  const response = await fetch(
+                    'https://api-server.krontiva.africa/api:uEBBwbSs/filterWindow',
+                    {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(postData),
+                    }
+                  );
+                  const data = await response.json();
+                  localStorage.setItem('delikaResults', JSON.stringify(data.filltered || []));
                   setIsFilterModalOpen(false);
+                  setTimeout(() => {
+                    const params = new URLSearchParams();
+                    Object.entries(postData).forEach(([key, value]) => {
+                      params.append(key, String(value));
+                    });
+                    router.push(`/results?${params.toString()}`);
+                  }, 100);
                 } catch (error) {
                   console.error('Error applying filters:', error);
                 } finally {
