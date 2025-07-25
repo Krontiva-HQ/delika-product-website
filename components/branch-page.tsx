@@ -1018,6 +1018,8 @@ export function BranchPage({ params }: BranchPageProps) {
           latitude: parseFloat(branch.branchLatitude),
           longitude: parseFloat(branch.branchLongitude)
         }}
+        onLoginClick={() => setIsLoginModalOpen(true)}
+        storeType="restaurant"
       />
 
       <LoginModal

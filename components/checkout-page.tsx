@@ -53,6 +53,8 @@ interface CheckoutPageProps {
   branchPhone: string
   initialFullName?: string
   initialPhoneNumber?: string
+  inventory?: any[]
+  storeType?: 'restaurant' | 'pharmacy' | 'grocery'
 }
 
 interface CustomerInfo {
@@ -104,8 +106,21 @@ export function CheckoutPage({
   branchLocation,
   branchPhone,
   initialFullName = "",
-  initialPhoneNumber = ""
+  initialPhoneNumber = "",
+  inventory = [],
+  storeType = 'restaurant'
 }: CheckoutPageProps) {
+  // Get store type from localStorage if not explicitly provided
+  const getActualStoreType = () => {
+    if (storeType !== 'restaurant') return storeType;
+    const savedStoreType = localStorage.getItem('selectedStoreType');
+    if (savedStoreType === 'groceries') return 'grocery';
+    if (savedStoreType === 'pharmacy') return 'pharmacy';
+    return 'restaurant';
+  };
+  
+  const actualStoreType = getActualStoreType();
+
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: initialFullName,
     phone: initialPhoneNumber,
@@ -480,8 +495,8 @@ export function CheckoutPage({
           })) || []
         })),
         pickup: [{
-          fromLatitude: branchDetails?.branchLatitude?.toString() || '0',
-          fromLongitude: branchDetails?.branchLongitude?.toString() || '0',
+          fromLatitude: branchLocation?.latitude?.toString() || branchDetails?.branchLatitude?.toString() || '0',
+          fromLongitude: branchLocation?.longitude?.toString() || branchDetails?.branchLongitude?.toString() || '0',
           fromAddress: branchName
         }],
         dropOff: [{
@@ -504,8 +519,8 @@ export function CheckoutPage({
         payVisaCard: false
       };
 
-      // Submit order first
-      const orderResponse = await submitOrder(orderData);
+            // Submit order to the appropriate endpoint based on store type
+      const orderResponse = await submitOrder(orderData, actualStoreType);
       
       // Store the full response in localStorage
       localStorage.setItem('orderSubmissionResponse', JSON.stringify({
@@ -513,13 +528,26 @@ export function CheckoutPage({
         timestamp: new Date().toISOString()
       }));
 
-      const backendOrderId = orderResponse?.result1?.id || orderId;
-      // Redirect to /pay page with amount, orderId from backend and customerId
-      router.push(`/pay?amount=${totalAmount}&orderId=${backendOrderId}&customerId=${userData?.id || ''}`);
+      // Extract order ID based on store type and response structure
+      let backendOrderId = orderId; // fallback to generated orderId
+      
+      if (actualStoreType === 'restaurant') {
+        // Restaurant response format: { result1: { id: "..." } }
+        backendOrderId = orderResponse?.result1?.id || orderId;
+      } else {
+        // Pharmacy/Grocery response format: { id: "...", ... }
+        backendOrderId = orderResponse?.id || orderId;
+      }
+
+      console.log(`🆔 ${actualStoreType} order ID:`, backendOrderId);
+      console.log(`📋 ${actualStoreType} order response:`, orderResponse);
+
+      // Redirect to /pay page with amount, orderId from backend, customerId and storeType
+      router.push(`/pay?amount=${totalAmount}&orderId=${backendOrderId}&customerId=${userData?.id || ''}&storeType=${actualStoreType}`);    
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to process order. Please try again.",
+        description: `Failed to process ${actualStoreType} order. Please try again.`,
         variant: "destructive",
       });
     } finally {

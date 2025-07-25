@@ -20,7 +20,13 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Wallet,
+  Plus,
+  Minus,
+  History,
+  ArrowUpRight,
+  ArrowDownLeft
 } from "lucide-react"
 import { UserData } from "@/components/auth-nav"
 
@@ -69,6 +75,22 @@ export function SettingsSection({ userData, onUserDataUpdate }: SettingsSectionP
     confirmPassword: "",
     twoFactorEnabled: localStorage.getItem('twoFactorEnabled') === 'true',
   })
+
+  // Wallet state
+  const [walletData, setWalletData] = useState({
+    balance: parseFloat(localStorage.getItem('delikaBalance') || '0'),
+    addAmount: "",
+    withdrawAmount: "",
+  })
+
+  // Mock transaction history
+  const [transactions] = useState([
+    { id: '1', type: 'credit', amount: 100, description: 'Added to wallet', date: '2024-01-15', status: 'completed' },
+    { id: '2', type: 'debit', amount: 25.50, description: 'Order #ORD-2024-001', date: '2024-01-14', status: 'completed' },
+    { id: '3', type: 'credit', amount: 50, description: 'Auto-reload', date: '2024-01-13', status: 'completed' },
+    { id: '4', type: 'debit', amount: 15.75, description: 'Order #ORD-2024-002', date: '2024-01-12', status: 'completed' },
+    { id: '5', type: 'debit', amount: 32.25, description: 'Order #ORD-2024-003', date: '2024-01-10', status: 'completed' },
+  ])
 
   const handleSaveProfile = async () => {
     setIsSaving(true)
@@ -158,6 +180,96 @@ export function SettingsSection({ userData, onUserDataUpdate }: SettingsSectionP
     }
   }
 
+  const handleAddMoney = async () => {
+    const amount = parseFloat(walletData.addAmount)
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid amount to add.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (amount > 1000) {
+      toast({
+        title: "Amount Too Large",
+        description: "Maximum amount per transaction is ₵1,000.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      const newBalance = walletData.balance + amount
+      setWalletData({...walletData, balance: newBalance, addAmount: ""})
+      localStorage.setItem('delikaBalance', newBalance.toString())
+      
+      toast({
+        title: "Money Added",
+        description: `₵${amount.toFixed(2)} has been added to your wallet successfully.`,
+      })
+    } catch (error) {
+      toast({
+        title: "Transaction Failed",
+        description: "Failed to add money. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleWithdrawMoney = async () => {
+    const amount = parseFloat(walletData.withdrawAmount)
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid amount to withdraw.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (amount > walletData.balance) {
+      toast({
+        title: "Insufficient Balance",
+        description: "You don't have enough balance for this withdrawal.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      // Simulate withdrawal processing
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      const newBalance = walletData.balance - amount
+      setWalletData({...walletData, balance: newBalance, withdrawAmount: ""})
+      localStorage.setItem('delikaBalance', newBalance.toString())
+      
+      toast({
+        title: "Withdrawal Successful",
+        description: `₵${amount.toFixed(2)} has been withdrawn from your wallet.`,
+      })
+    } catch (error) {
+      toast({
+        title: "Withdrawal Failed",
+        description: "Failed to process withdrawal. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+
+
   const toggleNotificationSetting = (setting: string) => {
     const newValue = !preferences[setting as keyof typeof preferences]
     setPreferences({...preferences, [setting]: newValue})
@@ -175,8 +287,9 @@ export function SettingsSection({ userData, onUserDataUpdate }: SettingsSectionP
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="wallet">Wallet</TabsTrigger>
           <TabsTrigger value="delivery">Delivery</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
@@ -278,6 +391,162 @@ export function SettingsSection({ userData, onUserDataUpdate }: SettingsSectionP
                   </Button>
                 </div>
               )}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Wallet Tab */}
+        <TabsContent value="wallet">
+          <div className="space-y-6">
+            {/* Balance Overview */}
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="border-b border-gray-200 px-6 py-4">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Wallet className="w-5 h-5 text-orange-500" />
+                  Delika Balance
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">Manage your digital wallet and transactions</p>
+              </div>
+              <div className="p-6">
+                <div className="text-center mb-6">
+                  <p className="text-sm text-gray-600 mb-2">Current Balance</p>
+                  <p className="text-4xl font-bold text-orange-500">₵{walletData.balance.toFixed(2)}</p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="addAmount">Add Money</Label>
+                      <div className="flex gap-2 mt-2">
+                        <div className="relative flex-1">
+                          <span className="absolute left-3 top-3 text-gray-400">₵</span>
+                          <Input
+                            id="addAmount"
+                            type="number"
+                            value={walletData.addAmount}
+                            onChange={(e) => setWalletData({...walletData, addAmount: e.target.value})}
+                            placeholder="0.00"
+                            className="pl-8"
+                            min="1"
+                            max="1000"
+                          />
+                        </div>
+                        <Button 
+                          onClick={handleAddMoney}
+                          disabled={isSaving || !walletData.addAmount}
+                          className="bg-green-500 hover:bg-green-600 flex items-center gap-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          {isSaving ? 'Adding...' : 'Add'}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setWalletData({...walletData, addAmount: "20"})}
+                      >
+                        ₵20
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setWalletData({...walletData, addAmount: "50"})}
+                      >
+                        ₵50
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setWalletData({...walletData, addAmount: "100"})}
+                      >
+                        ₵100
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="withdrawAmount">Withdraw Money</Label>
+                      <div className="flex gap-2 mt-2">
+                        <div className="relative flex-1">
+                          <span className="absolute left-3 top-3 text-gray-400">₵</span>
+                          <Input
+                            id="withdrawAmount"
+                            type="number"
+                            value={walletData.withdrawAmount}
+                            onChange={(e) => setWalletData({...walletData, withdrawAmount: e.target.value})}
+                            placeholder="0.00"
+                            className="pl-8"
+                            min="1"
+                            max={walletData.balance}
+                          />
+                        </div>
+                        <Button 
+                          onClick={handleWithdrawMoney}
+                          disabled={isSaving || !walletData.withdrawAmount || parseFloat(walletData.withdrawAmount) > walletData.balance}
+                          variant="outline"
+                          className="border-red-500 text-red-500 hover:bg-red-50 flex items-center gap-2"
+                        >
+                          <Minus className="w-4 h-4" />
+                          {isSaving ? 'Processing...' : 'Withdraw'}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <p className="text-xs text-gray-500">
+                      Available for withdrawal: ₵{walletData.balance.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+
+            {/* Transaction History */}
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="border-b border-gray-200 px-6 py-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <History className="w-5 h-5 text-orange-500" />
+                  Recent Transactions
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">Your latest wallet activity</p>
+              </div>
+              <div className="p-6">
+                <div className="space-y-3">
+                  {transactions.map((transaction) => (
+                    <div key={transaction.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${transaction.type === 'credit' ? 'bg-green-100' : 'bg-red-100'}`}>
+                          {transaction.type === 'credit' ? (
+                            <ArrowDownLeft className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <ArrowUpRight className="w-4 h-4 text-red-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{transaction.description}</p>
+                          <p className="text-xs text-gray-500">{transaction.date}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className={`font-semibold ${transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
+                          {transaction.type === 'credit' ? '+' : '-'}₵{transaction.amount.toFixed(2)}
+                        </p>
+                        <p className="text-xs text-gray-500 capitalize">{transaction.status}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 text-center">
+                  <Button variant="outline" size="sm">
+                    View All Transactions
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </TabsContent>

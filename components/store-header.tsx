@@ -2,7 +2,7 @@
 
 import { MapPin, Search, ChevronDown, ChevronLeft, Filter, Heart, Settings2 } from "lucide-react"
 import Image from "next/image"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +17,7 @@ import { SignupModal } from "@/components/signup-modal"
 import { EmptyState } from "@/components/empty-state"
 import { AuthNav } from "@/components/auth-nav"
 import { BranchPage } from "@/components/branch-page"
+import { SearchSection } from "@/components/search-section"
 import { calculateDistance } from "@/utils/distance"
 import { FavoritesSection } from "@/components/favorites-section"
 import { SettingsSection } from "@/components/settings-section"
@@ -24,9 +25,9 @@ import { getBranches, getCustomerDetails, updateFavorites } from "@/lib/api"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { LoadingSpinner } from "@/components/loading-spinner"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { GroceriesList } from "@/components/groceries-list";
+import { PharmacyList } from "@/components/pharmacy-list";
+import { FilterModal } from "@/components/FilterModal";
 
 interface Restaurant {
   restaurantName: string
@@ -165,12 +166,37 @@ export function StoreHeader() {
   const ORDERS_PER_PAGE = 10
   const [isBranchPageLoaded, setIsBranchPageLoaded] = useState(false)
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [filterRating, setFilterRating] = useState('all');
-  const [filterCategories, setFilterCategories] = useState<string[]>([]);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterOpenNow, setFilterOpenNow] = useState(false);
   const [filterDeliveryType, setFilterDeliveryType] = useState('all');
   const [filterSortBy, setFilterSortBy] = useState('best');
+  const [activeTab, setActiveTab] = useState("restaurants")
+
+  // FilterModal state variables
+  const [filterTypes, setFilterTypes] = useState<string[]>(['restaurant']);
+  const [filterCategories, setFilterCategories] = useState<string[]>([]);
+  const [filterRating, setFilterRating] = useState<string>('all');
+  const [filterDeliveryTime, setFilterDeliveryTime] = useState<number | null>(null);
+  const [filterPickup, setFilterPickup] = useState<boolean>(false);
+  const [isFilterLoading, setIsFilterLoading] = useState<boolean>(false);
+
+  // Category constants for FilterModal
+  const RESTAURANT_CATEGORIES = ['Italian', 'Chinese', 'Mexican', 'Indian', 'Thai', 'Japanese', 'American', 'French', 'Mediterranean', 'Korean', 'Vietnamese', 'Greek', 'Spanish', 'Lebanese', 'Turkish'];
+  const GROCERY_CATEGORIES = ['Fresh Produce', 'Dairy & Eggs', 'Meat & Poultry', 'Seafood', 'Bakery', 'Pantry', 'Frozen Foods', 'Beverages', 'Snacks', 'Health & Beauty', 'Household', 'Baby Care'];
+  const PHARMACY_CATEGORIES = ['Prescription', 'Over-the-Counter', 'Vitamins', 'First Aid', 'Personal Care', 'Baby & Child', 'Health Monitoring', 'Pain Relief', 'Allergy', 'Cold & Flu'];
+  const PAGE_SIZE = 5;
+
+  // Store and load activeTab from localStorage
+  useEffect(() => {
+    const savedTab = localStorage.getItem('selectedStoreType');
+    if (savedTab && ['restaurants', 'groceries', 'pharmacy'].includes(savedTab)) {
+      setActiveTab(savedTab);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('selectedStoreType', activeTab);
+  }, [activeTab]);
 
   useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
@@ -178,19 +204,28 @@ export function StoreHeader() {
   })
 
   useEffect(() => {
-    async function fetchBranchesData() {
+    async function fetchBranchesDirect() {
       try {
         setIsLoadingRestaurants(true);
-        const data = await getBranches<Branch[]>();
+        const apiUrl = process.env.NEXT_PUBLIC_BRANCHES_API;
+        if (!apiUrl) {
+          throw new Error('NEXT_PUBLIC_BRANCHES_API is not defined');
+        }
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        const data = await response.json();
         setBranches(data);
       } catch (error) {
-        console.error('Error fetching branches:', error);
+        console.error('Error fetching branches directly:', error);
       } finally {
         setIsLoadingRestaurants(false);
       }
     }
-
-    fetchBranchesData();
+    fetchBranchesDirect();
   }, []);
 
   useEffect(() => {
@@ -269,17 +304,18 @@ export function StoreHeader() {
   // Get unique cities for filter
   const cities = Array.from(new Set(branches.map(branch => branch.branchCity)))
 
-  // Filter branches by selected city
-  const filteredBranches = selectedCity === 'all' 
-    ? branches.filter(branch => {
-        const isActive = branch.active ?? true;
-        return isActive;
-      })
-    : branches.filter(branch => {
-        const isActive = branch.active ?? true;
-        const matchesCity = branch.branchCity === selectedCity;
-        return matchesCity && isActive;
-      });
+  // Filter branches by selected city and selected menu categories
+  const filteredBranches = useMemo(() => {
+    let result = selectedCity === 'all'
+      ? branches.filter(branch => branch.active ?? true)
+      : branches.filter(branch => (branch.active ?? true) && branch.branchCity === selectedCity);
+    if (filterCategories.length > 0) {
+      result = result.filter(branch =>
+        branch._menutable?.some(menu => filterCategories.includes(menu.name))
+      );
+    }
+    return result;
+  }, [branches, selectedCity, filterCategories]);
 
   // Filter branches by distance
   const filterBranchesByDistance = (branches: Branch[], userLat?: number, userLng?: number) => {
@@ -467,7 +503,7 @@ export function StoreHeader() {
     }
   }, []);
 
-  // Modify search input handler to save to localStorage
+  // Modify search input handler to save to localStorage and emit events for all tabs
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -476,6 +512,14 @@ export function StoreHeader() {
     } else {
       localStorage.removeItem('lastSearchQuery');
     }
+    
+    // Emit search events for grocery and pharmacy components regardless of active tab
+    window.dispatchEvent(new CustomEvent('grocerySearchUpdate', { 
+      detail: { query: value } 
+    }));
+    window.dispatchEvent(new CustomEvent('pharmacySearchUpdate', { 
+      detail: { query: value } 
+    }));
   };
 
   // Modify handleBackToStores to use router navigation
@@ -559,11 +603,11 @@ export function StoreHeader() {
   }
 
   const handleLoginClick = () => {
-    router.push('/login')
+    setIsLoginModalOpen(true)
   }
 
   const handleSignupClick = () => {
-    router.push('/signup')
+    setIsSignupModalOpen(true)
   }
 
   const handleHomeClick = () => {
@@ -688,8 +732,121 @@ export function StoreHeader() {
     )
   )).sort();
 
+  // Efficiently compute all unique menu categories (food types) from all branches
+  const allMenuCategories = useMemo(() => {
+    return Array.from(new Set(
+      branches.flatMap(branch =>
+        branch._menutable?.map(menu => menu.name) || []
+      )
+    )).filter(Boolean);
+  }, [branches]);
+
+  // Debug: Log branches and menu categories
+  useEffect(() => {
+    console.log('Branches:', branches);
+  }, [branches]);
+  useEffect(() => {
+    console.log('All Menu Categories:', allMenuCategories);
+  }, [allMenuCategories]);
+
   // Helper to filter out empty strings
   const nonEmpty = (arr: string[]) => arr.filter(Boolean);
+
+  const renderRestaurantList = () => (
+    <div className="container mx-auto px-4 py-6">
+      {/* Menu Categories Bar */}
+      {allMenuCategories.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
+          {allMenuCategories.map(category => (
+            <button
+              key={category}
+              className="px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm whitespace-nowrap hover:bg-orange-100 hover:text-orange-600 transition-colors"
+              type="button"
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      )}
+      {isLoadingRestaurants ? (
+        <div className="flex flex-col items-center justify-center py-16">
+          <LoadingSpinner 
+            size="lg"
+            color="orange"
+            text="Loading restaurants..."
+          />
+        </div>
+      ) : searchResults.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {searchResults.map((branch) => (
+            <Link
+              key={branch.id}
+              href={`/restaurants/${branch.slug}`}
+              onClick={(e) => {
+                e.preventDefault()
+                handleBranchSelect(branch)
+              }}
+              className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+            >
+              <button 
+                className={`absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
+                  likedBranches.has(branch.id) 
+                    ? 'text-orange-500 scale-110 hover:scale-105' 
+                    : 'text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105'
+                }`}
+                onClick={(e) => handleLikeToggle(branch.id, e)}
+                aria-label={likedBranches.has(branch.id) ? "Unlike restaurant" : "Like restaurant"}
+              >
+                <Heart className={`w-5 h-5 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
+              </button>
+              <div className="relative h-36">
+                <Image
+                  src={branch._restaurantTable[0].restaurantLogo.url}
+                  alt={branch._restaurantTable[0].restaurantName}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div className="p-4">
+                <h3 className="font-bold text-gray-900 truncate">
+                  {branch._restaurantTable[0].restaurantName}
+                </h3>
+                <span className="text-xs text-gray-600 truncate block">
+                  {branch.branchName}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-8">
+          {showExpandedSearch ? (
+            <div className="text-center">
+              <div className="mb-4">
+                <Search className="w-12 h-12 text-gray-400 mx-auto" />
+              </div>
+              <p className="text-gray-600 mb-4">
+                We found {filteredOutResults.length} {filteredOutResults.length === 1 ? 'restaurant' : 'restaurants'} matching your search, but they're a bit far from your location.
+              </p>
+              <button
+                onClick={handleExpandSearch}
+                className="text-orange-600 hover:text-orange-700 font-medium inline-flex items-center gap-2 border border-orange-600 rounded-md px-4 py-2 hover:bg-orange-50 transition-colors"
+              >
+                Click here to expand your search
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <EmptyState
+              title="No restaurants found"
+              description={searchQuery ? `We couldn't find any restaurants matching "${searchQuery}"` : "No restaurants available"}
+              icon="search"
+            />
+          )}
+        </div>
+      )}
+    </div>
+  )
 
   const renderContent = () => {
     if (isLoading && currentView === 'branch') {
@@ -847,255 +1004,68 @@ export function StoreHeader() {
       default:
         return (
           <div>
-            {/* Search and Store Content */}
-            <div className="border-b">
-              <div className="container mx-auto px-4 h-16 flex items-center justify-center">
-                <div className="flex items-center gap-2 md:gap-4 max-w-3xl w-full">
-                  {/* Location icon and formatted name on the left */}
-                  <button 
-                    onClick={() => setIsLocationModalOpen(true)} 
-                    className="flex items-center gap-1.5 hover:text-gray-600 p-2 rounded-full border border-gray-200 bg-white min-w-0"
-                    aria-label="Select delivery location"
-                  >
-                    <MapPin className="w-5 h-5 flex-shrink-0" />
-                    <span className="font-medium truncate max-w-[100px] md:max-w-[200px] hidden md:inline">{userLocation}</span>
-                  </button>
-                  <div className="flex-1 relative flex items-center">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search restaurants and stores"
-                      className="w-full pl-10 pr-16 py-2 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                      value={searchQuery}
-                      onChange={handleSearchChange}
-                    />
-                    {/* Filter button opens modal */}
-                    <button
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-full flex items-center gap-2 flex-shrink-0"
-                      onClick={() => setIsFilterModalOpen(true)}
-                      aria-label="Open filter options"
-                    >
-                      <Settings2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Search Section with Tabs */}
+            <SearchSection
+              onSearch={setSearchQuery}
+              userLocation={userLocation}
+              onLocationClick={() => setIsLocationModalOpen(true)}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onFilterClick={() => setIsFilterModalOpen(true)}
+            />
 
-            {/* Filter Modal */}
-            <Dialog open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
-              <DialogContent className="max-w-2xl p-0">
-                <div className="p-6">
-                  <DialogTitle className="mb-4">Filter Restaurants</DialogTitle>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Location */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
-                      <label className="block text-sm font-medium mb-1">City</label>
-                      <Select value={selectedCity} onValueChange={setSelectedCity}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="All Locations" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Locations</SelectItem>
-                          {nonEmpty(cities).map(city => (
-                            <SelectItem key={city} value={city}>{city}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {/* Rating */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
-                      <label className="block text-sm font-medium mb-1">Minimum Rating</label>
-                      <Select value={filterRating} onValueChange={setFilterRating}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="All" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All</SelectItem>
-                          <SelectItem value="4">4+ stars</SelectItem>
-                          <SelectItem value="3">3+ stars</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {/* Menu Categories */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2 md:col-span-2">
-                      <label className="block text-sm font-medium mb-1">Menu Categories</label>
-                      <div className="flex flex-wrap gap-2">
-                        {allCategories.map(category => (
-                          <button
-                            key={category}
-                            type="button"
-                            className={`px-3 py-1 rounded-full border text-sm ${filterCategories.includes(category) ? 'bg-orange-100 border-orange-400 text-orange-700' : 'bg-white border-gray-300 text-gray-700'}`}
-                            onClick={() => {
-                              if (filterCategories.includes(category)) {
-                                setFilterCategories(filterCategories.filter(c => c !== category));
-                              } else {
-                                setFilterCategories([...filterCategories, category]);
-                              }
-                            }}
-                          >
-                            {category}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    {/* Open Now Toggle */}
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex items-center gap-3 md:col-span-2">
-                      <Switch checked={filterOpenNow} onCheckedChange={setFilterOpenNow} id="open-now-switch" />
-                      <label htmlFor="open-now-switch" className="text-sm font-medium">Open Now</label>
-                    </div>
-                  </div>
-                  {/* Show More Filters */}
-                  <div className="mt-4 flex justify-end">
-                    <button
-                      type="button"
-                      className="text-orange-600 hover:underline text-sm font-medium"
-                      onClick={() => setShowAdvancedFilters(v => !v)}
-                    >
-                      {showAdvancedFilters ? 'Hide Advanced Filters' : 'Show More Filters'}
-                    </button>
-                  </div>
-                  {/* Advanced Filters */}
-                  {showAdvancedFilters && (
-                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Delivery Type */}
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
-                        <label className="block text-sm font-medium mb-1">Delivery Type</label>
-                        <div className="flex gap-4">
-                          <label className="flex items-center gap-1">
-                            <input type="radio" name="deliveryType" value="all" checked={filterDeliveryType === 'all'} onChange={() => setFilterDeliveryType('all')} />
-                            <span>All</span>
-                          </label>
-                          <label className="flex items-center gap-1">
-                            <input type="radio" name="deliveryType" value="delivery" checked={filterDeliveryType === 'delivery'} onChange={() => setFilterDeliveryType('delivery')} />
-                            <span>Delivery</span>
-                          </label>
-                          <label className="flex items-center gap-1">
-                            <input type="radio" name="deliveryType" value="pickup" checked={filterDeliveryType === 'pickup'} onChange={() => setFilterDeliveryType('pickup')} />
-                            <span>Pickup</span>
-                          </label>
-                        </div>
-                      </div>
-                      {/* Sort By */}
-                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col gap-2">
-                        <label className="block text-sm font-medium mb-1">Sort By</label>
-                        <Select value={filterSortBy} onValueChange={setFilterSortBy}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Best Match" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="best">Best Match</SelectItem>
-                            <SelectItem value="rating">Rating</SelectItem>
-                            <SelectItem value="distance">Distance</SelectItem>
-                            <SelectItem value="delivery">Delivery Time</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  )}
-                  <div className="mt-6 flex justify-end gap-2">
-                    <button
-                      className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium"
-                      onClick={() => setIsFilterModalOpen(false)}
-                      type="button"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="px-4 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 text-sm font-medium"
-                      onClick={() => setIsFilterModalOpen(false)}
-                      type="button"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+            {/* Advanced Filter Modal */}
+            <FilterModal
+              open={isFilterModalOpen}
+              onOpenChange={setIsFilterModalOpen}
+              filterTypes={filterTypes}
+              setFilterTypes={setFilterTypes}
+              filterCategories={filterCategories}
+              setFilterCategories={setFilterCategories}
+              filterRating={filterRating}
+              setFilterRating={setFilterRating}
+              filterDeliveryTime={filterDeliveryTime}
+              setFilterDeliveryTime={setFilterDeliveryTime}
+              filterPickup={filterPickup}
+              setFilterPickup={setFilterPickup}
+              foodPage={0}
+              setFoodPage={() => {}}
+              groceryPage={0}
+              setGroceryPage={() => {}}
+              pharmacyPage={0}
+              setPharmacyPage={() => {}}
+              RESTAURANT_CATEGORIES={RESTAURANT_CATEGORIES}
+              GROCERY_CATEGORIES={GROCERY_CATEGORIES}
+              PHARMACY_CATEGORIES={PHARMACY_CATEGORIES}
+              PAGE_SIZE={PAGE_SIZE}
+              isLoading={isFilterLoading}
+              onApply={async () => {
+                setIsFilterLoading(true);
+                try {
+                  // Small delay to show loading state
+                  await new Promise(resolve => setTimeout(resolve, 800));
+                  
+                  const params = new URLSearchParams();
+                  if (filterRating && filterRating !== 'all') params.append('rating', filterRating);
+                  if (filterCategories.length > 0) params.append('category', filterCategories.join(','));
+                  if (filterDeliveryTime) params.append('deliveryTime', filterDeliveryTime.toString());
+                  if (filterTypes.length > 0) params.append('type', filterTypes.join(','));
+                  
+                  router.push(`/results?${params.toString()}`);
+                  setIsFilterModalOpen(false);
+                } catch (error) {
+                  console.error('Error applying filters:', error);
+                } finally {
+                  setIsFilterLoading(false);
+                }
+              }}
+            />
 
-            {/* Store Listings */}
-            <div className="container mx-auto px-4 py-6">
-              {isLoadingRestaurants ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <LoadingSpinner 
-                    size="lg"
-                    color="orange"
-                    text="Loading restaurants..."
-                  />
-                </div>
-              ) : searchResults.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {searchResults.map((branch) => (
-                    <Link
-                      key={branch.id}
-                      href={`/restaurants/${branch.slug}`}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        handleBranchSelect(branch)
-                      }}
-                      className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
-                    >
-                      <button 
-                        className={`absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
-                          likedBranches.has(branch.id) 
-                            ? 'text-orange-500 scale-110 hover:scale-105' 
-                            : 'text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105'
-                        }`}
-                        onClick={(e) => handleLikeToggle(branch.id, e)}
-                        aria-label={likedBranches.has(branch.id) ? "Unlike restaurant" : "Like restaurant"}
-                      >
-                        <Heart className={`w-5 h-5 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
-                      </button>
-                      <div className="relative h-36">
-                        <Image
-                          src={branch._restaurantTable[0].restaurantLogo.url}
-                          alt={branch._restaurantTable[0].restaurantName}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-bold text-gray-900 truncate">
-                          {branch._restaurantTable[0].restaurantName}
-                        </h3>
-                        <span className="text-xs text-gray-600 truncate block">
-                          {branch.branchName}
-                        </span>
-                        <div className="flex items-center gap-1 mt-2 text-sm text-gray-600">
-                          <MapPin className="w-4 h-4" />
-                          <span className="truncate">{branch.branchLocation}</span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8">
-                  {showExpandedSearch ? (
-                    <div className="text-center">
-                      <div className="mb-4">
-                        <Search className="w-12 h-12 text-gray-400 mx-auto" />
-                      </div>
-                      <p className="text-gray-600 mb-4">
-                        We found {filteredOutResults.length} {filteredOutResults.length === 1 ? 'restaurant' : 'restaurants'} matching your search, but they're a bit far from your location.
-                      </p>
-                      <button
-                        onClick={handleExpandSearch}
-                        className="text-orange-600 hover:text-orange-700 font-medium inline-flex items-center gap-2 border border-orange-600 rounded-md px-4 py-2 hover:bg-orange-50 transition-colors"
-                      >
-                        Click here to expand your search
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <EmptyState
-                      title="No restaurants found"
-                      description={searchQuery ? `We couldn't find any restaurants matching "${searchQuery}"` : "No restaurants available"}
-                      icon="search"
-                    />
-                  )}
-                </div>
-              )}
+                        {/* Tab Content */}
+            <div className="container mx-auto px-4 py-4">
+              {activeTab === "restaurants" && renderRestaurantList()}
+              {activeTab === "groceries" && <GroceriesList />}
+              {activeTab === "pharmacy" && <PharmacyList />}
             </div>
           </div>
         )
@@ -1130,17 +1100,23 @@ export function StoreHeader() {
       />
 
       <LoginModal
-        isOpen={false}
-        onClose={() => {}}
-        onSwitchToSignup={() => {}}
-        onLoginSuccess={() => {}}
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSwitchToSignup={() => {
+          setIsLoginModalOpen(false)
+          setIsSignupModalOpen(true)
+        }}
+        onLoginSuccess={handleLoginSuccess}
       />
 
       <SignupModal
-        isOpen={false}
-        onClose={() => {}}
-        onLoginClick={() => {}}
-        onSignupSuccess={() => {}}
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
+        onLoginClick={() => {
+          setIsSignupModalOpen(false)
+          setIsLoginModalOpen(true)
+        }}
+        onSignupSuccess={handleLoginSuccess}
       />
     </div>
   )

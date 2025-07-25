@@ -291,18 +291,18 @@ export function AuthNav({
                 </>
               ) : (
                 <div className="flex items-center gap-3">
-                  <a
-                    href="/login"
+                  <button
+                    onClick={onLoginClick}
                     className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded transition font-medium"
                   >
                     Login
-                  </a>
-                  <a
-                    href="/signup"
+                  </button>
+                  <button
+                    onClick={onSignupClick}
                     className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded transition font-medium"
                   >
                     Sign up
-                  </a>
+                  </button>
                 </div>
               )}
             </div>

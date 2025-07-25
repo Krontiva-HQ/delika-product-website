@@ -1,6 +1,6 @@
 import React, { useEffect } from "react"
 import { useState } from "react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { LoadingSpinner } from "@/components/loading-spinner"
 
 interface InventoryModalProps {
@@ -127,10 +127,14 @@ export default function InventoryModal({ open, onClose, item, editMode }: Invent
   return (
     <Dialog open={open} onOpenChange={open => { if (!open) onClose() }}>
       <DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] md:w-[70vw] max-w-5xl z-50 bg-white p-6 rounded-lg shadow-lg border">
-        <button className="float-right" onClick={onClose}>×</button>
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold mb-4">
+            {step === 1 ? "Step 1: Prelim Data" : "Step 2: Search & Add Items"}
+          </DialogTitle>
+          <button className="absolute right-4 top-4" onClick={onClose}>×</button>
+        </DialogHeader>
         {step === 1 && (
           <div>
-            <h2 className="text-xl font-bold mb-4">Step 1: Prelim Data</h2>
             <input
               className="border p-2 mb-2 w-full"
               placeholder="Restaurant Name"
@@ -177,7 +181,6 @@ export default function InventoryModal({ open, onClose, item, editMode }: Invent
         )}
         {step === 2 && !editMode && (
           <div>
-            <h2 className="text-xl font-bold mb-4">Step 2: Search & Add Items</h2>
             <input
               className="border p-2 mb-2 w-full"
               placeholder="Search items..."

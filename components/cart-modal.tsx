@@ -37,6 +37,9 @@ interface CartModalProps {
   }>
   isAuthenticated: boolean
   branchLocation?: { latitude: number; longitude: number }
+  onLoginClick?: () => void
+  onCheckout?: () => void
+  storeType?: 'restaurant' | 'pharmacy' | 'grocery'
 }
 
 export function CartModal({
@@ -51,7 +54,10 @@ export function CartModal({
   branchName,
   menuCategories,
   isAuthenticated,
-  branchLocation
+  branchLocation,
+  onLoginClick,
+  onCheckout,
+  storeType = 'restaurant'
 }: CartModalProps) {
   const router = useRouter()
   const [isProcessingAuth, setIsProcessingAuth] = useState(false)
@@ -85,7 +91,12 @@ export function CartModal({
         setIsLoadingDelivery(true)
         const locationData = localStorage.getItem('userLocationData')
         
+        console.log('[Delivery Calculation] Starting delivery fee calculation');
+        console.log('[Delivery Calculation] Branch location prop:', branchLocation);
+        console.log('[Delivery Calculation] Raw user location data:', locationData);
+        
         if (!locationData || !branchLocation) {
+          console.log('[Delivery Calculation] Missing location data - locationData:', !!locationData, 'branchLocation:', !!branchLocation);
           setIsLoadingDelivery(false)
           return
         }
@@ -94,15 +105,19 @@ export function CartModal({
         const branchLat = parseFloat(branchLocation.latitude.toString())
         const branchLng = parseFloat(branchLocation.longitude.toString())
         
+        console.log('[Delivery Calculation] User coordinates:', { lat, lng });
+        console.log('[Delivery Calculation] Branch coordinates:', { branchLat, branchLng });
+        
         const distance = await calculateDistance(
           { latitude: lat, longitude: lng },
           { latitude: branchLat, longitude: branchLng }
         )
         
+        console.log('[Delivery Calculation] Calculated distance:', distance, 'km');
         setDistance(distance)
 
-        // Get delivery prices from API
-        const { riderFee: newRiderFee, pedestrianFee: newPedestrianFee } = await calculateDeliveryPrices({
+        // Prepare the payload for delivery price calculation
+        const deliveryPayload = {
           pickup: {
             fromLatitude: branchLat.toString(),
             fromLongitude: branchLng.toString(),
@@ -113,21 +128,31 @@ export function CartModal({
           },
           rider: true,
           pedestrian: true
-        });
+        };
+        
+        console.log('[Delivery Calculation] Payload being sent to delivery API:', JSON.stringify(deliveryPayload, null, 2));
 
+        // Get delivery prices from API
+        const { riderFee: newRiderFee, pedestrianFee: newPedestrianFee } = await calculateDeliveryPrices(deliveryPayload);
+
+        console.log('[Delivery Calculation] API response - Rider fee:', newRiderFee, 'Pedestrian fee:', newPedestrianFee);
+        
         setRiderFee(newRiderFee)
         setPedestrianFee(newPedestrianFee)
         
         // If distance > 2km and pedestrian is selected, switch to rider
         if (distance > 2 && deliveryType === 'pedestrian') {
+          console.log('[Delivery Calculation] Distance > 2km, switching from pedestrian to rider');
           setDeliveryType('rider')
           setDeliveryFee(newRiderFee)
         } else {
           // Set the fee based on the selected delivery type
           const currentFee = deliveryType === 'rider' ? newRiderFee : newPedestrianFee
+          console.log('[Delivery Calculation] Setting delivery fee for', deliveryType, ':', currentFee);
           setDeliveryFee(currentFee)
         }
       } catch (error) {
+        console.error('[Delivery Calculation] Error calculating delivery fee:', error);
         // Handle error silently
       } finally {
         setIsLoadingDelivery(false)
@@ -164,32 +189,68 @@ export function CartModal({
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
-      setIsProcessingAuth(true)
-      localStorage.setItem('loginRedirectUrl', `/checkout/${branchId}`)
+      // Store checkout data for after login
+      const redirectUrl = getCheckoutUrl()
+      localStorage.setItem('loginRedirectUrl', redirectUrl)
       localStorage.setItem('selectedDeliveryType', deliveryType)
       localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
       localStorage.setItem('checkoutPlatformFee', platformFee.toString())
       // Store cart items with extras in localStorage
       localStorage.setItem('checkoutCartItems', JSON.stringify(cart))
+      
+      // Close cart modal and open login modal
       onClose()
-      router.push('/login')
+      if (onLoginClick) {
+        onLoginClick()
+      } else {
+        // Fallback to router navigation if onLoginClick is not provided
+        setIsProcessingAuth(true)
+        router.push('/login')
+      }
       return
     }
+    
     // Store delivery type, delivery fee, and platform fee
     localStorage.setItem('selectedDeliveryType', deliveryType)
     localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
     localStorage.setItem('checkoutPlatformFee', platformFee.toString())
     // Store cart items with extras in localStorage
     localStorage.setItem('checkoutCartItems', JSON.stringify(cart))
-    router.push(`/checkout/${branchId}`)
-    onClose()
+    
+    if (onCheckout) {
+      // Use custom checkout handler if provided
+      onClose()
+      onCheckout()
+    } else {
+      // Navigate to appropriate checkout page
+      const checkoutUrl = getCheckoutUrl()
+      router.push(checkoutUrl)
+      onClose()
+    }
+  }
+
+  const getCheckoutUrl = () => {
+    switch (storeType) {
+      case 'pharmacy':
+        return `/checkout/pharmacy/${branchId}`
+      case 'grocery':
+        return `/checkout/grocery/${branchId}`
+      case 'restaurant':
+      default:
+        return `/checkout/${branchId}`
+    }
   }
 
   const hasUnavailableItems = cart.some(item => {
+    // If menuCategories is empty, fall back to item.available
+    if (!menuCategories || menuCategories.length === 0) {
+      return item.available === false;
+    }
     const menuItem = menuCategories
       .flatMap(cat => cat.foods)
-      .find(food => food.name === item.name)
-    return !menuItem?.available
+      .find(food => food.name === item.name);
+    // If menuItem is found, use its available, else fallback to item.available
+    return menuItem ? menuItem.available === false : item.available === false;
   })
 
   return (
@@ -211,38 +272,79 @@ export function CartModal({
           <>
             <div className="px-6 space-y-4 overflow-y-auto flex-1 py-6">
               {hasUnavailableItems && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-800">
-                    Some items in your cart are no longer available. Please remove them to proceed with checkout.
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-amber-800">
+                      Some items in your cart are no longer available. <strong>Click the red trash icon</strong> to remove them and proceed with checkout.
+                    </div>
                   </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-red-600 border-red-200 hover:bg-red-50 flex-shrink-0"
+                    onClick={() => {
+                      // Remove all unavailable items
+                      const unavailableItems = cart.filter(item => {
+                        if (!menuCategories || menuCategories.length === 0) {
+                          return item.available === false;
+                        }
+                        const menuItem = menuCategories
+                          .flatMap(cat => cat.foods)
+                          .find(food => food.name === item.name);
+                        return menuItem ? menuItem.available === false : item.available === false;
+                      });
+                      unavailableItems.forEach(item => {
+                        // Use different key formats based on store type
+                        if (storeType === 'restaurant') {
+                          // Generate cart item key for restaurants with extras
+                          const extrasKey = item.selectedExtras && item.selectedExtras.length > 0
+                            ? JSON.stringify([...item.selectedExtras].sort((a, b) => a.id.localeCompare(b.id)))
+                            : '';
+                          const cartItemKey = `${item.id}__${extrasKey}`;
+                          onDeleteItem(cartItemKey);
+                        } else {
+                          // Simple ID for pharmacy and grocery
+                          onDeleteItem(item.id);
+                        }
+                      });
+                    }}
+                  >
+                    Remove All
+                  </Button>
                 </div>
               )}
               
               <AnimatePresence>
                 {cart.map((item, index) => {
-                  const menuItem = menuCategories
-                    .flatMap(cat => cat.foods)
-                    .find(food => food.name === item.name);
-
+                  // If menuCategories is empty, use item.available; else use menuItem.available if found, else fallback to item.available
+                  let isAvailable = true;
+                  if (!menuCategories || menuCategories.length === 0) {
+                    isAvailable = item.available !== false;
+                  } else {
+                    const menuItem = menuCategories
+                      .flatMap(cat => cat.foods)
+                      .find(food => food.name === item.name);
+                    isAvailable = menuItem ? menuItem.available !== false : item.available !== false;
+                  }
                   return (
                     <motion.div
                       key={`${item.id}-${index}`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -100 }}
-                      className={`flex gap-4 p-4 rounded-xl border ${!menuItem?.available ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-100'}`}
+                      className={`flex gap-4 p-4 rounded-xl border ${!isAvailable ? 'bg-gray-50 border-gray-200 opacity-75' : 'bg-white border-gray-100'}`}
                     >
-                      <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                                              <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
                         {item.image ? (
                           <Image
                             src={item.image}
                             alt={item.name}
                             fill
-                            className={`object-cover ${!menuItem?.available ? 'grayscale' : ''}`}
+                            className={`object-cover ${!isAvailable ? 'grayscale' : ''}`}
                           />
                         ) : (
-                          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                          <div className={`w-full h-full bg-gray-100 flex items-center justify-center ${!isAvailable ? 'grayscale' : ''}`}>
                             <ShoppingCart className="w-6 h-6 text-gray-400" />
                           </div>
                         )}
@@ -251,20 +353,33 @@ export function CartModal({
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
-                            {menuItem?.available === false && (
+                            {!isAvailable && (
                               <span className="text-xs text-red-500 font-medium">No longer available</span>
                             )}
                           </div>
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
-                            onClick={() => onDeleteItem(item.id)}
+                            className={`h-8 w-8 ${!isAvailable ? 'text-red-500 hover:text-red-600 hover:bg-red-100 border border-red-200' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
+                            onClick={() => {
+                              // Use different key formats based on store type
+                              if (storeType === 'restaurant') {
+                                // Generate cart item key for restaurants with extras
+                                const extrasKey = item.selectedExtras && item.selectedExtras.length > 0
+                                  ? JSON.stringify([...item.selectedExtras].sort((a, b) => a.id.localeCompare(b.id)))
+                                  : '';
+                                const cartItemKey = `${item.id}__${extrasKey}`;
+                                onDeleteItem(cartItemKey);
+                              } else {
+                                // Simple ID for pharmacy and grocery
+                                onDeleteItem(item.id);
+                              }
+                            }}
+                            title={!isAvailable ? "Remove unavailable item" : "Remove item"}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                        
                         {/* Extras Section */}
                         {item.selectedExtras && item.selectedExtras.length > 0 && (
                           <div className="mt-2 pl-2 space-y-1 border-l-2 border-gray-200">
@@ -283,7 +398,6 @@ export function CartModal({
                             </div>
                           </div>
                         )}
-
                         <div className="flex items-center justify-between mt-3">
                           <span className="font-medium">GH₵ {((parseFloat(item.price) + (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0)) * item.quantity).toFixed(2)}</span>
                           <div className="flex items-center gap-3 bg-gray-50 rounded-full p-1">
@@ -291,8 +405,21 @@ export function CartModal({
                               size="icon"
                               variant="ghost"
                               className="h-7 w-7 rounded-full"
-                              onClick={() => onRemoveItem(item.id)}
-                              disabled={!menuItem?.available}
+                              onClick={() => {
+                                // Use different key formats based on store type
+                                if (storeType === 'restaurant') {
+                                  // Generate cart item key for restaurants with extras
+                                  const extrasKey = item.selectedExtras && item.selectedExtras.length > 0
+                                    ? JSON.stringify([...item.selectedExtras].sort((a, b) => a.id.localeCompare(b.id)))
+                                    : '';
+                                  const cartItemKey = `${item.id}__${extrasKey}`;
+                                  onRemoveItem(cartItemKey);
+                                } else {
+                                  // Simple ID for pharmacy and grocery
+                                  onRemoveItem(item.id);
+                                }
+                              }}
+                              disabled={!isAvailable}
                             >
                               <Minus className="h-4 w-4" />
                             </Button>
@@ -301,8 +428,21 @@ export function CartModal({
                               size="icon"
                               variant="ghost"
                               className="h-7 w-7 rounded-full"
-                              onClick={() => onAddItem(item.id)}
-                              disabled={!menuItem?.available}
+                              onClick={() => {
+                                // Use different key formats based on store type
+                                if (storeType === 'restaurant') {
+                                  // Generate cart item key for restaurants with extras
+                                  const extrasKey = item.selectedExtras && item.selectedExtras.length > 0
+                                    ? JSON.stringify([...item.selectedExtras].sort((a, b) => a.id.localeCompare(b.id)))
+                                    : '';
+                                  const cartItemKey = `${item.id}__${extrasKey}`;
+                                  onAddItem(cartItemKey);
+                                } else {
+                                  // Simple ID for pharmacy and grocery
+                                  onAddItem(item.id);
+                                }
+                              }}
+                              disabled={!isAvailable}
                             >
                               <Plus className="h-4 w-4" />
                             </Button>
