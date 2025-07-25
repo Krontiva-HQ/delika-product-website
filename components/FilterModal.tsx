@@ -78,16 +78,12 @@ export function FilterModal({
                   key={type.value}
                   type="button"
                   className={`px-5 py-2 rounded-xl font-medium bg-gray-100 ${
-                    filterTypes.includes(type.value)
+                    filterTypes[0] === type.value
                       ? "ring-2 ring-orange-500 bg-orange-50"
                       : ""
                   }`}
                   onClick={() => {
-                    setFilterTypes((prev: string[]) =>
-                      prev.includes(type.value)
-                        ? prev.filter((t) => t !== type.value)
-                        : [...prev, type.value]
-                    );
+                    setFilterTypes([type.value]);
                   }}
                 >
                   {type.label}

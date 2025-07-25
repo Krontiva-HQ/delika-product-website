@@ -58,6 +58,14 @@ interface Branch {
       quantity: number;
     }[];
   }[];
+  _itemsmenu?: {
+    name: string;
+    foods: {
+      name: string;
+      price: number;
+      quantity: number;
+    }[];
+  }[];
 }
 
 type Libraries = ("places" | "geocoding")[]
@@ -317,24 +325,6 @@ export function StoreHeader() {
     return result;
   }, [branches, selectedCity, filterCategories]);
 
-  // Filter branches by distance
-  const filterBranchesByDistance = (branches: Branch[], userLat?: number, userLng?: number) => {
-    if (!userLat || !userLng) return branches;
-
-    return branches.filter(branch => {
-      const isActive = branch.active ?? true;
-      if (!isActive) return false;
-      
-      const distance = calculateDistance(
-        userLat,
-        userLng,
-        parseFloat(branch.branchLatitude),
-        parseFloat(branch.branchLongitude)
-      );
-      return distance <= searchRadius;
-    });
-  };
-
   // Add useEffect to handle filtered results
   useEffect(() => {
     if (!userCoordinates || !searchQuery) {
@@ -377,22 +367,23 @@ export function StoreHeader() {
     }
   }, [currentView]);
 
-  // Further filter by search query
+  // Update searchResults logic to include food name matches
   const searchResults = searchQuery
-    ? filterBranchesByDistance(
-        filteredBranches.filter(branch => 
-          branch.branchName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          branch._restaurantTable[0]?.restaurantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          branch.branchLocation.toLowerCase().includes(searchQuery.toLowerCase())
-        ),
-        userCoordinates?.lat,
-        userCoordinates?.lng
-      )
-    : filterBranchesByDistance(
-        filteredBranches,
-        userCoordinates?.lat,
-        userCoordinates?.lng
-      )
+    ? filteredBranches.filter(branch => {
+        const query = searchQuery.toLowerCase();
+        const branchMatch =
+          branch.branchName?.toLowerCase().includes(query) ||
+          branch._restaurantTable?.[0]?.restaurantName?.toLowerCase().includes(query) ||
+          branch.branchLocation?.toLowerCase().includes(query);
+        // Check all food names in _itemsmenu
+        const foodMatch = branch._itemsmenu?.some((menu: any) =>
+          menu.foods?.some((food: any) =>
+            food.name?.toLowerCase().includes(query)
+          )
+        );
+        return branchMatch || foodMatch;
+      })
+    : filteredBranches;
 
   const handleLocationSelect = ({ address, lat, lng }: { address: string; lat: number; lng: number }) => {
     console.log('StoreHeader location selected:', { address, lat, lng })
@@ -1012,6 +1003,7 @@ export function StoreHeader() {
               activeTab={activeTab}
               onTabChange={setActiveTab}
               onFilterClick={() => setIsFilterModalOpen(true)}
+              branches={branches}
             />
 
             {/* Advanced Filter Modal */}

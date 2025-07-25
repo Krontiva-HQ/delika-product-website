@@ -90,67 +90,8 @@ export function GroceriesList() {
       )
     : branches;
 
-  // Filter branches by distance and activity status
-  const filterBranchesByDistance = (branches: GroceryBranch[], userLat?: number, userLng?: number, radius: number = 8) => {
-    console.log(`\n[Distance Filter] Starting distance calculations for ${branches.length} grocery branches`);
-    console.log(`[Distance Filter] User Location: ${userLat}, ${userLng}`);
-    console.log(`[Distance Filter] Search Radius: ${radius}km\n`);
-
-    if (!userLat || !userLng) {
-      console.log('[Distance Filter] No user coordinates, returning active branches only');
-      return branches.filter(branch => branch.active !== false);
-    }
-
-    return branches.filter(branch => {
-      console.log(`\n[Branch] Processing ${branch.grocerybranchName}`);
-      console.log(`[Branch] Active status:`, branch.active);
-      console.log(`[Branch] Raw coordinates - Lat: ${branch.grocerybranchLatitude}, Lng: ${branch.grocerybranchLongitude}`);
-      
-      // Check active status first
-      const isActive = branch.active !== false;
-      if (!isActive) {
-        console.log('[Branch] Excluded - Branch is inactive');
-        return false;
-      }
-      
-      const branchLat = parseFloat(branch.grocerybranchLatitude.toString());
-      const branchLng = parseFloat(branch.grocerybranchLongitude.toString());
-      
-      console.log(`[Branch] Parsed coordinates - Lat: ${branchLat}, Lng: ${branchLng}`);
-      
-      if (isNaN(branchLat) || isNaN(branchLng)) {
-        console.log('[Branch] Excluded - Invalid coordinates');
-        return false;
-      }
-      
-      const distance = calculateDistance(
-        userLat,
-        userLng,
-        branchLat,
-        branchLng
-      );
-
-      console.log(`[Branch] Calculated distance: ${distance.toFixed(2)}km`);
-      const isWithinRadius = distance <= radius;
-      console.log(`[Branch] Within ${radius}km radius: ${isWithinRadius}`);
-      
-      if (!isWithinRadius) {
-        console.log('[Branch] Excluded - Outside radius');
-      } else {
-        console.log('[Branch] Included - Active and within radius');
-      }
-      
-      return isWithinRadius;
-    });
-  };
-
-  // Get filtered results within radius
-  const filteredBranches = filterBranchesByDistance(
-    searchFilteredBranches,
-    userCoordinates?.lat,
-    userCoordinates?.lng,
-    searchRadius
-  );
+  // Remove or bypass filterBranchesByDistance for main search results
+  const filteredBranches = searchFilteredBranches;
 
   // Handle expanded search for branches outside 8km but within 15km
   useEffect(() => {
