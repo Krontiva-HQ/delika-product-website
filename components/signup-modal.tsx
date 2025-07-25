@@ -8,8 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OTPInputModal } from "@/components/otp-input-modal"
 import { Eye, EyeOff } from "lucide-react"
 import { authRequest, AuthResponse, OTPResponse, UserData } from "@/lib/api"
-import LocationInput from "@/components/location-input"
-import { DeliveryLocationData } from "@/components/location"
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -31,22 +29,12 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
   const [userData, setUserData] = useState<UserData | null>(null)
   const [signupMethod, setSignupMethod] = useState<'email' | 'phone'>('email')
   const [isLoading, setIsLoading] = useState(false)
-  const [locationData, setLocationData] = useState<DeliveryLocationData | null>(null)
   const [otpError, setOtpError] = useState<string>("")
-
-  const handleLocationSelect = (location: DeliveryLocationData) => {
-    setLocationData(location)
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (password !== confirmPassword) {
       alert("Passwords don't match")
-      return
-    }
-
-    if (!locationData) {
-      alert("Please select your location")
       return
     }
 
@@ -64,24 +52,12 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
             email, 
             password, 
             fullName,
-            role: 'Customer',
-            location: {
-              lat: locationData.latitude.toString(),
-              long: locationData.longitude.toString()
-            },
-            address: locationData.address,
-            city: locationData.city
+            role: 'Customer'
           }
         : { 
             phoneNumber: phone, 
             fullName,
-            role: 'Customer',
-            location: {
-              lat: locationData.latitude.toString(),
-              long: locationData.longitude.toString()
-            },
-            address: locationData.address,
-            city: locationData.city
+            role: 'Customer'
           }
 
       const response = await fetch(endpoint!, {
@@ -272,13 +248,6 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
                   </button>
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Location</label>
-                <LocationInput
-                  label="Delivery"
-                  onLocationSelect={handleLocationSelect}
-                />
-              </div>
               <Button 
                 type="submit" 
                 className="w-full bg-orange-500 hover:bg-orange-600"
@@ -315,13 +284,6 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Location</label>
-                <LocationInput
-                  label="Delivery"
-                  onLocationSelect={handleLocationSelect}
                 />
               </div>
               <Button 

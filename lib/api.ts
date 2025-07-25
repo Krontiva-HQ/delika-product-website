@@ -678,7 +678,17 @@ export async function calculateDeliveryPrices(params: {
   };
   rider: boolean;
   pedestrian: boolean;
-}) {
+  total?: number;
+  subTotal?: number;
+  userId?: string;
+}): Promise<{
+  riderFee: number;
+  pedestrianFee: number;
+  platformFee: number;
+  delikaBalance: number;
+  distance: number;
+  amountToBePaid: number;
+}> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_DELIVERY_PRICE || "https://api-server.krontiva.africa/api:uEBBwbSs/calculate/delivery/price"
 
@@ -699,13 +709,18 @@ export async function calculateDeliveryPrices(params: {
 
     const data = await response.json();
 
-    if (!data.riderFee && !data.pedestrianFee) {
-      throw new Error("Invalid API response - missing fee data");
+    if ((!data.riderFee && !data.pedestrianFee) || data.platformFee === undefined) {
+      console.error("API Response validation failed:", data);
+      throw new Error("Invalid API response - missing required fee data (riderFee, pedestrianFee, or platformFee)");
     }
 
     return {
       riderFee: data.riderFee,
       pedestrianFee: data.pedestrianFee,
+      platformFee: data.platformFee || 0, // Get from API response
+      delikaBalance: data.delikaBalance || 0,
+      distance: data.distance || 0,
+      amountToBePaid: data.amountToBePaid || 0,
     };
   } catch (error) {
     throw error; // Re-throw the error to be handled by the calling component

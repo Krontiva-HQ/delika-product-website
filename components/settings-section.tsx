@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/use-toast"
+import { getCustomerDetails } from "@/lib/api"
 import { 
   User, 
   MapPin, 
@@ -22,8 +23,6 @@ import {
   EyeOff,
   Settings as SettingsIcon,
   Wallet,
-  Plus,
-  Minus,
   History,
   ArrowUpRight,
   ArrowDownLeft
@@ -39,6 +38,7 @@ export function SettingsSection({ userData, onUserDataUpdate }: SettingsSectionP
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false)
   
   // Profile state
   const [profileData, setProfileData] = useState({
@@ -76,12 +76,106 @@ export function SettingsSection({ userData, onUserDataUpdate }: SettingsSectionP
     twoFactorEnabled: localStorage.getItem('twoFactorEnabled') === 'true',
   })
 
-  // Wallet state
+  // Wallet state - start with 0, will be updated from API
   const [walletData, setWalletData] = useState({
-    balance: parseFloat(localStorage.getItem('delikaBalance') || '0'),
-    addAmount: "",
-    withdrawAmount: "",
+    balance: 0,
   })
+
+  // Helper function to safely convert values to numbers
+  const toNumber = (value: any): number => {
+    if (typeof value === 'number' && !isNaN(value)) return value;
+    const parsed = parseFloat(value?.toString());
+    return isNaN(parsed) ? 0 : parsed;
+  }
+
+  // Fetch delikaBalance from customer details API
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      if (!userData?.id) {
+        // If no user ID, try to get from localStorage
+        try {
+          const storedUserData = localStorage.getItem('userData');
+          if (!storedUserData) {
+            console.log('[Settings] No user data available');
+            return;
+          }
+          
+          const parsedUserData = JSON.parse(storedUserData);
+          if (!parsedUserData.id) {
+            console.log('[Settings] No user ID found in stored data');
+            return;
+          }
+
+          setIsLoadingBalance(true);
+          console.log('[Settings] Fetching wallet balance for user:', parsedUserData.id);
+          
+          const customerDetails = await getCustomerDetails(parsedUserData.id);
+          console.log('[Settings] Customer details response:', customerDetails);
+          
+          // Extract delikaBalance from API response
+          const balance = customerDetails.delikaBalance || 
+                         customerDetails.walletBalance || 
+                         customerDetails.balance || 
+                         customerDetails.customerTable?.[0]?.delikaBalance ||
+                         customerDetails.customerTable?.[0]?.walletBalance ||
+                         0;
+          
+          const numericBalance = toNumber(balance);
+          console.log('[Settings] Extracted delikaBalance:', balance, '-> Converted to numeric:', numericBalance);
+          
+          setWalletData({ balance: numericBalance });
+          
+          // Also update localStorage for other components
+          localStorage.setItem('delikaBalance', numericBalance.toString());
+          
+        } catch (error) {
+          console.error('[Settings] Error fetching wallet balance:', error);
+          // Fallback to localStorage
+          const fallbackBalance = parseFloat(localStorage.getItem('delikaBalance') || '0');
+          console.log('[Settings] Fallback to localStorage balance:', fallbackBalance);
+          setWalletData({ balance: fallbackBalance });
+        } finally {
+          setIsLoadingBalance(false);
+        }
+      } else {
+        // If we have userData with ID, use it directly
+        try {
+          setIsLoadingBalance(true);
+          console.log('[Settings] Fetching wallet balance for user:', userData.id);
+          
+          const customerDetails = await getCustomerDetails(userData.id);
+          console.log('[Settings] Customer details response:', customerDetails);
+          
+          // Extract delikaBalance from API response
+          const balance = customerDetails.delikaBalance || 
+                         customerDetails.walletBalance || 
+                         customerDetails.balance || 
+                         customerDetails.customerTable?.[0]?.delikaBalance ||
+                         customerDetails.customerTable?.[0]?.walletBalance ||
+                         0;
+          
+          const numericBalance = toNumber(balance);
+          console.log('[Settings] Extracted delikaBalance:', balance, '-> Converted to numeric:', numericBalance);
+          
+          setWalletData({ balance: numericBalance });
+          
+          // Also update localStorage for other components
+          localStorage.setItem('delikaBalance', numericBalance.toString());
+          
+        } catch (error) {
+          console.error('[Settings] Error fetching wallet balance:', error);
+          // Fallback to localStorage
+          const fallbackBalance = parseFloat(localStorage.getItem('delikaBalance') || '0');
+          console.log('[Settings] Fallback to localStorage balance:', fallbackBalance);
+          setWalletData({ balance: fallbackBalance });
+        } finally {
+          setIsLoadingBalance(false);
+        }
+      }
+    };
+
+    fetchWalletBalance();
+  }, [userData?.id]); // Re-fetch when user ID changes
 
   // Mock transaction history
   const [transactions] = useState([
@@ -180,93 +274,7 @@ export function SettingsSection({ userData, onUserDataUpdate }: SettingsSectionP
     }
   }
 
-  const handleAddMoney = async () => {
-    const amount = parseFloat(walletData.addAmount)
-    if (isNaN(amount) || amount <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid amount to add.",
-        variant: "destructive",
-      })
-      return
-    }
 
-    if (amount > 1000) {
-      toast({
-        title: "Amount Too Large",
-        description: "Maximum amount per transaction is ₵1,000.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsSaving(true)
-    try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      const newBalance = walletData.balance + amount
-      setWalletData({...walletData, balance: newBalance, addAmount: ""})
-      localStorage.setItem('delikaBalance', newBalance.toString())
-      
-      toast({
-        title: "Money Added",
-        description: `₵${amount.toFixed(2)} has been added to your wallet successfully.`,
-      })
-    } catch (error) {
-      toast({
-        title: "Transaction Failed",
-        description: "Failed to add money. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const handleWithdrawMoney = async () => {
-    const amount = parseFloat(walletData.withdrawAmount)
-    if (isNaN(amount) || amount <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid amount to withdraw.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (amount > walletData.balance) {
-      toast({
-        title: "Insufficient Balance",
-        description: "You don't have enough balance for this withdrawal.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsSaving(true)
-    try {
-      // Simulate withdrawal processing
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      const newBalance = walletData.balance - amount
-      setWalletData({...walletData, balance: newBalance, withdrawAmount: ""})
-      localStorage.setItem('delikaBalance', newBalance.toString())
-      
-      toast({
-        title: "Withdrawal Successful",
-        description: `₵${amount.toFixed(2)} has been withdrawn from your wallet.`,
-      })
-    } catch (error) {
-      toast({
-        title: "Withdrawal Failed",
-        description: "Failed to process withdrawal. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSaving(false)
-    }
-  }
 
 
 
@@ -410,97 +418,72 @@ export function SettingsSection({ userData, onUserDataUpdate }: SettingsSectionP
               <div className="p-6">
                 <div className="text-center mb-6">
                   <p className="text-sm text-gray-600 mb-2">Current Balance</p>
-                  <p className="text-4xl font-bold text-orange-500">₵{walletData.balance.toFixed(2)}</p>
+                  {isLoadingBalance ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-lg text-gray-500">Loading balance...</span>
+                    </div>
+                  ) : (
+                    <p className="text-4xl font-bold text-orange-500">₵{walletData.balance.toFixed(2)}</p>
+                  )}
+                  
+                  <div className="mt-4">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        // Re-trigger the balance fetch
+                        const fetchWalletBalance = async () => {
+                          try {
+                            setIsLoadingBalance(true);
+                            const userId = userData?.id || JSON.parse(localStorage.getItem('userData') || '{}').id;
+                            if (!userId) return;
+                            
+                            console.log('[Settings] Manual refresh - Fetching wallet balance for user:', userId);
+                            const customerDetails = await getCustomerDetails(userId);
+                            console.log('[Settings] Manual refresh - Customer details response:', customerDetails);
+                            
+                            const balance = customerDetails.delikaBalance || 
+                                           customerDetails.walletBalance || 
+                                           customerDetails.balance || 
+                                           customerDetails.customerTable?.[0]?.delikaBalance ||
+                                           customerDetails.customerTable?.[0]?.walletBalance ||
+                                           0;
+                            
+                            const numericBalance = toNumber(balance);
+                            console.log('[Settings] Manual refresh - Updated balance to:', numericBalance);
+                            
+                            setWalletData({ balance: numericBalance });
+                            localStorage.setItem('delikaBalance', numericBalance.toString());
+                            
+                            toast({
+                              title: "Balance Updated",
+                              description: `Current balance: ₵${numericBalance.toFixed(2)}`,
+                            });
+                            
+                          } catch (error) {
+                            console.error('[Settings] Manual refresh error:', error);
+                            toast({
+                              title: "Error",
+                              description: "Failed to refresh balance. Please try again.",
+                              variant: "destructive",
+                            });
+                          } finally {
+                            setIsLoadingBalance(false);
+                          }
+                        };
+                        fetchWalletBalance();
+                      }}
+                      disabled={isLoadingBalance}
+                      className="flex items-center gap-2"
+                    >
+                      <Wallet className="w-4 h-4" />
+                      {isLoadingBalance ? 'Refreshing...' : 'Refresh Balance'}
+                    </Button>
+                  </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="addAmount">Add Money</Label>
-                      <div className="flex gap-2 mt-2">
-                        <div className="relative flex-1">
-                          <span className="absolute left-3 top-3 text-gray-400">₵</span>
-                          <Input
-                            id="addAmount"
-                            type="number"
-                            value={walletData.addAmount}
-                            onChange={(e) => setWalletData({...walletData, addAmount: e.target.value})}
-                            placeholder="0.00"
-                            className="pl-8"
-                            min="1"
-                            max="1000"
-                          />
-                        </div>
-                        <Button 
-                          onClick={handleAddMoney}
-                          disabled={isSaving || !walletData.addAmount}
-                          className="bg-green-500 hover:bg-green-600 flex items-center gap-2"
-                        >
-                          <Plus className="w-4 h-4" />
-                          {isSaving ? 'Adding...' : 'Add'}
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setWalletData({...walletData, addAmount: "20"})}
-                      >
-                        ₵20
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setWalletData({...walletData, addAmount: "50"})}
-                      >
-                        ₵50
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setWalletData({...walletData, addAmount: "100"})}
-                      >
-                        ₵100
-                      </Button>
-                    </div>
-                  </div>
 
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="withdrawAmount">Withdraw Money</Label>
-                      <div className="flex gap-2 mt-2">
-                        <div className="relative flex-1">
-                          <span className="absolute left-3 top-3 text-gray-400">₵</span>
-                          <Input
-                            id="withdrawAmount"
-                            type="number"
-                            value={walletData.withdrawAmount}
-                            onChange={(e) => setWalletData({...walletData, withdrawAmount: e.target.value})}
-                            placeholder="0.00"
-                            className="pl-8"
-                            min="1"
-                            max={walletData.balance}
-                          />
-                        </div>
-                        <Button 
-                          onClick={handleWithdrawMoney}
-                          disabled={isSaving || !walletData.withdrawAmount || parseFloat(walletData.withdrawAmount) > walletData.balance}
-                          variant="outline"
-                          className="border-red-500 text-red-500 hover:bg-red-50 flex items-center gap-2"
-                        >
-                          <Minus className="w-4 h-4" />
-                          {isSaving ? 'Processing...' : 'Withdraw'}
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <p className="text-xs text-gray-500">
-                      Available for withdrawal: ₵{walletData.balance.toFixed(2)}
-                    </p>
-                  </div>
-                </div>
               </div>
             </div>
 
