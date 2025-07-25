@@ -77,17 +77,12 @@ export function FilterModal({
                 <button
                   key={type.value}
                   type="button"
-                  className={`px-5 py-2 rounded-xl font-medium bg-gray-100 ${
-                    filterTypes.includes(type.value)
+                  className={`px-5 py-2 rounded-xl font-medium bg-gray-100 ${filterTypes[0] === type.value
                       ? "ring-2 ring-orange-500 bg-orange-50"
                       : ""
-                  }`}
+                    }`}
                   onClick={() => {
-                    setFilterTypes((prev: string[]) =>
-                      prev.includes(type.value)
-                        ? prev.filter((t) => t !== type.value)
-                        : [...prev, type.value]
-                    );
+                    setFilterTypes([type.value]);
                   }}
                 >
                   {type.label}
@@ -105,11 +100,10 @@ export function FilterModal({
                 <button
                   key={val}
                   type="button"
-                  className={`px-5 py-2 rounded-xl font-medium bg-gray-100 ${
-                    filterRating === val
+                  className={`px-5 py-2 rounded-xl font-medium bg-gray-100 ${filterRating === val
                       ? "ring-2 ring-orange-500 bg-orange-50"
                       : ""
-                  }`}
+                    }`}
                   onClick={() => setFilterRating(val)}
                 >
                   {val} or more
@@ -127,11 +121,10 @@ export function FilterModal({
                 <button
                   key={val}
                   type="button"
-                  className={`px-5 py-2 rounded-xl font-medium bg-gray-100 ${
-                    filterDeliveryTime === val
+                  className={`px-5 py-2 rounded-xl font-medium bg-gray-100 ${filterDeliveryTime === val
                       ? "ring-2 ring-orange-500 bg-orange-50"
                       : ""
-                  }`}
+                    }`}
                   onClick={() => setFilterDeliveryTime(val)}
                 >
                   {val} min or less
@@ -168,11 +161,10 @@ export function FilterModal({
                       <button
                         key={category}
                         type="button"
-                        className={`px-3 py-2 rounded-xl font-medium bg-gray-100 text-sm ${
-                          filterCategories.includes(category)
+                        className={`px-3 py-2 rounded-xl font-medium bg-gray-100 text-sm ${filterCategories.includes(category)
                             ? "ring-2 ring-orange-500 bg-orange-50"
                             : ""
-                        }`}
+                          }`}
                         onClick={() => {
                           if (filterCategories.includes(category)) {
                             setFilterCategories(
@@ -201,11 +193,10 @@ export function FilterModal({
                       <button
                         key={category}
                         type="button"
-                        className={`px-3 py-2 rounded-xl font-medium bg-gray-100 text-sm ${
-                          filterCategories.includes(category)
+                        className={`px-3 py-2 rounded-xl font-medium bg-gray-100 text-sm ${filterCategories.includes(category)
                             ? "ring-2 ring-orange-500 bg-orange-50"
                             : ""
-                        }`}
+                          }`}
                         onClick={() => {
                           if (filterCategories.includes(category)) {
                             setFilterCategories(
@@ -234,11 +225,10 @@ export function FilterModal({
                       <button
                         key={category}
                         type="button"
-                        className={`px-3 py-2 rounded-xl font-medium bg-gray-100 text-sm ${
-                          filterCategories.includes(category)
+                        className={`px-3 py-2 rounded-xl font-medium bg-gray-100 text-sm ${filterCategories.includes(category)
                             ? "ring-2 ring-orange-500 bg-orange-50"
                             : ""
-                        }`}
+                          }`}
                         onClick={() => {
                           if (filterCategories.includes(category)) {
                             setFilterCategories(

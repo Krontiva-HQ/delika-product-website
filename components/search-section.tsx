@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { loadGoogleMaps } from "@/lib/google-maps"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
+import debounce from "lodash.debounce"
+import Link from "next/link"
 
 interface SearchSectionProps {
   onSearch: (query: string) => void
@@ -14,11 +17,16 @@ interface SearchSectionProps {
   activeTab: string
   onTabChange: (value: string) => void
   onFilterClick?: () => void
+  branches: any[] // Add this prop
 }
 
-export function SearchSection({ onSearch, userLocation, onLocationClick, activeTab, onTabChange, onFilterClick }: SearchSectionProps) {
+export function SearchSection({ onSearch, userLocation, onLocationClick, activeTab, onTabChange, onFilterClick, branches }: SearchSectionProps) {
   const [searchValue, setSearchValue] = useState("")
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
+  const [dropdownResults, setDropdownResults] = useState<any[]>([])
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [loadingDropdown, setLoadingDropdown] = useState(false)
+  const router = useRouter();
 
   // Banner images data
   const bannerImages = [
@@ -27,7 +35,7 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
       alt: "Free Burger Promo"
     },
     {
-      src: "/banner/Can you generate restaurant sbanner images for apizza promo_ Text 30 days of pizza 3d charater.jpg", 
+      src: "/banner/Can you generate restaurant sbanner images for apizza promo_ Text 30 days of pizza 3d charater.jpg",
       alt: "30 Days of Pizza Promo"
     },
     {
@@ -43,7 +51,7 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
   // Auto-scroll banner every 3 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentBannerIndex((prevIndex) => 
+      setCurrentBannerIndex((prevIndex) =>
         (prevIndex + 1) % bannerImages.length
       )
     }, 3000)
@@ -85,18 +93,77 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
     }
   }, [userLocation])
 
+  // In-memory dropdown search
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setSearchValue(value)
     onSearch(value)
-    
     // Emit search events for grocery and pharmacy components
-    window.dispatchEvent(new CustomEvent('grocerySearchUpdate', { 
-      detail: { query: value } 
+    window.dispatchEvent(new CustomEvent('grocerySearchUpdate', {
+      detail: { query: value }
     }));
-    window.dispatchEvent(new CustomEvent('pharmacySearchUpdate', { 
-      detail: { query: value } 
+    window.dispatchEvent(new CustomEvent('pharmacySearchUpdate', {
+      detail: { query: value }
     }));
+    // In-memory dropdown search
+    if (!value.trim()) {
+      setDropdownResults([])
+      setShowDropdown(false)
+      return
+    }
+    const query = value.trim().toLowerCase();
+    const results: any[] = [];
+    branches.forEach((branch: any) => {
+      // Branch/restaurant match
+      if (
+        branch.branchName?.toLowerCase().includes(query) ||
+        branch._restaurantTable?.[0]?.restaurantName?.toLowerCase().includes(query)
+      ) {
+        results.push({
+          id: branch.id,
+          name: branch._restaurantTable?.[0]?.restaurantName || branch.branchName,
+          type: 'restaurant',
+          slug: branch.slug,
+          image: branch._restaurantTable?.[0]?.restaurantLogo?.url,
+        });
+      }
+      // Food match
+      branch._itemsmenu?.forEach((menu: any) => {
+        menu.foods?.forEach((food: any) => {
+          if (food.name?.toLowerCase().includes(query)) {
+            results.push({
+              id: food.name + branch.id,
+              name: food.name,
+              type: 'food',
+              slug: branch.slug,
+              image: food.foodImage?.url,
+              branchName: branch.branchName,
+            });
+          }
+        });
+      });
+    });
+    setDropdownResults(results)
+    setShowDropdown(true)
+  }
+
+  // Hide dropdown on blur (with slight delay for click)
+  const handleBlur = () => {
+    setTimeout(() => setShowDropdown(false), 150)
+  }
+
+  // Handle result click
+  const handleResultClick = (result: any) => {
+    setShowDropdown(false)
+    setSearchValue("")
+    // Navigate to detail page based on result type
+    if (result.type === 'restaurant') {
+      router.push(`/restaurant/${result.slug || result.id}`)
+    } else if (result.type === 'grocery') {
+      router.push(`/groceries/${result.slug || result.id}`)
+    } else if (result.type === 'pharmacy') {
+      router.push(`/pharmacy/${result.slug || result.id}`)
+    }
   }
 
   const handleLocationClick = () => {
@@ -107,6 +174,13 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
     }
     onLocationClick()
   }
+
+  const getPlaceholder = () => {
+    if (activeTab === 'restaurants') return 'Search Restaurants';
+    if (activeTab === 'groceries') return 'Search Groceries';
+    if (activeTab === 'pharmacy') return 'Search Pharmacy';
+    return 'Search';
+  };
 
   return (
     <div className="bg-white border-b sticky top-0 z-10">
@@ -124,15 +198,58 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
               >
                 <MapPin className="w-5 h-5" />
               </button>
+              {/* Mobile search input: */}
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
                   type="text"
-                  placeholder="Search restaurants"
+                  placeholder={getPlaceholder()}
                   value={searchValue}
                   onChange={handleChange}
+                  onFocus={() => searchValue && setShowDropdown(true)}
+                  onBlur={handleBlur}
                   className="w-full pl-10 pr-12 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  autoComplete="off"
                 />
+                {/* Dropdown results */}
+                {showDropdown && (
+                  <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-20 max-h-72 overflow-y-auto">
+                    {loadingDropdown ? (
+                      <div className="p-4 text-center text-gray-400">Loading...</div>
+                    ) : dropdownResults.length === 0 ? (
+                      <div className="p-4 text-center text-gray-400">No results found</div>
+                    ) : (
+                      dropdownResults.map((result, idx) => {
+                        let href = "/";
+                        if (result.type === 'restaurant') {
+                          href = `/restaurants/${result.slug || result.id}`;
+                        } else if (result.type === 'grocery') {
+                          href = `/groceries/${result.slug || result.id}`;
+                        } else if (result.type === 'pharmacy') {
+                          href = `/pharmacy/${result.slug || result.id}`;
+                        } else if (result.type === 'food') {
+                          href = `/restaurants/${result.slug || result.id}`;
+                        }
+                        return (
+                          <Link
+                            key={result.id || idx}
+                            href={href}
+                            className="w-full text-left px-4 py-2 hover:bg-orange-50 focus:bg-orange-100 focus:outline-none flex items-center gap-3 cursor-pointer"
+                            prefetch={false}
+                          >
+                            {result.image && (
+                              <img src={result.image} alt={result.name} className="w-8 h-8 rounded object-cover" />
+                            )}
+                            <div>
+                              <div className="font-medium">{result.name}</div>
+                              <div className="text-xs text-gray-500">{result.type === 'food' ? `Food${result.branchName ? ' @ ' + result.branchName : ''}` : 'Restaurant'}</div>
+                            </div>
+                          </Link>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
                 {/* Filter button */}
                 {onFilterClick && (
                   <button
@@ -145,7 +262,7 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
                 )}
               </div>
             </div>
-            
+
             {/* Tabs Row */}
             <div className="w-full flex justify-center mb-4">
               <Tabs value={activeTab} onValueChange={onTabChange}>
@@ -156,10 +273,10 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
                 </TabsList>
               </Tabs>
             </div>
-            
+
             {/* Mobile Auto-Scrolling Banner */}
             <div className="overflow-hidden">
-              <div 
+              <div
                 className="flex transition-transform duration-500 ease-in-out"
                 style={{ transform: `translateX(-${currentBannerIndex * 100}%)` }}
               >
@@ -178,15 +295,14 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
                   </div>
                 ))}
               </div>
-              
+
               {/* Banner Indicators */}
               <div className="flex justify-center mt-3 gap-2">
                 {bannerImages.map((_, index) => (
                   <button
                     key={index}
-                    className={`w-2 h-2 rounded-full transition-colors duration-200 ${
-                      index === currentBannerIndex ? 'bg-orange-500' : 'bg-gray-300'
-                    }`}
+                    className={`w-2 h-2 rounded-full transition-colors duration-200 ${index === currentBannerIndex ? 'bg-orange-500' : 'bg-gray-300'
+                      }`}
                     onClick={() => setCurrentBannerIndex(index)}
                     aria-label={`Go to banner ${index + 1}`}
                   />
@@ -206,17 +322,60 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
               <MapPin className="w-5 h-5 flex-shrink-0" />
               <span className="font-medium">{userLocation}</span>
             </button>
-            
+
             {/* Search */}
+            {/* Desktop search input: */}
             <div className="flex-1 relative mx-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search restaurants"
+                placeholder={getPlaceholder()}
                 value={searchValue}
                 onChange={handleChange}
+                onFocus={() => searchValue && setShowDropdown(true)}
+                onBlur={handleBlur}
                 className="w-full pl-10 pr-12 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                autoComplete="off"
               />
+              {/* Dropdown results */}
+              {showDropdown && (
+                <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-20 max-h-72 overflow-y-auto">
+                  {loadingDropdown ? (
+                    <div className="p-4 text-center text-gray-400">Loading...</div>
+                  ) : dropdownResults.length === 0 ? (
+                    <div className="p-4 text-center text-gray-400">No results found</div>
+                  ) : (
+                    dropdownResults.map((result, idx) => {
+                      let href = "/";
+                      if (result.type === 'restaurant') {
+                        href = `/restaurants/${result.slug || result.id}`;
+                      } else if (result.type === 'grocery') {
+                        href = `/groceries/${result.slug || result.id}`;
+                      } else if (result.type === 'pharmacy') {
+                        href = `/pharmacy/${result.slug || result.id}`;
+                      } else if (result.type === 'food') {
+                        href = `/restaurants/${result.slug || result.id}`;
+                      }
+                      return (
+                        <Link
+                          key={result.id || idx}
+                          href={href}
+                          className="w-full text-left px-4 py-2 hover:bg-orange-50 focus:bg-orange-100 focus:outline-none flex items-center gap-3 cursor-pointer"
+                          prefetch={false}
+                        >
+                          {result.image && (
+                            <img src={result.image} alt={result.name} className="w-8 h-8 rounded object-cover" />
+                          )}
+                          <div>
+                            <div className="font-medium">{result.name}</div>
+                            <div className="text-xs text-gray-500">{result.type === 'food' ? `Food${result.branchName ? ' @ ' + result.branchName : ''}` : 'Restaurant'}</div>
+                          </div>
+                        </Link>
+                      );
+                    })
+                  )}
+                </div>
+              )}
               {/* Filter button */}
               {onFilterClick && (
                 <button
@@ -228,7 +387,7 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
                 </button>
               )}
             </div>
-            
+
             {/* Tabs */}
             <div className="flex-shrink-0">
               <Tabs value={activeTab} onValueChange={onTabChange}>

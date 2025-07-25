@@ -58,6 +58,7 @@ interface Branch {
       quantity: number;
     }[];
   }[];
+  _itemsmenu?: any[];
 }
 
 type Libraries = ("places" | "geocoding")[]
@@ -377,22 +378,25 @@ export function StoreHeader() {
     }
   }, [currentView]);
 
-  // Further filter by search query
+  // Update searchResults logic to include food name and foodType (category) matches
   const searchResults = searchQuery
-    ? filterBranchesByDistance(
-        filteredBranches.filter(branch => 
-          branch.branchName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          branch._restaurantTable[0]?.restaurantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          branch.branchLocation.toLowerCase().includes(searchQuery.toLowerCase())
-        ),
-        userCoordinates?.lat,
-        userCoordinates?.lng
-      )
-    : filterBranchesByDistance(
-        filteredBranches,
-        userCoordinates?.lat,
-        userCoordinates?.lng
-      )
+    ? filteredBranches.filter(branch => {
+        const query = searchQuery.toLowerCase();
+        // Match branch name, restaurant name, or branch location
+        const branchMatch =
+          branch.branchName?.toLowerCase().includes(query) ||
+          branch._restaurantTable?.[0]?.restaurantName?.toLowerCase().includes(query) ||
+          branch.branchLocation?.toLowerCase().includes(query);
+        // Match any food name or foodType (category) in _itemsmenu
+        const foodMatch = branch._itemsmenu?.some((menu: any) =>
+          (menu.foodType?.toLowerCase().includes(query)) ||
+          menu.foods?.some((food: any) =>
+            food.name?.toLowerCase().includes(query)
+          )
+        );
+        return branchMatch || foodMatch;
+      })
+    : filteredBranches;
 
   const handleLocationSelect = ({ address, lat, lng }: { address: string; lat: number; lng: number }) => {
     console.log('StoreHeader location selected:', { address, lat, lng })
@@ -1012,6 +1016,7 @@ export function StoreHeader() {
               activeTab={activeTab}
               onTabChange={setActiveTab}
               onFilterClick={() => setIsFilterModalOpen(true)}
+              branches={branches}
             />
 
             {/* Advanced Filter Modal */}
