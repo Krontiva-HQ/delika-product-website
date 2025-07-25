@@ -30,15 +30,21 @@ export function NewHero() {
           {/* Icons Row */}
           <div className="flex gap-8 mb-2 justify-center md:justify-start">
             <div className="flex flex-col items-center">
-              <Utensils className="w-10 h-10 text-orange-600" />
+              <span className="flex items-center justify-center w-14 h-14 rounded-xl bg-orange-100 mb-1">
+                <Utensils className="w-8 h-8 text-orange-600" />
+              </span>
               <span className="text-xs mt-1 font-medium text-orange-600">Food</span>
             </div>
             <div className="flex flex-col items-center">
-              <ShoppingBag className="w-10 h-10 text-green-700" />
+              <span className="flex items-center justify-center w-14 h-14 rounded-xl bg-green-100 mb-1">
+                <ShoppingBag className="w-8 h-8 text-green-700" />
+              </span>
               <span className="text-xs mt-1 font-medium text-green-700">Groceries</span>
             </div>
             <div className="flex flex-col items-center">
-              <Pill className="w-10 h-10 text-blue-400" />
+              <span className="flex items-center justify-center w-14 h-14 rounded-xl bg-blue-100 mb-1">
+                <Pill className="w-8 h-8 text-blue-400" />
+              </span>
               <span className="text-xs mt-1 font-medium text-blue-400">Pharmacy</span>
             </div>
           </div>
@@ -64,10 +70,10 @@ export function NewHero() {
             transition={{ duration: 1, delay: 0.6, ease: "easeOut" }}
             className="flex flex-row gap-3 w-full justify-center md:justify-start"
           >
-            <Button asChild size="lg" className="rounded-full px-8 text-white">
+            <Button asChild size="lg" className="rounded-xl px-8 text-white">
               <Link href="/restaurants">Browse Shops</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="rounded-full px-8 border-2 border-black text-black">
+            <Button asChild size="lg" variant="outline" className="rounded-xl px-8 border-2 border-black text-black">
               <Link href="/restaurant-partner">Become a Vendor</Link>
             </Button>
           </motion.div>
