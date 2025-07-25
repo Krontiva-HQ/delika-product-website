@@ -6,23 +6,33 @@ const toc = [
   { id: "about", label: "1. About this Privacy Notice" },
   { id: "who", label: "2. Who Does This Notice Apply To?" },
   { id: "definitions", label: "3. Key Definitions to Help You Understand This Privacy Notice" },
-  { id: "dataprocess", label: "4. What personal data do we process?" },
-  { id: "collect", label: "4.1. Where does Krontiva Africa collect my Personal Data from?" },
-  { id: "provided", label: "4.2. Personal data provided by you to Krontiva Africa" },
-  { id: "collected", label: "4.3. Personal data we collect about you when you use the Delika App and Web Platform" },
-  { id: "purposes", label: "4.4. What purposes do we use your personal data for and what is our legal basis for processing?" },
-  { id: "provision", label: "4.5. For the provision of the Delika services" },
-  { id: "support", label: "4.6. For Customer Support" },
-  { id: "security", label: "4.7. For safety and security" },
-  { id: "marketing", label: "4.8. For marketing and advertising" },
-  { id: "servicecomms", label: "4.9. For Service Communications" },
-  { id: "research", label: "4.10. For research and improvement of the Delika Platform" },
-  { id: "legal", label: "4.11. For legal proceedings and compliance with the law" },
+  {
+    id: "dataprocess",
+    label: "4. What personal data do we process?",
+    children: [
+      { id: "collect", label: "4.1. Where does Krontiva Africa collect my Personal Data from?" },
+      { id: "provided", label: "4.2. Personal data provided by you to Krontiva Africa" },
+      { id: "collected", label: "4.3. Personal data we collect about you when you use the Delika App and Web Platform" },
+      { id: "purposes", label: "4.4. What purposes do we use your personal data for and what is our legal basis for processing?" },
+      { id: "provision", label: "4.5. For the provision of the Delika services" },
+      { id: "support", label: "4.6. For Customer Support" },
+      { id: "security", label: "4.7. For safety and security" },
+      { id: "marketing", label: "4.8. For marketing and advertising" },
+      { id: "servicecomms", label: "4.9. For Service Communications" },
+      { id: "research", label: "4.10. For research and improvement of the Delika Platform" },
+      { id: "legal", label: "4.11. For legal proceedings and compliance with the law" },
+    ],
+  },
   { id: "sharing", label: "5. Who do we share your personal data with?" },
   { id: "safety", label: "6. How do we keep your personal data safe?" },
   { id: "breaches", label: "7. How does Krontiva Africa handle Personal Data Breaches?" },
-  { id: "retention", label: "8. How long do we retain your personal data for?" },
-  { id: "retentionperiods", label: "8.1. Specific retention periods" },
+  {
+    id: "retention",
+    label: "8. How long do we retain your personal data for?",
+    children: [
+      { id: "retentionperiods", label: "8.1. Specific retention periods" },
+    ],
+  },
   { id: "rights", label: "9. What are your rights?" },
   { id: "directmarketing", label: "10. How do we use your personal data for direct marketing?" },
   { id: "changes", label: "11. How do we notify you of changes to this Notice?" },
@@ -136,6 +146,29 @@ export default function PrivacyPolicyPage() {
                   >
                     {item.label}
                   </a>
+                  {item.children && (
+                    <ul className="ml-4 mt-1 space-y-1 border-l border-orange-100 pl-2">
+                      {item.children.map((child) => (
+                        <li key={child.id}>
+                          <a
+                            href={`#${child.id}`}
+                            className={`block px-3 py-1 rounded transition-colors cursor-pointer text-xs ${
+                              activeId === child.id
+                                ? "bg-orange-50 border-l-4 border-orange-500 text-orange-600 font-semibold"
+                                : "hover:bg-orange-50"
+                            }`}
+                            aria-current={activeId === child.id ? "page" : undefined}
+                            onClick={e => {
+                              e.preventDefault();
+                              handleTocClick(child.id);
+                            }}
+                          >
+                            {child.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               ))}
             </ul>
