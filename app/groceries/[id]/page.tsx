@@ -16,6 +16,7 @@ import { FloatingCart } from "@/components/floating-cart";
 import { CartModal } from "@/components/cart-modal";
 import { LoginModal } from "@/components/login-modal";
 import { SignupModal } from "@/components/signup-modal";
+import { AuthNav } from "@/components/auth-nav";
 
 interface InventoryItem {
   id: string;
@@ -246,8 +247,25 @@ export default function GroceryDetailsPage() {
     }
   }, []);
 
+  // Placeholder handlers and userData for AuthNav
+  const userData = user;
+  const handleViewChange = () => {};
+  const handleLoginClick = () => setIsLoginModalOpen(true);
+  const handleSignupClick = () => setIsSignupModalOpen(true);
+  const handleLogout = () => setUser(null);
+  const handleHomeClick = () => window.location.href = "/restaurants";
+
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
+      <AuthNav
+        userData={userData}
+        onViewChange={handleViewChange}
+        currentView={"stores"}
+        onLoginClick={handleLoginClick}
+        onSignupClick={handleSignupClick}
+        onLogout={handleLogout}
+        onHomeClick={handleHomeClick}
+      />
       <div className="container mx-auto px-4 py-8">
         {/* Header section styled like branch-page */}
         <div className="mb-8">
