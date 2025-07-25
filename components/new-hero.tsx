@@ -46,7 +46,7 @@ export function NewHero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.6, ease: "easeOut" }}
-            className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center md:justify-start"
+            className="flex flex-row gap-3 w-full justify-center md:justify-start"
           >
             <Button asChild size="lg" className="rounded-full px-8 text-white">
               <Link href="/restaurants">Browse Shops</Link>
