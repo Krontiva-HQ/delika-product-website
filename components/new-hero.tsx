@@ -31,19 +31,19 @@ export function NewHero() {
           <div className="flex gap-8 mb-2 justify-center md:justify-start">
             <div className="flex flex-col items-center">
               <span className="flex items-center justify-center w-14 h-14 rounded-xl bg-orange-100 mb-1">
-                <Utensils className="w-8 h-8 text-orange-600" />
+                <Utensils className="w-6 h-6 text-orange-600" />
               </span>
               <span className="text-xs mt-1 font-medium text-orange-600">Food</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="flex items-center justify-center w-14 h-14 rounded-xl bg-green-100 mb-1">
-                <ShoppingBag className="w-8 h-8 text-green-700" />
+                <ShoppingBag className="w-6 h-6 text-green-700" />
               </span>
               <span className="text-xs mt-1 font-medium text-green-700">Groceries</span>
             </div>
             <div className="flex flex-col items-center">
               <span className="flex items-center justify-center w-14 h-14 rounded-xl bg-blue-100 mb-1">
-                <Pill className="w-8 h-8 text-blue-400" />
+                <Pill className="w-6 h-6 text-blue-400" />
               </span>
               <span className="text-xs mt-1 font-medium text-blue-400">Pharmacy</span>
             </div>
@@ -70,7 +70,7 @@ export function NewHero() {
             transition={{ duration: 1, delay: 0.6, ease: "easeOut" }}
             className="flex flex-row gap-3 w-full justify-center md:justify-start"
           >
-            <Button asChild size="lg" className="rounded-xl px-8 text-white">
+            <Button asChild size="lg" className="rounded-xl px-8 bg-orange-500 text-white">
               <Link href="/restaurants">Browse Shops</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="rounded-xl px-8 border-2 border-black text-black">
