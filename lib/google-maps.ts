@@ -7,28 +7,54 @@ declare global {
 
 let isLoading = false;
 let isLoaded = false;
+let loadPromise: Promise<void> | null = null;
 
 export function loadGoogleMaps(): Promise<void> {
-  // Add debug logging
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
     console.error('Google Maps API key is not defined');
     return Promise.reject(new Error('Google Maps API key is not defined'));
   }
 
-  if (isLoaded) return Promise.resolve();
-  if (isLoading) return new Promise((resolve) => {
-    const checkLoaded = setInterval(() => {
-      if (isLoaded) {
+  // Check if Google Maps is already loaded (by any method)
+  if (window.google && window.google.maps && window.google.maps.places) {
+    isLoaded = true;
+    return Promise.resolve();
+  }
+
+  // If we already have a loading promise, return it
+  if (loadPromise) {
+    return loadPromise;
+  }
+
+  // Check if there's already a Google Maps script tag
+  const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+  if (existingScript) {
+    // Script exists, wait for it to load
+    loadPromise = new Promise((resolve) => {
+      const checkLoaded = setInterval(() => {
+        if (window.google && window.google.maps && window.google.maps.places) {
+          isLoaded = true;
+          clearInterval(checkLoaded);
+          resolve();
+        }
+      }, 100);
+      
+      // Timeout after 10 seconds
+      setTimeout(() => {
         clearInterval(checkLoaded);
-        resolve();
-      }
-    }, 100);
-  });
+        if (!isLoaded) {
+          console.error('Google Maps failed to load within timeout');
+          loadPromise = null;
+        }
+      }, 10000);
+    });
+    return loadPromise;
+  }
 
   isLoading = true;
 
-  return new Promise((resolve, reject) => {
+  loadPromise = new Promise((resolve, reject) => {
     try {
       window.initMap = () => {
         isLoaded = true;
@@ -37,7 +63,7 @@ export function loadGoogleMaps(): Promise<void> {
       };
 
       const script = document.createElement("script");
-      script.id = "google-maps";
+      script.id = "google-maps-custom";
       const url = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding&callback=initMap`;
       script.src = url;
       script.async = true;
@@ -46,6 +72,7 @@ export function loadGoogleMaps(): Promise<void> {
       script.onerror = (error) => {
         console.error('Failed to load Google Maps script:', error);
         isLoading = false;
+        loadPromise = null;
         reject(new Error("Failed to load Google Maps API"));
       };
 
@@ -53,7 +80,10 @@ export function loadGoogleMaps(): Promise<void> {
     } catch (error) {
       console.error('Error in loadGoogleMaps:', error);
       isLoading = false;
+      loadPromise = null;
       reject(error);
     }
   });
+
+  return loadPromise;
 } 
