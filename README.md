@@ -294,7 +294,7 @@ The app can be deployed to any platform supporting Next.js:
 - Use Shadcn/ui components for consistency
 - Write meaningful commit messagesjust as it is fit
 - Test thoroughly before submitting PRs
-- Update documentation for new features
+- Update documentation for new features.
 
 ## 📄 License
 
