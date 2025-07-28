@@ -292,7 +292,7 @@ The app can be deployed to any platform supporting Next.js:
 
 - Follow TypeScript best practices
 - Use Shadcn/ui components for consistency
-- Write meaningful commit messages
+- Write meaningful commit messagesjust as it is fit
 - Test thoroughly before submitting PRs
 - Update documentation for new features
 
