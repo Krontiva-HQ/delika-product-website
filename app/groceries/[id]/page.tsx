@@ -17,6 +17,9 @@ import { CartModal } from "@/components/cart-modal";
 import { LoginModal } from "@/components/login-modal";
 import { SignupModal } from "@/components/signup-modal";
 import { AuthNav } from "@/components/auth-nav";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Plus, Minus } from "lucide-react";
 
 interface InventoryItem {
   id: string;
@@ -33,6 +36,94 @@ interface InventoryItem {
   _delika_groceries_shops_table?: {
     groceryshopAddress?: string;
   };
+}
+
+interface ItemDetailsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  item: InventoryItem;
+  onAddToCart: (item: InventoryItem, quantity: number) => void;
+}
+
+function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsModalProps) {
+  const [quantity, setQuantity] = useState(1);
+
+  console.log('Grocery ItemDetailsModal rendered with:', { isOpen, item: item?.productName });
+
+  const handleAddToCart = () => {
+    console.log('Adding to cart:', item.productName, 'quantity:', quantity);
+    onAddToCart(item, quantity);
+    onClose();
+    setQuantity(1); // Reset quantity
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md p-0 overflow-hidden">
+        <DialogTitle>{item?.productName || "Item Details"}</DialogTitle>
+        {/* Item Image */}
+        <div className="relative w-full h-48 sm:h-56 md:h-64">
+          {typeof item.image === 'object' && item.image && 'url' in item.image ? (
+            <Image
+              src={(item.image as { url: string }).url}
+              alt={item.productName}
+              fill
+              className="object-cover w-full h-full"
+            />
+          ) : typeof item.image === 'string' && item.image ? (
+            <Image
+              src={item.image}
+              alt={item.productName}
+              fill
+              className="object-cover w-full h-full"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-2xl">
+              No Image
+            </div>
+          )}
+        </div>
+        
+        <div className="p-6">
+          {/* Item Info */}
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold mb-1">{item.productName}</h2>
+            <div className="text-2xl font-bold text-gray-900 mb-1">GH₵{parseFloat(item.price).toFixed(2)}</div>
+            {item.description && <div className="text-gray-500 text-sm mb-2">{item.description}</div>}
+            {item.category && <div className="text-gray-400 text-xs mb-2">Category: {item.category}</div>}
+          </div>
+
+          {/* Quantity and Add Button */}
+          <div className="flex items-center justify-between border-t pt-4 mt-4">
+            <div className="flex items-center gap-2">
+              <Button 
+                size="icon" 
+                variant="outline" 
+                onClick={() => setQuantity(q => Math.max(1, q - 1))}
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <span className="w-8 text-center font-medium">{quantity}</span>
+              <Button 
+                size="icon" 
+                variant="outline" 
+                onClick={() => setQuantity(q => q + 1)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button 
+              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-2 rounded-full font-semibold text-base"
+              onClick={handleAddToCart}
+            >
+              Add
+              <span className="ml-2">GH₵{(parseFloat(item.price) * quantity).toFixed(2)}</span>
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export default function GroceryDetailsPage() {
@@ -165,7 +256,7 @@ export default function GroceryDetailsPage() {
   }, [cart]);
 
   // Helper to add item to cart, always saving name, price, and image
-  const handleAddToCart = (item: any) => {
+  const handleAddToCart = (item: any, quantity: number = 1) => {
     if (!item.productName || !item.price) return;
     const image =
       typeof item.image === "object" && item.image && "url" in item.image
@@ -181,7 +272,7 @@ export default function GroceryDetailsPage() {
           name: item.productName,
           price: item.price,
           image,
-          quantity: 1,
+          quantity: quantity,
           available: typeof item.available === "boolean" ? item.available : true
         }
       ];
@@ -235,6 +326,7 @@ export default function GroceryDetailsPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
   // Check authentication status
   useEffect(() => {
@@ -376,7 +468,11 @@ export default function GroceryDetailsPage() {
                         {item.available && (
                           <button
                             className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center ml-2"
-                            onClick={() => handleAddToCart(item)}
+                            onClick={() => {
+                              console.log('Grocery item clicked:', item.productName);
+                              setSelectedItem(item);
+                              console.log('Selected item set to:', item);
+                            }}
                           >
                             <span className="text-xl font-bold">+</span>
                           </button>
@@ -490,6 +586,26 @@ export default function GroceryDetailsPage() {
           setIsSignupModalOpen(false);
         }}
       />
+
+      {/* Item Details Modal */}
+      {selectedItem && (
+        <ItemDetailsModal
+          isOpen={!!selectedItem}
+          onClose={() => {
+            console.log('Grocery modal closing');
+            setSelectedItem(null);
+          }}
+          item={selectedItem}
+          onAddToCart={handleAddToCart}
+        />
+      )}
+      
+      {/* Debug: Show selected item state */}
+      {process.env.NODE_ENV === 'development' && selectedItem && (
+        <div className="fixed top-4 left-4 bg-green-500 text-white p-2 rounded z-50 text-xs">
+          Selected: {selectedItem.productName}
+        </div>
+      )}
       </div>
     </div>
   );

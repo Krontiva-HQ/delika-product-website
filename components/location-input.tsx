@@ -21,8 +21,10 @@ const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, 
     const [autocompleteService, setAutocompleteService] = useState<google.maps.places.AutocompleteService | null>(null);
     const [placesService, setPlacesService] = useState<google.maps.places.PlacesService | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<HTMLDivElement>(null);
+    const initializationRef = useRef<boolean>(false);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -47,42 +49,57 @@ const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, 
     }, [prefillData]); // Removed onLocationSelect to prevent loops
 
     useEffect(() => {
-        if (!isInitialized) {
-            loadGoogleMaps().then(() => {
-                if (!window.google || !window.google.maps || !window.google.maps.places) {
-                    console.error('Google Maps not loaded properly');
-                    return;
+        // Prevent multiple initialization attempts
+        if (initializationRef.current || isInitialized || isLoading) {
+            return;
+        }
+
+        initializationRef.current = true;
+        setIsLoading(true);
+
+        const initializeGoogleMaps = async () => {
+            try {
+                await loadGoogleMaps();
+                
+                if (!window.google?.maps?.places) {
+                    throw new Error('Google Maps Places API not available');
                 }
 
                 if (!mapRef.current) {
-                    console.error('Map div not found');
-                    return;
+                    throw new Error('Map container not found');
                 }
 
-                try {
-                    setAutocompleteService(new window.google.maps.places.AutocompleteService());
-                    const mapDiv = mapRef.current;
-                    const map = new window.google.maps.Map(mapDiv, {
-                        center: { lat: 5.6037, lng: -0.1870 },
-                        zoom: 13,
-                        disableDefaultUI: true
-                    });
-                    setPlacesService(new window.google.maps.places.PlacesService(map));
-                    setIsInitialized(true);
-                } catch (error) {
-                    console.error('Error initializing Google Maps services:', error);
-                }
-            }).catch(error => {
-                console.error('Error loading Google Maps:', error);
-            });
-        }
-    }, [isInitialized]);
+                // Initialize services
+                const autoCompleteService = new window.google.maps.places.AutocompleteService();
+                const mapDiv = mapRef.current;
+                const map = new window.google.maps.Map(mapDiv, {
+                    center: { lat: 5.6037, lng: -0.1870 },
+                    zoom: 13,
+                    disableDefaultUI: true
+                });
+                const placesServiceInstance = new window.google.maps.places.PlacesService(map);
+
+                setAutocompleteService(autoCompleteService);
+                setPlacesService(placesServiceInstance);
+                setIsInitialized(true);
+                
+            } catch (error) {
+                console.error('Error initializing Google Maps services:', error);
+                // Reset initialization flag on error to allow retry
+                initializationRef.current = false;
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        initializeGoogleMaps();
+    }, []); // Empty dependency array - only run once
 
     const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setAddress(value);
 
-        if (value.length > 2 && autocompleteService) {
+        if (value.length > 2 && autocompleteService && window.google?.maps?.places) {
             try {
                 const request = {
                     input: value,
@@ -95,10 +112,15 @@ const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, 
                     if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
                         setSuggestions(predictions);
                         setShowSuggestions(true);
+                    } else {
+                        setSuggestions([]);
+                        setShowSuggestions(false);
                     }
                 });
             } catch (error) {
                 console.error('Error fetching suggestions:', error);
+                setSuggestions([]);
+                setShowSuggestions(false);
             }
         } else {
             setSuggestions([]);
@@ -141,16 +163,16 @@ const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, 
                     placeholder={`Enter delivery ${label.toLowerCase()} location`}
                     value={address}
                     onChange={handleInputChange}
-                    disabled={disabled}
+                    disabled={disabled || isLoading}
                     style={{ width: '100%' }}
                     className={`font-sans w-full border-[#efefef] border-[1px] border-solid [outline:none]
                     text-[13px] bg-[#fff] rounded-[8px]
                     py-[14px] px-[20px]
                     text-[#201a18] placeholder:text-[#b1b4b3]
-                    box-border ${disabled ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    box-border ${disabled || isLoading ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                 />
 
-                {showSuggestions && suggestions.length > 0 && (
+                {showSuggestions && suggestions.length > 0 && !isLoading && (
                     <div className="font-sans absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg"
                         style={{ width: '100%' }}>
                         {suggestions.map((suggestion, index) => {
@@ -171,6 +193,12 @@ const LocationInput: React.FC<LocationInputProps> = ({ label, onLocationSelect, 
                                 </div>
                             );
                         })}
+                    </div>
+                )}
+                
+                {isLoading && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500"></div>
                     </div>
                 )}
             </div>

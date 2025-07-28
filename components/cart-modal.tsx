@@ -12,7 +12,9 @@ import { calculateDistance } from "@/lib/distance"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
-import { calculateDeliveryPrices } from "@/lib/api"
+import { calculateDeliveryPrices, getCustomerDetails } from "@/lib/api"
+import { Wallet } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 
 interface CartModalProps {
   isOpen: boolean
@@ -61,13 +63,22 @@ export function CartModal({
 }: CartModalProps) {
   const router = useRouter()
   const [isProcessingAuth, setIsProcessingAuth] = useState(false)
-  const [deliveryFee, setDeliveryFee] = useState(20)
-  const [distance, setDistance] = useState(0)
+  
+  // Helper function to safely convert values to numbers
+  const toNumber = (value: any): number => {
+    if (typeof value === 'number' && !isNaN(value)) return value;
+    const parsed = parseFloat(value?.toString());
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  const [deliveryFee, setDeliveryFee] = useState<number>(20)
+  const [distance, setDistance] = useState<number>(0)
   const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian'>('rider')
-  const [riderFee, setRiderFee] = useState(0)
-  const [pedestrianFee, setPedestrianFee] = useState(0)
+  const [riderFee, setRiderFee] = useState<number>(0)
+  const [pedestrianFee, setPedestrianFee] = useState<number>(0)
   const [isLoadingDelivery, setIsLoadingDelivery] = useState(false)
-  const platformFee = 3.00 // Platform fee of GHC3.00
+  const [walletBalance, setWalletBalance] = useState<number>(0)
+  const [useWallet, setUseWallet] = useState(false)
+  const [platformFee, setPlatformFee] = useState<number>(0) // Platform fee from NEXT_PUBLIC_DELIVERY_PRICE API
 
   useEffect(() => {
     console.log('Cart Items in CartModal:', cart.map(item => ({
@@ -85,6 +96,90 @@ export function CartModal({
   useEffect(() => {
   }, [deliveryType])
 
+  // Fetch delikaBalance from customer details API when modal opens
+  useEffect(() => {
+    const fetchDelikaBalance = async () => {
+      if (isOpen && isAuthenticated) {
+        try {
+          // Get userId from localStorage userData
+          const userData = localStorage.getItem('userData');
+          if (userData) {
+            const parsedUserData = JSON.parse(userData);
+            const userId = parsedUserData.id;
+            
+            if (userId) {
+              console.log('[Wallet] Fetching customer details for userId:', userId);
+              
+              // Fetch customer details from API
+              const customerDetails = await getCustomerDetails(userId);
+              console.log('[Wallet] Customer details response:', customerDetails);
+              
+              // Extract delikaBalance from API response
+              // Try different possible field names for delikaBalance
+              const balance = customerDetails.delikaBalance || 
+                             customerDetails.walletBalance || 
+                             customerDetails.balance || 
+                             customerDetails.wallet?.balance ||
+                             customerDetails.customerTable?.[0]?.delikaBalance ||
+                             customerDetails.customerTable?.[0]?.walletBalance ||
+                             0;
+              
+              const numericBalance = toNumber(balance);
+              console.log('[Wallet] Extracted delikaBalance:', balance, '-> Converted to numeric:', numericBalance);
+              setWalletBalance(numericBalance);
+              
+              // Automatically use wallet if balance is available
+              if (numericBalance > 0) {
+                setUseWallet(true);
+                console.log('[Wallet] Auto-enabling wallet usage - balance available:', numericBalance);
+              }
+            } else {
+              console.log('[Wallet] No userId found in userData');
+              setWalletBalance(0);
+              setUseWallet(false);
+            }
+          } else {
+            console.log('[Wallet] No userData found in localStorage');
+            setWalletBalance(0);
+            setUseWallet(false);
+          }
+        } catch (error) {
+          console.error('[Wallet] Error fetching delikaBalance from API:', error);
+          // Fallback to localStorage delikaBalance
+                      try {
+              const userData = localStorage.getItem('userData');
+              if (userData) {
+                const parsedUserData = JSON.parse(userData);
+                                const balance = parsedUserData.delikaBalance || parsedUserData.walletBalance || parsedUserData.balance || 0;
+                const numericBalance = toNumber(balance);
+                console.log('[Wallet] Fallback to localStorage delikaBalance:', balance, '-> Converted to numeric:', numericBalance);
+                setWalletBalance(numericBalance);
+                
+                // Automatically use wallet if balance is available
+                if (numericBalance > 0) {
+                  setUseWallet(true);
+                  console.log('[Wallet] Auto-enabling wallet usage from localStorage - balance available:', numericBalance);
+                }
+            } else {
+              setWalletBalance(0);
+              setUseWallet(false);
+            }
+          } catch (fallbackError) {
+            console.log('[Wallet] Fallback error, setting balance to 0:', fallbackError);
+            setWalletBalance(0);
+            setUseWallet(false);
+          }
+        }
+      } else if (isOpen && !isAuthenticated) {
+        // User not authenticated, set wallet balance to 0
+        setWalletBalance(0);
+        setUseWallet(false);
+      }
+    };
+
+    fetchDelikaBalance();
+  }, [isOpen, isAuthenticated])
+
   useEffect(() => {
     const calculateFee = async () => {
       try {
@@ -92,6 +187,7 @@ export function CartModal({
         const locationData = localStorage.getItem('userLocationData')
         
         console.log('[Delivery Calculation] Starting delivery fee calculation');
+        console.log('[Delivery Calculation] Triggered by cart/total change - Cart items:', cart.length, 'Cart total:', cartTotal);
         console.log('[Delivery Calculation] Branch location prop:', branchLocation);
         console.log('[Delivery Calculation] Raw user location data:', locationData);
         
@@ -114,7 +210,26 @@ export function CartModal({
         )
         
         console.log('[Delivery Calculation] Calculated distance:', distance, 'km');
-        setDistance(distance)
+        setDistance(toNumber(distance))
+
+        // Get userId from localStorage userData
+        let userId = '';
+        try {
+          const userData = localStorage.getItem('userData');
+          if (userData) {
+            const parsedUserData = JSON.parse(userData);
+            userId = parsedUserData.id || '';
+          }
+        } catch (error) {
+          console.log('[Delivery Calculation] Could not retrieve userId from userData:', error);
+        }
+
+        // Calculate total including extras for all cart items
+        const currentCartTotal = cart.reduce((total, item) => {
+          const base = parseFloat(item.price) * item.quantity;
+          const extrasTotal = (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0) * item.quantity;
+          return total + base + extrasTotal;
+        }, 0);
 
         // Prepare the payload for delivery price calculation
         const deliveryPayload = {
@@ -127,29 +242,60 @@ export function CartModal({
             toLongitude: lng.toString(),
           },
           rider: true,
-          pedestrian: true
+          pedestrian: true,
+          total: currentCartTotal,
+          subTotal: currentCartTotal,
+          userId: userId
         };
         
         console.log('[Delivery Calculation] Payload being sent to delivery API:', JSON.stringify(deliveryPayload, null, 2));
+        console.log('[Delivery Calculation] Additional payload details - Total:', currentCartTotal, 'SubTotal:', currentCartTotal, 'UserId:', userId);
 
         // Get delivery prices from API
-        const { riderFee: newRiderFee, pedestrianFee: newPedestrianFee } = await calculateDeliveryPrices(deliveryPayload);
+        const deliveryResponse = await calculateDeliveryPrices(deliveryPayload);
+        const { 
+          riderFee: newRiderFee, 
+          pedestrianFee: newPedestrianFee,
+          platformFee: newPlatformFee,
+          delikaBalance: newDelikaBalance,
+          distance: apiDistance,
+          amountToBePaid
+        } = deliveryResponse;
 
-        console.log('[Delivery Calculation] API response - Rider fee:', newRiderFee, 'Pedestrian fee:', newPedestrianFee);
+        console.log('[Delivery Calculation] Full API response:', deliveryResponse);
+        console.log('[Delivery Calculation] Extracted values - Rider fee:', newRiderFee, 'Pedestrian fee:', newPedestrianFee, 'Platform fee:', newPlatformFee, 'DelikaBalance:', newDelikaBalance);
         
-        setRiderFee(newRiderFee)
-        setPedestrianFee(newPedestrianFee)
+        setRiderFee(toNumber(newRiderFee))
+        setPedestrianFee(toNumber(newPedestrianFee))
+        
+        // Always update platform fee from API response  
+        const numericPlatformFee = toNumber(newPlatformFee);
+        setPlatformFee(numericPlatformFee)
+        console.log('[Delivery Calculation] ✅ Platform fee updated from', platformFee, 'to', numericPlatformFee, '(from API)');
+        
+        // Update wallet balance if provided by API (more up-to-date than localStorage)
+        if (newDelikaBalance !== undefined && newDelikaBalance !== null) {
+          const numericBalance = toNumber(newDelikaBalance);
+          setWalletBalance(numericBalance)
+          console.log('[Delivery Calculation] Updated delikaBalance from API to:', numericBalance, '(converted from:', newDelikaBalance, ')');
+          
+          // Automatically use wallet if balance is available
+          if (numericBalance > 0) {
+            setUseWallet(true);
+            console.log('[Delivery Calculation] Auto-enabling wallet usage - balance available:', numericBalance);
+          }
+        }
         
         // If distance > 2km and pedestrian is selected, switch to rider
         if (distance > 2 && deliveryType === 'pedestrian') {
           console.log('[Delivery Calculation] Distance > 2km, switching from pedestrian to rider');
           setDeliveryType('rider')
-          setDeliveryFee(newRiderFee)
+          setDeliveryFee(toNumber(newRiderFee))
         } else {
           // Set the fee based on the selected delivery type
           const currentFee = deliveryType === 'rider' ? newRiderFee : newPedestrianFee
           console.log('[Delivery Calculation] Setting delivery fee for', deliveryType, ':', currentFee);
-          setDeliveryFee(currentFee)
+          setDeliveryFee(toNumber(currentFee))
         }
       } catch (error) {
         console.error('[Delivery Calculation] Error calculating delivery fee:', error);
@@ -174,7 +320,7 @@ export function CartModal({
     return () => {
       window.removeEventListener('locationUpdated', handleLocationUpdate)
     }
-  }, [isOpen, branchLocation, deliveryType])
+  }, [isOpen, branchLocation, deliveryType, cartTotal, cart])
 
   // Check authentication status whenever the modal opens
   useEffect(() => {
@@ -195,6 +341,10 @@ export function CartModal({
       localStorage.setItem('selectedDeliveryType', deliveryType)
       localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
       localStorage.setItem('checkoutPlatformFee', platformFee.toString())
+      localStorage.setItem('useWalletBalance', useWallet.toString())
+      localStorage.setItem('walletDeduction', useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toString() : '0')
+      localStorage.setItem('delikaBalance', useWallet.toString()) // Boolean
+      localStorage.setItem('delikaBalanceAmount', useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toString() : '0') // Number
       // Store cart items with extras in localStorage
       localStorage.setItem('checkoutCartItems', JSON.stringify(cart))
       
@@ -210,10 +360,14 @@ export function CartModal({
       return
     }
     
-    // Store delivery type, delivery fee, and platform fee
+    // Store delivery type, delivery fee, platform fee, and wallet info
     localStorage.setItem('selectedDeliveryType', deliveryType)
     localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
     localStorage.setItem('checkoutPlatformFee', platformFee.toString())
+    localStorage.setItem('useWalletBalance', useWallet.toString())
+    localStorage.setItem('walletDeduction', useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toString() : '0')
+    localStorage.setItem('delikaBalance', useWallet.toString()) // Boolean
+    localStorage.setItem('delikaBalanceAmount', useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toString() : '0') // Number
     // Store cart items with extras in localStorage
     localStorage.setItem('checkoutCartItems', JSON.stringify(cart))
     
@@ -555,9 +709,39 @@ export function CartModal({
                   <span className="font-medium">GH₵ {platformFee.toFixed(2)}</span>
                 </div>
 
+                {/* Wallet Section */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4 text-gray-600" />
+                      <span className="text-gray-600">DelikaBalance</span>
+                    </div>
+                    <span className="font-medium text-green-600">GH₵ {toNumber(walletBalance).toFixed(2)}</span>
+                  </div>
+                  
+                  {walletBalance > 0 && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-700">
+                          Auto-applied
+                        </span>
+                      </div>
+                      <span className="text-sm text-orange-600">
+                        -GH₵ {Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-between items-center pt-3 border-t">
                   <span className="font-medium">Total</span>
-                  <span className="font-semibold text-lg">GH₵ {(cartTotal + deliveryFee + platformFee).toFixed(2)}</span>
+                  <span className="font-semibold text-lg">
+                    GH₵ {(() => {
+                      const finalTotal = Math.max(0, (cartTotal + deliveryFee + platformFee) - (useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee) : 0));
+                      console.log('[Cart Total] Calculation: CartTotal(', cartTotal, ') + DeliveryFee(', deliveryFee, ') + PlatformFee(', platformFee, ') - WalletDeduction = ', finalTotal);
+                      return finalTotal.toFixed(2);
+                    })()}
+                  </span>
                 </div>
               </div>
               <Button 
@@ -569,7 +753,11 @@ export function CartModal({
                   ? 'Calculating delivery...'
                   : hasUnavailableItems
                     ? 'Remove Unavailable Items'
-                    : 'Proceed to Checkout'}
+                    : (() => {
+                        const finalTotal = Math.max(0, (cartTotal + deliveryFee + platformFee) - (useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee) : 0));
+                        const isFullyPaidByWallet = finalTotal === 0 && useWallet;
+                        return isFullyPaidByWallet ? 'Confirm Order' : 'Proceed to Checkout';
+                      })()}
               </Button>
               {!isAuthenticated && (
                 <p className="text-sm text-gray-500 text-center mt-2">

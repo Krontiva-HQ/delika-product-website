@@ -422,7 +422,6 @@ const transformOrderData = (orderData: any, storeType: string) => {
       
       // Transform to match pharmacy orders table schema exactly
       const transformedData = {
-        id: baseData.id,
         orderDate: baseData.orderDate,
         orderOTP: 0,
         orderNumber: 0,
@@ -436,7 +435,7 @@ const transformOrderData = (orderData: any, storeType: string) => {
         batchID: "", // Note: capital ID to match schema
         orderPrice: baseData.orderPrice?.toString() || "0",
         deliveryPrice: baseData.deliveryPrice?.toString() || "0",
-        totalPrice: baseData.totalPrice?.toString() || "0",
+        totalPrice: baseData.finalAmount?.toString() || baseData.totalPrice?.toString() || "0",
         orderAccepted: "",
         orderStatus: "", // Leave empty - let API set default status
         paymentStatus: "Pending", // Use valid pharmacy payment status: Pending, Paid, or Abandoned
@@ -473,6 +472,7 @@ const transformOrderData = (orderData: any, storeType: string) => {
       };
 
       console.log('🏥 Final pharmacy order payload:', JSON.stringify(transformedData, null, 2));
+      console.log('💊 Pharmacy order totalPrice (after wallet deduction):', transformedData.totalPrice);
       return transformedData;
     
     case 'grocery':
@@ -484,9 +484,10 @@ const transformOrderData = (orderData: any, storeType: string) => {
         ? localStorage.getItem('selectedGroceryShopId') 
         : null;
       
+      console.log('🛒 Grocery order totalPrice (after wallet deduction):', baseData.finalAmount?.toString() || baseData.totalPrice?.toString() || "0");
+      
       // Transform to match grocery orders table schema exactly
       return {
-        id: baseData.id,
         orderDate: baseData.orderDate,
         orderOTP: 0,
         orderNumber: 0,
@@ -501,7 +502,7 @@ const transformOrderData = (orderData: any, storeType: string) => {
         batchId: "", // Note: lowercase 'd' for grocery (different from pharmacy)
         orderPrice: baseData.orderPrice?.toString() || "0",
         deliveryPrice: baseData.deliveryPrice?.toString() || "0",
-        totalPrice: baseData.totalPrice?.toString() || "0",
+        totalPrice: baseData.finalAmount?.toString() || baseData.totalPrice?.toString() || "0",
         orderAccepted: "",
         paymentStatus: "Pending", // Use valid grocery payment status
         paystackReferenceCode: "",
@@ -539,7 +540,17 @@ const transformOrderData = (orderData: any, storeType: string) => {
     
     case 'restaurant':
     default:
-      // No transformation needed for restaurant orders
+      // For restaurant orders, override totalPrice with finalAmount if available
+      if (baseData.finalAmount && baseData.finalAmount !== baseData.totalPrice) {
+        console.log('🍕 Restaurant order: Overriding totalPrice with finalAmount (after wallet deduction)');
+        console.log('- Original totalPrice:', baseData.totalPrice);
+        console.log('- Final amount after wallet deduction:', baseData.finalAmount);
+        
+        return {
+          ...baseData,
+          totalPrice: baseData.finalAmount.toString()
+        };
+      }
       return baseData;
   }
 };
@@ -579,16 +590,64 @@ export const submitOrder = async (orderData: any, storeType: string = 'restauran
 
     const transformedData = transformOrderData(orderData, storeType);
 
+    // 🔍 DETAILED PRICE ANALYSIS LOGGING
+    console.log('🔍 === DETAILED PRICE ANALYSIS ===');
+    console.log('💰 Original order data prices:');
+    console.log('  - totalPrice (before deduction):', orderData.totalPrice);
+    console.log('  - finalAmount (after deduction):', orderData.finalAmount);
+    console.log('  - walletDeduction:', orderData.walletDeduction);
+    console.log('  - useWallet:', orderData.walletUsed);
+    console.log('  - delikaBalanceAmount:', orderData.delikaBalanceAmount);
+    
+    console.log('💰 Transformed data prices:');
+    console.log('  - totalPrice (what will be sent to API):', transformedData.totalPrice);
+    console.log('  - orderPrice:', transformedData.orderPrice);
+    console.log('  - deliveryPrice:', transformedData.deliveryPrice);
+    console.log('  - platformFee:', transformedData.platformFee);
+    
+    // Calculate what the total should be
+    const originalTotal = parseFloat(orderData.totalPrice || '0');
+    const finalAmount = parseFloat(orderData.finalAmount || '0');
+    const walletDeduction = parseFloat(orderData.walletDeduction || '0');
+    const transformedTotal = parseFloat(transformedData.totalPrice || '0');
+    
+    console.log('🔢 === PRICE CALCULATION VERIFICATION ===');
+    console.log('  - Original total (before wallet):', originalTotal);
+    console.log('  - Wallet deduction:', walletDeduction);
+    console.log('  - Expected final amount:', originalTotal - walletDeduction);
+    console.log('  - Actual finalAmount from orderData:', finalAmount);
+    console.log('  - Transformed totalPrice being sent:', transformedTotal);
+    
+    if (transformedTotal !== finalAmount) {
+      console.error('❌ MISMATCH DETECTED!');
+      console.error('  - Expected (finalAmount):', finalAmount);
+      console.error('  - Actual (transformedTotal):', transformedTotal);
+      console.error('  - Difference:', transformedTotal - finalAmount);
+    } else {
+      console.log('✅ Price calculation is CORRECT!');
+    }
+    console.log('🔍 === END PRICE ANALYSIS ===');
+
     console.log(`📤 Submitting ${storeType} order to:`, endpoint);
     console.log('📋 Original order data:', JSON.stringify(orderData, null, 2));
     console.log('🔄 Transformed order data:', JSON.stringify(transformedData, null, 2));
+
+    // Log the exact payload being sent
+    const requestBody = JSON.stringify(transformedData);
+    console.log('📦 === EXACT PAYLOAD BEING SENT ===');
+    console.log('Request URL:', endpoint);
+    console.log('Request method: POST');
+    console.log('Request headers:', { 'Content-Type': 'application/json' });
+    console.log('Request body length:', requestBody.length, 'characters');
+    console.log('Request body:', requestBody);
+    console.log('📦 === END PAYLOAD LOG ===');
 
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(transformedData),
+      body: requestBody,
     });
 
     console.log(`📊 ${storeType} order response status:`, response.status);
@@ -678,7 +737,17 @@ export async function calculateDeliveryPrices(params: {
   };
   rider: boolean;
   pedestrian: boolean;
-}) {
+  total?: number;
+  subTotal?: number;
+  userId?: string;
+}): Promise<{
+  riderFee: number;
+  pedestrianFee: number;
+  platformFee: number;
+  delikaBalance: number;
+  distance: number;
+  amountToBePaid: number;
+}> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_DELIVERY_PRICE || "https://api-server.krontiva.africa/api:uEBBwbSs/calculate/delivery/price"
 
@@ -699,13 +768,18 @@ export async function calculateDeliveryPrices(params: {
 
     const data = await response.json();
 
-    if (!data.riderFee && !data.pedestrianFee) {
-      throw new Error("Invalid API response - missing fee data");
+    if ((!data.riderFee && !data.pedestrianFee) || data.platformFee === undefined) {
+      console.error("API Response validation failed:", data);
+      throw new Error("Invalid API response - missing required fee data (riderFee, pedestrianFee, or platformFee)");
     }
 
     return {
       riderFee: data.riderFee,
       pedestrianFee: data.pedestrianFee,
+      platformFee: data.platformFee || 0, // Get from API response
+      delikaBalance: data.delikaBalance || 0,
+      distance: data.distance || 0,
+      amountToBePaid: data.amountToBePaid || 0,
     };
   } catch (error) {
     throw error; // Re-throw the error to be handled by the calling component
