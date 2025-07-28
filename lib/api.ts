@@ -271,10 +271,55 @@ export async function getAllData<T = any>(): Promise<T> {
     
     const data = await response.json();
     
-    // Store allData in localStorage for detail pages to access
+    // Store essential data in localStorage for detail pages to access
     if (typeof window !== 'undefined') {
-      localStorage.setItem('allData', JSON.stringify(data));
-      console.log('Stored allData in localStorage for detail pages');
+      try {
+        // Store only essential data to avoid quota exceeded
+        const essentialData = {
+          Restaurants: data.Restaurants?.map((restaurant: any) => ({
+            id: restaurant.id,
+            slug: restaurant.slug,
+            branchName: restaurant.branchName,
+            branchLocation: restaurant.branchLocation,
+            branchCity: restaurant.branchCity,
+            active: restaurant.active,
+            Restaurant: restaurant.Restaurant ? {
+              restaurantLogo: restaurant.Restaurant.restaurantLogo,
+              restaurantName: restaurant.Restaurant.restaurantName,
+              restaurantDescription: restaurant.Restaurant.restaurantDescription
+            } : null
+          })) || [],
+          Groceries: data.Groceries?.map((grocery: any) => ({
+            id: grocery.id,
+            slug: grocery.slug,
+            grocerybranchName: grocery.grocerybranchName,
+            active: grocery.active,
+            Grocery: grocery.Grocery ? {
+              groceryshopLogo: grocery.Grocery.groceryshopLogo,
+              groceryshopName: grocery.Grocery.groceryshopName,
+              groceryshopDescription: grocery.Grocery.groceryshopDescription
+            } : null
+          })) || [],
+          Pharmacies: data.Pharmacies?.map((pharmacy: any) => ({
+            id: pharmacy.id,
+            slug: pharmacy.slug,
+            pharmacybranchName: pharmacy.pharmacybranchName,
+            active: pharmacy.active,
+            Pharmacy: pharmacy.Pharmacy ? {
+              pharmacyLogo: pharmacy.Pharmacy.pharmacyLogo,
+              pharmacyName: pharmacy.Pharmacy.pharmacyName,
+              pharmacyDescription: pharmacy.Pharmacy.pharmacyDescription
+            } : null
+          })) || [],
+          Ratings: data.Ratings || []
+        };
+        
+        localStorage.setItem('allData', JSON.stringify(essentialData));
+        console.log('Stored essential allData in localStorage for detail pages');
+      } catch (storageError) {
+        console.warn('Failed to store allData in localStorage:', storageError);
+        // Continue without storing if localStorage fails
+      }
     }
     
     return data as T;
