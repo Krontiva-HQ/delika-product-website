@@ -127,13 +127,21 @@ export function CartModal({
               const numericBalance = toNumber(balance);
               console.log('[Wallet] Extracted delikaBalance:', balance, '-> Converted to numeric:', numericBalance);
               setWalletBalance(numericBalance);
+              
+              // Automatically use wallet if balance is available
+              if (numericBalance > 0) {
+                setUseWallet(true);
+                console.log('[Wallet] Auto-enabling wallet usage - balance available:', numericBalance);
+              }
             } else {
               console.log('[Wallet] No userId found in userData');
               setWalletBalance(0);
+              setUseWallet(false);
             }
           } else {
             console.log('[Wallet] No userData found in localStorage');
             setWalletBalance(0);
+            setUseWallet(false);
           }
         } catch (error) {
           console.error('[Wallet] Error fetching delikaBalance from API:', error);
@@ -146,17 +154,26 @@ export function CartModal({
                 const numericBalance = toNumber(balance);
                 console.log('[Wallet] Fallback to localStorage delikaBalance:', balance, '-> Converted to numeric:', numericBalance);
                 setWalletBalance(numericBalance);
+                
+                // Automatically use wallet if balance is available
+                if (numericBalance > 0) {
+                  setUseWallet(true);
+                  console.log('[Wallet] Auto-enabling wallet usage from localStorage - balance available:', numericBalance);
+                }
             } else {
               setWalletBalance(0);
+              setUseWallet(false);
             }
           } catch (fallbackError) {
             console.log('[Wallet] Fallback error, setting balance to 0:', fallbackError);
             setWalletBalance(0);
+            setUseWallet(false);
           }
         }
       } else if (isOpen && !isAuthenticated) {
         // User not authenticated, set wallet balance to 0
         setWalletBalance(0);
+        setUseWallet(false);
       }
     };
 
@@ -261,6 +278,12 @@ export function CartModal({
           const numericBalance = toNumber(newDelikaBalance);
           setWalletBalance(numericBalance)
           console.log('[Delivery Calculation] Updated delikaBalance from API to:', numericBalance, '(converted from:', newDelikaBalance, ')');
+          
+          // Automatically use wallet if balance is available
+          if (numericBalance > 0) {
+            setUseWallet(true);
+            console.log('[Delivery Calculation] Auto-enabling wallet usage - balance available:', numericBalance);
+          }
         }
         
         // If distance > 2km and pedestrian is selected, switch to rider
@@ -320,6 +343,8 @@ export function CartModal({
       localStorage.setItem('checkoutPlatformFee', platformFee.toString())
       localStorage.setItem('useWalletBalance', useWallet.toString())
       localStorage.setItem('walletDeduction', useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toString() : '0')
+      localStorage.setItem('delikaBalance', useWallet.toString()) // Boolean
+      localStorage.setItem('delikaBalanceAmount', useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toString() : '0') // Number
       // Store cart items with extras in localStorage
       localStorage.setItem('checkoutCartItems', JSON.stringify(cart))
       
@@ -341,6 +366,8 @@ export function CartModal({
     localStorage.setItem('checkoutPlatformFee', platformFee.toString())
     localStorage.setItem('useWalletBalance', useWallet.toString())
     localStorage.setItem('walletDeduction', useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toString() : '0')
+    localStorage.setItem('delikaBalance', useWallet.toString()) // Boolean
+    localStorage.setItem('delikaBalanceAmount', useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toString() : '0') // Number
     // Store cart items with extras in localStorage
     localStorage.setItem('checkoutCartItems', JSON.stringify(cart))
     
@@ -695,23 +722,13 @@ export function CartModal({
                   {walletBalance > 0 && (
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Switch
-                          id="use-wallet"
-                          checked={useWallet}
-                          onCheckedChange={setUseWallet}
-                        />
-                        <Label 
-                          htmlFor="use-wallet" 
-                          className="text-sm text-gray-700 cursor-pointer"
-                        >
-                          Use delikaBalance
-                        </Label>
-                      </div>
-                      {useWallet && (
-                        <span className="text-sm text-orange-600">
-                          -GH₵ {Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toFixed(2)}
+                        <span className="text-sm text-gray-700">
+                          Auto-applied
                         </span>
-                      )}
+                      </div>
+                      <span className="text-sm text-orange-600">
+                        -GH₵ {Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toFixed(2)}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -736,7 +753,11 @@ export function CartModal({
                   ? 'Calculating delivery...'
                   : hasUnavailableItems
                     ? 'Remove Unavailable Items'
-                    : 'Proceed to Checkout'}
+                    : (() => {
+                        const finalTotal = Math.max(0, (cartTotal + deliveryFee + platformFee) - (useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee) : 0));
+                        const isFullyPaidByWallet = finalTotal === 0 && useWallet;
+                        return isFullyPaidByWallet ? 'Confirm Order' : 'Proceed to Checkout';
+                      })()}
               </Button>
               {!isAuthenticated && (
                 <p className="text-sm text-gray-500 text-center mt-2">

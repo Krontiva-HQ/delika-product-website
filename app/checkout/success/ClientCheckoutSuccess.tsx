@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Check, ShoppingBag, MapPin, Clock, Phone, User, Receipt, Star, Download, Share2 } from 'lucide-react'
+import { Check, ShoppingBag, MapPin, Clock, Phone, User, Receipt, Star, Download, Share2, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/use-toast'
 import Image from 'next/image'
@@ -15,6 +15,10 @@ interface OrderDetails {
   totalPrice: string
   orderPrice: string
   deliveryPrice: string
+  delikaBalance?: boolean // Added for wallet payment detection
+  walletUsed?: boolean // Added for wallet payment detection
+  delikaBalanceAmount?: number // Added for wallet payment amount
+  paymentStatus?: string // Added for payment status verification
   products: Array<{
     name: string
     price: string
@@ -45,6 +49,7 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [verificationError, setVerificationError] = useState(false)
+  const [isWalletPayment, setIsWalletPayment] = useState(false)
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -52,13 +57,107 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
         // Get reference from props or URL params
         const reference = propReference || (searchParams?.get('reference') ?? null)
         const orderId = propOrderId || (searchParams?.get('orderId') ?? null)
+        const walletPaid = searchParams?.get('walletPaid') === 'true'
         
         if (!reference && !orderId) {
           console.error('No reference or orderId found')
           throw new Error('No payment reference or order ID found')
         }
 
-        // If we have a reference, verify payment
+        // Check if this was a wallet payment (fully paid by Delika balance)
+        if (walletPaid) {
+          console.log('💰 Processing wallet payment success');
+          console.log('[Success Page] Wallet payment details:', {
+            walletPaid,
+            orderId,
+            reference
+          });
+          setIsWalletPayment(true);
+          
+          // For wallet payments, we need to fetch the order details from the backend
+          // since there's no walletPaymentResponse in localStorage
+          if (orderId) {
+            try {
+              // First, we need to get the orderNumber from the backend response
+              // Check if we have the order submission response in localStorage
+              const orderSubmissionData = localStorage.getItem('orderSubmissionResponse');
+              let orderNumber = null;
+              
+              if (orderSubmissionData) {
+                try {
+                  const { response } = JSON.parse(orderSubmissionData);
+                  console.log('[Success Page] Full order submission response:', response);
+                  
+                  // For restaurant orders: { result1: { id: "...", orderNumber: "..." } }
+                  // For pharmacy/grocery orders: { id: "...", orderNumber: "..." }
+                  orderNumber = response?.result1?.orderNumber || response?.orderNumber;
+                  console.log('[Success Page] Extracted orderNumber from localStorage:', orderNumber);
+                  console.log('[Success Page] Response structure:', {
+                    hasResult1: !!response?.result1,
+                    result1OrderNumber: response?.result1?.orderNumber,
+                    directOrderNumber: response?.orderNumber,
+                    finalOrderNumber: orderNumber
+                  });
+                } catch (error) {
+                  console.error('Error parsing order submission data:', error);
+                }
+              }
+              
+              // If we don't have orderNumber, try using orderId as fallback
+              if (!orderNumber) {
+                orderNumber = orderId;
+                console.log('[Success Page] Using orderId as fallback for orderNumber:', orderNumber);
+              }
+              
+              console.log('[Success Page] Final orderNumber being used for API call:', orderNumber);
+              console.log('[Success Page] API endpoint:', `${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderNumber}`);
+              
+              // Use the same API endpoint as the order status widget
+              const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderNumber}`)
+              if (!response.ok) {
+                throw new Error('Failed to fetch order details')
+              }
+              const data = await response.json()
+              
+              // Verify payment status for wallet payments
+              console.log('[Success Page] Wallet payment order details:', data);
+              console.log('[Success Page] Payment status:', data.paymentStatus);
+              
+              // Only show receipt if payment status is confirmed as "paid"
+              if (data.paymentStatus?.toLowerCase() === 'paid') {
+                setOrderDetails(data)
+                
+                // Store order number for tracking
+                if (data.orderNumber) {
+                  localStorage.setItem('activeOrderNumber', data.orderNumber.toString())
+                  localStorage.setItem('lastOrderDetails', JSON.stringify(data))
+                }
+                console.log('[Success Page] ✅ Wallet payment verified - showing receipt');
+              } else {
+                console.log('[Success Page] ❌ Wallet payment not confirmed - payment status:', data.paymentStatus);
+                setVerificationError(true)
+                toast({
+                  title: "Payment Verification Failed",
+                  description: "Your wallet payment could not be verified. Please contact support.",
+                  variant: "destructive"
+                })
+                // Redirect to shop page after a delay
+                setTimeout(() => {
+                  router.push('/shop')
+                }, 3000)
+                return;
+              }
+              return;
+            } catch (error) {
+              console.error('Error fetching order details for wallet payment:', error)
+              throw new Error('Failed to fetch wallet payment order details')
+            }
+          } else {
+            throw new Error('No orderId provided for wallet payment')
+          }
+        }
+
+        // If we have a reference, verify payment (this is for Paystack payments)
         if (reference) {
           const response = await fetch(`${process.env.NEXT_PUBLIC_VERIFY_ORDER_PAYMENT_API}?reference=${reference}`)
           if (!response.ok) {
@@ -90,12 +189,78 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
         } 
         // If we have an orderId, fetch order details
         else if (orderId) {
-          const response = await fetch(`/api/orders/${orderId}`)
+          // First, we need to get the orderNumber from the backend response
+          // Check if we have the order submission response in localStorage
+          const orderSubmissionData = localStorage.getItem('orderSubmissionResponse');
+          let orderNumber = null;
+          
+          if (orderSubmissionData) {
+            try {
+              const { response } = JSON.parse(orderSubmissionData);
+              console.log('[Success Page] Full order submission response (fallback):', response);
+              
+              // For restaurant orders: { result1: { id: "...", orderNumber: "..." } }
+              // For pharmacy/grocery orders: { id: "...", orderNumber: "..." }
+              orderNumber = response?.result1?.orderNumber || response?.orderNumber;
+              console.log('[Success Page] Extracted orderNumber from localStorage (fallback):', orderNumber);
+              console.log('[Success Page] Response structure (fallback):', {
+                hasResult1: !!response?.result1,
+                result1OrderNumber: response?.result1?.orderNumber,
+                directOrderNumber: response?.orderNumber,
+                finalOrderNumber: orderNumber
+              });
+            } catch (error) {
+              console.error('Error parsing order submission data:', error);
+            }
+          }
+          
+          // If we don't have orderNumber, try using orderId as fallback
+          if (!orderNumber) {
+            orderNumber = orderId;
+            console.log('[Success Page] Using orderId as fallback for orderNumber (fallback):', orderNumber);
+          }
+          
+          console.log('[Success Page] Final orderNumber being used for API call (fallback):', orderNumber);
+          console.log('[Success Page] API endpoint (fallback):', `${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderNumber}`);
+          
+          // Use the same API endpoint as the order status widget
+          const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderNumber}`)
           if (!response.ok) {
             throw new Error('Failed to fetch order details')
           }
           const data = await response.json()
-          setOrderDetails(data)
+          
+          // Check if this was a wallet payment based on order details
+          if (data.delikaBalance === true || data.walletUsed === true) {
+            setIsWalletPayment(true);
+            console.log('[Success Page] Detected wallet payment from order details');
+            
+            // Verify payment status for wallet payments
+            console.log('[Success Page] Wallet payment order details:', data);
+            console.log('[Success Page] Payment status:', data.paymentStatus);
+            
+            // Only show receipt if payment status is confirmed as "paid"
+            if (data.paymentStatus?.toLowerCase() === 'paid') {
+              setOrderDetails(data)
+              console.log('[Success Page] ✅ Wallet payment verified - showing receipt');
+            } else {
+              console.log('[Success Page] ❌ Wallet payment not confirmed - payment status:', data.paymentStatus);
+              setVerificationError(true)
+              toast({
+                title: "Payment Verification Failed",
+                description: "Your wallet payment could not be verified. Please contact support.",
+                variant: "destructive"
+              })
+              // Redirect to shop page after a delay
+              setTimeout(() => {
+                router.push('/shop')
+              }, 3000)
+              return;
+            }
+          } else {
+            // For non-wallet payments, show order details regardless of payment status
+            setOrderDetails(data)
+          }
         }
       } catch (error) {
         console.error('Error:', error)
@@ -110,7 +275,8 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
 
   const handleShare = () => {
     if (orderDetails) {
-      const message = `🧾 Order Receipt #${orderDetails.id}\n\n📱 Customer: ${orderDetails.customerName}\n💰 Total: GH₵${orderDetails.totalPrice}\n📍 From: ${orderDetails.pickup[0]?.fromAddress}\n🏠 To: ${orderDetails.dropOff[0]?.toAddress}\n\n✅ Order confirmed successfully!`
+      const paymentMethod = isWalletPayment ? 'Delika Balance' : 'Mobile Money';
+      const message = `🧾 Order Receipt #${orderDetails.id}\n\n📱 Customer: ${orderDetails.customerName}\n💰 Total: GH₵${orderDetails.totalPrice}\n💳 Payment: ${paymentMethod}\n📍 From: ${orderDetails.pickup[0]?.fromAddress}\n🏠 To: ${orderDetails.dropOff[0]?.toAddress}\n\n✅ Order confirmed successfully!`
       
       if (navigator.share) {
         navigator.share({
@@ -187,8 +353,21 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
               <Check className="h-12 w-12 text-white animate-bounce" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Payment Successful!</h1>
-          <p className="text-gray-600 text-lg">Your order has been confirmed</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {isWalletPayment ? 'Order Confirmed!' : 'Payment Successful!'}
+          </h1>
+          <p className="text-gray-600 text-lg">
+            {isWalletPayment 
+              ? 'Your order has been paid using your Delika balance' 
+              : 'Your order has been confirmed'
+            }
+          </p>
+          {isWalletPayment && (
+            <div className="mt-4 inline-flex items-center gap-2 bg-green-100 rounded-full px-4 py-2">
+              <Wallet className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-medium text-green-700">Paid with Delika Balance</span>
+            </div>
+          )}
         </div>
 
         {/* Receipt Card */}
@@ -208,6 +387,12 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
               <div className="text-right">
                 <Receipt className="h-8 w-8 ml-auto mb-1" />
                 <p className="text-sm opacity-90">Digital Receipt</p>
+                {isWalletPayment && (
+                  <div className="flex items-center gap-1 justify-end mt-1">
+                    <Wallet className="h-3 w-3" />
+                    <span className="text-xs opacity-90">Wallet Payment</span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex justify-between items-end">

@@ -194,13 +194,21 @@ export function CheckoutPage({
             const numericBalance = toNumber(balance);
             console.log('[Checkout Wallet] Extracted delikaBalance:', balance, '-> Converted to numeric:', numericBalance);
             setWalletBalance(numericBalance);
+            
+            // Automatically use wallet if balance is available
+            if (numericBalance > 0) {
+              setUseWallet(true);
+              console.log('[Checkout Wallet] Auto-enabling wallet usage - balance available:', numericBalance);
+            }
           } else {
             console.log('[Checkout Wallet] No userId found in userData');
             setWalletBalance(0);
+            setUseWallet(false);
           }
         } else {
           console.log('[Checkout Wallet] No userData found in localStorage');
           setWalletBalance(0);
+          setUseWallet(false);
         }
       } catch (error) {
         console.error('[Checkout Wallet] Error fetching delikaBalance from API:', error);
@@ -213,12 +221,20 @@ export function CheckoutPage({
             const numericBalance = toNumber(balance);
             console.log('[Checkout Wallet] Fallback to localStorage delikaBalance:', balance, '-> Converted to numeric:', numericBalance);
             setWalletBalance(numericBalance);
+            
+            // Automatically use wallet if balance is available
+            if (numericBalance > 0) {
+              setUseWallet(true);
+              console.log('[Checkout Wallet] Auto-enabling wallet usage from localStorage - balance available:', numericBalance);
+            }
           } else {
             setWalletBalance(0);
+            setUseWallet(false);
           }
         } catch (fallbackError) {
           console.log('[Checkout Wallet] Fallback error, setting balance to 0:', fallbackError);
           setWalletBalance(0);
+          setUseWallet(false);
         }
       }
     };
@@ -317,6 +333,9 @@ export function CheckoutPage({
     // Load wallet usage settings from localStorage (from cart modal)
     const savedUseWallet = localStorage.getItem('useWalletBalance')
     if (savedUseWallet === 'true') {
+      setUseWallet(true)
+    } else if (walletBalance > 0) {
+      // Auto-enable wallet if balance is available and no explicit setting
       setUseWallet(true)
     }
 
@@ -493,6 +512,12 @@ export function CheckoutPage({
           const numericBalance = toNumber(newDelikaBalance);
           setWalletBalance(numericBalance)
           console.log('[Checkout Delivery] Updated delikaBalance from API to:', numericBalance, '(converted from:', newDelikaBalance, ')');
+          
+          // Automatically use wallet if balance is available
+          if (numericBalance > 0) {
+            setUseWallet(true);
+            console.log('[Checkout Delivery] Auto-enabling wallet usage - balance available:', numericBalance);
+          }
         }
         
         // If distance > 2km and pedestrian is selected, switch to rider
@@ -604,6 +629,20 @@ export function CheckoutPage({
       
       console.log('[Checkout Submit] Order calculation - CartTotal:', cartTotal, 'DeliveryFee:', deliveryFee, 'PlatformFee:', platformFee, 'WalletDeduction:', walletDeduction, 'FinalTotal:', totalAmount);
 
+      // Check if the total amount is 0 (fully covered by Delika balance)
+      const isFullyPaidByWallet = totalAmount === 0 && useWallet;
+      
+      console.log('[Checkout Submit] Wallet payment check:', {
+        totalAmount,
+        useWallet,
+        walletBalance: toNumber(walletBalance),
+        isFullyPaidByWallet,
+        cartTotal,
+        deliveryFee,
+        platformFee,
+        walletDeduction
+      });
+
       // Prepare order data
       const orderData = {
         id: orderId,
@@ -620,7 +659,8 @@ export function CheckoutPage({
         finalAmount: totalAmount.toString(), // Amount after wallet deduction
         walletUsed: useWallet,
         walletDeduction: walletDeduction.toString(),
-        delikaBalance: walletBalance.toString(),
+        delikaBalance: useWallet, // Boolean indicating if wallet was used
+        delikaBalanceAmount: walletDeduction, // Number amount deducted from wallet
         orderComment: customerInfo.notes || '',
         products: cart.map(item => ({
           name: item.name,
@@ -645,7 +685,7 @@ export function CheckoutPage({
         foodAndDeliveryFee: true,
         payNow: true,
         payLater: false,
-        paymentStatus: "Pending",
+        paymentStatus: isFullyPaidByWallet ? "Paid" : "Pending", // Set to "Paid" if wallet covers everything
         orderStatus: "ReadyForPickup",
         trackingUrl: "",
         dropOffCity: branchCity || "",
@@ -657,14 +697,59 @@ export function CheckoutPage({
         payVisaCard: false
       };
 
+      // 🔍 DETAILED ORDER DATA LOGGING
+      console.log('🔍 === CHECKOUT ORDER DATA CREATION ===');
+      console.log('💰 Price breakdown:');
+      console.log('  - Cart total:', cartTotal);
+      console.log('  - Delivery fee:', deliveryFee);
+      console.log('  - Platform fee:', platformFee);
+      console.log('  - Original total (before wallet):', cartTotal + deliveryFee + platformFee);
+      console.log('  - Wallet deduction:', walletDeduction);
+      console.log('  - Final amount (after wallet):', totalAmount);
+      
+      console.log('💳 Wallet information:');
+      console.log('  - Use wallet:', useWallet);
+      console.log('  - Wallet balance:', toNumber(walletBalance));
+      console.log('  - Wallet deduction amount:', walletDeduction);
+      console.log('  - Is fully paid by wallet:', isFullyPaidByWallet);
+      
+      console.log('📋 Order data key fields:');
+      console.log('  - totalPrice (original):', orderData.totalPrice);
+      console.log('  - finalAmount (after deduction):', orderData.finalAmount);
+      console.log('  - walletDeduction:', orderData.walletDeduction);
+      console.log('  - walletUsed:', orderData.walletUsed);
+      console.log('  - delikaBalanceAmount:', orderData.delikaBalanceAmount);
+      
+      // Verify the calculation
+      const calculatedFinalAmount = Math.max(0, (cartTotal + deliveryFee + platformFee) - walletDeduction);
+      if (calculatedFinalAmount !== totalAmount) {
+        console.error('❌ CALCULATION MISMATCH IN CHECKOUT!');
+        console.error('  - Calculated final amount:', calculatedFinalAmount);
+        console.error('  - Stored totalAmount:', totalAmount);
+      } else {
+        console.log('✅ Checkout calculation is CORRECT!');
+      }
+      console.log('🔍 === END CHECKOUT ORDER DATA ===');
+
       // Store wallet usage information for order processing
       localStorage.setItem('useWalletBalance', useWallet.toString());
       localStorage.setItem('walletDeduction', walletDeduction.toString());
       localStorage.setItem('checkoutPlatformFee', platformFee.toString());
       localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString());
       localStorage.setItem('selectedDeliveryType', deliveryType);
+      localStorage.setItem('delikaBalance', useWallet.toString()); // Boolean
+      localStorage.setItem('delikaBalanceAmount', walletDeduction.toString()); // Number
 
-            // Submit order to the appropriate endpoint based on store type
+      // Submit order to the appropriate endpoint based on store type
+      console.log('🚀 === SUBMITTING ORDER ===');
+      console.log('📤 Store type:', actualStoreType);
+      console.log('📤 Order data being sent to submitOrder:');
+      console.log('  - totalPrice:', orderData.totalPrice);
+      console.log('  - finalAmount:', orderData.finalAmount);
+      console.log('  - walletDeduction:', orderData.walletDeduction);
+      console.log('  - walletUsed:', orderData.walletUsed);
+      console.log('🚀 === END SUBMIT LOG ===');
+      
       const orderResponse = await submitOrder(orderData, actualStoreType);
       
       // Store the full response in localStorage
@@ -687,8 +772,16 @@ export function CheckoutPage({
       console.log(`🆔 ${actualStoreType} order ID:`, backendOrderId);
       console.log(`📋 ${actualStoreType} order response:`, orderResponse);
 
-      // Redirect to /pay page with amount, orderId from backend, customerId and storeType
-      router.push(`/pay?amount=${totalAmount}&orderId=${backendOrderId}&customerId=${userData?.id || ''}&storeType=${actualStoreType}`);    
+      // Check if order is fully paid by wallet
+      if (isFullyPaidByWallet) {
+        console.log('💰 Order fully paid by Delika balance, skipping payment flow');
+        
+        // Redirect directly to success page
+        router.push(`/checkout/success?orderId=${backendOrderId}&walletPaid=true`);
+      } else {
+        // Redirect to /pay page with amount, orderId from backend, customerId and storeType
+        router.push(`/pay?amount=${totalAmount}&orderId=${backendOrderId}&customerId=${userData?.id || ''}&storeType=${actualStoreType}`);
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -892,23 +985,13 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
                   {walletBalance > 0 && (
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Switch
-                          id="use-wallet-checkout"
-                          checked={useWallet}
-                          onCheckedChange={setUseWallet}
-                        />
-                        <Label 
-                          htmlFor="use-wallet-checkout" 
-                          className="text-sm text-gray-700 cursor-pointer"
-                        >
-                          Use delikaBalance
-                        </Label>
-                      </div>
-                      {useWallet && (
-                        <span className="text-sm text-orange-600">
-                          -GH₵ {Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toFixed(2)}
+                        <span className="text-sm text-gray-700">
+                          Auto-applied
                         </span>
-                      )}
+                      </div>
+                      <span className="text-sm text-orange-600">
+                        -GH₵ {Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toFixed(2)}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -926,6 +1009,18 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
                     </span>
                   </div>
                 </div>
+                
+                {/* Show wallet payment indicator */}
+                {useWallet && (cartTotal + deliveryFee + platformFee) <= toNumber(walletBalance) && (
+                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium text-green-700">
+                        Order will be fully paid with your Delika balance
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1126,12 +1221,15 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
                     <div className="relative w-full h-full">
                       <span className="absolute inset-0 flex items-center justify-center gap-2 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] transform group-hover:-translate-y-full">
                         <ShoppingBag className="h-5 w-5" />
-                        Place Order • GH₵ {(() => {
+                        {(() => {
                           const finalTotal = Math.max(0, (cartTotal + deliveryFee + platformFee) - (useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee) : 0));
-                          return finalTotal.toFixed(2);
+                          const isFullyPaidByWallet = finalTotal === 0 && useWallet;
+                          return isFullyPaidByWallet 
+                            ? `Confirm Order • GH₵ ${finalTotal.toFixed(2)}`
+                            : `Place Order • GH₵ ${finalTotal.toFixed(2)}`;
                         })()}
                       </span>
-                      <span className="absolute inset-0 flex items-center justify-center gap-2 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] transform translate-y-full group-hover:translate-y-0">
+                                              <span className="absolute inset-0 flex items-center justify-center gap-2 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] transform translate-y-full group-hover:translate-y-0">
                         <span className="flex items-center gap-2">
                           Confirm Order
                           <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
