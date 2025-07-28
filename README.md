@@ -319,4 +319,4 @@ For support and questions:
 
 ---
 
-Built with ❤️ by the Krontiva Africa team
+Built with ❤️ by the Krontiva Africa team (Dibe, Ronald, Debby)
