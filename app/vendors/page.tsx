@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { StoreHeader } from '@/components/store-header';
-import { VendorGrid } from '@/components/vendor-grid';
+import { StoreHeader } from "@/components/store-header";
+import { VendorGrid } from "@/components/vendor-grid";
+import { VendorSkeleton } from "@/components/vendor-skeleton";
 
 interface VendorData {
     Restaurants: any[];
@@ -162,10 +163,36 @@ export default function VendorsPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading vendors...</p>
+            <div className="min-h-screen bg-gray-50">
+                {/* Header skeleton */}
+                <div className="bg-white shadow-sm border-b">
+                    <div className="container mx-auto px-4 py-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                                <div className="space-y-2">
+                                    <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+                                    <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                                </div>
+                            </div>
+                            <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Search section skeleton */}
+                <div className="container mx-auto px-4 py-6">
+                    <div className="space-y-4 mb-6">
+                        <div className="h-8 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+                    </div>
+                    
+                    {/* Vendor grid skeleton */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                        {Array.from({ length: 15 }).map((_, index) => (
+                            <VendorSkeleton key={index} />
+                        ))}
+                    </div>
                 </div>
             </div>
         );

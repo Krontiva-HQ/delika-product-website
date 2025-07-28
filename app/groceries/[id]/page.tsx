@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
-import { LoadingSpinner } from "@/components/loading-spinner";
+import { ProductSkeleton } from "@/components/product-skeleton";
+import { CategorySkeleton } from "@/components/category-skeleton";
 import {
   Pagination,
   PaginationContent,
@@ -398,7 +399,11 @@ export default function GroceryDetailsPage() {
             <div className="bg-white rounded-lg p-4 h-fit sticky top-4 z-10 hidden lg:block">
               <h2 className="font-semibold mb-4">Categories</h2>
               <div className="block overflow-x-auto whitespace-nowrap lg:whitespace-normal pb-2 lg:pb-0 gap-2 lg:gap-0 lg:space-y-2">
-                {categories.map(category => (
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <CategorySkeleton key={index} />
+                  ))
+                ) : categories.map(category => (
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
@@ -414,7 +419,11 @@ export default function GroceryDetailsPage() {
           <div className="bg-white rounded-lg p-4 mb-6 block lg:hidden">
             <h2 className="font-semibold mb-4">Categories</h2>
             <div className="flex overflow-x-auto whitespace-nowrap pb-2 gap-2">
-              {categories.map(category => (
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <CategorySkeleton key={index} />
+                ))
+              ) : categories.map(category => (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
@@ -430,7 +439,11 @@ export default function GroceryDetailsPage() {
             <div className="bg-white rounded-lg p-4 sm:p-6">
               <h2 className="text-xl font-bold mb-4 sm:mb-6">{selectedCategory}</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {filteredInventory.map((item) => (
+                {isLoading ? (
+                  Array.from({ length: 12 }).map((_, index) => (
+                    <ProductSkeleton key={index} />
+                  ))
+                ) : filteredInventory.map((item) => (
                   <div
                     key={item.id}
                     className={`bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left flex flex-col ${item.available === false ? "opacity-50 grayscale pointer-events-none" : ""}`}

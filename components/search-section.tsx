@@ -24,25 +24,74 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
   const router = useRouter();
 
-  // Banner images data
-  const bannerImages = [
-    {
-      src: "/banner/Can you generate restaurant sbanner images for a burger promo_ Text FREE BURGER.jpg",
-      alt: "Free Burger Promo"
-    },
-    {
-      src: "/banner/Can you generate restaurant sbanner images for apizza promo_ Text 30 days of pizza 3d charater.jpg",
-      alt: "30 Days of Pizza Promo"
-    },
-    {
-      src: "/banner/Can you generate restaurant sbanner images for a brand called delika_.jpg",
-      alt: "Delika Brand Banner"
-    },
-    {
-      src: "/banner/Can you generate restaurant sbanner images, randon food item with random messaging.jpg",
-      alt: "Food Promo Banner"
+  // Banner images data based on active tab
+  const getBannerImages = () => {
+    switch (activeTab) {
+      case "restaurants":
+        return [
+          {
+            src: "/banner/restuarants/Can you generate restaurant sbanner images for a burger promo_ Text FREE BURGER.jpg",
+            alt: "Free Burger Promo"
+          },
+          {
+            src: "/banner/restuarants/Can you generate restaurant sbanner images for apizza promo_ Text 30 days of pizza 3d charater.jpg",
+            alt: "30 Days of Pizza Promo"
+          },
+          {
+            src: "/banner/restuarants/Can you generate restaurant sbanner images, randon food item with random messaging.jpg",
+            alt: "Food Promo Banner"
+          }
+        ];
+      case "groceries":
+        return [
+          {
+            src: "/banner/groceries/grocery1.png",
+            alt: "Grocery Promo 1"
+          },
+          {
+            src: "/banner/groceries/grocery2.png",
+            alt: "Grocery Promo 2"
+          },
+          {
+            src: "/banner/groceries/grocery3.png",
+            alt: "Grocery Promo 3"
+          }
+        ];
+      case "pharmacy":
+        return [
+          {
+            src: "/banner/pharmacies/phamarcy1.png",
+            alt: "Pharmacy Promo 1"
+          },
+          {
+            src: "/banner/pharmacies/phamarcy2.png",
+            alt: "Pharmacy Promo 2"
+          }
+        ];
+      default:
+        return [
+          {
+            src: "/banner/restuarants/Can you generate restaurant sbanner images for a burger promo_ Text FREE BURGER.jpg",
+            alt: "Free Burger Promo"
+          },
+          {
+            src: "/banner/restuarants/Can you generate restaurant sbanner images for apizza promo_ Text 30 days of pizza 3d charater.jpg",
+            alt: "30 Days of Pizza Promo"
+          },
+          {
+            src: "/banner/restuarants/Can you generate restaurant sbanner images, randon food item with random messaging.jpg",
+            alt: "Food Promo Banner"
+          }
+        ];
     }
-  ]
+  };
+
+  const bannerImages = getBannerImages();
+
+  // Reset banner index when tab changes
+  useEffect(() => {
+    setCurrentBannerIndex(0);
+  }, [activeTab]);
 
   // Auto-scroll banner every 3 seconds
   useEffect(() => {
@@ -216,18 +265,7 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
                 ))}
               </div>
 
-              {/* Banner Indicators */}
-              <div className="flex justify-center mt-3 gap-2">
-                {bannerImages.map((_, index) => (
-                  <button
-                    key={index}
-                    className={`w-2 h-2 rounded-full transition-colors duration-200 ${index === currentBannerIndex ? 'bg-orange-500' : 'bg-gray-300'
-                      }`}
-                    onClick={() => setCurrentBannerIndex(index)}
-                    aria-label={`Go to banner ${index + 1}`}
-                  />
-                ))}
-              </div>
+              {/* Banner Indicators - REMOVED */}
             </div>
           </div>
 

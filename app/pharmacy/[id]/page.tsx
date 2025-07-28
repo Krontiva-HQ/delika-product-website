@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { LoadingSpinner } from "@/components/loading-spinner";
+import { ProductSkeleton } from "@/components/product-skeleton";
+import { CategorySkeleton } from "@/components/category-skeleton";
 import { FloatingCart } from "@/components/floating-cart";
 import { CartModal } from "@/components/cart-modal";
 import { LoginModal } from "@/components/login-modal";
@@ -395,7 +396,11 @@ export default function PharmacyDetailsPage() {
             <div className="bg-white rounded-lg p-4 h-fit sticky top-4 z-10 hidden lg:block">
               <h2 className="font-semibold mb-4">Categories</h2>
               <div className="block overflow-x-auto whitespace-nowrap lg:whitespace-normal pb-2 lg:pb-0 gap-2 lg:gap-0 lg:space-y-2">
-                {categories.map(category => (
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <CategorySkeleton key={index} />
+                  ))
+                ) : categories.map(category => (
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
@@ -411,7 +416,11 @@ export default function PharmacyDetailsPage() {
           <div className="bg-white rounded-lg p-4 mb-6 block lg:hidden">
             <h2 className="font-semibold mb-4">Categories</h2>
             <div className="flex overflow-x-auto whitespace-nowrap pb-2 gap-2">
-              {categories.map(category => (
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <CategorySkeleton key={index} />
+                ))
+              ) : categories.map(category => (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
@@ -427,8 +436,10 @@ export default function PharmacyDetailsPage() {
             <div className="bg-white rounded-lg p-4 sm:p-6">
               <h2 className="text-xl font-bold mb-4 sm:mb-6">{selectedCategory}</h2>
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <LoadingSpinner size="lg" color="orange" text="Loading inventory..." />
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {Array.from({ length: 12 }).map((_, index) => (
+                    <ProductSkeleton key={index} />
+                  ))}
                 </div>
               ) : filteredInventory.length === 0 ? (
                 <div className="text-gray-500 text-center py-16">

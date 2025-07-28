@@ -30,12 +30,249 @@ interface FilterModalProps {
   onApply: (filteredResults?: any[]) => void;
   onReset?: () => void;
   isLoading?: boolean;
+  vendorData?: any;
+  ratings?: any[];
+  userCoordinates?: { lat: number; lng: number } | null;
+  searchRadius?: number;
 }
 
 // 1. Replace RESTAURANT_CATEGORIES with the provided food categories list
 const FOOD_CATEGORIES = [
-  "Alcohol", "Angwamo Dishes", "Appetizer", "Assorted Fried Rice", "Bake", "Bakery", "Beef Pizza", "Beer", "Beverages", "Boba - Fruit Tea (Reg / Large)", "Boba - Milk Tea (Reg/ Large)", "Boba Tea", "Boiled Yam", "Bread", "Breakfast", "Burger", "Burger Size", "Burgers", "Burgers & Sandwiches", "Cakes & Pastries", "Chicken", "Chicken Meals", "Chicken Noodles", "Chicken Pizza", "Classic Cocktails", "Classic Cocktails / Mocktails", "Cocktail Mixes", "Coffee", "Coffee & Tea", "Crispy Fries", "Croissant", "Day Time “Tucker” Menu", "Dessert", "Desserts & Sweets", "Doughnuts", "Drink", "Drinks", "Drinks / Beer", "Energy Drinks", "Evening Menu", "Fast Food", "Flour", "Food, Beverages & Tobacco", "Fresh Juice", "Fried Dishes", "Fries", "Fries / Chips", "Fruit Juice", "Fruit Tea", "Ghana Jollof", "Grills / Fried", "Hot Beverages", "Juice", "Juices", "Juices & Smoothies", "Khebab", "Krontiva Menu", "Light Soup", "Loaded Fries", "Local Dish", "Local Dishes", "Local Food", "Local Foods", "Lunch", "Lunch Special", "Main Menu", "Margherita Pizza", "Menu For Classic Plate- Rice Dishes", "Milk Series", "Milk Shakes", "Milkshake", "Milkshakes", "Morning Menu", "Nigerian Local Food", "Noodles", "Okro Soup", "Other Dishes", "Pastries", "Pizza", "Pork", "Protein", "Proteins", "Ribs", "Rice", "Rice & Grains", "Rice Dishes", "Rice Meals", "Rice Menu", "Rich Dishes", "Salad", "Salad Dressing", "Salads", "Sandwich", "Sandwiches", "Sauce / Soups", "Sauces", "Sausage Pizza", "Seafood Lovers", "Self- Treat Dishes", "Shawarma", "Side Dish", "Side Meals", "Signature Cocktails / Mocktails", "Smoothies", "Smoothies (Reg / Large)", "Snack", "Snack Bar", "Snack Bites", "Sobolo", "Soft Drinks", "Soup", "Soups", "Soups Only", "Spaghetti", "Special Stir Fries", "Springrolls And Samosa", "Starter", "Starters", "Starters / Appetizers / Small Bites", "Stew", "Stir Fry Noodles", "Stir Fry Spaghetti", "Swallow Dish", "Test Foods", "Traditional Foods", "Unique Series", "Vegetarian Pizza", "Waakye", "Wine", "Wrap", "Wrap & Sandwich", "Wraps", "Yam/Plantain", "면류 (Noodles)", "식사류 (Meal)", "한식요리 (Korean Dish_Meats & Others)"
+  "Alcohol", "Angwamo Dishes", "Appetizer", "Assorted Fried Rice", "Bake", "Bakery", "Beef Pizza", "Beer", "Beverages", "Boba - Fruit Tea (Reg / Large)", "Boba - Milk Tea (Reg/ Large)", "Boba Tea", "Boiled Yam", "Bread", "Breakfast", "Burger", "Burger Size", "Burgers", "Burgers & Sandwiches", "Cakes & Pastries", "Chicken", "Chicken Meals", "Chicken Noodles", "Chicken Pizza", "Classic Cocktails", "Classic Cocktails / Mocktails", "Cocktail Mixes", "Coffee", "Coffee & Tea", "Crispy Fries", "Croissant", "Day Time Tucker Menu", "Dessert", "Desserts & Sweets", "Doughnuts", "Drink", "Drinks", "Drinks / Beer", "Energy Drinks", "Evening Menu", "Fast Food", "Flour", "Food, Beverages & Tobacco", "Fresh Juice", "Fried Dishes", "Fries", "Fries / Chips", "Fruit Juice", "Fruit Tea", "Ghana Jollof", "Grills / Fried", "Hot Beverages", "Juice", "Juices", "Juices & Smoothies", "Khebab", "Krontiva Menu", "Light Soup", "Loaded Fries", "Local Dish", "Local Dishes", "Local Food", "Local Foods", "Lunch", "Lunch Special", "Main Menu", "Margherita Pizza", "Menu For Classic Plate- Rice Dishes", "Milk Series", "Milk Shakes", "Milkshake", "Milkshakes", "Morning Menu", "Nigerian Local Food", "Noodles", "Okro Soup", "Other Dishes", "Pastries", "Pizza", "Pork", "Protein", "Proteins", "Ribs", "Rice", "Rice & Grains", "Rice Dishes", "Rice Meals", "Rice Menu", "Rich Dishes", "Salad", "Salad Dressing", "Salads", "Sandwich", "Sandwiches", "Sauce / Soups", "Sauces", "Sausage Pizza", "Seafood Lovers", "Self- Treat Dishes", "Shawarma", "Side Dish", "Side Meals", "Signature Cocktails / Mocktails", "Smoothies", "Smoothies (Reg / Large)", "Snack", "Snack Bar", "Snack Bites", "Sobolo", "Soft Drinks", "Soup", "Soups", "Soups Only", "Spaghetti", "Special Stir Fries", "Springrolls And Samosa", "Starter", "Starters", "Starters / Appetizers / Small Bites", "Stew", "Stir Fry Noodles", "Stir Fry Spaghetti", "Swallow Dish", "Test Foods", "Traditional Foods", "Unique Series", "Vegetarian Pizza", "Waakye", "Wine", "Wrap", "Wrap & Sandwich", "Wraps", "Yam/Plantain", "면류 (Noodles)", "식사류 (Meal)", "한식요리 (Korean Dish_Meats & Others)"
 ];
+
+// Helper Functions
+function getRatingForVendor(vendorId: string, ratings: any[]) {
+  const rating = ratings?.find(r => r.delika_branches_table_id === vendorId);
+  return rating?.OverallRating || '0';
+}
+
+function getDeliveryTimeForVendor(vendorId: string, ratings: any[]) {
+  const rating = ratings?.find(r => r.delika_branches_table_id === vendorId);
+  return rating?.deliveryTime || '';
+}
+
+function getPickupForVendor(vendorId: string, ratings: any[]) {
+  const rating = ratings?.find(r => r.delika_branches_table_id === vendorId);
+  return rating?.pickup || false;
+}
+
+// Calculate distance between two points using Haversine formula
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c; // Distance in kilometers
+}
+
+// Vendor Data Normalization and Filtering Logic
+function getFilteredResults(
+  vendorData: any,
+  ratings: any[],
+  filterTypes: string[],
+  filterCategories: string[],
+  filterRating: string,
+  filterDeliveryTime: number | null,
+  filterPickup: boolean,
+  userCoordinates: { lat: number; lng: number } | null = null,
+  searchRadius: number = 8,
+  isTestMode: boolean = false
+) {
+  if (!vendorData) return [];
+
+  // Combine all vendor types into a single array
+  const allVendors: any[] = [];
+
+  // Add restaurants
+  if (vendorData.Restaurants) {
+    vendorData.Restaurants.forEach((restaurant: any) => {
+      let distance = null;
+      if (userCoordinates && restaurant.branchLatitude && restaurant.branchLongitude) {
+        try {
+          const lat = parseFloat(restaurant.branchLatitude);
+          const lng = parseFloat(restaurant.branchLongitude);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            distance = calculateDistance(
+              userCoordinates.lat,
+              userCoordinates.lng,
+              lat,
+              lng
+            );
+          }
+        } catch (error) {
+          console.warn('Error calculating distance for restaurant:', restaurant.id, error);
+        }
+      }
+
+      allVendors.push({
+        ...restaurant,
+        type: 'restaurant',
+        displayName: restaurant.branchName,
+        displayLocation: restaurant.branchLocation,
+        displayPhone: restaurant.branchPhoneNumber,
+        displayCity: restaurant.branchCity,
+        displayLatitude: restaurant.branchLatitude,
+        displayLongitude: restaurant.branchLongitude,
+        displaySlug: restaurant.slug,
+        displayLogo: restaurant.Restaurant?.[0]?.restaurantLogo?.url,
+        restaurantName: restaurant.Restaurant?.[0]?.restaurantName,
+        active: restaurant.active,
+        rating: getRatingForVendor(restaurant.id, ratings),
+        deliveryTime: getDeliveryTimeForVendor(restaurant.id, ratings),
+        pickup: getPickupForVendor(restaurant.id, ratings),
+        distance,
+      });
+    });
+  }
+
+  // Add groceries
+  if (vendorData.Groceries) {
+    vendorData.Groceries.forEach((grocery: any) => {
+      let distance = null;
+      if (userCoordinates && grocery.grocerybranchLatitude && grocery.grocerybranchLongitude) {
+        try {
+          const lat = parseFloat(grocery.grocerybranchLatitude);
+          const lng = parseFloat(grocery.grocerybranchLongitude);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            distance = calculateDistance(
+              userCoordinates.lat,
+              userCoordinates.lng,
+              lat,
+              lng
+            );
+          }
+        } catch (error) {
+          console.warn('Error calculating distance for grocery:', grocery.id, error);
+        }
+      }
+
+      allVendors.push({
+        ...grocery,
+        type: 'grocery',
+        displayName: grocery.grocerybranchName,
+        displayLocation: grocery.grocerybranchLocation,
+        displayPhone: grocery.grocerybranchPhoneNumber,
+        displayCity: grocery.grocerybranchCity,
+        displayLatitude: grocery.grocerybranchLatitude,
+        displayLongitude: grocery.grocerybranchLongitude,
+        displaySlug: grocery.slug,
+        displayLogo: grocery.Grocery?.groceryshopLogo?.url,
+        groceryName: grocery.Grocery?.groceryshopName,
+        active: grocery.active,
+        rating: getRatingForVendor(grocery.id, ratings),
+        deliveryTime: getDeliveryTimeForVendor(grocery.id, ratings),
+        pickup: getPickupForVendor(grocery.id, ratings),
+        distance,
+      });
+    });
+  }
+
+  // Add pharmacies
+  if (vendorData.Pharmacies) {
+    vendorData.Pharmacies.forEach((pharmacy: any) => {
+      let distance = null;
+      if (userCoordinates && pharmacy.pharmacybranchLatitude && pharmacy.pharmacybranchLongitude) {
+        try {
+          const lat = parseFloat(pharmacy.pharmacybranchLatitude);
+          const lng = parseFloat(pharmacy.pharmacybranchLongitude);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            distance = calculateDistance(
+              userCoordinates.lat,
+              userCoordinates.lng,
+              lat,
+              lng
+            );
+          }
+        } catch (error) {
+          console.warn('Error calculating distance for pharmacy:', pharmacy.id, error);
+        }
+      }
+
+      allVendors.push({
+        ...pharmacy,
+        type: 'pharmacy',
+        displayName: pharmacy.pharmacybranchName,
+        displayLocation: pharmacy.pharmacybranchLocation,
+        displayPhone: pharmacy.pharmacybranchPhoneNumber,
+        displayCity: pharmacy.pharmacybranchCity,
+        displayLatitude: pharmacy.pharmacybranchLatitude,
+        displayLongitude: pharmacy.pharmacybranchLongitude,
+        displaySlug: pharmacy.slug,
+        displayLogo: pharmacy.Pharmacy?.pharmacyLogo?.url,
+        pharmacyName: pharmacy.Pharmacy?.pharmacyName,
+        active: pharmacy.active,
+        rating: getRatingForVendor(pharmacy.id, ratings),
+        deliveryTime: getDeliveryTimeForVendor(pharmacy.id, ratings),
+        pickup: getPickupForVendor(pharmacy.id, ratings),
+        distance,
+      });
+    });
+  }
+
+  // Apply filters sequentially
+  let filteredVendors = allVendors;
+
+  // Type filter
+  if (filterTypes.length > 0 && filterTypes[0] !== 'all') {
+    filteredVendors = filteredVendors.filter(vendor => 
+      filterTypes.includes(vendor.type)
+    );
+  }
+
+  // Rating filter
+  if (filterRating && filterRating !== 'all') {
+    const minRating = parseInt(filterRating);
+    filteredVendors = filteredVendors.filter(vendor => {
+      const vendorRating = parseFloat(vendor.rating || '0');
+      return vendorRating >= minRating;
+    });
+  }
+
+  // Delivery time filter
+  if (filterDeliveryTime) {
+    filteredVendors = filteredVendors.filter(vendor => {
+      const vendorDeliveryTime = parseInt(vendor.deliveryTime || '0');
+      return vendorDeliveryTime <= filterDeliveryTime;
+    });
+  }
+
+  // Pickup filter
+  if (filterPickup) {
+    filteredVendors = filteredVendors.filter(vendor => vendor.pickup === true);
+  }
+
+  // Category filter
+  if (filterCategories.length > 0) {
+    filteredVendors = filteredVendors.filter(vendor => {
+      // Check if vendor has items that match any of the selected categories
+      const vendorItems = (vendor.RestaurantItem || vendor.GroceryItem || vendor.PharmacyItem || []) as any[];
+      
+      return vendorItems.some((item: any) => {
+        const itemCategory = item.foodType || item.itemType || item.category || '';
+        return filterCategories.includes(itemCategory);
+      });
+    });
+  }
+
+  // Distance filter - only show vendors within search radius
+  if (userCoordinates) {
+    filteredVendors = filteredVendors.filter(vendor => 
+      vendor.distance === null || vendor.distance <= searchRadius
+    );
+  }
+
+  // Test mode: return only first 3 results for testing
+  if (isTestMode) {
+    return filteredVendors.slice(0, 3);
+  }
+
+  return filteredVendors;
+}
 
 export function FilterModal({
   open,
@@ -63,8 +300,37 @@ export function FilterModal({
   onApply,
   onReset,
   isLoading = false,
+  vendorData,
+  ratings,
+  userCoordinates,
+  searchRadius,
 }: FilterModalProps) {
   const router = useRouter();
+
+  const handleApplyFilters = async () => {
+    try {
+      // Get filtered results using the helper function
+      const filteredResults = getFilteredResults(
+        vendorData,
+        ratings || [],
+        filterTypes,
+        filterCategories,
+        filterRating,
+        filterDeliveryTime,
+        filterPickup,
+        userCoordinates,
+        searchRadius || 8,
+        false // Disable test mode to show all results
+      );
+
+      // Call the onApply callback with the filtered results
+      onApply(filteredResults);
+    } catch (error) {
+      console.error('Error applying filters:', error);
+      // Still call onApply with empty array in case of error
+      onApply([]);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -120,7 +386,7 @@ export function FilterModal({
                       }`}
                     onClick={() => setFilterRating(val)}
                   >
-                    {val} or more
+                    {val} stars
                   </button>
                 ))}
               </div>
@@ -131,7 +397,7 @@ export function FilterModal({
                 <span>⏱️</span> Delivery time
               </div>
               <div className="flex gap-3">
-                {[15, 20, 30].map((val) => (
+                {[5, 10, 20].map((val) => (
                   <button
                     key={val}
                     type="button"
@@ -275,10 +541,7 @@ export function FilterModal({
               </button>
               <button
                 className="px-4 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                onClick={() => {
-                  // Pass empty array to onApply since store-header handles the filtering
-                  onApply([]);
-                }}
+                onClick={handleApplyFilters}
                 disabled={isLoading}
                 type="button"
               >

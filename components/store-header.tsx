@@ -28,6 +28,8 @@ import { LoadingSpinner } from "@/components/loading-spinner"
 import { GroceriesList } from "@/components/groceries-list";
 import { PharmacyList } from "@/components/pharmacy-list";
 import { FilterModal } from "@/components/FilterModal";
+import { ActiveFilters } from "@/components/ActiveFilters";
+import { VendorSkeleton } from "@/components/vendor-skeleton";
 
 
 interface Restaurant {
@@ -263,6 +265,18 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
   const GROCERY_CATEGORIES = ['Fresh Produce', 'Dairy & Eggs', 'Meat & Poultry', 'Seafood', 'Bakery', 'Pantry', 'Frozen Foods', 'Beverages', 'Snacks', 'Health & Beauty', 'Household', 'Baby Care'];
   const PHARMACY_CATEGORIES = ['Prescription', 'Over-the-Counter', 'Vitamins', 'First Aid', 'Personal Care', 'Baby & Child', 'Health Monitoring', 'Pain Relief', 'Allergy', 'Cold & Flu'];
   const PAGE_SIZE = 5;
+
+  // Show More state for search results
+  const [showMoreRestaurants, setShowMoreRestaurants] = useState(false);
+  const [showMoreGroceries, setShowMoreGroceries] = useState(false);
+  const [showMorePharmacies, setShowMorePharmacies] = useState(false);
+
+  // Reset "Show More" states when search query changes or tab changes
+  useEffect(() => {
+    setShowMoreRestaurants(false);
+    setShowMoreGroceries(false);
+    setShowMorePharmacies(false);
+  }, [searchQuery, activeTab]);
 
   // Store and load activeTab from localStorage
   useEffect(() => {
@@ -1157,69 +1171,76 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
 
   // Update handleLikeToggle to handle the response properly
   const handleLikeToggle = async (branchName: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent branch selection when clicking like
-    e.preventDefault(); // Prevent any default behavior
+    e.preventDefault();
+    e.stopPropagation();
 
     if (!user) {
       setIsLoginModalOpen(true);
       return;
     }
 
-    const targetButton = e.currentTarget as HTMLButtonElement;
-    const isCurrentlyLiked = likedBranches.has(branchName);
-    
-    // Provide immediate visual feedback
-    targetButton.classList.add(isCurrentlyLiked ? 'animate-unliked' : 'animate-liked');
-    
     try {
-      // Optimistically update UI
-      const newLikedBranches = new Set(likedBranches);
-      if (isCurrentlyLiked) {
-        newLikedBranches.delete(branchName);
-      } else {
-        newLikedBranches.add(branchName);
-      }
-      setLikedBranches(newLikedBranches);
-      localStorage.setItem('filteredFavoritesCount', newLikedBranches.size.toString());
-
-      // Call the CUSTOMER_FAVORITES_API endpoint
-      const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/customer/favorites/add/remove/restaurant', {
-        method: 'PATCH',
+      const response = await fetch('/api/favorites', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
         body: JSON.stringify({
+          branchName,
           userId: user.id,
-          branchName: branchName,
-          liked: !isCurrentlyLiked,
-          field_value: user.id
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update favorites');
+      if (response.ok) {
+        // Toggle the liked state
+        setLikedBranches(prev => {
+          const newSet = new Set(prev);
+          if (newSet.has(branchName)) {
+            newSet.delete(branchName);
+          } else {
+            newSet.add(branchName);
+          }
+          return newSet;
+        });
       }
-
-      // Don't try to set orders from the favorites response
-      // Just refresh the favorites data
-      await fetchUserFavorites(user.id);
-      
     } catch (error) {
-      console.error('Error toggling like:', error);
-      // Revert UI if error occurred
-      const revertedLikedBranches = new Set(likedBranches);
-      setLikedBranches(revertedLikedBranches);
-      localStorage.setItem('filteredFavoritesCount', revertedLikedBranches.size.toString());
-    } finally {
-      // Remove animation class after animation completes
-      setTimeout(() => {
-        targetButton.classList.remove('animate-liked', 'animate-unliked');
-      }, 300);
+      console.error('Error toggling favorite:', error);
     }
   };
 
+  // Handle clearing individual filters
+  const handleClearFilter = (filterType: string, value?: string) => {
+    switch (filterType) {
+      case 'type':
+        setFilterTypes([]);
+        break;
+      case 'rating':
+        setFilterRating('all');
+        break;
+      case 'deliveryTime':
+        setFilterDeliveryTime(null);
+        break;
+      case 'pickup':
+        setFilterPickup(false);
+        break;
+      case 'category':
+        if (value) {
+          setFilterCategories(prev => prev.filter(cat => cat !== value));
+        }
+        break;
+    }
+  };
 
+  // Handle clearing all filters
+  const handleClearAllFilters = () => {
+    setFilterTypes([]);
+    setFilterCategories([]);
+    setFilterRating('all');
+    setFilterDeliveryTime(null);
+    setFilterPickup(false);
+    setIsShowingFilteredResults(false);
+    setFilteredResults([]);
+  };
 
   const fetchOrderHistory = useCallback(async () => {
     localStorage.removeItem('orders');
@@ -1284,28 +1305,38 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
   const renderRestaurantList = () => (
     <div className="container mx-auto px-4 py-6">
       {isLoadingRestaurants ? (
-        <div className="flex flex-col items-center justify-center py-16">
-          <LoadingSpinner 
-            size="lg"
-            color="orange"
-            text={`Loading ${activeTab}...`}
-          />
+        <div className="space-y-6">
+          {/* Search section skeleton */}
+          <div className="space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+          </div>
+          
+          {/* Vendor cards skeleton */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {Array.from({ length: 12 }).map((_, index) => (
+              <VendorSkeleton key={index} />
+            ))}
+          </div>
         </div>
       ) : isShowingFilteredResults && filteredResults.length > 0 ? (
         // Display filtered results
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900">Filtered Results</h2>
-            <button
-              onClick={() => {
-                setIsShowingFilteredResults(false);
-                setFilteredResults([]);
-              }}
-              className="text-sm text-orange-600 hover:text-orange-700"
-            >
-              Clear Filters
-            </button>
           </div>
+          
+          {/* Active Filters Display */}
+          <ActiveFilters
+            filterTypes={filterTypes}
+            filterCategories={filterCategories}
+            filterRating={filterRating}
+            filterDeliveryTime={filterDeliveryTime}
+            filterPickup={filterPickup}
+            onClearFilter={handleClearFilter}
+            onClearAll={handleClearAllFilters}
+          />
+          
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {filteredResults.map((vendor) => (
               <Link
@@ -1341,10 +1372,10 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                 </div>
                 <div className="p-4">
                   <h3 className="font-bold text-gray-900 truncate">
-                    {vendor.displayName || vendor.type}
+                    {vendor.restaurantName || vendor.groceryName || vendor.pharmacyName || vendor.displayName || vendor.type}
                   </h3>
                   <span className="text-xs text-gray-600 truncate block">
-                    {vendor.displayLocation || 'Location'}
+                    {vendor.displayName || vendor.type}
                   </span>
                   {vendor.rating && (
                     <div className="flex items-center gap-1 mt-1">
@@ -1485,35 +1516,35 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
           {organizedSearchResults.restaurants.length > 0 && (
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Restaurants</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {organizedSearchResults.restaurants.map((branch) => (
-            <Link
-              key={branch.id}
-              href={`/restaurants/${branch.slug}`}
-              onClick={(e) => {
-                e.preventDefault()
-                handleBranchSelect(branch)
-              }}
-              className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
-            >
-              <button 
-                className={`absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
-                  likedBranches.has(branch.id) 
-                    ? 'text-orange-500 scale-110 hover:scale-105' 
-                    : 'text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105'
-                }`}
-                onClick={(e) => handleLikeToggle(branch.id, e)}
-                aria-label={likedBranches.has(branch.id) ? "Unlike restaurant" : "Like restaurant"}
-              >
-                <Heart className={`w-5 h-5 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
-              </button>
-              <div className="relative h-36">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {organizedSearchResults.restaurants.slice(0, showMoreRestaurants ? undefined : 12).map((branch) => (
+                  <Link
+                    key={branch.id}
+                    href={`/restaurants/${branch.slug}`}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleBranchSelect(branch)
+                    }}
+                    className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+                  >
+                    <button 
+                      className={`absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
+                        likedBranches.has(branch.id) 
+                          ? 'text-orange-500 scale-110 hover:scale-105' 
+                          : 'text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105'
+                      }`}
+                      onClick={(e) => handleLikeToggle(branch.id, e)}
+                      aria-label={likedBranches.has(branch.id) ? "Unlike restaurant" : "Like restaurant"}
+                    >
+                      <Heart className={`w-5 h-5 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
+                    </button>
+                    <div className="relative h-36">
                       {branch.Restaurant?.[0]?.restaurantLogo?.url || 
                        branch._restaurantTable?.[0]?.restaurantLogo?.url || 
                        branch.restaurantLogo?.url ||
                        branch.logo?.url ||
                        branch.image?.url ? (
-                <Image
+                        <Image
                           src={branch.Restaurant?.[0]?.restaurantLogo?.url ||
                                branch._restaurantTable?.[0]?.restaurantLogo?.url ||
                                branch.restaurantLogo?.url ||
@@ -1525,31 +1556,43 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                                branch.name ||
                                branch.branchName ||
                                'Restaurant'}
-                  fill
-                  className="object-cover"
-                />
+                          fill
+                          className="object-cover"
+                        />
                       ) : (
                         <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                           <span className="text-gray-500 text-sm">No Image</span>
                         </div>
                       )}
-              </div>
-              <div className="p-4">
-                <h3 className="font-bold text-gray-900 truncate">
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-gray-900 truncate">
                         {branch.Restaurant?.[0]?.restaurantName ||
                          branch._restaurantTable?.[0]?.restaurantName ||
                          branch.restaurantName ||
                          branch.name ||
                          branch.branchName ||
                          'Restaurant'}
-                </h3>
-                <span className="text-xs text-gray-600 truncate block">
+                      </h3>
+                      <span className="text-xs text-gray-600 truncate block">
                         {branch.branchName || branch.location || 'Location'}
-                </span>
+                      </span>
+                    </div>
+                  </Link>
+                ))}
               </div>
-            </Link>
-          ))}
-        </div>
+              
+              {/* Show More Button for Restaurants */}
+              {organizedSearchResults.restaurants.length > 12 && (
+                <div className="flex justify-center mt-6">
+                  <button
+                    onClick={() => setShowMoreRestaurants(!showMoreRestaurants)}
+                    className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+                  >
+                    {showMoreRestaurants ? 'Show Less' : `Show All ${organizedSearchResults.restaurants.length} Restaurants`}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -1648,7 +1691,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Grocery Stores</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {organizedSearchResults.groceries.map((grocery) => (
+                {organizedSearchResults.groceries.slice(0, showMoreGroceries ? undefined : 12).map((grocery) => (
                   <Link
                     key={grocery.id}
                     href={`/groceries/${grocery.slug}`}
@@ -1689,6 +1732,18 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                   </Link>
                 ))}
               </div>
+              
+              {/* Show More Button for Groceries */}
+              {organizedSearchResults.groceries.length > 12 && (
+                <div className="flex justify-center mt-6">
+                  <button
+                    onClick={() => setShowMoreGroceries(!showMoreGroceries)}
+                    className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+                  >
+                    {showMoreGroceries ? 'Show Less' : `Show All ${organizedSearchResults.groceries.length} Grocery Stores`}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -1787,7 +1842,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Pharmacies</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {organizedSearchResults.pharmacies.map((pharmacy) => (
+                {organizedSearchResults.pharmacies.slice(0, showMorePharmacies ? undefined : 12).map((pharmacy) => (
                   <Link
                     key={pharmacy.id}
                     href={`/pharmacy/${pharmacy.slug}`}
@@ -1832,6 +1887,18 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                   </Link>
                 ))}
               </div>
+              
+              {/* Show More Button for Pharmacies */}
+              {organizedSearchResults.pharmacies.length > 12 && (
+                <div className="flex justify-center mt-6">
+                  <button
+                    onClick={() => setShowMorePharmacies(!showMorePharmacies)}
+                    className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
+                  >
+                    {showMorePharmacies ? 'Show Less' : `Show All ${organizedSearchResults.pharmacies.length} Pharmacies`}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -2221,7 +2288,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                   await new Promise(resolve => setTimeout(resolve, 500));
                   
                   // Store filtered results in state
-                  setFilteredResults(filteredResults);
+                  setFilteredResults(filteredResults || []);
                   setIsShowingFilteredResults(true);
                   console.log('StoreHeader: setFilteredResults and setIsShowingFilteredResults called');
                   
@@ -2466,9 +2533,43 @@ export function GroceriesStoreHeader() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-6">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Loading Grocery Store...</h1>
-            <p className="text-gray-600">Please wait while we load the grocery data.</p>
+          {/* Header skeleton */}
+          <div className="bg-white shadow-sm border-b mb-6">
+            <div className="container mx-auto px-4 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                  <div className="space-y-2">
+                    <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Category tabs skeleton */}
+          <div className="mb-6">
+            <div className="grid grid-cols-4 lg:grid-cols-6 gap-2">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="h-8 bg-gray-200 rounded animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+
+          {/* Product grid skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden animate-pulse">
+                <div className="aspect-square bg-gray-200"></div>
+                <div className="p-4 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                  <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -2771,9 +2872,43 @@ export function PharmacyStoreHeader() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-6">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Loading Pharmacy...</h1>
-            <p className="text-gray-600">Please wait while we load the pharmacy data.</p>
+          {/* Header skeleton */}
+          <div className="bg-white shadow-sm border-b mb-6">
+            <div className="container mx-auto px-4 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                  <div className="space-y-2">
+                    <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Category tabs skeleton */}
+          <div className="mb-6">
+            <div className="grid grid-cols-4 lg:grid-cols-6 gap-2">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="h-8 bg-gray-200 rounded animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+
+          {/* Product grid skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden animate-pulse">
+                <div className="aspect-square bg-gray-200"></div>
+                <div className="p-4 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                  <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
