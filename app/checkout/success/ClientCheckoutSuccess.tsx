@@ -110,10 +110,10 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
               }
               
               console.log('[Success Page] Final orderNumber being used for API call:', orderNumber);
-              console.log('[Success Page] API endpoint:', `${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderNumber}`);
+              console.log('[Success Page] API endpoint:', `${process.env.NEXT_PUBLIC_ORDER_STATUS_API}?orderNumber=${orderNumber}`);
               
-              // Use the same API endpoint as the order status widget
-              const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderNumber}`)
+              // Use the same API endpoint as the order status widget, but pass orderNumber as query parameter
+              const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}?orderNumber=${orderNumber}`)
               if (!response.ok) {
                 throw new Error('Failed to fetch order details')
               }
@@ -221,10 +221,10 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
           }
           
           console.log('[Success Page] Final orderNumber being used for API call (fallback):', orderNumber);
-          console.log('[Success Page] API endpoint (fallback):', `${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderNumber}`);
+          console.log('[Success Page] API endpoint (fallback):', `${process.env.NEXT_PUBLIC_ORDER_STATUS_API}?orderNumber=${orderNumber}`);
           
-          // Use the same API endpoint as the order status widget
-          const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderNumber}`)
+          // Use the same API endpoint as the order status widget, but pass orderNumber as query parameter
+          const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}?orderNumber=${orderNumber}`)
           if (!response.ok) {
             throw new Error('Failed to fetch order details')
           }
