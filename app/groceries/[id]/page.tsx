@@ -33,9 +33,8 @@ interface InventoryItem {
   groceryShopId?: string | null;
   groceryShopBranchId?: string | null;
   available?: boolean;
-  _delika_groceries_shops_table?: {
-    groceryshopAddress?: string;
-  };
+  created_at?: number;
+  updatedAt?: number;
 }
 
 interface ItemDetailsModalProps {
@@ -127,14 +126,8 @@ function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsMod
 
 export default function GroceryDetailsPage() {
   const params = useParams();
-  const shopId = params?.id as string;
-  // Use localStorage values if available, fallback to URL param
-  const groceryShopIdParam = typeof window !== "undefined"
-    ? localStorage.getItem("selectedGroceryShopId") || shopId || null
-    : shopId || null;
-  const groceryBranchId = typeof window !== "undefined"
-    ? localStorage.getItem("selectedGroceryBranchId") || null
-    : null;
+  const shopId = params?.id as string; // This is now the slug
+  
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -153,78 +146,74 @@ export default function GroceryDetailsPage() {
   }, [categories]);
   const filteredInventory = inventory.filter(item => (item.category || "Uncategorized") === selectedCategory);
 
-  // Get shop info from localStorage (set when user clicks a grocery branch)
+  // Get shop info from API response
   const [shopLogo, setShopLogo] = useState<string | null>(null);
   const [shopName, setShopName] = useState<string | null>(null);
   const [shopCoordinates, setShopCoordinates] = useState<{lat: number, lng: number} | null>(null);
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const shopData = localStorage.getItem("selectedGroceryShopData");
-      if (shopData) {
-        try {
-          const parsed = JSON.parse(shopData);
-          setShopLogo(parsed.groceryshopLogo?.url || null);
-          setShopName(parsed.groceryshopName || null);
-        } catch {}
-      }
-      
-      // Get shop coordinates from the selected branch
-      const branchData = localStorage.getItem("selectedGroceryBranchData");
-      if (branchData) {
-        try {
-          const parsed = JSON.parse(branchData);
-          console.log('[Grocery Coordinates] Branch data loaded:', parsed);
-          const lat = parseFloat(parsed.grocerybranchLatitude);
-          const lng = parseFloat(parsed.grocerybranchLongitude);
-          console.log('[Grocery Coordinates] Parsed coordinates:', { lat, lng });
-          if (!isNaN(lat) && !isNaN(lng)) {
-            setShopCoordinates({ lat, lng });
-            console.log('[Grocery Coordinates] Shop coordinates set:', { lat, lng });
-          } else {
-            console.log('[Grocery Coordinates] Invalid coordinates - NaN values');
-          }
-        } catch (error) {
-          console.log('[Grocery Coordinates] Error parsing branch data:', error);
-        }
-      } else {
-        console.log('[Grocery Coordinates] No branch data found in localStorage');
-      }
-    }
-  }, []);
-
+  
   useEffect(() => {
     async function fetchInventory() {
       try {
         setIsLoading(true);
-        const baseUrl = process.env.NEXT_PUBLIC_GROCERIES_SHOPS_INVENTORY_API;
-        if (!baseUrl) throw new Error("NEXT_PUBLIC_GROCERIES_SHOPS_INVENTORY_API is not defined");
-        const apiUrl = `${baseUrl}?groceryShopId=${groceryShopIdParam}&groceryBranchId=${groceryBranchId}`;
-        // Log the endpoint
-        console.log("Fetching inventory from:", apiUrl);
+        // Use the new slug-based API endpoint
+        const apiUrl = `https://api-server.krontiva.africa/api:uEBBwbSs/groceries/${shopId}`;
+        console.log("Fetching grocery inventory from:", apiUrl);
+        
         const response = await fetch(apiUrl, {
-          method: "GET",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
         });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch grocery data: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log("Grocery API response:", data);
+        
+        // Extract shop information from the response
+        if (data.slug) {
+          setShopName(data.slug.grocerybranchName || "Grocery Shop");
+          setShopCoordinates({
+            lat: parseFloat(data.slug.grocerybranchLatitude) || 0,
+            lng: parseFloat(data.slug.grocerybranchLongitude) || 0
+          });
+          // Use fallback image if no shop logo is available
+          setShopLogo("/fallback/grocery.jpg");
+        }
+        
         const normalize = (item: any) => ({
           ...item,
-          groceryShopId: item.groceryShopId ?? groceryShopIdParam ?? null,
-          groceryShopBranchId: item.groceryShopBranchId ?? groceryBranchId ?? null,
+          // Map the new API structure to our interface
+          id: item.id,
+          productName: item.productName,
+          price: item.price?.toString() || "0",
+          category: item.category,
+          subCategory: item.subCategory,
+          description: item.description,
+          stockQuantity: item.stockQuantity,
           available: typeof item.available === "boolean" ? item.available : true,
+          // Handle image object structure
+          image: item.image?.url || item.image || null,
+          // Map grocery IDs
+          groceryShopId: item.groceryShopId || null,
+          groceryShopBranchId: item.groceryShopBranchId || null,
         });
-        if (Array.isArray(data)) {
-          const sorted = data.map(normalize).sort((a, b) => {
+        
+        if (Array.isArray(data.ShopsInventory)) {
+          const sorted = data.ShopsInventory.map(normalize).sort((a, b) => {
             if (!a.productName) return -1;
             if (!b.productName) return 1;
             return a.productName.localeCompare(b.productName);
           });
           setInventory(sorted);
-        } else if (data && typeof data === 'object') {
-          setInventory([normalize(data)]);
+        } else if (data.ShopsInventory && typeof data.ShopsInventory === 'object') {
+          setInventory([normalize(data.ShopsInventory)]);
         } else {
           setInventory([]);
         }
       } catch (error) {
+        console.error("Error fetching grocery inventory:", error);
         setInventory([]);
       } finally {
         setIsLoading(false);
@@ -373,7 +362,7 @@ export default function GroceryDetailsPage() {
             {bannerImage ? (
               <img src={bannerImage} alt={shopName || "Grocery Shop"} className="object-cover w-full h-full" />
             ) : (
-              <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-2xl">No Image</div>
+              <img src="/fallback/grocery.jpg" alt="Grocery Shop" className="object-cover w-full h-full" />
             )}
             {/* Optionally, add a like button at top-right */}
           </div>

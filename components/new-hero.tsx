@@ -7,9 +7,9 @@ import { Utensils, ShoppingBag, Pill } from "lucide-react"
 import { useState, useEffect } from "react"
 
 const sliderImages = [
-  { src: "/asthma.jpg", alt: "Delika delivery illustration" },
-  { src: "/fast-food.jpg", alt: "Delika burger" },
-  { src: "/shopping-bag.jpg", alt: "Delika hero" },
+  { src: "/headerimage.png", alt: "Delika delivery illustration" },
+  { src: "/headerimage.png", alt: "Delika delivery illustration" },
+  { src: "/headerimage.png", alt: "Delika delivery illustration" },
 ]
 
 export function NewHero() {

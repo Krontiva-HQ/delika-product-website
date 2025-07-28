@@ -25,11 +25,12 @@ interface PharmacyInventoryItem {
   pharmacyShopId?: string | null;
   pharmacyShopBranchId?: string | null;
   available?: boolean;
-  _delika_pharmacy_table?: {
-    pharmacyLogo?: { url: string };
-    pharmacyName?: string;
-    pharmacyAddress?: string;
-  };
+  brand?: string;
+  sku?: string;
+  unitType?: string;
+  expiryDate?: string;
+  created_at?: number;
+  updatedAt?: number;
 }
 
 interface ItemDetailsModalProps {
@@ -121,16 +122,8 @@ function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsMod
 
 export default function PharmacyDetailsPage() {
   const params = useParams();
-  const searchParams = useSearchParams();
-  const shopId = params?.id as string;
-  const branchId = searchParams ? searchParams.get("branchId") : null;
-  // Use localStorage values if available, fallback to URL param
-  const pharmacyShopIdParam = typeof window !== "undefined"
-    ? localStorage.getItem("selectedPharmacyShopId") || shopId || null
-    : shopId || null;
-  const pharmacyBranchId = typeof window !== "undefined"
-    ? localStorage.getItem("selectedPharmacyBranchId") || branchId || null
-    : branchId || null;
+  const shopId = params?.id as string; // This is now the slug
+  
   const [inventory, setInventory] = useState<PharmacyInventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cart, setCart] = useState<any[]>([]);
@@ -166,95 +159,85 @@ export default function PharmacyDetailsPage() {
     localStorage.setItem('pharmacyCart', JSON.stringify(cart));
   }, [cart]);
 
-  // Get shop info from localStorage (set when user clicks a pharmacy branch)
+  // Get shop info from API response
   const [shopLogo, setShopLogo] = useState<string | null>(null);
   const [shopName, setShopName] = useState<string | null>(null);
   const [shopCoordinates, setShopCoordinates] = useState<{lat: number, lng: number} | null>(null);
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const shopData = localStorage.getItem("selectedPharmacyShopData");
-      if (shopData) {
-        try {
-          const parsed = JSON.parse(shopData);
-          setShopLogo(parsed.pharmacyshopLogo?.url || null);
-          setShopName(parsed.pharmacyshopName || null);
-        } catch {}
-      }
-      
-      // Get shop coordinates from the selected branch
-      const branchData = localStorage.getItem("selectedPharmacyBranchData");
-      if (branchData) {
-        try {
-          const parsed = JSON.parse(branchData);
-          console.log('[Pharmacy Coordinates] Branch data loaded:', parsed);
-          const lat = parseFloat(parsed.pharmacybranchLatitude);
-          const lng = parseFloat(parsed.pharmacybranchLongitude);
-          console.log('[Pharmacy Coordinates] Parsed coordinates:', { lat, lng });
-          if (!isNaN(lat) && !isNaN(lng)) {
-            setShopCoordinates({ lat, lng });
-            console.log('[Pharmacy Coordinates] Shop coordinates set:', { lat, lng });
-          } else {
-            console.log('[Pharmacy Coordinates] Invalid coordinates - NaN values');
-          }
-        } catch (error) {
-          console.log('[Pharmacy Coordinates] Error parsing branch data:', error);
-        }
-      } else {
-        console.log('[Pharmacy Coordinates] No branch data found in localStorage');
-      }
-    }
-  }, []);
-
-  // Update shop logo/name from inventory if available
-  useEffect(() => {
-    if (inventory.length > 0 && inventory[0]._delika_pharmacy_table) {
-      const table = inventory[0]._delika_pharmacy_table;
-      setShopLogo(table.pharmacyLogo?.url || null);
-      setShopName(table.pharmacyName || null);
-    }
-  }, [inventory]);
-
+  
   useEffect(() => {
     async function fetchInventory() {
       try {
         setIsLoading(true);
-        const baseUrl = process.env.NEXT_PUBLIC_PHARMACY_SHOPS_INVENTORY_API;
-        if (!baseUrl) throw new Error("NEXT_PUBLIC_PHARMACY_SHOPS_INVENTORY_API is not defined");
-        const apiUrl = `${baseUrl}?pharmacyShopId=${pharmacyShopIdParam}&pharmacyBranchId=${pharmacyBranchId}`;
-        // Log the endpoint
+        // Use the new slug-based API endpoint
+        const apiUrl = `https://api-server.krontiva.africa/api:uEBBwbSs/phamarcies/${shopId}`;
         console.log("Fetching pharmacy inventory from:", apiUrl);
-        console.log("Filtering for pharmacyShopId:", pharmacyShopIdParam, "pharmacyBranchId:", pharmacyBranchId);
+        
         const response = await fetch(apiUrl, {
-          method: "GET",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
         });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch pharmacy data: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log("Pharmacy API response:", data);
+        
+        // Extract shop information from the response
+        if (data.slug) {
+          setShopName(data.slug.pharmacybranchName || "Pharmacy Shop");
+          setShopCoordinates({
+            lat: parseFloat(data.slug.pharmacybranchLatitude) || 0,
+            lng: parseFloat(data.slug.pharmacybranchLongitude) || 0
+          });
+          // Use fallback image if no shop logo is available
+          setShopLogo("/fallback/phamarcy.jpg");
+        }
+        
         const normalize = (item: any) => ({
           ...item,
-          pharmacyShopId: item.pharmacyShopId ?? pharmacyShopIdParam ?? null,
-          pharmacyShopBranchId: item.pharmacyShopBranchId ?? pharmacyBranchId ?? null,
+          // Map the new API structure to our interface
+          id: item.id,
+          productName: item.productName,
+          price: item.price?.toString() || "0",
+          category: item.category,
+          subCategory: item.subCategory,
+          description: item.description,
+          stockQuantity: item.stockQuantity,
+          brand: item.brand,
+          sku: item.sku,
+          unitType: item.unitType,
+          expiryDate: item.expiryDate,
           available: typeof item.available === "boolean" ? item.available : true,
+          // Handle image object structure
+          image: item.image?.url || item.image || null,
+          // Map pharmacy IDs
+          pharmacyShopId: item.pharmacyShopId || null,
+          pharmacyShopBranchId: item.pharmacyBranchId || null,
         });
-        if (Array.isArray(data)) {
-          const sorted = data.map(normalize).sort((a, b) => {
+        
+        if (Array.isArray(data.Inventory)) {
+          const sorted = data.Inventory.map(normalize).sort((a, b) => {
             if (!a.productName) return -1;
             if (!b.productName) return 1;
             return a.productName.localeCompare(b.productName);
           });
           setInventory(sorted);
-        } else if (data && typeof data === 'object') {
-          setInventory([normalize(data)]);
+        } else if (data.Inventory && typeof data.Inventory === 'object') {
+          setInventory([normalize(data.Inventory)]);
         } else {
           setInventory([]);
         }
       } catch (error) {
+        console.error("Error fetching pharmacy inventory:", error);
         setInventory([]);
       } finally {
         setIsLoading(false);
       }
     }
     if (shopId) fetchInventory();
-  }, [shopId, pharmacyBranchId]);
+  }, [shopId]);
 
   // Group inventory by category
   const categories = ["All Items", ...Array.from(new Set(inventory.map(item => item.category || "Uncategorized")))];
@@ -376,7 +359,7 @@ export default function PharmacyDetailsPage() {
             {bannerImage ? (
               <img src={bannerImage} alt={shopName || "Pharmacy Shop"} className="object-cover w-full h-full" />
             ) : (
-              <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-2xl">No Image</div>
+              <img src="/fallback/phamarcy.jpg" alt="Pharmacy Shop" className="object-cover w-full h-full" />
             )}
             {/* Optionally, add a like button at top-right */}
           </div>
