@@ -3,7 +3,7 @@ import Image from "next/image";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import Link from "next/link";
 import { calculateDistance } from "@/utils/distance";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Search, Heart } from "lucide-react";
 
 interface GroceryBranch {
   id: string;
@@ -19,6 +19,27 @@ interface GroceryBranch {
   };
 }
 
+interface UserData {
+  id: string;
+  customerTable?: Array<{
+    id: string;
+    userId: string;
+    created_at: number;
+    deliveryAddress?: {
+      fromAddress: string;
+      fromLatitude: string;
+      fromLongitude: string;
+    };
+    favoriteRestaurants?: Array<{
+      branchName: string;
+    }>;
+  }>;
+}
+
+interface FavoriteRestaurant {
+  branchName: string;
+}
+
 export function GroceriesList() {
   const [branches, setBranches] = useState<GroceryBranch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,6 +49,202 @@ export function GroceriesList() {
   const [filteredOutResults, setFilteredOutResults] = useState<GroceryBranch[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [hasUserSearched, setHasUserSearched] = useState<boolean>(false);
+  const [user, setUser] = useState<UserData | null>(null);
+  const [likedBranches, setLikedBranches] = useState<Set<string>>(new Set());
+
+  // Check authentication status on mount and when localStorage changes
+  useEffect(() => {
+    const checkAuth = () => {
+      const userData = localStorage.getItem('userData')
+      const authToken = localStorage.getItem('authToken')
+      console.log('checkAuth called:', { hasUserData: !!userData, hasAuthToken: !!authToken })
+      
+      if (userData && authToken) {
+        const user = JSON.parse(userData)
+        console.log('Setting user from localStorage:', user)
+        setUser(user)
+        // Fetch user favorites when user data is loaded
+        if (user.id) {
+          fetchUserFavorites(user.id)
+        }
+      } else {
+        console.log('No user data or auth token found')
+        setUser(null)
+        setLikedBranches(new Set())
+      }
+    }
+
+    // Initial check
+    checkAuth()
+
+    // Listen for auth state changes
+    window.addEventListener('userDataUpdated', checkAuth)
+    window.addEventListener('storage', checkAuth)
+
+    return () => {
+      window.removeEventListener('userDataUpdated', checkAuth)
+      window.removeEventListener('storage', checkAuth)
+    }
+  }, [])
+
+  // Add function to fetch user favorites
+  const fetchUserFavorites = async (userId: string) => {
+    if (!userId) {
+      return;
+    }
+    
+    try {
+      // Use our API utility function instead of direct fetch
+      const { getCustomerDetails } = await import('@/lib/api');
+      const customerData = await getCustomerDetails(userId);
+      
+      if (customerData?.favoriteRestaurants) {
+        const favorites = new Set<string>(
+          customerData.favoriteRestaurants.map((fav: FavoriteRestaurant) => fav.branchName)
+        );
+
+        setLikedBranches(favorites);
+        localStorage.setItem('filteredFavoritesCount', favorites.size.toString());
+      } else {
+        setLikedBranches(new Set<string>());
+        localStorage.setItem('filteredFavoritesCount', '0');
+      }
+    } catch (error) {
+      console.error('Error fetching user favorites:', error);
+
+      // Clear favorites on error to prevent stale data
+      setLikedBranches(new Set<string>());
+      localStorage.setItem('filteredFavoritesCount', '0');
+    }
+  };
+
+  // Handle like/unlike toggle for grocery branches
+  const handleLikeToggle = async (branchId: string, e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation
+    e.stopPropagation(); // Prevent event bubbling
+    
+    console.log('handleLikeToggle called with user:', user)
+    
+    if (!user) {
+      console.log('No user found, opening login modal')
+      // You can add login modal logic here if needed
+      return
+    }
+
+    // Check if user has auth token
+    const authToken = localStorage.getItem('authToken')
+    if (!authToken) {
+      console.error('No auth token found, user needs to login again')
+      // You can add login modal logic here if needed
+      return
+    }
+
+    const currentlyLiked = likedBranches.has(branchId)
+
+    try {
+      // Optimistically update UI
+      setLikedBranches(prev => {
+        const newSet = new Set(prev)
+        if (currentlyLiked) {
+          newSet.delete(branchId)
+        } else {
+          newSet.add(branchId)
+        }
+        return newSet
+      })
+
+      // Call the favorites API using the environment variable
+      const favoritesApiUrl = process.env.NEXT_PUBLIC_CUSTOMER_FAVORITES_API || 'https://api-server.krontiva.africa/api:uEBBwbSs/customer/favorites/add/remove/restaurant';
+      
+      console.log('Favorites API Debug Info:', {
+        url: favoritesApiUrl,
+        envVar: process.env.NEXT_PUBLIC_CUSTOMER_FAVORITES_API,
+        userId: user.id,
+        branchId,
+        currentlyLiked,
+        newLikedState: !currentlyLiked,
+        hasAuthToken: !!authToken,
+        authTokenLength: authToken?.length,
+        requestPayload: {
+          userId: user.id,
+          branchName: branchId,
+          liked: !currentlyLiked,
+          field_value: user.id
+        }
+      })
+      
+      const response = await fetch(favoritesApiUrl, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          branchName: branchId,
+          liked: !currentlyLiked,
+          field_value: user.id
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText,
+          url: favoritesApiUrl,
+          requestBody: {
+            userId: user.id,
+            branchName: branchId,
+            liked: !currentlyLiked,
+            field_value: user.id
+          }
+        })
+        throw new Error(`Failed to update favorites: ${response.status} - ${errorText}`)
+      }
+
+      // Show feedback
+      const feedbackElem = document.createElement('div')
+      feedbackElem.textContent = !currentlyLiked ? 'Added to favorites!' : 'Removed from favorites'
+      feedbackElem.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md shadow-md z-50'
+      document.body.appendChild(feedbackElem)
+      setTimeout(() => {
+        if (document.body.contains(feedbackElem)) {
+          document.body.removeChild(feedbackElem)
+        }
+      }, 2000)
+
+      // Update localStorage favorites count for other components
+      const currentCount = parseInt(localStorage.getItem('filteredFavoritesCount') || '0', 10)
+      const newCount = !currentlyLiked ? currentCount + 1 : Math.max(0, currentCount - 1)
+      localStorage.setItem('filteredFavoritesCount', newCount.toString())
+
+    } catch (error) {
+      console.error('Error updating favorites:', error)
+      // Revert UI if error occurred
+      setLikedBranches(prev => {
+        const newSet = new Set(prev)
+        if (currentlyLiked) {
+          newSet.add(branchId)
+        } else {
+          newSet.delete(branchId)
+        }
+        return newSet
+      })
+      
+      // Show error feedback
+      const feedbackElem = document.createElement('div')
+      feedbackElem.textContent = 'Failed to update favorites'
+      feedbackElem.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-md shadow-md z-50'
+      document.body.appendChild(feedbackElem)
+      setTimeout(() => {
+        if (document.body.contains(feedbackElem)) {
+          document.body.removeChild(feedbackElem)
+        }
+      }, 2000)
+    }
+  }
 
   // Load user location from localStorage
   useEffect(() => {
@@ -264,55 +481,68 @@ export function GroceriesList() {
     <div className="container mx-auto px-4 py-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {filteredBranches.map((branch) => (
-          <Link
-            key={branch.id}
-            href={`/groceries/${branch.groceryshopID}?branchId=${branch.id}`}
-            onClick={() => {
-              localStorage.setItem("selectedGroceryBranchId", branch.id);
-              localStorage.setItem("selectedGroceryShopId", branch.groceryshopID);
-              // Store grocery shop name and logo for details page
-              localStorage.setItem("selectedGroceryShopData", JSON.stringify({
-                groceryshopName: branch._delika_groceries_shops_table?.groceryshopName || "",
-                groceryshopLogo: branch._delika_groceries_shops_table?.groceryshopLogo || null
-              }));
-              // Store branch coordinates for delivery calculation
-              localStorage.setItem("selectedGroceryBranchData", JSON.stringify({
-                grocerybranchLatitude: branch.grocerybranchLatitude,
-                grocerybranchLongitude: branch.grocerybranchLongitude,
-                grocerybranchName: branch.grocerybranchName,
-                grocerybranchLocation: branch.grocerybranchLocation
-              }));
-            }}
-            className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
-          >
-            <div className="relative h-36">
-              {branch._delika_groceries_shops_table?.groceryshopLogo?.url ? (
-                <Image
-                  src={branch._delika_groceries_shops_table.groceryshopLogo.url}
-                  alt={branch._delika_groceries_shops_table.groceryshopName || "Grocery Shop"}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-                  No Image
-                </div>
-              )}
-            </div>
-            <div className="p-4">
-              <h3 className="font-bold text-gray-900 truncate">
-                {branch._delika_groceries_shops_table?.groceryshopName || "No Name"}
-              </h3>
-              <span className="text-xs text-gray-600 truncate block">
-                {branch.grocerybranchName}
-              </span>
-              <span className="text-xs text-gray-500 truncate block">
-                {branch.grocerybranchLocation}
-              </span>
-            </div>
-          </Link>
+          <div key={branch.id} className="relative">
+            <Link
+              href={`/groceries/${branch.groceryshopID}?branchId=${branch.id}`}
+              onClick={() => {
+                localStorage.setItem("selectedGroceryBranchId", branch.id);
+                localStorage.setItem("selectedGroceryShopId", branch.groceryshopID);
+                // Store grocery shop name and logo for details page
+                localStorage.setItem("selectedGroceryShopData", JSON.stringify({
+                  groceryshopName: branch._delika_groceries_shops_table?.groceryshopName || "",
+                  groceryshopLogo: branch._delika_groceries_shops_table?.groceryshopLogo || null
+                }));
+                // Store branch coordinates for delivery calculation
+                localStorage.setItem("selectedGroceryBranchData", JSON.stringify({
+                  grocerybranchLatitude: branch.grocerybranchLatitude,
+                  grocerybranchLongitude: branch.grocerybranchLongitude,
+                  grocerybranchName: branch.grocerybranchName,
+                  grocerybranchLocation: branch.grocerybranchLocation
+                }));
+              }}
+              className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+            >
+              <div className="relative h-36">
+                {branch._delika_groceries_shops_table?.groceryshopLogo?.url ? (
+                  <Image
+                    src={branch._delika_groceries_shops_table.groceryshopLogo.url}
+                    alt={branch._delika_groceries_shops_table.groceryshopName || "Grocery Shop"}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                    No Image
+                  </div>
+                )}
+                {/* Favorite Button */}
+                <button
+                  onClick={(e) => handleLikeToggle(branch.id, e)}
+                  className={`absolute top-2 right-2 z-10 rounded-full p-1.5 shadow-md transition-all duration-200 ${
+                    likedBranches.has(branch.id)
+                      ? 'bg-orange-100 text-orange-500 border border-orange-200 hover:bg-orange-200'
+                      : 'bg-white text-gray-400 border border-gray-200 hover:bg-gray-100'
+                  }`}
+                  aria-label={likedBranches.has(branch.id) ? 'Remove from favorites' : 'Add to favorites'}
+                >
+                  <Heart className={`w-4 h-4 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
+                </button>
+              </div>
+              <div className="p-4">
+                <h3 className="font-bold text-gray-900 truncate">
+                  {branch._delika_groceries_shops_table?.groceryshopName || "No Name"}
+                </h3>
+                <span className="text-xs text-gray-600 truncate block">
+                  {branch.grocerybranchName}
+                </span>
+                <span className="text-xs text-gray-500 truncate block">
+                  {branch.grocerybranchLocation}
+                </span>
+              </div>
+            </Link>
+          </div>
         ))}
       </div>
     </div>
   );
-} 
+}
