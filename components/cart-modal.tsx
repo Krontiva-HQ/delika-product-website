@@ -611,6 +611,30 @@ export function CartModal({
 
             <div className="border-t bg-white px-6 py-4 sticky bottom-0">
               <div className="space-y-3">
+                {/* Wallet Section - Moved to top */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4 text-gray-600" />
+                      <span className="text-gray-600">DelikaBalance</span>
+                    </div>
+                    <span className="font-medium text-green-600">GH₵ {toNumber(walletBalance).toFixed(2)}</span>
+                  </div>
+                  
+                  {walletBalance > 0 && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-700">
+                          Auto-applied
+                        </span>
+                      </div>
+                      <span className="text-sm text-orange-600">
+                        -GH₵ {Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-600">Subtotal</span>
                   <span className="font-medium">GH₵ {cart.reduce((total, item) => {
@@ -709,30 +733,6 @@ export function CartModal({
                   <span className="font-medium">GH₵ {platformFee.toFixed(2)}</span>
                 </div>
 
-                {/* Wallet Section */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center text-sm">
-                    <div className="flex items-center gap-2">
-                      <Wallet className="h-4 w-4 text-gray-600" />
-                      <span className="text-gray-600">DelikaBalance</span>
-                    </div>
-                    <span className="font-medium text-green-600">GH₵ {toNumber(walletBalance).toFixed(2)}</span>
-                  </div>
-                  
-                  {walletBalance > 0 && (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-700">
-                          Auto-applied
-                        </span>
-                      </div>
-                      <span className="text-sm text-orange-600">
-                        -GH₵ {Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee).toFixed(2)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
                 <div className="flex justify-between items-center pt-3 border-t">
                   <span className="font-medium">Total</span>
                   <span className="font-semibold text-lg">
@@ -749,15 +749,13 @@ export function CartModal({
                 onClick={handleCheckout}
                 disabled={hasUnavailableItems || isLoadingDelivery}
               >
-                {isLoadingDelivery
-                  ? 'Proceed to Checkout...'
-                  : hasUnavailableItems
-                    ? 'Remove Unavailable Items'
-                    : (() => {
-                        const finalTotal = Math.max(0, (cartTotal + deliveryFee + platformFee) - (useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee) : 0));
-                        const isFullyPaidByWallet = finalTotal === 0 && useWallet;
-                        return isFullyPaidByWallet ? 'Confirm Order' : 'Proceed to Checkout';
-                      })()}
+                {hasUnavailableItems
+                  ? 'Remove Unavailable Items'
+                  : (() => {
+                      const finalTotal = Math.max(0, (cartTotal + deliveryFee + platformFee) - (useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee) : 0));
+                      const isFullyPaidByWallet = finalTotal === 0 && useWallet;
+                      return isFullyPaidByWallet ? 'Confirm Order' : 'Proceed to Checkout';
+                    })()}
               </Button>
               {!isAuthenticated && (
                 <p className="text-sm text-gray-500 text-center mt-2">

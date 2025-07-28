@@ -855,25 +855,7 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
               </div>
 
               <div className="mt-6 pt-6 border-t border-dashed space-y-4">
-                <div className="flex justify-between text-gray-600">
-                  <span>Subtotal</span>
-                  <span className="font-medium">GH₵ {cartTotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <span>Delivery Fee</span>
-                    <span className="px-2 py-1 bg-orange-100 rounded-full text-xs text-orange-700">
-                      {deliveryType.charAt(0).toUpperCase() + deliveryType.slice(1)}
-                    </span>
-                  </div>
-                  <span className="font-medium">GH₵ {deliveryFee.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Platform Fee</span>
-                  <span className="font-medium">GH₵ {platformFee.toFixed(2)}</span>
-                </div>
-
-                {/* Wallet Section */}
+                {/* Wallet Section - Moved to top */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
                     <div className="flex items-center gap-2">
@@ -895,6 +877,24 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
                       </span>
                     </div>
                   )}
+                </div>
+
+                <div className="flex justify-between text-gray-600">
+                  <span>Subtotal</span>
+                  <span className="font-medium">GH₵ {cartTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <span>Delivery Fee</span>
+                    <span className="px-2 py-1 bg-orange-100 rounded-full text-xs text-orange-700">
+                      {deliveryType.charAt(0).toUpperCase() + deliveryType.slice(1)}
+                    </span>
+                  </div>
+                  <span className="font-medium">GH₵ {deliveryFee.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>Platform Fee</span>
+                  <span className="font-medium">GH₵ {platformFee.toFixed(2)}</span>
                 </div>
 
                 <div className="flex justify-between text-lg font-semibold pt-4 border-t">

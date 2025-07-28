@@ -50,6 +50,7 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
   const [loading, setLoading] = useState(true)
   const [verificationError, setVerificationError] = useState(false)
   const [isWalletPayment, setIsWalletPayment] = useState(false)
+  const [reverifying, setReverifying] = useState(false)
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -273,6 +274,155 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
     verifyPayment()
   }, [propReference, propOrderId, searchParams, router])
 
+  const handleReverifyPayment = async () => {
+    setReverifying(true)
+    setVerificationError(false)
+    
+    try {
+      // Get reference from props or URL params
+      const reference = propReference || (searchParams?.get('reference') ?? null)
+      const orderId = propOrderId || (searchParams?.get('orderId') ?? null)
+      const walletPaid = searchParams?.get('walletPaid') === 'true'
+      
+      if (!reference && !orderId) {
+        throw new Error('No payment reference or order ID found')
+      }
+
+      // Check if this was a wallet payment
+      if (walletPaid) {
+        console.log('💰 Re-verifying wallet payment...');
+        
+        if (orderId) {
+          // Get orderNumber from localStorage or use orderId as fallback
+          const orderSubmissionData = localStorage.getItem('orderSubmissionResponse');
+          let orderNumber = null;
+          
+          if (orderSubmissionData) {
+            try {
+              const { response } = JSON.parse(orderSubmissionData);
+              orderNumber = response?.result1?.orderNumber || response?.orderNumber;
+            } catch (error) {
+              console.error('Error parsing order submission data:', error);
+            }
+          }
+          
+          if (!orderNumber) {
+            orderNumber = orderId;
+          }
+          
+          // Re-verify using the order status API
+          const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}?orderNumber=${orderNumber}`)
+          if (!response.ok) {
+            throw new Error('Failed to fetch order details')
+          }
+          const data = await response.json()
+          
+          // Check payment status
+          if (data.paymentStatus?.toLowerCase() === 'paid') {
+            setOrderDetails(data)
+            setIsWalletPayment(true)
+            
+            // Store order number for tracking
+            if (data.orderNumber) {
+              localStorage.setItem('activeOrderNumber', data.orderNumber.toString())
+              localStorage.setItem('lastOrderDetails', JSON.stringify(data))
+            }
+            
+            toast({
+              title: "Payment Verified!",
+              description: "Your payment has been successfully verified.",
+            })
+          } else {
+            throw new Error('Payment not confirmed')
+          }
+        } else {
+          throw new Error('No orderId provided for wallet payment')
+        }
+      } else if (reference) {
+        // Re-verify Paystack payment
+        const response = await fetch(`${process.env.NEXT_PUBLIC_VERIFY_ORDER_PAYMENT_API}?reference=${reference}`)
+        if (!response.ok) {
+          throw new Error('Failed to verify payment')
+        }
+
+        const data: PaymentVerificationResponse = await response.json()
+        
+        if (data.paymentVerification === "unsuccessful") {
+          throw new Error('Payment verification unsuccessful')
+        } else {
+          setOrderDetails(data.paymentVerification)
+          setIsWalletPayment(false)
+          
+          // Store order number for tracking
+          if (data.paymentVerification.orderNumber) {
+            localStorage.setItem('activeOrderNumber', data.paymentVerification.orderNumber.toString())
+            localStorage.setItem('lastOrderDetails', JSON.stringify(data.paymentVerification))
+          }
+          
+          toast({
+            title: "Payment Verified!",
+            description: "Your payment has been successfully verified.",
+          })
+        }
+      } else if (orderId) {
+        // Re-verify using orderId
+        const orderSubmissionData = localStorage.getItem('orderSubmissionResponse');
+        let orderNumber = null;
+        
+        if (orderSubmissionData) {
+          try {
+            const { response } = JSON.parse(orderSubmissionData);
+            orderNumber = response?.result1?.orderNumber || response?.orderNumber;
+          } catch (error) {
+            console.error('Error parsing order submission data:', error);
+          }
+        }
+        
+        if (!orderNumber) {
+          orderNumber = orderId;
+        }
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}?orderNumber=${orderNumber}`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch order details')
+        }
+        const data = await response.json()
+        
+        // Check if this was a wallet payment
+        if (data.delikaBalance === true || data.walletUsed === true) {
+          setIsWalletPayment(true);
+          
+          if (data.paymentStatus?.toLowerCase() === 'paid') {
+            setOrderDetails(data)
+            toast({
+              title: "Payment Verified!",
+              description: "Your wallet payment has been successfully verified.",
+            })
+          } else {
+            throw new Error('Wallet payment not confirmed')
+          }
+        } else {
+          setOrderDetails(data)
+          setIsWalletPayment(false)
+          toast({
+            title: "Order Retrieved!",
+            description: "Your order details have been retrieved successfully.",
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Re-verification error:', error)
+      setVerificationError(true)
+      toast({
+        title: "Verification Failed",
+        description: "Payment verification failed again. Please contact support.",
+        variant: "destructive"
+      })
+    } finally {
+      setReverifying(false)
+    }
+  }
+
   const handleShare = () => {
     if (orderDetails) {
       const paymentMethod = isWalletPayment ? 'Delika Balance' : 'Mobile Money';
@@ -330,13 +480,35 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
             <Receipt className="h-8 w-8 text-red-600" />
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Payment Verification Failed</h2>
-          <p className="text-gray-600 mb-6">We couldn't verify your payment. Please contact support.</p>
-          <Button 
-            onClick={() => router.push('/shop')} 
-            className="bg-red-500 hover:bg-red-600 w-full"
-          >
-            Return to Shop
-          </Button>
+          <p className="text-gray-600 mb-6">We couldn't verify your payment. You can try reverifying or contact support.</p>
+          
+          <div className="space-y-3">
+            <Button 
+              onClick={handleReverifyPayment}
+              disabled={reverifying}
+              className="bg-orange-500 hover:bg-orange-600 w-full"
+            >
+              {reverifying ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                  Re-verifying...
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  <Check className="h-4 w-4" />
+                  Re-verify Payment
+                </span>
+              )}
+            </Button>
+            
+            <Button 
+              onClick={() => router.push('/shop')} 
+              variant="outline"
+              className="border-red-200 hover:bg-red-50 w-full"
+            >
+              Return to Shop
+            </Button>
+          </div>
         </div>
       </div>
     )
