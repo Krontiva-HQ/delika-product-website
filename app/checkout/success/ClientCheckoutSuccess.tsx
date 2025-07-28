@@ -524,7 +524,7 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
               </Button>
             </div>
             <Button 
-              onClick={() => router.push('/restaurants')} 
+                              onClick={() => router.push('/vendors')} 
               className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 h-12 text-lg font-semibold shadow-lg"
             >
               Back to Restaurants

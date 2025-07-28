@@ -6,7 +6,7 @@ const splits = [
     title: "Restaurants",
     description: "Browse top restaurants and order your favorite meals.",
     image: "/restaurant-interior.jpg",
-    button: { text: "View Restaurants", href: "/restaurants" },
+    button: { text: "View Restaurants", href: "/vendors" },
   },
   {
     title: "Groceries",

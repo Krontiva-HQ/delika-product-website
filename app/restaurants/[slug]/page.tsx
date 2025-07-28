@@ -58,7 +58,7 @@ export default function RestaurantPage({ params }: PageProps) {
   }
 
   const handleBackToRestaurants = () => {
-    router.push('/restaurants')
+    router.push('/vendors')
   }
 
   try {
