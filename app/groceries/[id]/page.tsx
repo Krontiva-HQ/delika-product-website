@@ -19,7 +19,7 @@ import { SignupModal } from "@/components/signup-modal";
 import { AuthNav } from "@/components/auth-nav";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, ChevronLeft } from "lucide-react";
 
 interface InventoryItem {
   id: string;
@@ -344,7 +344,7 @@ export default function GroceryDetailsPage() {
   const handleLoginClick = () => setIsLoginModalOpen(true);
   const handleSignupClick = () => setIsSignupModalOpen(true);
   const handleLogout = () => setUser(null);
-  const handleHomeClick = () => window.location.href = "/restaurants";
+  const handleHomeClick = () => window.location.href = "/vendors";
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -358,6 +358,15 @@ export default function GroceryDetailsPage() {
         onHomeClick={handleHomeClick}
       />
       <div className="container mx-auto px-4 py-8">
+        {/* Back to Vendors button */}
+        <button
+          onClick={handleHomeClick}
+          className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+        >
+          <ChevronLeft className="w-4 h-4 mr-1" />
+          Back to Vendors
+        </button>
+        
         {/* Header section styled like branch-page */}
         <div className="mb-8">
           <div className="relative w-full h-56 sm:h-72 rounded-2xl overflow-hidden shadow-lg bg-white border mx-auto">

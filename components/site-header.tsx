@@ -13,12 +13,12 @@ export function SiteHeader() {
   const pathname = usePathname()
 
   const menuItems = [
-    { href: "/restaurants", label: "Vendors" },
+    { href: "/vendors", label: "Vendors" },
     { href: "/about", label: "About" },
   ]
 
-  // Don't show header at all on /restaurants page
-  if (pathname === "/restaurants") {
+  // Don't show header at all on /vendors page
+  if (pathname === "/vendors") {
     return null;
   }
 

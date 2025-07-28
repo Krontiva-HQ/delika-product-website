@@ -71,7 +71,7 @@ export function NewHero() {
             className="flex flex-row gap-3 w-full justify-center md:justify-start"
           >
             <Button asChild size="lg" className="rounded-xl px-8 bg-orange-500 text-white">
-              <Link href="/restaurants">Browse Shops</Link>
+              <Link href="/vendors">Browse</Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="rounded-xl px-8 border-2 border-black text-black">
               <Link href="/restaurant-partner">Become a Vendor</Link>

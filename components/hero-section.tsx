@@ -62,7 +62,7 @@ export function HeroSection() {
           className="flex flex-col sm:flex-row gap-4 px-4"
         >
           <Link 
-            href="/restaurants" 
+            href="/vendors" 
             className="rounded-full px-6 md:px-8 py-3 w-full sm:w-auto bg-black text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 focus:ring-2 focus:ring-black focus:ring-offset-2 focus:outline-none hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 relative overflow-hidden group"
           >
             <span className="relative z-10 group-hover:text-white">Browse Shops</span>

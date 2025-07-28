@@ -204,6 +204,20 @@ export async function authRequest<T = any>(
  */
 export async function getBranches<T = any>(): Promise<T> {
   try {
+    const response = await apiGet('/branches');
+    return response as T;
+  } catch (error) {
+    console.error('Error fetching branches:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get branches data using direct fetch (for compatibility)
+ * @returns The branches data
+ */
+export async function getBranchesDirect<T = any>(): Promise<T> {
+  try {
     const response = await fetch('/api/branches', {
       method: 'GET',
       headers: {
@@ -219,7 +233,53 @@ export async function getBranches<T = any>(): Promise<T> {
     
     return responseData as T;
   } catch (error) {
+    throw error;
+  }
+}
 
+export async function getGroceries<T = any>(): Promise<T> {
+  try {
+    const response = await apiGet('/groceries');
+    return response as T;
+  } catch (error) {
+    console.error('Error fetching groceries:', error);
+    throw error;
+  }
+}
+
+export async function getPharmacies<T = any>(): Promise<T> {
+  try {
+    const response = await apiGet('/pharmacies');
+    return response as T;
+  } catch (error) {
+    console.error('Error fetching pharmacies:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get all vendor data (restaurants, groceries, pharmacies, ratings)
+ * @returns The complete allData structure
+ */
+export async function getAllData<T = any>(): Promise<T> {
+  try {
+    const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/allData');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch allData');
+    }
+    
+    const data = await response.json();
+    
+    // Store allData in localStorage for detail pages to access
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('allData', JSON.stringify(data));
+      console.log('Stored allData in localStorage for detail pages');
+    }
+    
+    return data as T;
+  } catch (error) {
+    console.error('Error fetching allData:', error);
     throw error;
   }
 }
@@ -422,6 +482,7 @@ const transformOrderData = (orderData: any, storeType: string) => {
       
       // Transform to match pharmacy orders table schema exactly
       const transformedData = {
+        id: baseData.id,
         orderDate: baseData.orderDate,
         orderOTP: 0,
         orderNumber: 0,
@@ -488,6 +549,7 @@ const transformOrderData = (orderData: any, storeType: string) => {
       
       // Transform to match grocery orders table schema exactly
       return {
+        id: baseData.id,
         orderDate: baseData.orderDate,
         orderOTP: 0,
         orderNumber: 0,

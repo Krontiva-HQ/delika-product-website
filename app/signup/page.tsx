@@ -162,7 +162,7 @@ export default function SignupPage() {
           if (pathname.startsWith('/checkout')) {
             window.location.reload();
           } else {
-            router.push('/restaurants');
+            router.push('/vendors');
           }
         }
       } else {
