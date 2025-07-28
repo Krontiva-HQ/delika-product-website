@@ -166,8 +166,8 @@ export function AuthNav({
   const handleConfirmLogout = async () => {
     setIsLogoutModalOpen(false);
     await onLogout();
-    // Refresh the page after logout
-    window.location.reload();
+    // Redirect to home page after logout
+    window.location.href = '/';
   };
 
   const fetchOrderHistory = useCallback(async () => {

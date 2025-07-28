@@ -30,6 +30,11 @@ import { PharmacyList } from "@/components/pharmacy-list";
 import { FilterModal } from "@/components/FilterModal";
 import { ActiveFilters } from "@/components/ActiveFilters";
 import { VendorSkeleton } from "@/components/vendor-skeleton";
+import { Star, Clock, Plus, Minus, Share2, Store, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { FloatingCart } from "@/components/floating-cart"
+import { CartModal } from "@/components/cart-modal"
+import { isVendorOpen } from "@/lib/utils"
 
 
 interface Restaurant {
@@ -463,11 +468,6 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
     return branches.filter(branch => branch.active);
   }, [branches]);
 
-
-
-  // Simple search logic - start fresh
-
-
   const searchResults = useMemo(() => {
     // If no search query, return all data for current tab
     if (!searchQuery.trim()) {
@@ -662,19 +662,47 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
     return finalResults;
   }, [searchQuery, filteredBranches, activeTab, vendorData]);
 
+  // Check if we should sort by open/closed status (when 35% or more are closed)
+  const shouldSortByStatus = useMemo(() => {
+    if (!searchResults.length) return false;
+    
+    const closedCount = searchResults.filter(vendor => {
+      const isOpen = isVendorOpen(vendor.activeHours);
+      return !isOpen;
+    }).length;
+    
+    const closedPercentage = (closedCount / searchResults.length) * 100;
+    return closedPercentage >= 35;
+  }, [searchResults]);
+
+  // Sort vendors by open/closed status when threshold is met
+  const sortedSearchResults = useMemo(() => {
+    if (!shouldSortByStatus) return searchResults;
+    
+    return [...searchResults].sort((a, b) => {
+      const aIsOpen = isVendorOpen(a.activeHours);
+      const bIsOpen = isVendorOpen(b.activeHours);
+      
+      // Open vendors first, then closed ones
+      if (aIsOpen && !bIsOpen) return -1;
+      if (!aIsOpen && bIsOpen) return 1;
+      return 0;
+    });
+  }, [searchResults, shouldSortByStatus]);
+
   // Organize search results into sections
   const organizedSearchResults = useMemo(() => {
     if (!searchQuery.trim()) {
       return {
         foodNames: [],
         foodCategories: [],
-        restaurants: searchResults,
+        restaurants: sortedSearchResults,
         groceryItems: [],
         groceryCategories: [],
-        groceries: searchResults,
+        groceries: sortedSearchResults,
         pharmacyItems: [],
         pharmacyCategories: [],
-        pharmacies: searchResults
+        pharmacies: sortedSearchResults
       };
     }
 
@@ -687,7 +715,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
       const restaurants: any[] = [];
 
       // Collect all food names and categories from search results
-      searchResults.forEach((branch) => {
+      sortedSearchResults.forEach((branch) => {
         const restaurantItems = branch.RestaurantItem || branch.restaurantItem || [];
         
         restaurantItems.forEach((item: any) => {
@@ -721,7 +749,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
       });
 
       // Add restaurants that match by name/location OR have matching food items
-      searchResults.forEach((branch) => {
+      sortedSearchResults.forEach((branch) => {
         const restaurantName = branch.Restaurant?.[0]?.restaurantName || 
                               branch._restaurantTable?.[0]?.restaurantName || 
                               branch.branchName;
@@ -780,7 +808,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
       const groceries: any[] = [];
 
       // Collect all grocery items and categories from search results
-      searchResults.forEach((grocery) => {
+      sortedSearchResults.forEach((grocery) => {
         const groceryItemsList = grocery.GroceryItem || grocery.groceryItem || [];
         
         groceryItemsList.forEach((item: any) => {
@@ -810,7 +838,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
       });
 
       // Add groceries that match by name/location OR have matching items
-      searchResults.forEach((grocery) => {
+      sortedSearchResults.forEach((grocery) => {
         const groceryName = grocery.Grocery?.groceryshopName || grocery.branchName;
         
         // Check if grocery matches by name/location
@@ -863,7 +891,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
       const pharmacies: any[] = [];
 
       // Collect all pharmacy items and categories from search results
-      searchResults.forEach((pharmacy) => {
+      sortedSearchResults.forEach((pharmacy) => {
         const pharmacyItemsList = pharmacy.PharmacyItem || pharmacy.pharmacyItem || [];
         
         pharmacyItemsList.forEach((item: any) => {
@@ -893,7 +921,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
       });
 
       // Add pharmacies that match by name/location OR have matching items
-      searchResults.forEach((pharmacy) => {
+      sortedSearchResults.forEach((pharmacy) => {
         const pharmacyName = pharmacy.Pharmacy?.pharmacyName;
         
         // Check if pharmacy matches by name/location
@@ -950,7 +978,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
       pharmacyCategories: [],
       pharmacies: searchResults
     };
-  }, [searchQuery, searchResults, activeTab]);
+  }, [searchQuery, sortedSearchResults, activeTab]);
 
   const handleLocationSelect = ({ address, lat, lng }: { address: string; lat: number; lng: number }) => {
     setUserLocation(address)
@@ -1149,6 +1177,9 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
 
       // Small delay to ensure state updates are processed
       await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Redirect to home page
+      window.location.href = '/';
     } catch (error) {
       console.error('Error during logout:', error);
     }
@@ -1338,59 +1369,81 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
           />
           
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {filteredResults.map((vendor) => (
-              <Link
-                key={vendor.id}
-                href={`/${vendor.type}s/${vendor.slug}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleBranchSelect(vendor);
-                }}
-                className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
-              >
-                <button 
-                  className="absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105"
-                  aria-label={`Like ${vendor.type}`}
+            {filteredResults.map((vendor) => {
+              // Check if vendor is open based on working hours
+              const isOpen = isVendorOpen(vendor.activeHours);
+              
+              return (
+                <Link
+                  key={vendor.id}
+                  href={`/${vendor.type}s/${vendor.slug}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleBranchSelect(vendor);
+                  }}
+                  className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                    !isOpen ? 'opacity-50 grayscale' : ''
+                  }`}
                 >
-                  <Heart className="w-5 h-5 transition-all duration-200" />
-                </button>
-                <div className="relative h-36">
-                  {vendor.displayLogo ? (
-                    <Image
-                      src={vendor.displayLogo}
-                      alt={vendor.displayName || vendor.type}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                      <span className="text-gray-600 text-3xl">
-                        {vendor.type === 'restaurant' ? '🍽️' : vendor.type === 'grocery' ? '🛒' : '💊'}
-                      </span>
+                  <button 
+                    className="absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105"
+                    aria-label={`Like ${vendor.type}`}
+                  >
+                    <Heart className="w-5 h-5 transition-all duration-200" />
+                  </button>
+                  
+                  {/* Closed indicator */}
+                  {!isOpen && (
+                    <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                      Closed
                     </div>
                   )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-gray-900 truncate">
-                    {vendor.restaurantName || vendor.groceryName || vendor.pharmacyName || vendor.displayName || vendor.type}
-                  </h3>
-                  <span className="text-xs text-gray-600 truncate block">
-                    {vendor.displayName || vendor.type}
-                  </span>
-                  {vendor.rating && (
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className="text-yellow-400">★</span>
-                      <span className="text-xs text-gray-600">{vendor.rating}</span>
-                    </div>
-                  )}
-                  {vendor.deliveryTime && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {vendor.deliveryTime} min
-                    </div>
-                  )}
-                </div>
-              </Link>
-            ))}
+                  
+                  <div className="relative h-36">
+                    {vendor.displayLogo ? (
+                      <Image
+                        src={vendor.displayLogo}
+                        alt={vendor.displayName || vendor.type}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                        <span className="text-gray-600 text-3xl">
+                          {vendor.type === 'restaurant' ? '🍽️' : vendor.type === 'grocery' ? '🛒' : '💊'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-bold text-gray-900 truncate">
+                      {vendor.restaurantName || vendor.groceryName || vendor.pharmacyName || vendor.displayName || vendor.type}
+                    </h3>
+                    <span className="text-xs text-gray-600 truncate block">
+                      {vendor.displayName || vendor.type}
+                    </span>
+                    {vendor.rating && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <span className="text-yellow-400">★</span>
+                        <span className="text-xs text-gray-600">{vendor.rating}</span>
+                      </div>
+                    )}
+                    {vendor.deliveryTime && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        {vendor.deliveryTime} min
+                      </div>
+                    )}
+                    {/* Status indicator */}
+                    {!isOpen && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Clock className="w-3 h-3 text-red-500" />
+                        <span className="text-xs text-red-500">Closed</span>
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       ) : isShowingFilteredResults && filteredResults.length === 0 ? (
@@ -1921,41 +1974,53 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
               </div>
           )}
         </div>
-      ) : searchResults.length > 0 ? (
+      ) : sortedSearchResults.length > 0 ? (
         // Display regular results for non-restaurant tabs or when no search query
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {searchResults.map((item) => {
+          {sortedSearchResults.map((item) => {
             // Handle different item types based on activeTab
             if (activeTab === "restaurants") {
               const branch = item;
+              const isOpen = isVendorOpen(branch.activeHours);
+              
               return (
-            <Link
-              key={branch.id}
-              href={`/restaurants/${branch.slug}`}
-              onClick={(e) => {
-                e.preventDefault()
-                handleBranchSelect(branch)
-              }}
-              className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
-            >
-              <button
-                className={`absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
-                  likedBranches.has(branch.id) 
-                    ? 'text-orange-500 scale-110 hover:scale-105' 
-                    : 'text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105'
-                }`}
-                onClick={(e) => handleLikeToggle(branch.id, e)}
-                aria-label={likedBranches.has(branch.id) ? "Unlike restaurant" : "Like restaurant"}
-              >
-                <Heart className={`w-5 h-5 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
-              </button>
-              <div className="relative h-36">
+                <Link
+                  key={branch.id}
+                  href={`/restaurants/${branch.slug}`}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handleBranchSelect(branch)
+                  }}
+                  className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                    !isOpen ? 'opacity-50 grayscale' : ''
+                  }`}
+                >
+                  <button
+                    className={`absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
+                      likedBranches.has(branch.id) 
+                        ? 'text-orange-500 scale-110 hover:scale-105' 
+                        : 'text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105'
+                    }`}
+                    onClick={(e) => handleLikeToggle(branch.id, e)}
+                    aria-label={likedBranches.has(branch.id) ? "Unlike restaurant" : "Like restaurant"}
+                  >
+                    <Heart className={`w-5 h-5 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
+                  </button>
+                  
+                  {/* Closed indicator */}
+                  {!isOpen && (
+                    <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                      Closed
+                    </div>
+                  )}
+                  
+                  <div className="relative h-36">
                     {branch.Restaurant?.[0]?.restaurantLogo?.url || 
                      branch._restaurantTable?.[0]?.restaurantLogo?.url || 
                      branch.restaurantLogo?.url || 
                      branch.logo?.url || 
                      branch.image?.url ? (
-                <Image
+                      <Image
                         src={branch.Restaurant?.[0]?.restaurantLogo?.url || 
                              branch._restaurantTable?.[0]?.restaurantLogo?.url || 
                              branch.restaurantLogo?.url || 
@@ -1967,38 +2032,49 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                              branch.name || 
                              branch.branchName || 
                              'Restaurant'}
-                  fill
-                  className="object-cover"
-                />
+                        fill
+                        className="object-cover"
+                      />
                     ) : (
                       <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
                         No Image
-            </div>
+                      </div>
                     )}
-              </div>
-              <div className="p-4">
-                <h3 className="font-bold text-gray-900 truncate">
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-bold text-gray-900 truncate">
                       {branch.Restaurant?.[0]?.restaurantName || 
                        branch._restaurantTable?.[0]?.restaurantName || 
                        branch.restaurantName || 
                        branch.name || 
                        branch.branchName || 
                        'Restaurant'}
-                </h3>
-                <span className="text-xs text-gray-600 truncate block">
+                    </h3>
+                    <span className="text-xs text-gray-600 truncate block">
                       {branch.branchName || branch.location || 'Location'}
-                </span>
-              </div>
-            </Link>
+                    </span>
+                    {/* Status indicator */}
+                    {!isOpen && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Clock className="w-3 h-3 text-red-500" />
+                        <span className="text-xs text-red-500">Closed</span>
+                      </div>
+                    )}
+                  </div>
+                </Link>
               );
             } else if (activeTab === "groceries") {
               const grocery = item;
               const groceryName = grocery.Grocery?.groceryshopName || grocery.grocerybranchName;
+              const isOpen = isVendorOpen(grocery.activeHours);
+              
               return (
                 <Link
                   key={grocery.id}
                   href={`/groceries/${grocery.slug}`}
-                  className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+                  className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                    !isOpen ? 'opacity-50 grayscale' : ''
+                  }`}
                 >
                   <button 
                     className="absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105"
@@ -2006,6 +2082,14 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                   >
                     <Heart className="w-5 h-5 transition-all duration-200" />
                   </button>
+                  
+                  {/* Closed indicator */}
+                  {!isOpen && (
+                    <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                      Closed
+                    </div>
+                  )}
+                  
                   <div className="relative h-36">
                     {grocery.Grocery?.groceryshopLogo?.url ? (
                       <Image
@@ -2017,7 +2101,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     ) : (
                       <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
                         No Image
-              </div>
+                      </div>
                     )}
                   </div>
                   <div className="p-4">
@@ -2027,24 +2111,43 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     <span className="text-xs text-gray-600 truncate block">
                       {grocery.grocerybranchLocation || 'Grocery Store'}
                     </span>
+                    {/* Status indicator */}
+                    {!isOpen && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Clock className="w-3 h-3 text-red-500" />
+                        <span className="text-xs text-red-500">Closed</span>
+                      </div>
+                    )}
                   </div>
                 </Link>
               );
             } else if (activeTab === "pharmacy") {
               const pharmacy = item;
               const pharmacyName = pharmacy.Pharmacy?.pharmacyName || pharmacy.pharmacybranchName;
+              const isOpen = isVendorOpen(pharmacy.activeHours);
+              
               return (
                 <Link
                   key={pharmacy.id}
                   href={`/pharmacy/${pharmacy.slug}`}
-                  className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+                  className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                    !isOpen ? 'opacity-50 grayscale' : ''
+                  }`}
                 >
-              <button
+                  <button
                     className="absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105"
                     aria-label="Like pharmacy"
-              >
+                  >
                     <Heart className="w-5 h-5 transition-all duration-200" />
-              </button>
+                  </button>
+                  
+                  {/* Closed indicator */}
+                  {!isOpen && (
+                    <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                      Closed
+                    </div>
+                  )}
+                  
                   <div className="relative h-36">
                     {pharmacy.Pharmacy?.pharmacyLogo?.url ? (
                       <Image
@@ -2066,6 +2169,13 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     <span className="text-xs text-gray-600 truncate block">
                       {pharmacy.pharmacybranchLocation || 'Pharmacy'}
                     </span>
+                    {/* Status indicator */}
+                    {!isOpen && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Clock className="w-3 h-3 text-red-500" />
+                        <span className="text-xs text-red-500">Closed</span>
+                      </div>
+                    )}
                   </div>
                 </Link>
               );

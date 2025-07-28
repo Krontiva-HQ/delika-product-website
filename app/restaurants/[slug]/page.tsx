@@ -50,7 +50,9 @@ export default function RestaurantPage({ params }: PageProps) {
     localStorage.removeItem('userData')
     localStorage.removeItem('selectedBranchId')
     localStorage.removeItem('branchSlug')
+    localStorage.removeItem('authToken')
     setUserData(null)
+    window.location.href = '/'
   }
 
   const handleHomeClick = () => {

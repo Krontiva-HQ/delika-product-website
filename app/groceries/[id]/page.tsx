@@ -20,7 +20,7 @@ import { SignupModal } from "@/components/signup-modal";
 import { AuthNav } from "@/components/auth-nav";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus, ChevronLeft } from "lucide-react";
+import { Plus, Minus, ChevronLeft, MapPin, Phone, Clock } from "lucide-react";
 
 interface InventoryItem {
   id: string;
@@ -151,6 +151,7 @@ export default function GroceryDetailsPage() {
   // Get shop info from API response
   const [shopLogo, setShopLogo] = useState<string | null>(null);
   const [shopName, setShopName] = useState<string | null>(null);
+  const [shopAddress, setShopAddress] = useState<string | null>(null);
   const [shopCoordinates, setShopCoordinates] = useState<{lat: number, lng: number} | null>(null);
   
   useEffect(() => {
@@ -173,14 +174,31 @@ export default function GroceryDetailsPage() {
         const data = await response.json();
         console.log("Grocery API response:", data);
         
-        // Extract shop information from the response
+        // Extract shop information from the new API structure
         if (data.slug) {
           setShopName(data.slug.grocerybranchName || "Grocery Shop");
           setShopCoordinates({
             lat: parseFloat(data.slug.grocerybranchLatitude) || 0,
             lng: parseFloat(data.slug.grocerybranchLongitude) || 0
           });
-          // Use fallback image if no shop logo is available
+        }
+        
+        // Extract grocery shop details from Groceries_Shops array
+        if (data.Groceries_Shops && Array.isArray(data.Groceries_Shops) && data.Groceries_Shops.length > 0) {
+          const groceryShop = data.Groceries_Shops[0];
+          setShopName(groceryShop.groceryshopName || data.slug?.grocerybranchName || "Grocery Shop");
+          setShopAddress(groceryShop.groceryshopAddress || "");
+          
+          // Extract logo from groceryshopLogo object
+          if (groceryShop.groceryshopLogo && groceryShop.groceryshopLogo.url) {
+            setShopLogo(groceryShop.groceryshopLogo.url);
+          } else {
+            setShopLogo("/fallback/grocery.jpg");
+          }
+        } else {
+          // Fallback to slug data
+          setShopName(data.slug?.grocerybranchName || "Grocery Shop");
+          setShopAddress(data.slug?.grocerybranchLocation || "");
           setShopLogo("/fallback/grocery.jpg");
         }
         
@@ -203,7 +221,7 @@ export default function GroceryDetailsPage() {
         });
         
         if (Array.isArray(data.ShopsInventory)) {
-          const sorted = data.ShopsInventory.map(normalize).sort((a, b) => {
+          const sorted = data.ShopsInventory.map(normalize).sort((a: any, b: any) => {
             if (!a.productName) return -1;
             if (!b.productName) return 1;
             return a.productName.localeCompare(b.productName);
@@ -308,8 +326,6 @@ export default function GroceryDetailsPage() {
 
   // Optionally, get a banner image (use logo as fallback)
   const bannerImage = shopLogo;
-  // Optionally, get address/location if available
-  const shopAddress = inventory[0]?._delika_groceries_shops_table?.groceryshopAddress || "";
   // Modal state for View Details
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
@@ -334,7 +350,12 @@ export default function GroceryDetailsPage() {
   const handleViewChange = () => {};
   const handleLoginClick = () => setIsLoginModalOpen(true);
   const handleSignupClick = () => setIsSignupModalOpen(true);
-  const handleLogout = () => setUser(null);
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('userData');
+    localStorage.removeItem('authToken');
+    window.location.href = '/';
+  };
   const handleHomeClick = () => window.location.href = "/vendors";
 
   return (
@@ -383,14 +404,63 @@ export default function GroceryDetailsPage() {
         </div>
         {/* Placeholder for View Details modal */}
         {isDetailsModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 max-w-md w-full shadow-lg">
-              <h2 className="text-xl font-bold mb-4">Shop Details</h2>
-              <p>Name: {shopName}</p>
-              <p>Address: {shopAddress}</p>
-              <button className="mt-4 px-4 py-2 bg-orange-500 text-white rounded" onClick={() => setIsDetailsModalOpen(false)}>Close</button>
-            </div>
-          </div>
+          <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+            <DialogContent className="sm:max-w-[500px] p-0 max-h-[80vh] overflow-y-auto">
+              <DialogTitle className="text-2xl font-bold mb-6 px-6 pt-6">
+                {shopName || 'Shop Details'}
+              </DialogTitle>
+              
+              <div className="space-y-4 px-6 pb-6">
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
+                  <div className="w-full">
+                    <h4 className="font-medium text-gray-900">Location</h4>
+                    {shopCoordinates ? (
+                      <div className="mt-2 -mx-6">
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${shopCoordinates.lat},${shopCoordinates.lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block overflow-hidden w-full"
+                          title="Open in Google Maps"
+                        >
+                          <iframe
+                            src={`https://www.google.com/maps?q=${shopCoordinates.lat},${shopCoordinates.lng}&z=16&output=embed`}
+                            className="w-full"
+                            height="220"
+                            style={{ border: 0, width: '100%', borderRadius: 0 }}
+                            allowFullScreen
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                            title="Shop Location Map"
+                          />
+                        </a>
+                        <p className="text-xs text-gray-500 mt-1 px-6">
+                          Click the map to open a larger view
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-gray-600">{shopAddress || 'Location not available'}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-gray-900">Phone</h4>
+                    <p className="text-gray-600">Phone not available</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Clock className="w-5 h-5 text-gray-400 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-gray-900">Hours</h4>
+                    <p className="text-gray-600">Hours not available</p>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         )}
         <hr className="my-6 border-gray-200" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
