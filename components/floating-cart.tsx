@@ -114,6 +114,18 @@ export function FloatingCart({ total, itemCount, onClick, branchLocation, branch
 
       const { lat, lng } = JSON.parse(locationData)
       
+      // Get userId from localStorage userData
+      let userId = '';
+      try {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+          const parsedUserData = JSON.parse(userData);
+          userId = parsedUserData.id || '';
+        }
+      } catch (error) {
+        console.log('[FloatingCart] Could not retrieve userId from userData:', error);
+      }
+      
       const prices = await calculateDeliveryPrices({
         pickup: {
           fromLatitude: branchLocation.latitude,
@@ -124,7 +136,10 @@ export function FloatingCart({ total, itemCount, onClick, branchLocation, branch
           toLongitude: lng.toString(),
         },
         rider: true,
-        pedestrian: true
+        pedestrian: true,
+        total: total,
+        subTotal: total,
+        userId: userId
       })
       
       // Store the prices in localStorage for cart modal to use

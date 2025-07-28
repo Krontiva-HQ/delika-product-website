@@ -22,9 +22,6 @@ interface SearchSectionProps {
 export function SearchSection({ onSearch, userLocation, onLocationClick, activeTab, onTabChange, onFilterClick, branches }: SearchSectionProps) {
   const [searchValue, setSearchValue] = useState("")
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0)
-  const [dropdownResults, setDropdownResults] = useState<any[]>([])
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [loadingDropdown, setLoadingDropdown] = useState(false)
   const router = useRouter();
 
   // Banner images data
@@ -104,72 +101,27 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
     window.dispatchEvent(new CustomEvent('pharmacySearchUpdate', {
       detail: { query: value }
     }));
-    // In-memory dropdown search
-    if (!value.trim()) {
-      setDropdownResults([])
-      setShowDropdown(false)
-      return
-    }
-    const query = value.trim().toLowerCase();
-    const results: any[] = [];
-    branches.forEach((branch: any) => {
-      // Branch/restaurant match
-      if (
-        branch.branchName?.toLowerCase().includes(query) ||
-        branch._restaurantTable?.[0]?.restaurantName?.toLowerCase().includes(query)
-      ) {
-        results.push({
-          id: branch.id,
-          name: branch._restaurantTable?.[0]?.restaurantName || branch.branchName,
-          type: 'restaurant',
-          slug: branch.slug,
-          image: branch._restaurantTable?.[0]?.restaurantLogo?.url,
-        });
-      }
-      // Food match
-      branch._itemsmenu?.forEach((menu: any) => {
-        menu.foods?.forEach((food: any) => {
-          if (food.name?.toLowerCase().includes(query)) {
-            results.push({
-              id: food.name + branch.id,
-              name: food.name,
-              type: 'food',
-              slug: branch.slug,
-              image: food.foodImage?.url,
-              branchName: branch.branchName,
-            });
-          }
-        });
-      });
-    });
-    // Deduplicate results by id+type
-    const uniqueResultsMap = new Map();
-    results.forEach((item) => {
-      const key = item.id + '-' + item.type;
-      if (!uniqueResultsMap.has(key)) {
-        uniqueResultsMap.set(key, item);
-      }
-    });
-    setDropdownResults(Array.from(uniqueResultsMap.values()));
-    setShowDropdown(true)
+    
+    // Disable dropdown functionality
   }
 
   // Hide dropdown on blur (with slight delay for click)
   const handleBlur = () => {
-    setTimeout(() => setShowDropdown(false), 150)
+    // Dropdown functionality disabled
   }
 
   // Handle result click
   const handleResultClick = (result: any) => {
-    setShowDropdown(false)
     setSearchValue("")
     // Navigate to detail page based on result type
     if (result.type === 'restaurant') {
-      router.push(`/restaurant/${result.slug || result.id}`)
+      router.push(`/restaurants/${result.slug || result.id}`);
     } else if (result.type === 'grocery') {
-      router.push(`/groceries/${result.slug || result.id}`)
+      router.push(`/groceries/${result.slug || result.id}`);
     } else if (result.type === 'pharmacy') {
-      router.push(`/pharmacy/${result.slug || result.id}`)
+      router.push(`/pharmacy/${result.slug || result.id}`);
+    } else if (result.type === 'food') {
+      router.push(`/restaurants/${result.slug || result.id}`);
     }
   }
 
@@ -213,50 +165,11 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
                   placeholder={getPlaceholder()}
                   value={searchValue}
                   onChange={handleChange}
-                  onFocus={() => searchValue && setShowDropdown(true)}
                   onBlur={handleBlur}
                   className="w-full pl-10 pr-12 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   autoComplete="off"
                 />
-                {/* Dropdown results */}
-                {showDropdown && (
-                  <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-20 max-h-72 overflow-y-auto">
-                    {loadingDropdown ? (
-                      <div className="p-4 text-center text-gray-400">Loading...</div>
-                    ) : dropdownResults.length === 0 ? (
-                      <div className="p-4 text-center text-gray-400">No results found</div>
-                    ) : (
-                      dropdownResults.map((result, idx) => {
-                        let href = "/";
-                        if (result.type === 'restaurant') {
-                          href = `/restaurants/${result.slug || result.id}`;
-                        } else if (result.type === 'grocery') {
-                          href = `/groceries/${result.slug || result.id}`;
-                        } else if (result.type === 'pharmacy') {
-                          href = `/pharmacy/${result.slug || result.id}`;
-                        } else if (result.type === 'food') {
-                          href = `/restaurants/${result.slug || result.id}`;
-                        }
-                        return (
-                          <Link
-                            key={result.id || idx}
-                            href={href}
-                            className="w-full text-left px-4 py-2 hover:bg-orange-50 focus:bg-orange-100 focus:outline-none flex items-center gap-3 cursor-pointer"
-                            prefetch={false}
-                          >
-                            {result.image && (
-                              <img src={result.image} alt={result.name} className="w-8 h-8 rounded object-cover" />
-                            )}
-                            <div>
-                              <div className="font-medium">{result.name}</div>
-                              <div className="text-xs text-gray-500">{result.type === 'food' ? `Food${result.branchName ? ' @ ' + result.branchName : ''}` : 'Restaurant'}</div>
-                            </div>
-                          </Link>
-                        );
-                      })
-                    )}
-                  </div>
-                )}
+                {/* Dropdown results - DISABLED */}
                 {/* Filter button */}
                 {onFilterClick && (
                   <button
@@ -339,50 +252,11 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
                 placeholder={getPlaceholder()}
                 value={searchValue}
                 onChange={handleChange}
-                onFocus={() => searchValue && setShowDropdown(true)}
                 onBlur={handleBlur}
                 className="w-full pl-10 pr-12 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 autoComplete="off"
               />
-              {/* Dropdown results */}
-              {showDropdown && (
-                <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-20 max-h-72 overflow-y-auto">
-                  {loadingDropdown ? (
-                    <div className="p-4 text-center text-gray-400">Loading...</div>
-                  ) : dropdownResults.length === 0 ? (
-                    <div className="p-4 text-center text-gray-400">No results found</div>
-                  ) : (
-                    dropdownResults.map((result, idx) => {
-                      let href = "/";
-                      if (result.type === 'restaurant') {
-                        href = `/restaurants/${result.slug || result.id}`;
-                      } else if (result.type === 'grocery') {
-                        href = `/groceries/${result.slug || result.id}`;
-                      } else if (result.type === 'pharmacy') {
-                        href = `/pharmacy/${result.slug || result.id}`;
-                      } else if (result.type === 'food') {
-                        href = `/restaurants/${result.slug || result.id}`;
-                      }
-                      return (
-                        <Link
-                          key={result.id || idx}
-                          href={href}
-                          className="w-full text-left px-4 py-2 hover:bg-orange-50 focus:bg-orange-100 focus:outline-none flex items-center gap-3 cursor-pointer"
-                          prefetch={false}
-                        >
-                          {result.image && (
-                            <img src={result.image} alt={result.name} className="w-8 h-8 rounded object-cover" />
-                          )}
-                          <div>
-                            <div className="font-medium">{result.name}</div>
-                            <div className="text-xs text-gray-500">{result.type === 'food' ? `Food${result.branchName ? ' @ ' + result.branchName : ''}` : 'Restaurant'}</div>
-                          </div>
-                        </Link>
-                      );
-                    })
-                  )}
-                </div>
-              )}
+              {/* Dropdown results - DISABLED */}
               {/* Filter button */}
               {onFilterClick && (
                 <button

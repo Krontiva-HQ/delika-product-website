@@ -204,7 +204,10 @@ const deliveryFees = await calculateDeliveryPrices({
   pickup: { fromLatitude: 'lat', fromLongitude: 'lng' },
   dropOff: { toLatitude: 'lat', toLongitude: 'lng' },
   rider: true,
-  pedestrian: false
+  pedestrian: false,
+  total: 100.00,
+  subTotal: 100.00,
+  userId: 'user123'
 });
 ```
 

@@ -162,7 +162,7 @@ export function CheckoutPage({
 
   // Debug log to check if branchLocation is available
   useEffect(() => {
-    console.log('CheckoutPage mounted with branchLocation:', branchLocation);
+    // Removed console.log
   }, [branchLocation]);
 
   // Fetch delikaBalance from customer details API
@@ -176,11 +176,8 @@ export function CheckoutPage({
           const userId = parsedUserData.id;
           
           if (userId) {
-            console.log('[Checkout Wallet] Fetching customer details for userId:', userId);
-            
             // Fetch customer details from API
             const customerDetails = await getCustomerDetails(userId);
-            console.log('[Checkout Wallet] Customer details response:', customerDetails);
             
             // Extract delikaBalance from API response
             const balance = customerDetails.delikaBalance || 
@@ -192,26 +189,21 @@ export function CheckoutPage({
                            0;
             
             const numericBalance = toNumber(balance);
-            console.log('[Checkout Wallet] Extracted delikaBalance:', balance, '-> Converted to numeric:', numericBalance);
             setWalletBalance(numericBalance);
             
             // Automatically use wallet if balance is available
             if (numericBalance > 0) {
               setUseWallet(true);
-              console.log('[Checkout Wallet] Auto-enabling wallet usage - balance available:', numericBalance);
             }
           } else {
-            console.log('[Checkout Wallet] No userId found in userData');
             setWalletBalance(0);
             setUseWallet(false);
           }
         } else {
-          console.log('[Checkout Wallet] No userData found in localStorage');
           setWalletBalance(0);
           setUseWallet(false);
         }
       } catch (error) {
-        console.error('[Checkout Wallet] Error fetching delikaBalance from API:', error);
         // Fallback to localStorage delikaBalance
         try {
           const userData = localStorage.getItem('userData');
@@ -219,20 +211,17 @@ export function CheckoutPage({
             const parsedUserData = JSON.parse(userData);
             const balance = parsedUserData.delikaBalance || parsedUserData.walletBalance || parsedUserData.balance || 0;
             const numericBalance = toNumber(balance);
-            console.log('[Checkout Wallet] Fallback to localStorage delikaBalance:', balance, '-> Converted to numeric:', numericBalance);
             setWalletBalance(numericBalance);
             
             // Automatically use wallet if balance is available
             if (numericBalance > 0) {
               setUseWallet(true);
-              console.log('[Checkout Wallet] Auto-enabling wallet usage from localStorage - balance available:', numericBalance);
             }
           } else {
             setWalletBalance(0);
             setUseWallet(false);
           }
         } catch (fallbackError) {
-          console.log('[Checkout Wallet] Fallback error, setting balance to 0:', fallbackError);
           setWalletBalance(0);
           setUseWallet(false);
         }
@@ -407,13 +396,6 @@ export function CheckoutPage({
     const storedRiderFee = localStorage.getItem('checkoutRiderFee')
     const storedPedestrianFee = localStorage.getItem('checkoutPedestrianFee')
     
-    console.log('Loading stored delivery data:', { 
-      storedFee, 
-      storedType, 
-      storedRiderFee, 
-      storedPedestrianFee 
-    });
-    
     if (storedFee && storedType && (storedType === 'rider' || storedType === 'pedestrian')) {
       setDeliveryFee(Number(storedFee))
       setDeliveryType(storedType as 'rider' | 'pedestrian')
@@ -432,7 +414,6 @@ export function CheckoutPage({
         const locationData = localStorage.getItem('userLocationData')
         
         if (!locationData || !branchLocation) {
-          console.log('Missing data - locationData:', !!locationData, 'branchLocation:', !!branchLocation)
           setIsLoadingDelivery(false)
           return
         }
@@ -441,14 +422,11 @@ export function CheckoutPage({
         const branchLat = parseFloat(branchLocation.latitude.toString())
         const branchLng = parseFloat(branchLocation.longitude.toString())
         
-        console.log('Calculating distance between:', { userLat: lat, userLng: lng, branchLat, branchLng })
-        
         const distance = await calculateDistance(
           { latitude: lat, longitude: lng },
           { latitude: branchLat, longitude: branchLng }
         )
         
-        console.log('[Checkout Delivery] Distance calculated:', distance)
         setDistance(distance)
 
         // Get userId from localStorage userData
@@ -460,7 +438,7 @@ export function CheckoutPage({
             userId = parsedUserData.id || '';
           }
         } catch (error) {
-          console.log('[Checkout Delivery] Could not retrieve userId from userData:', error);
+          // Handle error silently
         }
 
         // Calculate current cart total
@@ -483,8 +461,6 @@ export function CheckoutPage({
           userId: userId
         };
 
-        console.log('[Checkout Delivery] Payload being sent to delivery API:', JSON.stringify(deliveryPayload, null, 2));
-
         // Get delivery prices from API
         const deliveryResponse = await calculateDeliveryPrices(deliveryPayload);
         const { 
@@ -496,43 +472,35 @@ export function CheckoutPage({
           amountToBePaid
         } = deliveryResponse;
 
-        console.log('[Checkout Delivery] Full API response:', deliveryResponse);
-        console.log('[Checkout Delivery] Extracted values - Rider fee:', newRiderFee, 'Pedestrian fee:', newPedestrianFee, 'Platform fee:', newPlatformFee, 'DelikaBalance:', newDelikaBalance);
-
         setRiderFee(toNumber(newRiderFee))
         setPedestrianFee(toNumber(newPedestrianFee))
         
         // Always update platform fee from API response  
         const numericPlatformFee = toNumber(newPlatformFee);
         setPlatformFee(numericPlatformFee)
-        console.log('[Checkout Delivery] ✅ Platform fee updated from API to:', numericPlatformFee);
         
         // Update wallet balance if provided by API (more up-to-date than what we fetched earlier)
         if (newDelikaBalance !== undefined && newDelikaBalance !== null) {
           const numericBalance = toNumber(newDelikaBalance);
           setWalletBalance(numericBalance)
-          console.log('[Checkout Delivery] Updated delikaBalance from API to:', numericBalance, '(converted from:', newDelikaBalance, ')');
           
           // Automatically use wallet if balance is available
           if (numericBalance > 0) {
             setUseWallet(true);
-            console.log('[Checkout Delivery] Auto-enabling wallet usage - balance available:', numericBalance);
           }
         }
         
         // If distance > 2km and pedestrian is selected, switch to rider
         if (distance > 2 && deliveryType === 'pedestrian') {
-          console.log('[Checkout Delivery] Distance > 2km, switching from pedestrian to rider');
           setDeliveryType('rider')
           setDeliveryFee(toNumber(newRiderFee))
         } else {
           // Set the fee based on the selected delivery type
           const currentFee = deliveryType === 'rider' ? newRiderFee : newPedestrianFee
-          console.log('[Checkout Delivery] Setting delivery fee for', deliveryType, ':', currentFee);
           setDeliveryFee(toNumber(currentFee))
         }
       } catch (error) {
-        console.error('Error calculating delivery fee:', error)
+        // Handle error silently
       } finally {
         setIsLoadingDelivery(false)
       }
@@ -543,7 +511,6 @@ export function CheckoutPage({
 
     // Listen for location updates - same as cart modal
     const handleLocationUpdate = () => {
-      console.log('Location update event received')
       calculateFee()
     }
 
@@ -627,22 +594,9 @@ export function CheckoutPage({
       const walletDeduction = useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee) : 0;
       const totalAmount = Math.max(0, (cartTotal + deliveryFee + platformFee) - walletDeduction);
       
-      console.log('[Checkout Submit] Order calculation - CartTotal:', cartTotal, 'DeliveryFee:', deliveryFee, 'PlatformFee:', platformFee, 'WalletDeduction:', walletDeduction, 'FinalTotal:', totalAmount);
-
       // Check if the total amount is 0 (fully covered by Delika balance)
       const isFullyPaidByWallet = totalAmount === 0 && useWallet;
       
-      console.log('[Checkout Submit] Wallet payment check:', {
-        totalAmount,
-        useWallet,
-        walletBalance: toNumber(walletBalance),
-        isFullyPaidByWallet,
-        cartTotal,
-        deliveryFee,
-        platformFee,
-        walletDeduction
-      });
-
       // Prepare order data
       const orderData = {
         id: orderId,
@@ -697,40 +651,6 @@ export function CheckoutPage({
         payVisaCard: false
       };
 
-      // 🔍 DETAILED ORDER DATA LOGGING
-      console.log('🔍 === CHECKOUT ORDER DATA CREATION ===');
-      console.log('💰 Price breakdown:');
-      console.log('  - Cart total:', cartTotal);
-      console.log('  - Delivery fee:', deliveryFee);
-      console.log('  - Platform fee:', platformFee);
-      console.log('  - Original total (before wallet):', cartTotal + deliveryFee + platformFee);
-      console.log('  - Wallet deduction:', walletDeduction);
-      console.log('  - Final amount (after wallet):', totalAmount);
-      
-      console.log('💳 Wallet information:');
-      console.log('  - Use wallet:', useWallet);
-      console.log('  - Wallet balance:', toNumber(walletBalance));
-      console.log('  - Wallet deduction amount:', walletDeduction);
-      console.log('  - Is fully paid by wallet:', isFullyPaidByWallet);
-      
-      console.log('📋 Order data key fields:');
-      console.log('  - totalPrice (original):', orderData.totalPrice);
-      console.log('  - finalAmount (after deduction):', orderData.finalAmount);
-      console.log('  - walletDeduction:', orderData.walletDeduction);
-      console.log('  - walletUsed:', orderData.walletUsed);
-      console.log('  - delikaBalanceAmount:', orderData.delikaBalanceAmount);
-      
-      // Verify the calculation
-      const calculatedFinalAmount = Math.max(0, (cartTotal + deliveryFee + platformFee) - walletDeduction);
-      if (calculatedFinalAmount !== totalAmount) {
-        console.error('❌ CALCULATION MISMATCH IN CHECKOUT!');
-        console.error('  - Calculated final amount:', calculatedFinalAmount);
-        console.error('  - Stored totalAmount:', totalAmount);
-      } else {
-        console.log('✅ Checkout calculation is CORRECT!');
-      }
-      console.log('🔍 === END CHECKOUT ORDER DATA ===');
-
       // Store wallet usage information for order processing
       localStorage.setItem('useWalletBalance', useWallet.toString());
       localStorage.setItem('walletDeduction', walletDeduction.toString());
@@ -741,23 +661,8 @@ export function CheckoutPage({
       localStorage.setItem('delikaBalanceAmount', walletDeduction.toString()); // Number
 
       // Submit order to the appropriate endpoint based on store type
-      console.log('🚀 === SUBMITTING ORDER ===');
-      console.log('📤 Store type:', actualStoreType);
-      console.log('📤 Order data being sent to submitOrder:');
-      console.log('  - totalPrice:', orderData.totalPrice);
-      console.log('  - finalAmount:', orderData.finalAmount);
-      console.log('  - walletDeduction:', orderData.walletDeduction);
-      console.log('  - walletUsed:', orderData.walletUsed);
-      console.log('🚀 === END SUBMIT LOG ===');
-      
       const orderResponse = await submitOrder(orderData, actualStoreType);
       
-      // Store the full response in localStorage
-      localStorage.setItem('orderSubmissionResponse', JSON.stringify({
-        response: orderResponse,
-        timestamp: new Date().toISOString()
-      }));
-
       // Extract order ID based on store type and response structure
       let backendOrderId = orderId; // fallback to generated orderId
       
@@ -769,12 +674,8 @@ export function CheckoutPage({
         backendOrderId = orderResponse?.id || orderId;
       }
 
-      console.log(`🆔 ${actualStoreType} order ID:`, backendOrderId);
-      console.log(`📋 ${actualStoreType} order response:`, orderResponse);
-
       // Check if order is fully paid by wallet
       if (isFullyPaidByWallet) {
-        console.log('💰 Order fully paid by Delika balance, skipping payment flow');
         
         // Redirect directly to success page
         router.push(`/checkout/success?orderId=${backendOrderId}&walletPaid=true`);
@@ -1003,7 +904,6 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
                     <span className="text-2xl text-orange-600">
                       {(() => {
                         const finalTotal = Math.max(0, (cartTotal + deliveryFee + platformFee) - (useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee) : 0));
-                        console.log('[Checkout Total] Calculation: CartTotal(', cartTotal, ') + DeliveryFee(', deliveryFee, ') + PlatformFee(', platformFee, ') - WalletDeduction = ', finalTotal);
                         return finalTotal.toFixed(2);
                       })()}
                     </span>

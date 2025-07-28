@@ -77,6 +77,26 @@ export default function CartPage() {
           { latitude: branchLat, longitude: branchLng }
         )
         setDistance(distance)
+        
+        // Get userId from localStorage userData
+        let userId = '';
+        try {
+          const userData = localStorage.getItem('userData');
+          if (userData) {
+            const parsedUserData = JSON.parse(userData);
+            userId = parsedUserData.id || '';
+          }
+        } catch (error) {
+          console.log('[CartPage] Could not retrieve userId from userData:', error);
+        }
+
+        // Calculate current cart total
+        const currentCartTotal = cart.reduce((total, item) => {
+          const base = parseFloat(item.price) * item.quantity;
+          const extrasTotal = (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0) * item.quantity;
+          return total + base + extrasTotal;
+        }, 0);
+        
         const { riderFee: newRiderFee, pedestrianFee: newPedestrianFee } = await calculateDeliveryPrices({
           pickup: {
             fromLatitude: branchLat.toString(),
@@ -87,7 +107,10 @@ export default function CartPage() {
             toLongitude: lng.toString(),
           },
           rider: true,
-          pedestrian: true
+          pedestrian: true,
+          total: currentCartTotal,
+          subTotal: currentCartTotal,
+          userId: userId
         });
         setRiderFee(newRiderFee)
         setPedestrianFee(newPedestrianFee)

@@ -59,6 +59,7 @@ function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsMod
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md p-0 overflow-hidden">
+        <DialogTitle className="sr-only">Item Details</DialogTitle>
         {/* Item Image */}
         <div className="relative w-full h-48 sm:h-56 md:h-64">
           {typeof item.image === 'object' && item.image && 'url' in item.image ? (

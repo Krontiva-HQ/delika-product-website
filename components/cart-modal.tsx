@@ -750,7 +750,7 @@ export function CartModal({
                 disabled={hasUnavailableItems || isLoadingDelivery}
               >
                 {isLoadingDelivery
-                  ? 'Calculating delivery...'
+                  ? 'Proceed to Checkout...'
                   : hasUnavailableItems
                     ? 'Remove Unavailable Items'
                     : (() => {

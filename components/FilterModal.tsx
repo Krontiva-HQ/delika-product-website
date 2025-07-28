@@ -1,5 +1,5 @@
 "use client";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import React from "react";
 import { useRouter } from "next/navigation";
@@ -27,7 +27,7 @@ interface FilterModalProps {
   GROCERY_CATEGORIES: string[];
   PHARMACY_CATEGORIES: string[];
   PAGE_SIZE: number;
-  onApply: () => void;
+  onApply: (filteredResults?: any[]) => void;
   onReset?: () => void;
   isLoading?: boolean;
 }
@@ -69,6 +69,12 @@ export function FilterModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl p-0">
+        <DialogHeader className="px-6 pt-6">
+          <DialogTitle>Filters</DialogTitle>
+          <DialogDescription>
+            Customize your search by selecting filters for type, rating, delivery time, and more.
+          </DialogDescription>
+        </DialogHeader>
         <div className="p-6 space-y-8 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-center mb-6">
               <div className="text-xl font-bold text-center">Filters</div>
@@ -269,7 +275,10 @@ export function FilterModal({
               </button>
               <button
                 className="px-4 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                onClick={onApply}
+                onClick={() => {
+                  // Pass empty array to onApply since store-header handles the filtering
+                  onApply([]);
+                }}
                 disabled={isLoading}
                 type="button"
               >
