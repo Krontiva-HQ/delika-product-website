@@ -1,5 +1,5 @@
 import { calculateDeliveryPrices } from "@/lib/api"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 interface FloatingCartProps {
   total: number
@@ -10,9 +10,38 @@ interface FloatingCartProps {
     longitude: string
   }
   branchId: string
+  onLoginClick?: () => void // Add optional login handler prop
 }
 
-export function FloatingCart({ total, itemCount, onClick, branchLocation, branchId }: FloatingCartProps) {
+export function FloatingCart({ total, itemCount, onClick, branchLocation, branchId, onLoginClick }: FloatingCartProps) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  // Check authentication status on mount and when localStorage changes
+  useEffect(() => {
+    const checkAuth = () => {
+      const userData = localStorage.getItem('userData')
+      const authToken = localStorage.getItem('authToken')
+      
+      if (userData && authToken) {
+        setIsAuthenticated(true)
+      } else {
+        setIsAuthenticated(false)
+      }
+    }
+
+    // Initial check
+    checkAuth()
+
+    // Listen for auth state changes
+    window.addEventListener('userDataUpdated', checkAuth)
+    window.addEventListener('storage', checkAuth)
+
+    return () => {
+      window.removeEventListener('userDataUpdated', checkAuth)
+      window.removeEventListener('storage', checkAuth)
+    }
+  }, [])
+
   useEffect(() => {
     // Clear other restaurant carts when mounting
     for (let i = 0; i < localStorage.length; i++) {
@@ -27,16 +56,49 @@ export function FloatingCart({ total, itemCount, onClick, branchLocation, branch
       localStorage.removeItem(`cart-${branchId}`);
     };
 
+    // Listen for login success with cart context
+    const handleLoginSuccessWithCart = (event: CustomEvent) => {
+      const context = event.detail;
+      if (context.branchId === branchId) {
+        // If this is the same branch, automatically open the cart modal
+        onClick();
+      }
+    };
+
     window.addEventListener('paymentSuccess', handlePaymentSuccess);
+    window.addEventListener('loginSuccessWithCart', handleLoginSuccessWithCart as EventListener);
     
     return () => {
       window.removeEventListener('paymentSuccess', handlePaymentSuccess);
+      window.removeEventListener('loginSuccessWithCart', handleLoginSuccessWithCart as EventListener);
     };
-  }, [branchId]);
+  }, [branchId, onClick]);
 
   if (itemCount === 0) return null
 
   const handleClick = async () => {
+    // Check if user is authenticated first
+    if (!isAuthenticated) {
+      // Store current cart context for after login
+      localStorage.setItem('cartContext', JSON.stringify({
+        branchId,
+        total,
+        itemCount,
+        branchLocation
+      }))
+      
+      // If onLoginClick is provided, use it
+      if (onLoginClick) {
+        onLoginClick()
+      } else {
+        // Fallback: show a toast notification or redirect to login page
+        console.log('Please log in to view your cart')
+        // You could also redirect to a login page here
+        // window.location.href = '/login'
+      }
+      return
+    }
+
     try {
       const locationData = localStorage.getItem('userLocationData')
       

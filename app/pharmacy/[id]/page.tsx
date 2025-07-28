@@ -516,6 +516,7 @@ export default function PharmacyDetailsPage() {
           longitude: shopCoordinates?.lng.toString() || "0" 
         }}
         branchId={shopName || "pharmacy"}
+        onLoginClick={() => setIsLoginModalOpen(true)}
       />
 
       <CartModal

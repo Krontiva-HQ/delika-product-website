@@ -234,6 +234,22 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         setShowOTP(false);
         onClose();
 
+        // Check for cart context and trigger cart modal if needed
+        const cartContext = localStorage.getItem('cartContext');
+        if (cartContext) {
+          try {
+            const context = JSON.parse(cartContext);
+            localStorage.removeItem('cartContext');
+            
+            // Dispatch a custom event to notify that login was successful and cart should be shown
+            window.dispatchEvent(new CustomEvent('loginSuccessWithCart', { 
+              detail: context 
+            }));
+          } catch (error) {
+            console.error('Error parsing cart context:', error);
+          }
+        }
+
         // Check for redirect URL
         const redirectUrl = localStorage.getItem('loginRedirectUrl');
         if (redirectUrl) {

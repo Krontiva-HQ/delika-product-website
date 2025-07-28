@@ -524,6 +524,7 @@ export default function GroceryDetailsPage() {
           longitude: shopCoordinates?.lng.toString() || "0" 
         }}
         branchId={shopName || "grocery"}
+        onLoginClick={() => setIsLoginModalOpen(true)}
       />
 
       <CartModal

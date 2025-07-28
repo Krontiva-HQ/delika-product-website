@@ -975,6 +975,7 @@ export function BranchPage({ params }: BranchPageProps) {
           longitude: branch.branchLongitude
         }}
         branchId={params.id}
+        onLoginClick={() => setIsLoginModalOpen(true)}
       />
 
       <CartModal
