@@ -317,16 +317,22 @@ export function FavoritesSection() {
               <Heart className={`w-5 h-5 transition-all duration-200 ${favoriteBranches.some(b => b.id === branch.id) ? 'fill-current' : ''}`} />
             </button>
             <div className="relative h-48">
-              <Image
-                src={branch._restaurantTable[0].restaurantLogo.url}
-                alt={branch._restaurantTable[0].restaurantName}
-                fill
-                className="object-cover"
-              />
+              {branch._restaurantTable?.[0]?.restaurantLogo?.url ? (
+                <Image
+                  src={branch._restaurantTable[0].restaurantLogo.url}
+                  alt={branch._restaurantTable[0]?.restaurantName || 'Restaurant'}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                  No Image
+                </div>
+              )}
             </div>
             <div className="p-4">
               <h3 className="font-bold truncate text-gray-900">
-                {branch._restaurantTable[0].restaurantName}
+                {branch._restaurantTable?.[0]?.restaurantName || 'Restaurant'}
               </h3>
               <p className="text-sm text-gray-500 mt-1">{branch.branchName}</p>
               <div className="flex items-center gap-1 mt-2 text-sm text-gray-600">

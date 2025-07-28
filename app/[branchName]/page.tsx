@@ -68,7 +68,7 @@ export default function BranchPage({ params: paramsPromise }: { params: Promise<
         if (foundBranch) {
           // Then get branch details with the correct endpoint
           const detailsResponse = await fetch(
-            `https://api-server.krontiva.africa/api:uEBBwbSs/get/branch/details?id=${foundBranch.id}&branchName=${encodeURIComponent(foundBranch.branchName)}&restaurantID=${foundBranch._restaurantTable[0].id}`, 
+            `https://api-server.krontiva.africa/api:uEBBwbSs/get/branch/details?id=${foundBranch.id}&branchName=${encodeURIComponent(foundBranch.branchName)}&restaurantID=${foundBranch._restaurantTable?.[0]?.id || ''}`, 
             {
               method: 'GET',
               headers: {
@@ -93,9 +93,9 @@ export default function BranchPage({ params: paramsPromise }: { params: Promise<
             branchCity: detailsData.branchCity,
             _menutable: detailsData._menutable,
             _restaurantTable: [{
-              restaurantName: foundBranch._restaurantTable[0].restaurantName,
+              restaurantName: foundBranch._restaurantTable?.[0]?.restaurantName || 'Restaurant',
               restaurantLogo: {
-                url: foundBranch._restaurantTable[0].restaurantLogo.url
+                url: foundBranch._restaurantTable?.[0]?.restaurantLogo?.url || '/placeholder-image.jpg'
               }
             }]
           }

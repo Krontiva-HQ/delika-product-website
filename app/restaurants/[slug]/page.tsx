@@ -18,11 +18,20 @@ export default function RestaurantPage({ params }: PageProps) {
   const [currentView, setCurrentView] = useState('stores')
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showSignupModal, setShowSignupModal] = useState(false)
+  const [branchId, setBranchId] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const branchId = searchParams?.get('id') || localStorage.getItem('selectedBranchId')
 
   useEffect(() => {
+    // Get branch ID from search params or localStorage (client-side only)
+    const idFromParams = searchParams?.get('id')
+    if (idFromParams) {
+      setBranchId(idFromParams)
+    } else {
+      const storedId = localStorage.getItem('selectedBranchId')
+      setBranchId(storedId)
+    }
+
     // Check for user data in localStorage on component mount
     const storedUserData = localStorage.getItem('userData')
     if (storedUserData) {
@@ -32,7 +41,7 @@ export default function RestaurantPage({ params }: PageProps) {
         console.error('Error parsing user data:', error)
       }
     }
-  }, [])
+  }, [searchParams])
 
   const handleViewChange = (view: 'stores' | 'orders' | 'favorites' | 'profile' | 'settings') => {
     setCurrentView(view)
@@ -58,67 +67,11 @@ export default function RestaurantPage({ params }: PageProps) {
   }
 
   const handleBackToRestaurants = () => {
-    router.push('/restaurants')
+    router.push('/vendors')
   }
 
-  try {
-    if (!branchId) {
-      // If no ID in query, try to get it from localStorage
-      const storedId = localStorage.getItem('selectedBranchId')
-      if (!storedId) {
-        throw new Error('Branch ID not found')
-      }
-      return (
-        <div className="flex flex-col min-h-screen">
-          <AuthNav
-            userData={userData}
-            onViewChange={handleViewChange}
-            currentView={currentView}
-            onLoginClick={handleLoginClick}
-            onSignupClick={handleSignupClick}
-            onLogout={handleLogout}
-            onHomeClick={handleHomeClick}
-          />
-          <div className="container mx-auto px-4 py-4">
-            <button
-              onClick={handleBackToRestaurants}
-              className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
-            >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Back to Vendors
-            </button>
-          </div>
-          <BranchPage params={{ id: storedId }} />
-        </div>
-      )
-    }
-    
-    // Pass the actual branch ID to BranchPage
-    return (
-      <div className="flex flex-col min-h-screen">
-        <AuthNav
-          userData={userData}
-          onViewChange={handleViewChange}
-          currentView={currentView}
-          onLoginClick={handleLoginClick}
-          onSignupClick={handleSignupClick}
-          onLogout={handleLogout}
-          onHomeClick={handleHomeClick}
-        />
-        <div className="container mx-auto px-4 py-4">
-          <button
-            onClick={handleBackToRestaurants}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
-          >
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Back to Vendors
-          </button>
-        </div>
-        <BranchPage params={{ id: branchId }} />
-      </div>
-    )
-  } catch (error) {
-    console.error('Error in RestaurantPage:', error)
+  // Show loading while branchId is being determined
+  if (!branchId) {
     return (
       <div className="flex flex-col min-h-screen">
         <AuthNav
@@ -131,30 +84,38 @@ export default function RestaurantPage({ params }: PageProps) {
           onHomeClick={handleHomeClick}
         />
         <div className="flex flex-col items-center justify-center min-h-[50vh] p-8">
-          <div className="text-center p-8 text-red-600 font-semibold">
-            Restaurant not found
-          </div>
-          <p className="text-gray-500 text-sm">
-            The restaurant you're looking for might have been moved or doesn't exist.
-          </p>
-          <div className="mt-4 flex gap-4">
-            <button 
-              onClick={handleBackToRestaurants}
-              className="text-orange-500 hover:text-orange-600 text-sm"
-            >
-              Back to Vendors
-            </button>
-            <button 
-              onClick={handleHomeClick}
-              className="text-orange-500 hover:text-orange-600 text-sm"
-            >
-              Go to Home
-            </button>
+          <div className="text-center p-8 text-gray-600 font-semibold">
+            Loading restaurant...
           </div>
         </div>
       </div>
     )
   }
+    
+  // Pass the actual branch ID to BranchPage
+  return (
+    <div className="flex flex-col min-h-screen">
+      <AuthNav
+        userData={userData}
+        onViewChange={handleViewChange}
+        currentView={currentView}
+        onLoginClick={handleLoginClick}
+        onSignupClick={handleSignupClick}
+        onLogout={handleLogout}
+        onHomeClick={handleHomeClick}
+      />
+      <div className="container mx-auto px-4 py-4">
+        <button
+          onClick={handleBackToRestaurants}
+          className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+        >
+          <ChevronLeft className="w-4 h-4 mr-1" />
+          Back to Vendors
+        </button>
+      </div>
+      <BranchPage params={{ id: branchId }} />
+    </div>
+  )
 }
 
 // Make the page dynamic since we're fetching fresh data each time

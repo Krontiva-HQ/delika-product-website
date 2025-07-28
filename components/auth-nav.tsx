@@ -205,7 +205,7 @@ export function AuthNav({
   };
 
   return (
-    <div className="bg-white">
+    <div className="bg-white sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex flex-col">
           <div className="flex items-center justify-between h-16 border-b">

@@ -26,7 +26,9 @@ interface FilterModalProps {
   GROCERY_CATEGORIES: string[];
   PHARMACY_CATEGORIES: string[];
   PAGE_SIZE: number;
-  onApply: () => void;
+  vendorData?: any;
+  ratings?: any[];
+  onApply: (filteredResults: any[]) => void;
   onReset?: () => void;
   isLoading?: boolean;
 }
@@ -54,10 +56,187 @@ export function FilterModal({
   GROCERY_CATEGORIES,
   PHARMACY_CATEGORIES,
   PAGE_SIZE,
+  vendorData,
+  ratings,
   onApply,
   onReset,
   isLoading = false,
 }: FilterModalProps) {
+  
+  // Helper function to get rating for a vendor
+  const getRatingForVendor = (vendorId: string) => {
+    if (!ratings) return '0';
+    const rating = ratings.find(r => r.delika_branches_table_id === vendorId);
+    return rating?.OverallRating || '0';
+  };
+
+  // Helper function to get delivery time for a vendor
+  const getDeliveryTimeForVendor = (vendorId: string) => {
+    if (!ratings) return null;
+    const rating = ratings.find(r => r.delika_branches_table_id === vendorId);
+    return rating?.deliveryTime || null;
+  };
+
+  // Helper function to get pickup status for a vendor
+  const getPickupForVendor = (vendorId: string) => {
+    if (!ratings) return false;
+    const rating = ratings.find(r => r.delika_branches_table_id === vendorId);
+    return rating?.pickup || false;
+  };
+
+  // Filter vendors based on current filters
+  const getFilteredResults = () => {
+    console.log('FilterModal: getFilteredResults called');
+    console.log('FilterModal: vendorData:', vendorData);
+    if (!vendorData) return [];
+
+    let allVendors: any[] = [];
+
+    // Add restaurants
+    if (vendorData.Restaurants) {
+      vendorData.Restaurants.forEach((restaurant: any) => {
+        allVendors.push({
+          ...restaurant,
+          type: 'restaurant',
+          displayName: restaurant.Restaurant?.[0]?.restaurantName || restaurant.branchName,
+          displayLocation: restaurant.branchLocation,
+          displayLogo: restaurant.Restaurant?.[0]?.restaurantLogo?.url,
+          restaurantName: restaurant.Restaurant?.[0]?.restaurantName,
+          rating: getRatingForVendor(restaurant.id),
+          deliveryTime: getDeliveryTimeForVendor(restaurant.id),
+          pickup: getPickupForVendor(restaurant.id),
+        });
+      });
+    }
+
+    // Add groceries
+    if (vendorData.Groceries) {
+      vendorData.Groceries.forEach((grocery: any) => {
+        allVendors.push({
+          ...grocery,
+          type: 'grocery',
+          displayName: grocery.Grocery?.groceryshopName || grocery.grocerybranchName,
+          displayLocation: grocery.grocerybranchLocation,
+          displayLogo: grocery.Grocery?.groceryshopLogo?.url,
+          groceryName: grocery.Grocery?.groceryshopName,
+          rating: getRatingForVendor(grocery.id),
+          deliveryTime: getDeliveryTimeForVendor(grocery.id),
+          pickup: getPickupForVendor(grocery.id),
+        });
+      });
+    }
+
+    // Add pharmacies
+    if (vendorData.Pharmacies) {
+      vendorData.Pharmacies.forEach((pharmacy: any) => {
+        allVendors.push({
+          ...pharmacy,
+          type: 'pharmacy',
+          displayName: pharmacy.Pharmacy?.pharmacyName || pharmacy.pharmacybranchName,
+          displayLocation: pharmacy.pharmacybranchLocation,
+          displayLogo: pharmacy.Pharmacy?.pharmacyLogo?.url,
+          pharmacyName: pharmacy.Pharmacy?.pharmacyName,
+          rating: getRatingForVendor(pharmacy.id),
+          deliveryTime: getDeliveryTimeForVendor(pharmacy.id),
+          pickup: getPickupForVendor(pharmacy.id),
+        });
+      });
+    }
+
+    // Apply filters
+    let filtered = allVendors;
+
+    // Filter by type
+    if (filterTypes.length > 0) {
+      filtered = filtered.filter(vendor => filterTypes.includes(vendor.type));
+    }
+
+    // Filter by rating
+    if (filterRating && filterRating !== 'all') {
+      filtered = filtered.filter(vendor => {
+        const rating = parseFloat(vendor.rating);
+        return rating >= parseFloat(filterRating);
+      });
+    }
+
+    // Filter by delivery time
+    if (filterDeliveryTime) {
+      filtered = filtered.filter(vendor => {
+        const deliveryTime = vendor.deliveryTime;
+        return deliveryTime && deliveryTime <= filterDeliveryTime;
+      });
+    }
+
+    // Filter by pickup
+    if (filterPickup) {
+      filtered = filtered.filter(vendor => vendor.pickup);
+    }
+
+    // Filter by categories
+    if (filterCategories.length > 0) {
+      filtered = filtered.filter(vendor => {
+        // For restaurants, check food categories
+        if (vendor.type === 'restaurant') {
+          const restaurantItems = vendor.RestaurantItem || vendor.restaurantItem || [];
+          return restaurantItems.some((item: any) => {
+            // Check if the item's foodType matches any selected category
+            if (item.foodType && filterCategories.includes(item.foodType)) {
+              return true;
+            }
+            // Also check individual food names if they match category names
+            if (item.foods && Array.isArray(item.foods)) {
+              return item.foods.some((food: any) => 
+                food.name && filterCategories.includes(food.name)
+              );
+            }
+            return false;
+          });
+        }
+        
+        // For groceries, check product categories
+        if (vendor.type === 'grocery') {
+          const groceryItems = vendor.GroceryItem || vendor.groceryItem || [];
+          return groceryItems.some((item: any) => {
+            return item.category && filterCategories.includes(item.category);
+          });
+        }
+        
+        // For pharmacies, check product categories
+        if (vendor.type === 'pharmacy') {
+          const pharmacyItems = vendor.PharmacyItem || vendor.pharmacyItem || [];
+          return pharmacyItems.some((item: any) => {
+            return item.category && filterCategories.includes(item.category);
+          });
+        }
+        
+        return false;
+      });
+    }
+
+    return filtered;
+  };
+
+  const handleApply = async () => {
+    try {
+      // Get filtered results
+      let filteredResults = getFilteredResults();
+      console.log('FilterModal: initial filteredResults:', filteredResults);
+      
+      // If no filters are applied, return first 3 results as a test
+      if (filterTypes.length === 0 && filterCategories.length === 0 && filterRating === 'all' && !filterDeliveryTime && !filterPickup) {
+        filteredResults = filteredResults.slice(0, 3);
+        console.log('FilterModal: applying test filter, returning first 3 results:', filteredResults);
+      }
+      
+      // Call onApply with the filtered results
+      console.log('FilterModal: calling onApply with:', filteredResults);
+      onApply(filteredResults);
+      
+      // The modal will be closed by the parent component after data is set
+    } catch (error) {
+      console.error('Error applying filters:', error);
+    }
+  };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl p-0">
@@ -119,7 +298,7 @@ export function FilterModal({
               <span>⏱️</span> Delivery time
             </div>
             <div className="flex gap-3">
-              {[15, 20, 30].map((val) => (
+              {[5, 10, 20].map((val) => (
                 <button
                   key={val}
                   type="button"
@@ -159,7 +338,7 @@ export function FilterModal({
               {filterTypes.includes("restaurant") && (
                 <div>
                   <div className="font-semibold mb-1">Food</div>
-                  <div className="grid grid-cols-4 gap-3 max-h-24 overflow-hidden">
+                  <div className="grid grid-cols-4 gap-3 max-h-48 overflow-y-auto">
                     {RESTAURANT_CATEGORIES.map((category: string) => (
                       <button
                         key={category}
@@ -192,7 +371,7 @@ export function FilterModal({
               {filterTypes.includes("grocery") && (
                 <div>
                   <div className="font-semibold mb-1">Grocery</div>
-                  <div className="grid grid-cols-4 gap-3 max-h-24 overflow-hidden">
+                  <div className="grid grid-cols-4 gap-3 max-h-48 overflow-y-auto">
                     {GROCERY_CATEGORIES.map((category: string) => (
                       <button
                         key={category}
@@ -225,7 +404,7 @@ export function FilterModal({
               {filterTypes.includes("pharmacy") && (
                 <div>
                   <div className="font-semibold mb-1">Pharmacy</div>
-                  <div className="grid grid-cols-4 gap-3 max-h-24 overflow-hidden">
+                  <div className="grid grid-cols-4 gap-3 max-h-48 overflow-y-auto">
                     {PHARMACY_CATEGORIES.map((category: string) => (
                       <button
                         key={category}
@@ -267,7 +446,10 @@ export function FilterModal({
             </button>
             <button
               className="px-4 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              onClick={onApply}
+              onClick={() => {
+                console.log('Apply button clicked');
+                handleApply();
+              }}
               disabled={isLoading}
               type="button"
             >
@@ -277,7 +459,7 @@ export function FilterModal({
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               )}
-              {isLoading ? 'Applying...' : 'Next'}
+              {isLoading ? 'Applying...' : 'Apply'}
             </button>
           </div>
         </div>

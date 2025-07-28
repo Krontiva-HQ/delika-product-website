@@ -204,22 +204,30 @@ export async function authRequest<T = any>(
  */
 export async function getBranches<T = any>(): Promise<T> {
   try {
-    const response = await fetch('/api/branches', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const responseData = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(responseData.error || 'Failed to fetch branches');
-    }
-    
-    return responseData as T;
+    const response = await apiGet('/branches');
+    return response as T;
   } catch (error) {
+    console.error('Error fetching branches:', error);
+    throw error;
+  }
+}
 
+export async function getGroceries<T = any>(): Promise<T> {
+  try {
+    const response = await apiGet('/groceries');
+    return response as T;
+  } catch (error) {
+    console.error('Error fetching groceries:', error);
+    throw error;
+  }
+}
+
+export async function getPharmacies<T = any>(): Promise<T> {
+  try {
+    const response = await apiGet('/pharmacies');
+    return response as T;
+  } catch (error) {
+    console.error('Error fetching pharmacies:', error);
     throw error;
   }
 }
