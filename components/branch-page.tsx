@@ -11,7 +11,8 @@ import { CartModal } from "@/components/cart-modal"
 import { LoginModal } from "@/components/login-modal"
 import { SignupModal } from "@/components/signup-modal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { getCustomerDetails } from "@/lib/api"
+import { getCustomerDetails, calculateDeliveryPrices } from "@/lib/api"
+import { calculateDistance } from "@/lib/distance"
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface BranchDetails {
@@ -474,6 +475,131 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
     }>
   } | null>(null)
 
+  // Delivery calculation state
+  const [riderFee, setRiderFee] = useState<number>(0)
+  const [pedestrianFee, setPedestrianFee] = useState<number>(0)
+  const [platformFee, setPlatformFee] = useState<number>(0)
+  const [distance, setDistance] = useState<number>(0)
+  const [isLoadingDelivery, setIsLoadingDelivery] = useState(false)
+
+  // Helper function to safely convert values to numbers
+  const toNumber = (value: any): number => {
+    if (typeof value === 'number' && !isNaN(value)) return value;
+    const parsed = parseFloat(value?.toString());
+    return isNaN(parsed) ? 0 : parsed;
+  }
+
+  // Function to calculate delivery fees when branch page loads
+  const calculateDeliveryFees = async () => {
+    if (!branch) return;
+    
+    try {
+      setIsLoadingDelivery(true);
+      const locationData = localStorage.getItem('userLocationData');
+      
+      console.log('[BranchPage] Starting delivery fee calculation for branch:', params.id);
+      console.log('[BranchPage] Branch location:', branch.branchLatitude, branch.branchLongitude);
+      console.log('[BranchPage] User location data:', locationData);
+      
+      if (!locationData) {
+        console.log('[BranchPage] No user location data found, skipping delivery calculation');
+        setIsLoadingDelivery(false);
+        return;
+      }
+
+      const { lat, lng } = JSON.parse(locationData);
+      const branchLat = parseFloat(branch.branchLatitude);
+      const branchLng = parseFloat(branch.branchLongitude);
+      
+      console.log('[BranchPage] User coordinates:', { lat, lng });
+      console.log('[BranchPage] Branch coordinates:', { branchLat, branchLng });
+      
+      const calculatedDistance = await calculateDistance(
+        { latitude: lat, longitude: lng },
+        { latitude: branchLat, longitude: branchLng }
+      );
+      
+      console.log('[BranchPage] Calculated distance:', calculatedDistance, 'km');
+      setDistance(toNumber(calculatedDistance));
+
+      // Get userId from localStorage userData
+      let userId = '';
+      try {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+          const parsedUserData = JSON.parse(userData);
+          userId = parsedUserData.id || '';
+        }
+      } catch (error) {
+        console.log('[BranchPage] Could not retrieve userId from userData:', error);
+      }
+
+      // Calculate current cart total (if any items in cart)
+      const currentCartTotal = cart.reduce((total, item) => {
+        const base = parseFloat(item.price) * item.quantity;
+        const extrasTotal = (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0) * item.quantity;
+        return total + base + extrasTotal;
+      }, 0);
+
+      console.log('[BranchPage] Current cart total for delivery calculation:', currentCartTotal);
+
+      // Prepare the payload for delivery price calculation
+      const deliveryPayload = {
+        pickup: {
+          fromLatitude: branchLat.toString(),
+          fromLongitude: branchLng.toString(),
+        },
+        dropOff: {
+          toLatitude: lat.toString(),
+          toLongitude: lng.toString(),
+        },
+        rider: true,
+        pedestrian: true,
+        total: currentCartTotal,
+        subTotal: currentCartTotal,
+        userId: userId
+      };
+
+      console.log('[BranchPage] Sending delivery payload to API:', deliveryPayload);
+
+      // Get delivery prices from API
+      const deliveryResponse = await calculateDeliveryPrices(deliveryPayload);
+      const { 
+        riderFee: newRiderFee, 
+        pedestrianFee: newPedestrianFee,
+        platformFee: newPlatformFee
+      } = deliveryResponse;
+
+      console.log('[BranchPage] Delivery API response:', deliveryResponse);
+      console.log('[BranchPage] Extracted fees - Rider:', newRiderFee, 'Pedestrian:', newPedestrianFee, 'Platform:', newPlatformFee);
+      
+      setRiderFee(toNumber(newRiderFee));
+      setPedestrianFee(toNumber(newPedestrianFee));
+      setPlatformFee(toNumber(newPlatformFee));
+      
+      // Store delivery calculation results in localStorage for persistence
+      const deliveryCalculationData = {
+        riderFee: toNumber(newRiderFee),
+        pedestrianFee: toNumber(newPedestrianFee),
+        platformFee: toNumber(newPlatformFee),
+        distance: toNumber(calculatedDistance),
+        cartTotal: currentCartTotal,
+        branchId: params.id,
+        timestamp: Date.now(),
+        deliveryType: 'rider' // Default to rider
+      };
+      
+      localStorage.setItem('deliveryCalculationData', JSON.stringify(deliveryCalculationData));
+      console.log('[BranchPage] ✅ Stored delivery calculation data in localStorage:', deliveryCalculationData);
+      
+      console.log('[BranchPage] ✅ Delivery fees calculated successfully');
+    } catch (error) {
+      console.error('[BranchPage] Error calculating delivery fees:', error);
+    } finally {
+      setIsLoadingDelivery(false);
+    }
+  };
+
   // Handle URL parameters for category selection
   useEffect(() => {
     if (urlParams?.category && branch?._menutable) {
@@ -609,6 +735,22 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
       setIsOpen(isRestaurantOpen(branch.activeHours));
     }
   }, [branch]);
+
+  // Calculate delivery fees when branch data is loaded
+  useEffect(() => {
+    if (branch && !isLoading) {
+      console.log('[BranchPage] Branch data loaded, calculating delivery fees');
+      calculateDeliveryFees();
+    }
+  }, [branch, isLoading]);
+
+  // Recalculate delivery fees when cart changes
+  useEffect(() => {
+    if (branch && cart.length > 0) {
+      console.log('[BranchPage] Cart changed, recalculating delivery fees');
+      calculateDeliveryFees();
+    }
+  }, [cart, branch]);
 
   // Helper to generate a unique key for a cart item based on id and selectedExtras
   function getCartItemKey(item: CartItem) {
@@ -1108,6 +1250,14 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
           setIsCartModalOpen(false)
         }}
         storeType="restaurant"
+        // Pre-calculated delivery fees from branch page
+        preCalculatedFees={{
+          riderFee,
+          pedestrianFee,
+          platformFee,
+          distance,
+          isLoadingDelivery
+        }}
       />
 
       <LoginModal

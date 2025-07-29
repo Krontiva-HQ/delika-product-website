@@ -46,6 +46,13 @@ interface CartModalProps {
   onCheckout?: () => void
   storeType?: 'restaurant' | 'pharmacy' | 'grocery'
   onLoginSuccess?: (userData: UserData) => void
+  preCalculatedFees?: {
+    riderFee: number
+    pedestrianFee: number
+    platformFee: number
+    distance: number
+    isLoadingDelivery: boolean
+  }
 }
 
 export function CartModal({
@@ -64,7 +71,8 @@ export function CartModal({
   onLoginClick,
   onCheckout,
   storeType = 'restaurant',
-  onLoginSuccess
+  onLoginSuccess,
+  preCalculatedFees
 }: CartModalProps) {
   // Console logging for cart modal vs user auth status
   useEffect(() => {
@@ -124,6 +132,87 @@ export function CartModal({
     const parsed = parseFloat(value?.toString());
     return isNaN(parsed) ? 0 : parsed;
   }
+
+  // Load stored delivery data or use pre-calculated fees
+  const loadStoredDeliveryData = () => {
+    // If pre-calculated fees are provided, use them
+    if (preCalculatedFees) {
+      console.log('[CartModal] Using pre-calculated fees from branch page:', preCalculatedFees);
+      setRiderFee(preCalculatedFees.riderFee);
+      setPedestrianFee(preCalculatedFees.pedestrianFee);
+      setPlatformFee(preCalculatedFees.platformFee);
+      setDistance(preCalculatedFees.distance);
+      setIsLoadingDelivery(preCalculatedFees.isLoadingDelivery);
+      return true; // Indicate that we loaded pre-calculated data
+    }
+
+    // Otherwise, try to load stored data
+    try {
+      const storedData = localStorage.getItem('deliveryCalculationData');
+      if (storedData) {
+        const data = JSON.parse(storedData);
+        const now = Date.now();
+        const dataAge = now - data.timestamp;
+        const maxAge = 5 * 60 * 1000; // 5 minutes in milliseconds
+        
+        // Check if data is still valid (not too old and for the same branch)
+        if (dataAge < maxAge && data.branchId === branchId) {
+          console.log('[Delivery Calculation] Loading stored data:', data);
+          console.log('[Delivery Calculation] Data age:', Math.round(dataAge / 1000), 'seconds');
+          
+          setRiderFee(data.riderFee || 0);
+          setPedestrianFee(data.pedestrianFee || 0);
+          setPlatformFee(data.platformFee || 0);
+          setDistance(data.distance || 0);
+          setDeliveryType(data.deliveryType || 'rider');
+          
+          // Set delivery fee based on current delivery type
+          const currentFee = data.deliveryType === 'rider' ? data.riderFee : data.pedestrianFee;
+          setDeliveryFee(currentFee || 0);
+          
+          console.log('[Delivery Calculation] ✅ Loaded stored delivery data successfully');
+          return true; // Indicate that we loaded stored data
+        } else {
+          console.log('[Delivery Calculation] Stored data is too old or for different branch, will recalculate');
+          localStorage.removeItem('deliveryCalculationData');
+        }
+      }
+    } catch (error) {
+      console.error('[Delivery Calculation] Error loading stored delivery data:', error);
+      localStorage.removeItem('deliveryCalculationData');
+    }
+    return false; // Indicate that we need to calculate fresh data
+  }
+
+  // Helper function to clear stored delivery data when cart changes significantly
+  const clearStoredDeliveryData = () => {
+    try {
+      const storedData = localStorage.getItem('deliveryCalculationData');
+      if (storedData) {
+        const data = JSON.parse(storedData);
+        const currentCartTotal = cart.reduce((total, item) => {
+          const base = parseFloat(item.price) * item.quantity;
+          const extrasTotal = (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0) * item.quantity;
+          return total + base + extrasTotal;
+        }, 0);
+        
+        // Clear stored data if cart total changed significantly (more than 10% difference)
+        const cartTotalDifference = Math.abs(currentCartTotal - data.cartTotal);
+        const cartTotalPercentage = (cartTotalDifference / data.cartTotal) * 100;
+        
+        if (cartTotalPercentage > 10) {
+          console.log('[Delivery Calculation] Cart total changed significantly (', cartTotalPercentage.toFixed(1), '%), clearing stored data');
+          localStorage.removeItem('deliveryCalculationData');
+          return true; // Indicate that we cleared the data
+        }
+      }
+    } catch (error) {
+      console.error('[Delivery Calculation] Error checking stored delivery data:', error);
+      localStorage.removeItem('deliveryCalculationData');
+    }
+    return false;
+  }
+
   const [deliveryFee, setDeliveryFee] = useState<number>(0)
   const [distance, setDistance] = useState<number>(0)
   const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian'>('rider')
@@ -255,6 +344,7 @@ export function CartModal({
         console.log('[Delivery Calculation] Triggered by cart/total change - Cart items:', cart.length, 'Cart total:', cartTotal);
         console.log('[Delivery Calculation] Branch location prop:', branchLocation);
         console.log('[Delivery Calculation] Raw user location data:', locationData);
+        console.log('[Delivery Calculation] Mode:', isAuthenticated ? 'Mode 1 (Authenticated)' : 'Mode 2 (Non-authenticated)');
         
         if (!locationData || !branchLocation) {
           console.log('[Delivery Calculation] Missing location data - locationData:', !!locationData, 'branchLocation:', !!branchLocation);
@@ -296,6 +386,8 @@ export function CartModal({
           return total + base + extrasTotal;
         }, 0);
 
+        console.log('[Delivery Calculation] Calculated currentCartTotal:', currentCartTotal, 'from cart items:', cart.length);
+
         // Prepare the payload for delivery price calculation
         const deliveryPayload = {
           pickup: {
@@ -312,6 +404,8 @@ export function CartModal({
           subTotal: currentCartTotal,
           userId: userId
         };
+
+        console.log('[Delivery Calculation] Sending payload to API:', deliveryPayload);
 
         // Get delivery prices from API
         const deliveryResponse = await calculateDeliveryPrices(deliveryPayload);
@@ -334,6 +428,21 @@ export function CartModal({
         const numericPlatformFee = toNumber(newPlatformFee);
         setPlatformFee(numericPlatformFee)
         console.log('[Delivery Calculation] ✅ Platform fee updated from', platformFee, 'to', numericPlatformFee, '(from API)');
+        
+        // Store delivery calculation results in localStorage for persistence
+        const deliveryCalculationData = {
+          riderFee: toNumber(newRiderFee),
+          pedestrianFee: toNumber(newPedestrianFee),
+          platformFee: numericPlatformFee,
+          distance: toNumber(distance),
+          cartTotal: currentCartTotal,
+          branchId: branchId,
+          timestamp: Date.now(),
+          deliveryType: deliveryType
+        };
+        
+        localStorage.setItem('deliveryCalculationData', JSON.stringify(deliveryCalculationData));
+        console.log('[Delivery Calculation] ✅ Stored delivery calculation data in localStorage:', deliveryCalculationData);
         
         // Update wallet balance if provided by API (more up-to-date than localStorage)
         if (newDelikaBalance !== undefined && newDelikaBalance !== null) {
@@ -378,12 +487,35 @@ export function CartModal({
     }
 
     if (isOpen) {
-      calculateFee()
+      console.log('[CartModal] Modal opened, triggering fee calculation for Mode:', isAuthenticated ? '1' : '2');
+      
+      // If pre-calculated fees are provided, use them directly
+      if (preCalculatedFees) {
+        console.log('[CartModal] Using pre-calculated fees, skipping calculation');
+        setRiderFee(preCalculatedFees.riderFee);
+        setPedestrianFee(preCalculatedFees.pedestrianFee);
+        setPlatformFee(preCalculatedFees.platformFee);
+        setDistance(preCalculatedFees.distance);
+        setIsLoadingDelivery(preCalculatedFees.isLoadingDelivery);
+        return;
+      }
+      
+      // First try to load stored delivery data
+      const loadedStoredData = loadStoredDeliveryData();
+      
+      // Only calculate fresh data if we don't have valid stored data
+      if (!loadedStoredData) {
+        console.log('[CartModal] No valid stored data found, calculating fresh delivery fees');
+        calculateFee()
+      } else {
+        console.log('[CartModal] Using stored delivery data, skipping API call');
+      }
     }
 
     // Listen for location updates
     const handleLocationUpdate = () => {
       if (isOpen) {
+        console.log('[CartModal] Location updated, recalculating fees');
         calculateFee()
       }
     }
@@ -392,7 +524,114 @@ export function CartModal({
     return () => {
       window.removeEventListener('locationUpdated', handleLocationUpdate)
     }
-  }, [isOpen, branchLocation, deliveryType, cartTotal, cart])
+  }, [isOpen, branchLocation, deliveryType, cartTotal, cart, isAuthenticated, preCalculatedFees])
+
+  // Additional effect for Mode 2 to ensure calculation triggers when cart changes
+  useEffect(() => {
+    if (!isAuthenticated && isOpen && cart.length > 0) {
+      console.log('[Mode 2] Cart changed, triggering fee calculation for non-authenticated user');
+      console.log('[Mode 2] Cart items:', cart.length, 'Cart total:', cartTotal);
+      
+      // Check if we need to clear stored data due to significant cart changes
+      const clearedStoredData = clearStoredDeliveryData();
+      
+      // Trigger calculation with a small delay to ensure state updates are processed
+      const timer = setTimeout(() => {
+        const calculateFeeForMode2 = async () => {
+          try {
+            setIsLoadingDelivery(true)
+            const locationData = localStorage.getItem('userLocationData')
+            
+            if (!locationData || !branchLocation) {
+              console.log('[Mode 2] Missing location data, skipping calculation');
+              setIsLoadingDelivery(false)
+              return
+            }
+
+            const { lat, lng } = JSON.parse(locationData)
+            const branchLat = parseFloat(branchLocation.latitude.toString())
+            const branchLng = parseFloat(branchLocation.longitude.toString())
+            
+            const distance = await calculateDistance(
+              { latitude: lat, longitude: lng },
+              { latitude: branchLat, longitude: branchLng }
+            )
+            
+            setDistance(toNumber(distance))
+
+            // Calculate total including extras for all cart items
+            const currentCartTotal = cart.reduce((total, item) => {
+              const base = parseFloat(item.price) * item.quantity;
+              const extrasTotal = (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0) * item.quantity;
+              return total + base + extrasTotal;
+            }, 0);
+
+            console.log('[Mode 2] Recalculating fees with cart total:', currentCartTotal);
+
+            // Prepare the payload for delivery price calculation
+            const deliveryPayload = {
+              pickup: {
+                fromLatitude: branchLat.toString(),
+                fromLongitude: branchLng.toString(),
+              },
+              dropOff: {
+                toLatitude: lat.toString(),
+                toLongitude: lng.toString(),
+              },
+              rider: true,
+              pedestrian: true,
+              total: currentCartTotal,
+              subTotal: currentCartTotal,
+              userId: ''
+            };
+
+            // Get delivery prices from API
+            const deliveryResponse = await calculateDeliveryPrices(deliveryPayload);
+            const { 
+              riderFee: newRiderFee, 
+              pedestrianFee: newPedestrianFee,
+              platformFee: newPlatformFee
+            } = deliveryResponse;
+
+            console.log('[Mode 2] Updated fees - Rider:', newRiderFee, 'Pedestrian:', newPedestrianFee, 'Platform:', newPlatformFee);
+            
+            setRiderFee(toNumber(newRiderFee))
+            setPedestrianFee(toNumber(newPedestrianFee))
+            setPlatformFee(toNumber(newPlatformFee))
+            
+            // Set the fee based on the selected delivery type
+            const currentFee = deliveryType === 'rider' ? newRiderFee : newPedestrianFee
+            setDeliveryFee(toNumber(currentFee))
+            
+            // Store delivery calculation results in localStorage for persistence (Mode 2)
+            const deliveryCalculationData = {
+              riderFee: toNumber(newRiderFee),
+              pedestrianFee: toNumber(newPedestrianFee),
+              platformFee: toNumber(newPlatformFee),
+              distance: toNumber(distance),
+              cartTotal: currentCartTotal,
+              branchId: branchId,
+              timestamp: Date.now(),
+              deliveryType: deliveryType
+            };
+            
+            localStorage.setItem('deliveryCalculationData', JSON.stringify(deliveryCalculationData));
+            console.log('[Mode 2] ✅ Stored delivery calculation data in localStorage:', deliveryCalculationData);
+            
+            console.log('[Mode 2] ✅ Fees updated successfully');
+          } catch (error) {
+            console.error('[Mode 2] Error calculating delivery fee:', error);
+          } finally {
+            setIsLoadingDelivery(false)
+          }
+        }
+
+        calculateFeeForMode2()
+      }, 100)
+
+      return () => clearTimeout(timer)
+    }
+  }, [cart, cartTotal, isAuthenticated, isOpen, branchLocation, deliveryType])
 
   // Authentication handlers for Mode 2
   const handleLoginSubmit = async (e: React.FormEvent) => {
