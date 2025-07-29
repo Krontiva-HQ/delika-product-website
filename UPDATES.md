@@ -5,6 +5,10 @@ This document tracks all the major updates and improvements made to the Delika p
 
 ## Table of Contents
 - [API Structure Updates](#api-structure-updates)
+- [Map Integration in View Details](#map-integration-in-view-details)
+- [Vendor Working Hours Display](#vendor-working-hours-display)
+- [Smart Vendor Sorting](#smart-vendor-sorting)
+- [Consistent Logout Redirect](#consistent-logout-redirect)
 - [Filter Modal Refactoring](#filter-modal-refactoring)
 - [Location-Based Filtering](#location-based-filtering)
 - [Active Filters Display](#active-filters-display)
@@ -356,6 +360,104 @@ const sortedSearchResults = useMemo(() => {
 
 ---
 
+## Consistent Logout Redirect
+
+### **Date**: Recent
+### **Files Modified**: 
+- `app/pharmacy/[id]/page.tsx`
+- `app/groceries/[id]/page.tsx`
+- `app/restaurants/[slug]/page.tsx`
+- `components/auth-nav.tsx`
+- `components/store-header.tsx`
+
+### **Changes Made**:
+- **Unified Logout Behavior**: All logout actions now redirect to home page (`/`)
+- **Complete State Clearing**: Removes all user data, auth tokens, and local storage
+- **Consistent Experience**: Same logout behavior across all pages and components
+- **Security Enhancement**: Proper cleanup of sensitive data before redirect
+
+### **Implementation Details**:
+
+#### **Pharmacy Pages**:
+```typescript
+const handleLogout = () => {
+  setUser(null);
+  localStorage.removeItem('userData');
+  localStorage.removeItem('authToken');
+  window.location.href = '/';
+};
+```
+
+#### **Grocery Pages**:
+```typescript
+const handleLogout = () => {
+  setUser(null);
+  localStorage.removeItem('userData');
+  localStorage.removeItem('authToken');
+  window.location.href = '/';
+};
+```
+
+#### **Restaurant Pages**:
+```typescript
+const handleLogout = async () => {
+  localStorage.removeItem('userData')
+  localStorage.removeItem('selectedBranchId')
+  localStorage.removeItem('branchSlug')
+  localStorage.removeItem('authToken')
+  setUserData(null)
+  window.location.href = '/'
+}
+```
+
+#### **AuthNav Component**:
+```typescript
+const handleConfirmLogout = async () => {
+  setIsLogoutModalOpen(false);
+  await onLogout();
+  // Redirect to home page after logout
+  window.location.href = '/';
+};
+```
+
+#### **Store Header**:
+```typescript
+const handleLogout = async () => {
+  try {
+    // Clear all modals and user data
+    setIsLoginModalOpen(false)
+    setIsSignupModalOpen(false)
+    setUser(null)
+    setLikedBranches(new Set())
+    
+    // Clear auth data and navigation state
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('userData')
+    localStorage.removeItem('selectedBranchId')
+    localStorage.removeItem('currentView')
+    
+    // Redirect to home page
+    window.location.href = '/';
+  } catch (error) {
+    console.error('Error during logout:', error);
+  }
+}
+```
+
+### **User Experience Benefits**:
+- **Consistent Behavior**: All logout actions lead to the same destination
+- **Clean Slate**: Complete state reset for fresh user experience
+- **Security**: Proper cleanup of sensitive data
+- **Predictable**: Users know exactly where they'll end up after logout
+
+### **Benefits**:
+- **Better User Experience**: Consistent logout behavior across the entire application
+- **Security**: Complete cleanup of user data and authentication tokens
+- **Clean State**: Users start fresh on the home page after logout
+- **Professional**: Standard logout behavior that users expect
+
+---
+
 ## Filter Modal Refactoring
 
 ### **Date**: Recent
@@ -661,5 +763,9 @@ These updates have significantly improved the user experience by:
 4. **Enhancing search functionality** with show more options
 5. **Improving visual consistency** across all store types
 6. **Optimizing performance** with better loading strategies
+7. **Adding smart vendor sorting** for better availability awareness
+8. **Implementing consistent logout behavior** across all pages
+9. **Enhancing vendor status display** with real-time working hours
+10. **Improving navigation** with integrated map features
 
 The application now provides a modern, professional user experience that feels fast and responsive while maintaining all functionality. 
