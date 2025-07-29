@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { motion } from "framer-motion"
-import { ClipboardList, Truck, BarChart3, Smartphone } from "lucide-react"
+import { ClipboardList, Truck, BarChart3, Smartphone, Users, Shield } from "lucide-react"
 
 const features = [
   {
@@ -17,13 +17,23 @@ const features = [
   },
   {
     title: "Customer Insights",
-    description: "Gain valuable insights into customer behavior and preferences. Make data-driven decisions to grow your business.",
+    description: "Gain valuable insights into customer behavior and preferences. Make data-driven decisions to grow your business and increase revenue.",
     icon: BarChart3,
   },
   {
     title: "Mobile App",
-    description: "Stay connected with our powerful mobile app. Manage your restaurant on the go with real-time updates and notifications.",
+    description: "Stay connected with our powerful mobile app. Manage your restaurant on the go with real-time updates and instant notifications.",
     icon: Smartphone,
+  },
+  {
+    title: "Team Management",
+    description: "Efficiently manage your staff, assign roles, and track performance. Keep your team organized and productive.",
+    icon: Users,
+  },
+  {
+    title: "Secure Payments",
+    description: "Accept payments securely with our integrated payment system. Multiple payment options for your customers' convenience.",
+    icon: Shield,
   },
 ]
 
@@ -40,7 +50,7 @@ export function MoreFeatures() {
           >
             Everything you need to{" "}
             <span className="bg-gradient-to-r from-orange-600 to-orange-600 bg-clip-text text-transparent">
-              run your business
+              grow your business
             </span>
           </motion.h2>
           <motion.p
@@ -49,11 +59,11 @@ export function MoreFeatures() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-lg text-gray-600"
           >
-            Powerful features designed to help you manage, grow, and succeed in the restaurant business
+            Powerful features designed to help you manage, scale, and succeed in the competitive delivery market
           </motion.p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
             <motion.div
               key={index}
@@ -74,8 +84,6 @@ export function MoreFeatures() {
             </motion.div>
           ))}
         </div>
-
-        
       </div>
     </section>
   )

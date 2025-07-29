@@ -99,4 +99,17 @@
   input, select, button, textarea, label, p, div, span {
     font-family: inherit !important;
   }
+  
+  /* Hero section padding fix */
+  .hero-container {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  
+  @media (min-width: 768px) {
+    .hero-container {
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+  }
 }

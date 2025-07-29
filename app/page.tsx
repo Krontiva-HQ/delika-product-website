@@ -1,7 +1,8 @@
 import { SiteHeader } from "@/components/site-header"
 import { NewHero } from "@/components/new-hero"
+import { YourFavorites } from "@/components/your-favorites"
+import { HowItWorks } from "@/components/how-it-works"
 import { BrandBanner } from "@/components/brand-banner"
-import { MainCTA } from "@/components/main-cta"
 import { NewFeature } from "@/components/new-feature"
 import { MoreFeatures } from "@/components/more-features"
 import { CookieConsentBanner } from "@/components/cookie-consent-banner"
@@ -13,10 +14,14 @@ export default function Home() {
       <SiteHeader />
       <main className="relative">
         <NewHero />
-        <BrandBanner />
-        <NewFeature />
+        <HowItWorks />
+        <YourFavorites />
         <MoreFeatures />
-        <MainCTA />
+        
+        {/* Hidden sections - uncomment to show */}
+        {/* <BrandBanner /> */}
+        {/* <NewFeature /> */}
+        {/* <MoreFeatures /> */}
         <Footer />
         <CookieConsentBanner />
       </main>

@@ -23,8 +23,14 @@ export function NewHero() {
   }, [])
 
   return (
-    <section className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center overflow-hidden">
-      <div className="container relative z-10 flex flex-col-reverse md:flex-row items-center justify-between gap-12 py-16 md:py-32">
+    <section 
+      className="relative flex items-center justify-center overflow-hidden" 
+      style={{ 
+        minHeight: 'calc(-24rem + 100vh)',
+        height: 'calc(-84rem + 100vh)'
+      }}
+    >
+      <div className="container mx-auto px-4 md:px-8 flex flex-col-reverse md:flex-row items-center justify-between gap-12 h-full">
         {/* Left: Text content */}
         <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left gap-6">
           {/* Icons Row */}
@@ -83,9 +89,9 @@ export function NewHero() {
           initial={{ x: 100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
-          className="flex-1 flex items-center justify-center relative w-full max-w-md md:max-w-lg lg:max-w-xl"
+          className="flex-1 flex items-center justify-center relative w-full max-w-md md:max-w-lg lg:max-w-2xl"
         >
-          <div className="relative w-full aspect-square max-w-[400px] md:max-w-[500px] lg:max-w-[600px] h-auto">
+          <div className="relative w-full aspect-square max-w-[450px] md:max-w-[550px] lg:max-w-[700px] h-auto">
             {sliderImages.map((img, idx) => (
               <Image
                 key={img.src}

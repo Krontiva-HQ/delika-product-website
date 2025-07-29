@@ -1004,3 +1004,217 @@ These updates have significantly improved the user experience by:
 12. **Implementing category trimming** for clean, professional URLs
 
 The application now provides a modern, professional user experience that feels fast and responsive while maintaining all functionality. 
+
+---
+
+## Vendor Page Navigation and UX Enhancements
+
+### **Date**: Recent
+### **Files Modified**: 
+- `components/store-header.tsx`
+- `app/groceries/[id]/page.tsx`
+- `app/pharmacy/[id]/page.tsx`
+- `components/branch-page.tsx`
+- `components/FilterModal.tsx`
+- `app/restaurants/[slug]/loading.tsx` (removed)
+
+### **Changes Made**:
+
+#### **Navigation Fixes**:
+- **Correct URL Routing**: Fixed grocery and pharmacy pages from redirecting to restaurant URLs
+- **Type-Based Navigation**: Updated `handleBranchSelect` to route to correct URLs based on vendor type:
+  - **Restaurants**: `/restaurants/${branchSlug}`
+  - **Groceries**: `/groceries/${branchSlug}`
+  - **Pharmacies**: `/pharmacy/${branchSlug}`
+- **URL Parameter Cleanup**: Reverted grocery and pharmacy search results to use clean URLs without category parameters
+
+#### **Skeleton Loading Implementation**:
+- **Restaurant Pages**: Replaced spinner loading with comprehensive skeleton components
+- **Skeleton Components**: Created detailed skeleton layouts matching actual page structure:
+  - **Header Skeleton**: Hero image, restaurant name, rating, status indicators
+  - **Mobile Categories**: Horizontal scrolling category placeholders
+  - **Desktop Layout**: Sidebar categories and menu items grid
+  - **Responsive Design**: Different layouts for mobile and desktop
+- **Loading States**: Added `isLoading` state management for smooth transitions
+
+#### **Item Click Functionality**:
+- **Grocery Pages**: Added click handlers to item cards to open ItemDetailsModal
+- **Pharmacy Pages**: Added click handlers to item cards to open ItemDetailsModal
+- **Event Handling**: Prevented event bubbling between card clicks and add buttons
+- **Visual Feedback**: Added cursor pointer for clickable items
+- **Availability Check**: Only available items are clickable
+
+#### **Filter Modal Improvements**:
+- **Sticky Bottom Buttons**: Buttons now stick to bottom of modal for better accessibility
+- **Scrollable Categories**: Category sections are now scrollable with proper height limits
+- **Mobile-Friendly Layout**: Categories display as responsive grid (1-4 columns based on screen size)
+- **Removed Duplicate Title**: Eliminated redundant "Filters" title from content area
+- **Better Organization**: Clear visual separation between sections with borders and padding
+
+#### **URL Parameter Handling**:
+- **Load-First Approach**: Pages now load with base URL, then read parameters during loading
+- **Category Navigation**: Automatically navigates to matching category after page loads
+- **Smooth Scrolling**: Scrolls to selected category section when found
+- **Fallback Handling**: Defaults to first category if no match found
+- **Decoding Support**: Properly decodes URL parameters with case-insensitive matching
+
+### **Technical Implementation**:
+
+#### **Navigation Logic**:
+```typescript
+// Type-based routing in handleBranchSelect
+let targetUrl = ''
+if (branch.Grocery) {
+  targetUrl = `/groceries/${branchSlug}`
+} else if (branch.Pharmacy) {
+  targetUrl = `/pharmacy/${branchSlug}`
+} else {
+  targetUrl = `/restaurants/${branchSlug}`
+}
+await router.replace(targetUrl)
+```
+
+#### **Skeleton Loading Structure**:
+```typescript
+// Restaurant page skeleton
+if (isLoading) {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Restaurant Header Skeleton */}
+        <div className="mb-6">
+          <div className="relative h-[220px] sm:h-[320px] bg-gray-200 rounded-2xl animate-pulse"></div>
+          {/* Title and info placeholders */}
+        </div>
+        
+        {/* Mobile/Desktop Layout Skeletons */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+          {/* Categories Sidebar Skeleton */}
+          {/* Menu Items Grid Skeleton */}
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+#### **Item Click Implementation**:
+```typescript
+// Item card click handler
+<div
+  className={`... cursor-pointer ${item.available === false ? "pointer-events-none" : ""}`}
+  onClick={() => {
+    if (item.available !== false) {
+      setSelectedItem(item);
+    }
+  }}
+>
+  {/* Add button with event bubbling prevention */}
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      setSelectedItem(item);
+    }}
+  >
+    <span className="text-xl font-bold">+</span>
+  </button>
+</div>
+```
+
+#### **Filter Modal Structure**:
+```typescript
+// Sticky layout structure
+<DialogContent className="max-w-2xl p-0 h-[90vh] flex flex-col">
+  <DialogHeader className="px-6 pt-6 flex-shrink-0">
+    <DialogTitle>Filters</DialogTitle>
+  </DialogHeader>
+  
+  {/* Scrollable Content Area */}
+  <div className="flex-1 overflow-y-auto px-6 space-y-6">
+    {/* Filter sections */}
+  </div>
+  
+  {/* Sticky Bottom Buttons */}
+  <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200 bg-white">
+    {/* Action buttons */}
+  </div>
+</DialogContent>
+```
+
+#### **URL Parameter Handling**:
+```typescript
+// Load-first approach with category navigation
+useEffect(() => {
+  const categoryParam = searchParams?.get('category');
+  if (categoryParam && categories.length > 0 && !isLoading) {
+    const decodedCategory = decodeURIComponent(categoryParam);
+    const matchingCategory = categories.find(cat => 
+      cat.toLowerCase().trim() === decodedCategory.toLowerCase().trim()
+    );
+    if (matchingCategory) {
+      setSelectedCategory(matchingCategory);
+      // Scroll to category section
+      const categoryElement = document.querySelector(`[data-category="${matchingCategory}"]`);
+      if (categoryElement) {
+        categoryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }
+}, [categories, searchParams, selectedCategory, isLoading]);
+```
+
+### **User Experience Benefits**:
+
+#### **Navigation Improvements**:
+- **Correct Routing**: Users land on the right page type (grocery/pharmacy/restaurant)
+- **Clean URLs**: No unnecessary query parameters cluttering the URL
+- **Consistent Behavior**: Same navigation pattern across all vendor types
+
+#### **Loading Experience**:
+- **Visual Structure**: Users see expected layout while loading
+- **Professional Feel**: Skeleton animations provide smooth loading experience
+- **Fast Perception**: App feels faster even with same load time
+- **Responsive Design**: Skeleton layouts adapt to different screen sizes
+
+#### **Interaction Enhancements**:
+- **Larger Click Targets**: Entire item cards are clickable
+- **Consistent Behavior**: Same modal opens regardless of how triggered
+- **Visual Feedback**: Clear indication of what's clickable
+- **No Conflicts**: Add button and card click work independently
+
+#### **Filter Modal UX**:
+- **Always Accessible**: Buttons stick to bottom and are always visible
+- **Better Organization**: Scrollable categories with clear visual separation
+- **Mobile Optimized**: Responsive grid layouts for different screen sizes
+- **Clean Design**: Single title without redundancy
+
+#### **URL Parameter Benefits**:
+- **Load-First Experience**: Pages load normally, then navigate to category
+- **Smooth Navigation**: Automatic scrolling to selected category
+- **Fallback Handling**: Graceful handling when category doesn't match
+- **Performance**: No immediate URL processing during load
+
+### **Benefits**:
+- **Better User Experience**: Correct navigation, faster perceived loading, larger click targets
+- **Professional Appearance**: Skeleton loading and clean modal design
+- **Mobile Friendly**: Responsive layouts and touch-friendly interactions
+- **Performance Optimized**: Efficient loading strategies and event handling
+- **Consistent Behavior**: Same patterns across all vendor types and pages
+- **Accessibility**: Better click targets and visual feedback
+- **Future-Proof**: Clean architecture that's easy to extend and maintain
+
+---
+
+## Summary
+
+These updates have significantly improved the user experience by:
+1. **Fixing navigation issues** with correct URL routing for different vendor types
+2. **Implementing skeleton loading** for better perceived performance
+3. **Adding item click functionality** for easier product interaction
+4. **Enhancing filter modal design** with sticky buttons and scrollable categories
+5. **Improving URL parameter handling** with load-first approach
+6. **Optimizing mobile experience** with responsive layouts
+7. **Ensuring consistent behavior** across all vendor types
+8. **Providing better visual feedback** for user interactions
+
+The application now provides a modern, professional user experience with correct navigation, fast loading states, and intuitive interactions across all vendor pages. 

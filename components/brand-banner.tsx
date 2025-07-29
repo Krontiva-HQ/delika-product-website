@@ -11,13 +11,16 @@ const brands = [
 
 export function BrandBanner() {
   return (
-    <div className="w-full bg-white py-12">
+    <div className="w-full bg-gray-50 py-16">
       <div className="container px-4 md:px-8">
-        <h2 className="text-center text-2xl sm:text-3xl font-medium text-muted-foreground mb-8 md:mb-12">
-          Powering popular restaurants across Africa
+        <h2 className="text-center text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+          Powering Popular Restaurants
         </h2>
+        <p className="text-center text-lg text-gray-600 mb-12 max-w-2xl mx-auto">
+          Trusted by the best restaurants, grocery stores, and pharmacies across Africa
+        </p>
         <div className="flex items-center justify-between">
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-8 md:gap-12 items-center w-full">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8 md:gap-12 items-center w-full">
             {brands.map((brand, i) => (
               <div key={i} className="flex items-center justify-center w-full">
                 <Image
@@ -25,7 +28,7 @@ export function BrandBanner() {
                   alt={brand.alt}
                   width={300}
                   height={100}
-                  className="w-full h-12 sm:h-12 md:h-12 object-contain opacity-90 hover:opacity-100 transition-opacity"
+                  className="w-full h-16 sm:h-16 md:h-16 object-contain opacity-80 hover:opacity-100 transition-opacity"
                 />
               </div>
             ))}
