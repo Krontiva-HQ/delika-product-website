@@ -7,6 +7,7 @@ This document tracks all the major updates and improvements made to the Delika p
 - [API Structure Updates](#api-structure-updates)
 - [Map Integration in View Details](#map-integration-in-view-details)
 - [Vendor Working Hours Display](#vendor-working-hours-display)
+- [Active Hours Grayout in Search Filters](#active-hours-grayout-in-search-filters)
 - [Smart Vendor Sorting](#smart-vendor-sorting)
 - [Consistent Logout Redirect](#consistent-logout-redirect)
 - [Filter Modal Refactoring](#filter-modal-refactoring)
@@ -16,6 +17,7 @@ This document tracks all the major updates and improvements made to the Delika p
 - [Vendor Card Display Enhancements](#vendor-card-display-enhancements)
 - [Banner Improvements](#banner-improvements)
 - [Skeleton Loading Implementation](#skeleton-loading-implementation)
+- [URL Parameters and Category Enhancement](#url-parameters-and-category-enhancement)
 
 ---
 
@@ -732,6 +734,116 @@ export function VendorSkeleton() {
 
 ---
 
+## Active Hours Grayout in Search Filters
+
+### **Date**: Recent
+### **Files Modified**: 
+- `components/store-header.tsx`
+- `components/vendor-grid.tsx`
+- `components/groceries-list.tsx`
+- `components/pharmacy-list.tsx`
+
+### **Changes Made**:
+- **Comprehensive Grayout Implementation**: Applied active hours grayout functionality to all search filter components
+- **Visual Status Indicators**: Added "Closed" badges and status indicators for closed vendors in search results
+- **Consistent User Experience**: Unified grayout behavior across restaurants, groceries, and pharmacies
+- **Real-Time Status**: Search results now respect vendor working hours and display appropriate visual cues
+
+### **Components Updated**:
+
+#### **Search Results Sections**:
+- **Restaurant Search**: Food Names, Food Categories, Restaurants sections
+- **Grocery Search**: Grocery Items, Grocery Categories, Grocery Stores sections  
+- **Pharmacy Search**: Pharmacy Items, Pharmacy Categories, Pharmacies sections
+
+#### **Standalone Components**:
+- **Vendor Grid**: All vendor cards in grid layout
+- **Groceries List**: Grocery store listings
+- **Pharmacy List**: Pharmacy store listings
+
+### **Features Added**:
+
+#### **Visual Grayout Effect**:
+```typescript
+// Conditional styling based on vendor status
+className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+  !isOpen ? 'opacity-50 grayscale' : ''
+}`}
+```
+
+#### **Status Indicators**:
+```typescript
+// Closed badge in top-left corner
+{!isOpen && (
+  <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+    Closed
+  </div>
+)}
+
+// Status indicator below vendor info
+{!isOpen && (
+  <div className="flex items-center gap-1 mt-1">
+    <Clock className="w-3 h-3 text-red-500" />
+    <span className="text-xs text-red-500">Closed</span>
+  </div>
+)}
+```
+
+#### **Working Hours Integration**:
+```typescript
+// Check vendor status for each search result
+const isOpen = isVendorOpen(vendor.activeHours);
+
+// Apply to all search result types
+{organizedSearchResults.restaurants.map((branch) => {
+  const isOpen = isVendorOpen(branch.activeHours);
+  return (
+    <Link className={`... ${!isOpen ? 'opacity-50 grayscale' : ''}`}>
+      {/* Vendor card content */}
+    </Link>
+  );
+})}
+```
+
+### **Search Result Sections Covered**:
+
+#### **Restaurant Search Results**:
+- **Food Names Section**: Individual food items with vendor status
+- **Food Categories Section**: Food categories with vendor status
+- **Restaurants Section**: Complete restaurant listings with status
+
+#### **Grocery Search Results**:
+- **Grocery Items Section**: Individual grocery products with vendor status
+- **Grocery Categories Section**: Product categories with vendor status
+- **Grocery Stores Section**: Complete grocery store listings with status
+
+#### **Pharmacy Search Results**:
+- **Pharmacy Items Section**: Individual pharmacy products with vendor status
+- **Pharmacy Categories Section**: Product categories with vendor status
+- **Pharmacies Section**: Complete pharmacy store listings with status
+
+### **Technical Implementation**:
+- **Import Integration**: Added `isVendorOpen` function from `@/lib/utils` to all components
+- **Active Hours Check**: Each vendor card checks `isVendorOpen(vendor.activeHours)`
+- **Conditional Rendering**: Status indicators only appear for closed vendors
+- **Consistent Styling**: Applied across all search result sections and standalone components
+
+### **User Experience Benefits**:
+- **Clear Status**: Users immediately see which vendors are open/closed in search results
+- **Visual Hierarchy**: Open vendors stand out while closed ones are de-emphasized
+- **Time Awareness**: Real-time status based on current time and vendor working hours
+- **Consistent Experience**: Same behavior across all vendor types and search scenarios
+- **Better Decision Making**: Users can quickly identify which vendors they can order from
+
+### **Benefits**:
+- **Enhanced Search Experience**: Search results now provide clear vendor availability status
+- **Reduced Confusion**: Users won't try to order from closed vendors
+- **Professional Appearance**: Clean, intuitive visual indicators for vendor status
+- **Real-Time Accuracy**: Status updates automatically based on current time and working hours
+- **Comprehensive Coverage**: All search scenarios and vendor types are covered
+
+---
+
 ## Performance Improvements
 
 ### **Date**: Throughout Development
@@ -767,5 +879,128 @@ These updates have significantly improved the user experience by:
 8. **Implementing consistent logout behavior** across all pages
 9. **Enhancing vendor status display** with real-time working hours
 10. **Improving navigation** with integrated map features
+
+The application now provides a modern, professional user experience that feels fast and responsive while maintaining all functionality.
+
+---
+
+## URL Parameters and Category Enhancement
+
+### **Date**: Recent
+### **Files Modified**: 
+- `components/store-header.tsx`
+
+### **Changes Made**:
+- **Dynamic URL Parameters**: Added `name` and `category` URL parameters to search results for better tracking and navigation
+- **Category Trimming**: Implemented automatic trimming of spaces from all category names to ensure clean URLs
+- **Selective Implementation**: URL parameters are applied to specific sections based on user requirements:
+  - **Meals Available**: Includes both `name` and `category` parameters
+  - **Categories Sections**: Includes `category` parameter for restaurants, groceries, and pharmacies
+  - **Products Sections**: Includes `category` parameter for grocery and pharmacy items
+
+### **Features Added**:
+
+#### **Dynamic Category Parameters**:
+- **Restaurant Food Items**: Uses actual `foodType` from item data instead of hardcoded values
+- **Grocery Items**: Uses `item.category` for category parameter
+- **Pharmacy Items**: Uses `item.category` for category parameter
+- **All Categories**: Uses actual category names from data with space trimming
+
+#### **URL Parameter Structure**:
+```typescript
+// Meals Available (Restaurants)
+href={`/restaurants/${item.branch.slug}?name=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent((item.foodCategory || 'food').trim())}`}
+
+// Categories (Restaurants, Groceries, Pharmacies)
+href={`/restaurants/${item.branch.slug}?category=${encodeURIComponent((item.categoryName || '').trim())}`}
+href={`/groceries/${item.grocery.slug}?category=${encodeURIComponent((item.categoryName || '').trim())}`}
+href={`/pharmacy/${item.pharmacy.slug}?category=${encodeURIComponent((item.categoryName || '').trim())}`}
+
+// Products (Grocery and Pharmacy Items)
+href={`/groceries/${item.grocery.slug}?category=${encodeURIComponent((item.itemCategory || 'product').trim())}`}
+href={`/pharmacy/${item.pharmacy.slug}?category=${encodeURIComponent((item.itemCategory || 'product').trim())}`}
+```
+
+#### **Data Structure Enhancements**:
+```typescript
+// Enhanced food items with category information
+foodNames.push({
+  foodName: food.name,
+  foodPrice: parseFloat(food.price) || 0,
+  foodImage: food.foodImage,
+  foodCategory: item.foodType?.trim(), // Add the category from the parent item and trim spaces
+  restaurantName: branch.Restaurant?.[0]?.restaurantName || branch._restaurantTable?.[0]?.restaurantName || branch.branchName,
+  branchName: branch.branchName,
+  branch: branch
+});
+
+// Enhanced grocery items with category information
+groceryItems.push({
+  itemName: item.productName,
+  itemPrice: parseFloat(item.price) || 0,
+  itemImage: item.image,
+  itemCategory: item.category?.trim(), // Add category and trim spaces
+  groceryName: grocery.Grocery?.groceryshopName || grocery.branchName,
+  branchName: grocery.branchName,
+  grocery: grocery
+});
+
+// Enhanced pharmacy items with category information
+pharmacyItems.push({
+  itemName: item.productName,
+  itemPrice: parseFloat(item.price) || 0,
+  itemImage: item.image,
+  itemCategory: item.category?.trim(), // Add category and trim spaces
+  pharmacyName: pharmacy.Pharmacy?.pharmacyName,
+  branchName: pharmacy.branchName,
+  pharmacy: pharmacy
+});
+```
+
+#### **Category Name Trimming**:
+```typescript
+// All category names are trimmed to remove leading/trailing spaces
+categoryName: item.foodType?.trim(), // Restaurant food categories
+categoryName: item.category?.trim(), // Grocery and pharmacy categories
+itemCategory: item.category?.trim(), // Product categories
+```
+
+### **Technical Implementation**:
+- **URL Encoding**: All parameters are properly encoded using `encodeURIComponent()`
+- **Fallback Values**: Provides sensible defaults when category data is missing
+- **Space Trimming**: Applied at both data creation and URL generation levels
+- **Selective Application**: Parameters only added to specified sections as requested
+
+### **User Experience Benefits**:
+- **Better Tracking**: URL parameters enable better analytics and user journey tracking
+- **Clean URLs**: No spaces in category parameters for professional appearance
+- **Dynamic Content**: URLs reflect actual category data instead of static values
+- **Consistent Behavior**: Same parameter structure across all vendor types
+- **SEO Friendly**: Clean, descriptive URLs with proper encoding
+
+### **Benefits**:
+- **Enhanced Analytics**: URL parameters provide valuable tracking data
+- **Professional URLs**: Clean, space-free category parameters
+- **Dynamic Content**: URLs reflect actual data rather than hardcoded values
+- **Consistent Implementation**: Same approach across all vendor types and sections
+- **Future-Proof**: Easy to extend with additional parameters as needed
+
+---
+
+## Summary
+
+These updates have significantly improved the user experience by:
+1. **Providing better loading states** with skeleton loading
+2. **Implementing location-based filtering** for more relevant results
+3. **Adding interactive filter management** with active filters display
+4. **Enhancing search functionality** with show more options
+5. **Improving visual consistency** across all store types
+6. **Optimizing performance** with better loading strategies
+7. **Adding smart vendor sorting** for better availability awareness
+8. **Implementing consistent logout behavior** across all pages
+9. **Enhancing vendor status display** with real-time working hours
+10. **Improving navigation** with integrated map features
+11. **Adding URL parameters** for better tracking and navigation
+12. **Implementing category trimming** for clean, professional URLs
 
 The application now provides a modern, professional user experience that feels fast and responsive while maintaining all functionality. 

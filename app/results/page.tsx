@@ -13,7 +13,7 @@ export default function ResultsPage() {
     const [results, setResults] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const searchParams = useSearchParams();
-    const type = searchParams.get("type") || "restaurant";
+    const type = searchParams?.get("type") || "restaurant";
     const router = useRouter();
 
     useEffect(() => {

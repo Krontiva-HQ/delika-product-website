@@ -86,6 +86,10 @@ interface BranchPageProps {
   params: {
     id: string
   }
+  urlParams?: {
+    category?: string | null
+    name?: string | null
+  }
 }
 
 interface CartItem {
@@ -434,7 +438,7 @@ function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsMod
   );
 }
 
-export function BranchPage({ params }: BranchPageProps) {
+export function BranchPage({ params, urlParams }: BranchPageProps) {
   const [branch, setBranch] = useState<BranchDetails | null>(null)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -465,6 +469,19 @@ export function BranchPage({ params }: BranchPageProps) {
       }>
     }>
   } | null>(null)
+
+  // Handle URL parameters for category selection
+  useEffect(() => {
+    if (urlParams?.category && branch?._menutable) {
+      const decodedCategory = decodeURIComponent(urlParams.category);
+      const matchingCategory = branch._menutable.find(cat => 
+        cat.foodType?.toLowerCase().trim() === decodedCategory.toLowerCase().trim()
+      );
+      if (matchingCategory) {
+        setSelectedCategory(matchingCategory.foodType);
+      }
+    }
+  }, [urlParams?.category, branch]);
 
   // Check authentication status on mount and when localStorage changes
   useEffect(() => {
@@ -756,10 +773,68 @@ export function BranchPage({ params }: BranchPageProps) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="flex items-center justify-center h-[60vh]">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading restaurant details...</p>
+        <div className="container mx-auto px-4 py-8">
+          {/* Restaurant Header Skeleton */}
+          <div className="mb-6">
+            <div className="relative h-[220px] sm:h-[320px] bg-gray-200 rounded-2xl animate-pulse"></div>
+            <div className="text-center py-4">
+              <div className="h-8 bg-gray-200 rounded w-64 mx-auto mb-2 animate-pulse"></div>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+              </div>
+              <div className="mt-3 flex justify-center">
+                <div className="h-8 bg-gray-200 rounded-full w-24 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Menu Categories Skeleton */}
+          <div className="bg-white rounded-lg p-4 mb-6 block lg:hidden">
+            <div className="h-6 bg-gray-200 rounded w-32 mb-4 animate-pulse"></div>
+            <div className="flex overflow-x-auto whitespace-nowrap pb-2 gap-2">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="h-8 bg-gray-200 rounded w-20 animate-pulse flex-shrink-0"></div>
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop Layout Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+            {/* Categories Sidebar Skeleton */}
+            <div className="lg:col-span-3">
+              <div className="bg-white rounded-lg p-4 h-fit sticky top-4 z-10 hidden lg:block">
+                <div className="h-6 bg-gray-200 rounded w-24 mb-4 animate-pulse"></div>
+                <div className="space-y-2">
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <div key={index} className="h-8 bg-gray-200 rounded animate-pulse"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Menu Items Grid Skeleton */}
+            <div className="lg:col-span-9">
+              <div className="bg-white rounded-lg p-4 sm:p-6">
+                <div className="h-6 bg-gray-200 rounded w-32 mb-6 animate-pulse"></div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {Array.from({ length: 12 }).map((_, index) => (
+                    <div key={index} className="bg-white rounded-lg overflow-hidden shadow-sm flex flex-col animate-pulse">
+                      <div className="relative h-36 w-full bg-gray-200"></div>
+                      <div className="p-4 flex flex-col flex-1">
+                        <div className="h-4 bg-gray-200 rounded mb-1"></div>
+                        <div className="flex items-center justify-between mt-auto">
+                          <div className="h-5 bg-gray-200 rounded w-16"></div>
+                          <div className="w-9 h-9 bg-gray-200 rounded-full ml-2"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

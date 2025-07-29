@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import Image from "next/image";
 import { ProductSkeleton } from "@/components/product-skeleton";
 import { CategorySkeleton } from "@/components/category-skeleton";
@@ -135,6 +135,19 @@ export default function PharmacyDetailsPage() {
   const [user, setUser] = useState<any>(null);
   const [selectedItem, setSelectedItem] = useState<PharmacyInventoryItem | null>(null);
 
+  // Group inventory by category
+  const categories = Array.from(new Set(inventory.map(item => item.category || "Uncategorized")));
+  const [selectedCategory, setSelectedCategory] = useState(categories[0] || "");
+  
+  // Set default category when categories are loaded
+  useEffect(() => {
+    if (categories.length > 0 && !selectedCategory && !isLoading) {
+      setSelectedCategory(categories[0]);
+    }
+  }, [categories, selectedCategory, isLoading]);
+  
+  const filteredInventory = inventory.filter(item => (item.category || "Uncategorized") === selectedCategory);
+
   // Load cart from localStorage on mount
   useEffect(() => {
     const savedCart = localStorage.getItem('pharmacyCart');
@@ -258,19 +271,6 @@ export default function PharmacyDetailsPage() {
     }
     if (shopId) fetchInventory();
   }, [shopId]);
-
-  // Group inventory by category
-  const categories = ["All Items", ...Array.from(new Set(inventory.map(item => item.category || "Uncategorized")))];
-  const [selectedCategory, setSelectedCategory] = useState("All Items");
-  useEffect(() => {
-    if (categories.length && !categories.includes(selectedCategory)) {
-      setSelectedCategory("All Items");
-    }
-  }, [categories, selectedCategory]);
-  
-  const filteredInventory = selectedCategory === "All Items" 
-    ? inventory 
-    : inventory.filter(item => (item.category || "Uncategorized") === selectedCategory);
 
   // Optionally, get a banner image (use logo as fallback)
   const bannerImage = shopLogo;
@@ -475,6 +475,7 @@ export default function PharmacyDetailsPage() {
                     key={category}
                     onClick={() => setSelectedCategory(category)}
                     className={`px-3 py-2 rounded-md hover:bg-gray-100 text-sm flex-shrink-0 lg:w-full text-left ${selectedCategory === category ? 'bg-gray-100' : ''}`}
+                    data-category={category}
                   >
                     {category}
                   </button>
@@ -495,6 +496,7 @@ export default function PharmacyDetailsPage() {
                   key={category}
                   onClick={() => setSelectedCategory(category)}
                   className={`px-3 py-2 rounded-md hover:bg-gray-100 text-sm flex-shrink-0 ${selectedCategory === category ? 'bg-gray-100' : ''}`}
+                  data-category={category}
                 >
                   {category}
                 </button>
@@ -523,7 +525,14 @@ export default function PharmacyDetailsPage() {
                   {filteredInventory.map((item) => (
                     <div
                       key={item.id}
-                      className={`bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left flex flex-col ${item.available === false ? "opacity-50 grayscale" : ""}`}
+                      className={`bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left flex flex-col cursor-pointer ${item.available === false ? "opacity-50 grayscale pointer-events-none" : ""}`}
+                      onClick={() => {
+                        if (item.available !== false) {
+                          console.log('Pharmacy item card clicked:', item.productName);
+                          setSelectedItem(item);
+                          console.log('Selected item set to:', item);
+                        }
+                      }}
                     >
                       <div className="relative h-36 w-full">
                         {typeof item.image === 'object' && item.image && 'url' in item.image ? (
@@ -556,7 +565,8 @@ export default function PharmacyDetailsPage() {
                           {item.available !== false && (
                             <button
                               className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center ml-2"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 console.log('Pharmacy item clicked:', item.productName);
                                 setSelectedItem(item);
                                 console.log('Selected item set to:', item);

@@ -12,7 +12,7 @@ export default function Page({ params }: PageProps) {
   
   return (
     <main>
-      <BranchPage params={resolvedParams} />
+      <BranchPage params={resolvedParams} urlParams={{}} />
     </main>
   )
 } 

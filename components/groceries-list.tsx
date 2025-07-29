@@ -3,7 +3,8 @@ import Image from "next/image";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import Link from "next/link";
 import { calculateDistance } from "@/utils/distance";
-import { ChevronDown, Search, Heart } from "lucide-react";
+import { ChevronDown, Search, Heart, Clock } from "lucide-react";
+import { isVendorOpen } from "@/lib/utils";
 
 interface GroceryBranch {
   id: string;
@@ -13,6 +14,10 @@ interface GroceryBranch {
   grocerybranchLatitude: string | number;
   grocerybranchLongitude: string | number;
   active?: boolean;
+  activeHours?: {
+    open: string;
+    close: string;
+  }[];
   _delika_groceries_shops_table?: {
     groceryshopName?: string;
     groceryshopLogo?: { url: string } | null;
@@ -480,7 +485,11 @@ export function GroceriesList() {
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        {filteredBranches.map((branch) => (
+        {filteredBranches.map((branch) => {
+          // Check if vendor is open based on working hours
+          const isOpen = isVendorOpen(branch.activeHours as any);
+          
+          return (
           <div key={branch.id} className="relative">
             <Link
               href={`/groceries/${branch.groceryshopID}?branchId=${branch.id}`}
@@ -500,7 +509,9 @@ export function GroceriesList() {
                   grocerybranchLocation: branch.grocerybranchLocation
                 }));
               }}
-              className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+              className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                !isOpen ? 'opacity-50 grayscale' : ''
+              }`}
             >
               <div className="relative h-36">
                 {branch._delika_groceries_shops_table?.groceryshopLogo?.url ? (
@@ -527,6 +538,13 @@ export function GroceriesList() {
                 >
                   <Heart className={`w-4 h-4 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
                 </button>
+
+                {/* Closed indicator */}
+                {!isOpen && (
+                  <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                    Closed
+                  </div>
+                )}
               </div>
               <div className="p-4">
                 <h3 className="font-bold text-gray-900 truncate">
@@ -538,10 +556,19 @@ export function GroceriesList() {
                 <span className="text-xs text-gray-500 truncate block">
                   {branch.grocerybranchLocation}
                 </span>
+                
+                {/* Status indicator */}
+                {!isOpen && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <Clock className="w-3 h-3 text-red-500" />
+                    <span className="text-xs text-red-500">Closed</span>
+                  </div>
+                )}
               </div>
             </Link>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

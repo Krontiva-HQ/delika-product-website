@@ -727,6 +727,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                   foodName: food.name,
                   foodPrice: parseFloat(food.price) || 0,
                   foodImage: food.foodImage,
+                  foodCategory: item.foodType?.trim(), // Add the category from the parent item and trim spaces
                   restaurantName: branch.Restaurant?.[0]?.restaurantName || branch._restaurantTable?.[0]?.restaurantName || branch.branchName,
                   branchName: branch.branchName,
                   branch: branch
@@ -738,7 +739,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
           // Check food categories
           if (item.foodType?.toLowerCase().includes(query)) {
             foodCategories.push({
-              categoryName: item.foodType,
+              categoryName: item.foodType?.trim(), // Trim spaces from category name
               categoryImage: item.foodTypeImage,
               restaurantName: branch.Restaurant?.[0]?.restaurantName || branch._restaurantTable?.[0]?.restaurantName || branch.branchName,
               branchName: branch.branchName,
@@ -814,20 +815,21 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
         groceryItemsList.forEach((item: any) => {
           // Check grocery item names
           if (item.productName?.toLowerCase().includes(query)) {
-                          groceryItems.push({
-                itemName: item.productName,
-                itemPrice: parseFloat(item.price) || 0,
-                itemImage: item.image,
-                groceryName: grocery.Grocery?.groceryshopName || grocery.branchName,
-                branchName: grocery.branchName,
-                grocery: grocery
-              });
+                                      groceryItems.push({
+              itemName: item.productName,
+              itemPrice: parseFloat(item.price) || 0,
+              itemImage: item.image,
+              itemCategory: item.category?.trim(), // Add category and trim spaces
+              groceryName: grocery.Grocery?.groceryshopName || grocery.branchName,
+              branchName: grocery.branchName,
+              grocery: grocery
+            });
           }
           
           // Check grocery categories
           if (item.category?.toLowerCase().includes(query)) {
             groceryCategories.push({
-              categoryName: item.category,
+              categoryName: item.category?.trim(), // Trim spaces from category name
               categoryImage: null, // Groceries might not have category images
               groceryName: grocery.Grocery?.groceryshopName || grocery.branchName,
               branchName: grocery.branchName,
@@ -901,6 +903,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
               itemName: item.productName,
               itemPrice: parseFloat(item.price) || 0,
               itemImage: item.image,
+              itemCategory: item.category?.trim(), // Add category and trim spaces
               pharmacyName: pharmacy.Pharmacy?.pharmacyName,
               branchName: pharmacy.branchName,
               pharmacy: pharmacy
@@ -910,7 +913,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
           // Check pharmacy categories
           if (item.category?.toLowerCase().includes(query)) {
             pharmacyCategories.push({
-              categoryName: item.category,
+              categoryName: item.category?.trim(), // Trim spaces from category name
               categoryImage: null, // Pharmacies might not have category images
               pharmacyName: pharmacy.Pharmacy?.pharmacyName,
               branchName: pharmacy.branchName,
@@ -1041,8 +1044,17 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
         localStorage.setItem('branchSlug', branchSlug)
         localStorage.setItem('currentView', 'branch')
         
-        // Navigate using only the slug (no ID in URL)
-        await router.replace(`/restaurants/${branchSlug}`)
+        // Navigate to the correct URL based on branch type
+        let targetUrl = ''
+        if (branch.Grocery) {
+          targetUrl = `/groceries/${branchSlug}`
+        } else if (branch.Pharmacy) {
+          targetUrl = `/pharmacy/${branchSlug}`
+        } else {
+          targetUrl = `/restaurants/${branchSlug}`
+        }
+        
+        await router.replace(targetUrl)
         
         setIsLoading(false)
         setIsBranchPageLoaded(true)
@@ -1374,23 +1386,23 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
               const isOpen = isVendorOpen(vendor.activeHours);
               
               return (
-                <Link
-                  key={vendor.id}
-                  href={`/${vendor.type}s/${vendor.slug}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleBranchSelect(vendor);
-                  }}
+              <Link
+                key={vendor.id}
+                href={`/${vendor.type}s/${vendor.slug}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleBranchSelect(vendor);
+                }}
                   className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
                     !isOpen ? 'opacity-50 grayscale' : ''
                   }`}
+              >
+                <button 
+                  className="absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105"
+                  aria-label={`Like ${vendor.type}`}
                 >
-                  <button 
-                    className="absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105"
-                    aria-label={`Like ${vendor.type}`}
-                  >
-                    <Heart className="w-5 h-5 transition-all duration-200" />
-                  </button>
+                  <Heart className="w-5 h-5 transition-all duration-200" />
+                </button>
                   
                   {/* Closed indicator */}
                   {!isOpen && (
@@ -1399,40 +1411,40 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     </div>
                   )}
                   
-                  <div className="relative h-36">
-                    {vendor.displayLogo ? (
-                      <Image
-                        src={vendor.displayLogo}
-                        alt={vendor.displayName || vendor.type}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                        <span className="text-gray-600 text-3xl">
-                          {vendor.type === 'restaurant' ? '🍽️' : vendor.type === 'grocery' ? '🛒' : '💊'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-bold text-gray-900 truncate">
-                      {vendor.restaurantName || vendor.groceryName || vendor.pharmacyName || vendor.displayName || vendor.type}
-                    </h3>
-                    <span className="text-xs text-gray-600 truncate block">
-                      {vendor.displayName || vendor.type}
-                    </span>
-                    {vendor.rating && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <span className="text-yellow-400">★</span>
-                        <span className="text-xs text-gray-600">{vendor.rating}</span>
-                      </div>
-                    )}
-                    {vendor.deliveryTime && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        {vendor.deliveryTime} min
-                      </div>
-                    )}
+                <div className="relative h-36">
+                  {vendor.displayLogo ? (
+                    <Image
+                      src={vendor.displayLogo}
+                      alt={vendor.displayName || vendor.type}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                      <span className="text-gray-600 text-3xl">
+                        {vendor.type === 'restaurant' ? '🍽️' : vendor.type === 'grocery' ? '🛒' : '💊'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-gray-900 truncate">
+                    {vendor.restaurantName || vendor.groceryName || vendor.pharmacyName || vendor.displayName || vendor.type}
+                  </h3>
+                  <span className="text-xs text-gray-600 truncate block">
+                    {vendor.displayName || vendor.type}
+                  </span>
+                  {vendor.rating && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <span className="text-yellow-400">★</span>
+                      <span className="text-xs text-gray-600">{vendor.rating}</span>
+                    </div>
+                  )}
+                  {vendor.deliveryTime && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {vendor.deliveryTime} min
+                    </div>
+                  )}
                     {/* Status indicator */}
                     {!isOpen && (
                       <div className="flex items-center gap-1 mt-1">
@@ -1440,8 +1452,8 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                         <span className="text-xs text-red-500">Closed</span>
                       </div>
                     )}
-                  </div>
-                </Link>
+                </div>
+              </Link>
               );
             })}
           </div>
@@ -1471,15 +1483,21 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Meals Available</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {organizedSearchResults.foodNames.slice(0, showAllFoods ? undefined : 6).map((item, index) => (
+                {organizedSearchResults.foodNames.slice(0, showAllFoods ? undefined : 6).map((item, index) => {
+                  // Check if vendor is open based on working hours
+                  const isOpen = isVendorOpen(item.branch.activeHours);
+                  
+                  return (
                   <Link
                     key={`food-${index}`}
-                    href={`/restaurants/${item.branch.slug}`}
+                    href={`/restaurants/${item.branch.slug}?name=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent((item.foodCategory || 'food').trim())}`}
                     onClick={(e) => {
                       e.preventDefault()
                       handleBranchSelect(item.branch)
                     }}
-                    className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                      !isOpen ? 'opacity-50 grayscale' : ''
+                    }`}
                   >
                     <div className="relative h-36">
                       {item.foodImage?.url ? (
@@ -1494,6 +1512,13 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                           <span className="text-orange-600 text-3xl">🍽️</span>
                         </div>
                       )}
+
+                      {/* Closed indicator */}
+                      {!isOpen && (
+                        <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                          Closed
+                        </div>
+                      )}
                     </div>
                     <div className="p-4">
                       <h3 className="font-bold text-gray-900 truncate">{item.foodName}</h3>
@@ -1501,7 +1526,8 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                       <span className="text-xs font-bold text-orange-600">₵{typeof item.foodPrice === 'number' ? item.foodPrice.toFixed(2) : '0.00'}</span>
                     </div>
                   </Link>
-                ))}
+                );
+              })}
               </div>
               {organizedSearchResults.foodNames.length > 6 && !showAllFoods && (
                 <div className="flex justify-center mt-6">
@@ -1531,15 +1557,21 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Categories</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {organizedSearchResults.foodCategories.map((item, index) => (
+                {organizedSearchResults.foodCategories.map((item, index) => {
+                  // Check if vendor is open based on working hours
+                  const isOpen = isVendorOpen(item.branch.activeHours);
+                  
+                  return (
                   <Link
                     key={`category-${index}`}
-                    href={`/restaurants/${item.branch.slug}`}
+                    href={`/restaurants/${item.branch.slug}?category=${encodeURIComponent((item.categoryName || '').trim())}`}
                     onClick={(e) => {
                       e.preventDefault()
                       handleBranchSelect(item.branch)
                     }}
-                    className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                      !isOpen ? 'opacity-50 grayscale' : ''
+                    }`}
                   >
                     <div className="relative h-36">
                       {item.categoryImage?.url ? (
@@ -1554,13 +1586,29 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                           <span className="text-blue-600 text-3xl">📂</span>
                         </div>
                       )}
+
+                      {/* Closed indicator */}
+                      {!isOpen && (
+                        <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                          Closed
+                        </div>
+                      )}
                     </div>
                     <div className="p-4">
                       <h3 className="font-bold text-gray-900 truncate">{item.categoryName}</h3>
                       <span className="text-xs text-gray-600 truncate block">{item.restaurantName}</span>
+                      
+                      {/* Status indicator */}
+                      {!isOpen && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <Clock className="w-3 h-3 text-red-500" />
+                          <span className="text-xs text-red-500">Closed</span>
+                        </div>
+                      )}
                     </div>
                   </Link>
-                ))}
+                );
+              })}
               </div>
             </div>
           )}
@@ -1570,7 +1618,11 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Restaurants</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {organizedSearchResults.restaurants.slice(0, showMoreRestaurants ? undefined : 12).map((branch) => (
+                {organizedSearchResults.restaurants.slice(0, showMoreRestaurants ? undefined : 12).map((branch) => {
+                  // Check if vendor is open based on working hours
+                  const isOpen = isVendorOpen(branch.activeHours);
+                  
+                  return (
                   <Link
                     key={branch.id}
                     href={`/restaurants/${branch.slug}`}
@@ -1578,7 +1630,9 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                       e.preventDefault()
                       handleBranchSelect(branch)
                     }}
-                    className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                      !isOpen ? 'opacity-50 grayscale' : ''
+                    }`}
                   >
                     <button 
                       className={`absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
@@ -1591,6 +1645,14 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     >
                       <Heart className={`w-5 h-5 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
                     </button>
+
+                    {/* Closed indicator */}
+                    {!isOpen && (
+                      <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                        Closed
+                      </div>
+                    )}
+
                     <div className="relative h-36">
                       {branch.Restaurant?.[0]?.restaurantLogo?.url || 
                        branch._restaurantTable?.[0]?.restaurantLogo?.url || 
@@ -1632,7 +1694,8 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                       </span>
                     </div>
                   </Link>
-                ))}
+                );
+              })}
               </div>
               
               {/* Show More Button for Restaurants */}
@@ -1654,7 +1717,11 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Products Available</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {organizedSearchResults.groceryItems.slice(0, showAllFoods ? undefined : 6).map((item, index) => (
+                {organizedSearchResults.groceryItems.slice(0, showAllFoods ? undefined : 6).map((item, index) => {
+                  // Check if vendor is open based on working hours
+                  const isOpen = isVendorOpen(item.grocery.activeHours);
+                  
+                  return (
                   <Link
                     key={`grocery-item-${index}`}
                     href={`/groceries/${item.grocery.slug}`}
@@ -1662,7 +1729,9 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                       e.preventDefault()
                       handleBranchSelect(item.grocery)
                     }}
-                    className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                      !isOpen ? 'opacity-50 grayscale' : ''
+                    }`}
                   >
                     <div className="relative h-36">
                       {item.itemImage?.url ? (
@@ -1677,6 +1746,13 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                           <span className="text-orange-600 text-3xl">🛒</span>
                         </div>
                       )}
+
+                      {/* Closed indicator */}
+                      {!isOpen && (
+                        <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                          Closed
+                        </div>
+                      )}
                     </div>
                     <div className="p-4">
                       <h3 className="font-bold text-gray-900 truncate">{item.itemName}</h3>
@@ -1684,7 +1760,8 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                       <span className="text-xs font-bold text-orange-600">₵{typeof item.itemPrice === 'number' ? item.itemPrice.toFixed(2) : '0.00'}</span>
                     </div>
                   </Link>
-                ))}
+                );
+              })}
               </div>
               {organizedSearchResults.groceryItems.length > 6 && !showAllFoods && (
                 <div className="flex justify-center mt-6">
@@ -1714,7 +1791,11 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Categories</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {organizedSearchResults.groceryCategories.map((item, index) => (
+                {organizedSearchResults.groceryCategories.map((item, index) => {
+                  // Check if vendor is open based on working hours
+                  const isOpen = isVendorOpen(item.grocery.activeHours);
+                  
+                  return (
                   <Link
                     key={`grocery-category-${index}`}
                     href={`/groceries/${item.grocery.slug}`}
@@ -1722,19 +1803,29 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                       e.preventDefault()
                       handleBranchSelect(item.grocery)
                     }}
-                    className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                      !isOpen ? 'opacity-50 grayscale' : ''
+                    }`}
                   >
                     <div className="relative h-36">
                       <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
                         <span className="text-orange-600 text-3xl">📂</span>
                       </div>
+
+                      {/* Closed indicator */}
+                      {!isOpen && (
+                        <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                          Closed
+                        </div>
+                      )}
                     </div>
                     <div className="p-4">
                       <h3 className="font-bold text-gray-900 truncate">{item.categoryName}</h3>
                       <span className="text-xs text-gray-600 truncate block">{item.groceryName}</span>
                     </div>
                   </Link>
-                ))}
+                );
+              })}
               </div>
             </div>
           )}
@@ -1744,7 +1835,11 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Grocery Stores</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {organizedSearchResults.groceries.slice(0, showMoreGroceries ? undefined : 12).map((grocery) => (
+                {organizedSearchResults.groceries.slice(0, showMoreGroceries ? undefined : 12).map((grocery) => {
+                  // Check if vendor is open based on working hours
+                  const isOpen = isVendorOpen(grocery.activeHours);
+                  
+                  return (
                   <Link
                     key={grocery.id}
                     href={`/groceries/${grocery.slug}`}
@@ -1752,7 +1847,9 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                       e.preventDefault()
                       handleBranchSelect(grocery)
                     }}
-                    className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                      !isOpen ? 'opacity-50 grayscale' : ''
+                    }`}
                   >
                     <button 
                       className="absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105"
@@ -1760,6 +1857,14 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     >
                       <Heart className="w-5 h-5 transition-all duration-200" />
                     </button>
+
+                    {/* Closed indicator */}
+                    {!isOpen && (
+                      <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                        Closed
+                      </div>
+                    )}
+
                     <div className="relative h-36">
                       {grocery.Grocery?.groceryshopLogo?.url ? (
                         <Image
@@ -1781,9 +1886,18 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                       <span className="text-xs text-gray-600 truncate block">
                         {grocery.Grocery?.groceryshopAddress || grocery.branchName || grocery.location || 'Location'}
                       </span>
+                      
+                      {/* Status indicator */}
+                      {!isOpen && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <Clock className="w-3 h-3 text-red-500" />
+                          <span className="text-xs text-red-500">Closed</span>
+                        </div>
+                      )}
                     </div>
                   </Link>
-                ))}
+                );
+              })}
               </div>
               
               {/* Show More Button for Groceries */}
@@ -1805,7 +1919,11 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Products Available</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {organizedSearchResults.pharmacyItems.slice(0, showAllFoods ? undefined : 6).map((item, index) => (
+                {organizedSearchResults.pharmacyItems.slice(0, showAllFoods ? undefined : 6).map((item, index) => {
+                  // Check if vendor is open based on working hours
+                  const isOpen = isVendorOpen(item.pharmacy.activeHours);
+                  
+                  return (
                   <Link
                     key={`pharmacy-item-${index}`}
                     href={`/pharmacy/${item.pharmacy.slug}`}
@@ -1813,7 +1931,9 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                       e.preventDefault()
                       handleBranchSelect(item.pharmacy)
                     }}
-                    className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                      !isOpen ? 'opacity-50 grayscale' : ''
+                    }`}
                   >
                     <div className="relative h-36">
                       {item.itemImage?.url ? (
@@ -1828,6 +1948,13 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                           <span className="text-blue-600 text-3xl">💊</span>
                         </div>
                       )}
+
+                      {/* Closed indicator */}
+                      {!isOpen && (
+                        <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                          Closed
+                        </div>
+                      )}
                     </div>
                     <div className="p-4">
                       <h3 className="font-bold text-gray-900 truncate">{item.itemName}</h3>
@@ -1835,7 +1962,8 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                       <span className="text-xs font-bold text-blue-600">₵{typeof item.itemPrice === 'number' ? item.itemPrice.toFixed(2) : '0.00'}</span>
                     </div>
                   </Link>
-                ))}
+                );
+              })}
               </div>
               {organizedSearchResults.pharmacyItems.length > 6 && !showAllFoods && (
                 <div className="flex justify-center mt-6">
@@ -1865,7 +1993,11 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Categories</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {organizedSearchResults.pharmacyCategories.map((item, index) => (
+                {organizedSearchResults.pharmacyCategories.map((item, index) => {
+                  // Check if vendor is open based on working hours
+                  const isOpen = isVendorOpen(item.pharmacy.activeHours);
+                  
+                  return (
                   <Link
                     key={`pharmacy-category-${index}`}
                     href={`/pharmacy/${item.pharmacy.slug}`}
@@ -1873,19 +2005,29 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                       e.preventDefault()
                       handleBranchSelect(item.pharmacy)
                     }}
-                    className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                      !isOpen ? 'opacity-50 grayscale' : ''
+                    }`}
                   >
                     <div className="relative h-36">
                       <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
                         <span className="text-blue-600 text-3xl">📂</span>
                       </div>
+
+                      {/* Closed indicator */}
+                      {!isOpen && (
+                        <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                          Closed
+                        </div>
+                      )}
                     </div>
                     <div className="p-4">
                       <h3 className="font-bold text-gray-900 truncate">{item.categoryName}</h3>
                       <span className="text-xs text-gray-600 truncate block">{item.pharmacyName}</span>
                     </div>
                   </Link>
-                ))}
+                );
+              })}
               </div>
             </div>
           )}
@@ -1895,7 +2037,11 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Pharmacies</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {organizedSearchResults.pharmacies.slice(0, showMorePharmacies ? undefined : 12).map((pharmacy) => (
+                {organizedSearchResults.pharmacies.slice(0, showMorePharmacies ? undefined : 12).map((pharmacy) => {
+                  // Check if vendor is open based on working hours
+                  const isOpen = isVendorOpen(pharmacy.activeHours);
+                  
+                  return (
                   <Link
                     key={pharmacy.id}
                     href={`/pharmacy/${pharmacy.slug}`}
@@ -1903,7 +2049,9 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                       e.preventDefault()
                       handleBranchSelect(pharmacy)
                     }}
-                    className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block"
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                      !isOpen ? 'opacity-50 grayscale' : ''
+                    }`}
                   >
                     <button 
                       className="absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform text-gray-400 hover:text-blue-500 hover:bg-white hover:scale-105"
@@ -1911,6 +2059,14 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     >
                       <Heart className="w-5 h-5 transition-all duration-200" />
                     </button>
+
+                    {/* Closed indicator */}
+                    {!isOpen && (
+                      <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                        Closed
+                      </div>
+                    )}
+
                     <div className="relative h-36">
                       {pharmacy.Pharmacy?.pharmacyLogo?.url ? (
                         <Image
@@ -1934,11 +2090,12 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                         {pharmacy.Pharmacy?.pharmacyName}
                       </h3>
                       <span className="text-xs text-gray-600 truncate block">
-                        {pharmacy.Pharmacy?.pharmacyAddress || 'Location'}
+                        {pharmacy.Pharmacy?.pharmacyAddress || pharmacy.branchName || pharmacy.location || 'Location'}
                       </span>
                     </div>
                   </Link>
-                ))}
+                );
+              })}
               </div>
               
               {/* Show More Button for Pharmacies */}
@@ -1984,28 +2141,28 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
               const isOpen = isVendorOpen(branch.activeHours);
               
               return (
-                <Link
-                  key={branch.id}
-                  href={`/restaurants/${branch.slug}`}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    handleBranchSelect(branch)
-                  }}
+            <Link
+              key={branch.id}
+              href={`/restaurants/${branch.slug}`}
+              onClick={(e) => {
+                e.preventDefault()
+                handleBranchSelect(branch)
+              }}
                   className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
                     !isOpen ? 'opacity-50 grayscale' : ''
                   }`}
-                >
-                  <button
-                    className={`absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
-                      likedBranches.has(branch.id) 
-                        ? 'text-orange-500 scale-110 hover:scale-105' 
-                        : 'text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105'
-                    }`}
-                    onClick={(e) => handleLikeToggle(branch.id, e)}
-                    aria-label={likedBranches.has(branch.id) ? "Unlike restaurant" : "Like restaurant"}
-                  >
-                    <Heart className={`w-5 h-5 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
-                  </button>
+            >
+              <button
+                className={`absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
+                  likedBranches.has(branch.id) 
+                    ? 'text-orange-500 scale-110 hover:scale-105' 
+                    : 'text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105'
+                }`}
+                onClick={(e) => handleLikeToggle(branch.id, e)}
+                aria-label={likedBranches.has(branch.id) ? "Unlike restaurant" : "Like restaurant"}
+              >
+                <Heart className={`w-5 h-5 transition-all duration-200 ${likedBranches.has(branch.id) ? 'fill-current' : ''}`} />
+              </button>
                   
                   {/* Closed indicator */}
                   {!isOpen && (
@@ -2014,13 +2171,13 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     </div>
                   )}
                   
-                  <div className="relative h-36">
+              <div className="relative h-36">
                     {branch.Restaurant?.[0]?.restaurantLogo?.url || 
                      branch._restaurantTable?.[0]?.restaurantLogo?.url || 
                      branch.restaurantLogo?.url || 
                      branch.logo?.url || 
                      branch.image?.url ? (
-                      <Image
+                <Image
                         src={branch.Restaurant?.[0]?.restaurantLogo?.url || 
                              branch._restaurantTable?.[0]?.restaurantLogo?.url || 
                              branch.restaurantLogo?.url || 
@@ -2032,36 +2189,29 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                              branch.name || 
                              branch.branchName || 
                              'Restaurant'}
-                        fill
-                        className="object-cover"
-                      />
+                  fill
+                  className="object-cover"
+                />
                     ) : (
                       <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
                         No Image
-                      </div>
+            </div>
                     )}
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-bold text-gray-900 truncate">
+              </div>
+              <div className="p-4">
+                <h3 className="font-bold text-gray-900 truncate">
                       {branch.Restaurant?.[0]?.restaurantName || 
                        branch._restaurantTable?.[0]?.restaurantName || 
                        branch.restaurantName || 
                        branch.name || 
                        branch.branchName || 
                        'Restaurant'}
-                    </h3>
-                    <span className="text-xs text-gray-600 truncate block">
+                </h3>
+                <span className="text-xs text-gray-600 truncate block">
                       {branch.branchName || branch.location || 'Location'}
-                    </span>
-                    {/* Status indicator */}
-                    {!isOpen && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <Clock className="w-3 h-3 text-red-500" />
-                        <span className="text-xs text-red-500">Closed</span>
-                      </div>
-                    )}
-                  </div>
-                </Link>
+                </span>
+              </div>
+            </Link>
               );
             } else if (activeTab === "groceries") {
               const grocery = item;
@@ -2101,7 +2251,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     ) : (
                       <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
                         No Image
-                      </div>
+              </div>
                     )}
                   </div>
                   <div className="p-4">
@@ -2111,13 +2261,6 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     <span className="text-xs text-gray-600 truncate block">
                       {grocery.grocerybranchLocation || 'Grocery Store'}
                     </span>
-                    {/* Status indicator */}
-                    {!isOpen && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <Clock className="w-3 h-3 text-red-500" />
-                        <span className="text-xs text-red-500">Closed</span>
-                      </div>
-                    )}
                   </div>
                 </Link>
               );
@@ -2134,12 +2277,12 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     !isOpen ? 'opacity-50 grayscale' : ''
                   }`}
                 >
-                  <button
+              <button
                     className="absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105"
                     aria-label="Like pharmacy"
-                  >
+              >
                     <Heart className="w-5 h-5 transition-all duration-200" />
-                  </button>
+              </button>
                   
                   {/* Closed indicator */}
                   {!isOpen && (
@@ -2169,13 +2312,6 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     <span className="text-xs text-gray-600 truncate block">
                       {pharmacy.pharmacybranchLocation || 'Pharmacy'}
                     </span>
-                    {/* Status indicator */}
-                    {!isOpen && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <Clock className="w-3 h-3 text-red-500" />
-                        <span className="text-xs text-red-500">Closed</span>
-                      </div>
-                    )}
                   </div>
                 </Link>
               );
@@ -2216,7 +2352,7 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
               <ChevronLeft className="w-4 h-4" />
               Back to Restaurants
             </Link>
-            {currentBranch && <BranchPage params={{ id: currentBranch.id }} />}
+            {currentBranch && <BranchPage params={{ id: currentBranch.id }} urlParams={{}} />}
           </div>
         )
       case 'orders':

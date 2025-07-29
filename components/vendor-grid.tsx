@@ -5,6 +5,7 @@ import { Heart, MapPin, Star, Clock, Truck, Expand } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { isVendorOpen } from "@/lib/utils"
 
 interface VendorData {
   Restaurants: any[];
@@ -136,7 +137,7 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
 
   // Combine all vendors with their type and calculate distances
   const allVendors = useMemo(() => {
-    const vendors = [];
+    const vendors: any[] = [];
     
     // Add restaurants
     if (vendorData.Restaurants) {
@@ -396,10 +397,16 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-      {filteredVendors.map((vendor) => (
+      {filteredVendors.map((vendor) => {
+        // Check if vendor is open based on working hours
+        const isOpen = isVendorOpen(vendor.activeHours);
+        
+        return (
         <div 
           key={vendor.id} 
-          className="group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer"
+          className={`group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer ${
+            !isOpen ? 'opacity-50 grayscale' : ''
+          }`}
           onClick={(e) => {
             e.preventDefault();
             handleVendorSelect(vendor);
@@ -419,6 +426,13 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
               } transition-colors`}
             />
           </button>
+
+          {/* Closed indicator */}
+          {!isOpen && (
+            <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+              Closed
+            </div>
+          )}
 
           {/* Vendor Image */}
           <div className="aspect-square relative overflow-hidden">
@@ -482,9 +496,18 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
                 <span className="text-xs text-green-600">Pickup Available</span>
               </div>
             )}
+
+            {/* Status indicator */}
+            {!isOpen && (
+              <div className="flex items-center gap-1 mt-1">
+                <Clock className="w-3 h-3 text-red-500" />
+                <span className="text-xs text-red-500">Closed</span>
+              </div>
+            )}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 } 

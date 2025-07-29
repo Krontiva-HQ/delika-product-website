@@ -143,9 +143,14 @@ export default function GroceryDetailsPage() {
   // Group inventory by category
   const categories = Array.from(new Set(inventory.map(item => item.category || "Uncategorized")));
   const [selectedCategory, setSelectedCategory] = useState(categories[0] || "");
+  
+  // Set default category when categories are loaded
   useEffect(() => {
-    if (categories.length && !selectedCategory) setSelectedCategory(categories[0]);
-  }, [categories]);
+    if (categories.length > 0 && !selectedCategory && !isLoading) {
+      setSelectedCategory(categories[0]);
+    }
+  }, [categories, selectedCategory, isLoading]);
+  
   const filteredInventory = inventory.filter(item => (item.category || "Uncategorized") === selectedCategory);
 
   // Get shop info from API response
@@ -478,6 +483,7 @@ export default function GroceryDetailsPage() {
                     key={category}
                     onClick={() => setSelectedCategory(category)}
                     className={`px-3 py-2 rounded-md hover:bg-gray-100 text-sm flex-shrink-0 lg:w-full text-left ${selectedCategory === category ? 'bg-gray-100' : ''}`}
+                    data-category={category}
                   >
                     {category}
                   </button>
@@ -516,7 +522,14 @@ export default function GroceryDetailsPage() {
                 ) : filteredInventory.map((item) => (
                   <div
                     key={item.id}
-                    className={`bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left flex flex-col ${item.available === false ? "opacity-50 grayscale pointer-events-none" : ""}`}
+                    className={`bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left flex flex-col cursor-pointer ${item.available === false ? "opacity-50 grayscale pointer-events-none" : ""}`}
+                    onClick={() => {
+                      if (item.available !== false) {
+                        console.log('Grocery item card clicked:', item.productName);
+                        setSelectedItem(item);
+                        console.log('Selected item set to:', item);
+                      }
+                    }}
                   >
                     <div className="relative h-36 w-full">
                       {typeof item.image === 'object' && item.image && 'url' in item.image ? (
@@ -549,7 +562,8 @@ export default function GroceryDetailsPage() {
                         {item.available && (
                           <button
                             className="bg-orange-500 hover:bg-orange-600 text-white rounded-full w-9 h-9 flex items-center justify-center ml-2"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               console.log('Grocery item clicked:', item.productName);
                               setSelectedItem(item);
                               console.log('Selected item set to:', item);

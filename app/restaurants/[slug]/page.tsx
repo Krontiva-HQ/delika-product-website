@@ -21,6 +21,8 @@ export default function RestaurantPage({ params }: PageProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const branchId = searchParams?.get('id') || localStorage.getItem('selectedBranchId')
+  const categoryParam = searchParams?.get('category')
+  const nameParam = searchParams?.get('name')
 
   useEffect(() => {
     // Check for user data in localStorage on component mount
@@ -90,7 +92,7 @@ export default function RestaurantPage({ params }: PageProps) {
               Back to Vendors
             </button>
           </div>
-          <BranchPage params={{ id: storedId }} />
+          <BranchPage params={{ id: storedId }} urlParams={{ category: categoryParam, name: nameParam }} />
         </div>
       )
     }
@@ -116,7 +118,7 @@ export default function RestaurantPage({ params }: PageProps) {
             Back to Vendors
           </button>
         </div>
-        <BranchPage params={{ id: branchId }} />
+        <BranchPage params={{ id: branchId! }} urlParams={{ category: categoryParam, name: nameParam }} />
       </div>
     )
   } catch (error) {

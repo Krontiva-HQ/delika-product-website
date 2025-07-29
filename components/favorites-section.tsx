@@ -275,7 +275,7 @@ export function FavoritesSection() {
           <ChevronLeft className="w-4 h-4" />
           Back to Favorites
         </button>
-        <BranchPage params={{ id: selectedBranchId }} />
+        <BranchPage params={{ id: selectedBranchId }} urlParams={{}} />
       </div>
     );
   }

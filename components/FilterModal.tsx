@@ -334,17 +334,16 @@ export function FilterModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0">
-        <DialogHeader className="px-6 pt-6">
+      <DialogContent className="max-w-2xl p-0 h-[90vh] flex flex-col">
+        <DialogHeader className="px-6 pt-6 flex-shrink-0">
           <DialogTitle>Filters</DialogTitle>
           <DialogDescription>
             Customize your search by selecting filters for type, rating, delivery time, and more.
           </DialogDescription>
         </DialogHeader>
-        <div className="p-6 space-y-8 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-center mb-6">
-              <div className="text-xl font-bold text-center">Filters</div>
-            </div>
+        
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto px-6 space-y-6">
             {/* Type Filter */}
             <div>
               <div className="font-medium flex items-center gap-2 mb-2">Type</div>
@@ -435,127 +434,136 @@ export function FilterModal({
                 {/* Food Categories */}
                 {filterTypes.includes("restaurant") && (
                   <div>
-                    <div className="font-semibold mb-1">Food</div>
-                    <div className="grid grid-cols-4 gap-3 max-h-24 overflow-hidden">
-                      {FOOD_CATEGORIES.map((category: string) => (
-                        <button
-                          key={category}
-                          type="button"
-                          className={`px-3 py-2 rounded-xl font-medium bg-gray-100 text-sm ${filterCategories.includes(category)
-                              ? "ring-2 ring-orange-500 bg-orange-50"
-                              : ""
-                            }`}
-                          onClick={() => {
-                            if (filterCategories.includes(category)) {
-                              setFilterCategories(
-                                filterCategories.filter((c: string) => c !== category)
-                              );
-                            } else {
-                              setFilterCategories([
-                                ...filterCategories,
-                                category,
-                              ]);
-                            }
-                          }}
-                        >
-                          {category}
-                        </button>
-                      ))}
+                    <div className="font-semibold mb-2">Food</div>
+                    <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {FOOD_CATEGORIES.map((category: string) => (
+                          <button
+                            key={category}
+                            type="button"
+                            className={`px-3 py-2 rounded-lg font-medium bg-gray-100 text-sm text-left ${filterCategories.includes(category)
+                                ? "ring-2 ring-orange-500 bg-orange-50"
+                                : ""
+                              }`}
+                            onClick={() => {
+                              if (filterCategories.includes(category)) {
+                                setFilterCategories(
+                                  filterCategories.filter((c: string) => c !== category)
+                                );
+                              } else {
+                                setFilterCategories([
+                                  ...filterCategories,
+                                  category,
+                                ]);
+                              }
+                            }}
+                          >
+                            {category}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
                 {/* Grocery Categories */}
                 {filterTypes.includes("grocery") && (
                   <div>
-                    <div className="font-semibold mb-1">Grocery</div>
-                    <div className="grid grid-cols-4 gap-3 max-h-24 overflow-hidden">
-                      {GROCERY_CATEGORIES.map((category: string) => (
-                        <button
-                          key={category}
-                          type="button"
-                          className={`px-3 py-2 rounded-xl font-medium bg-gray-100 text-sm ${filterCategories.includes(category)
-                              ? "ring-2 ring-orange-500 bg-orange-50"
-                              : ""
-                            }`}
-                          onClick={() => {
-                            if (filterCategories.includes(category)) {
-                              setFilterCategories(
-                                filterCategories.filter((c: string) => c !== category)
-                              );
-                            } else {
-                              setFilterCategories([
-                                ...filterCategories,
-                                category,
-                              ]);
-                            }
-                          }}
-                        >
-                          {category}
-                        </button>
-                      ))}
+                    <div className="font-semibold mb-2">Grocery</div>
+                    <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {GROCERY_CATEGORIES.map((category: string) => (
+                          <button
+                            key={category}
+                            type="button"
+                            className={`px-3 py-2 rounded-lg font-medium bg-gray-100 text-sm text-left ${filterCategories.includes(category)
+                                ? "ring-2 ring-orange-500 bg-orange-50"
+                                : ""
+                              }`}
+                            onClick={() => {
+                              if (filterCategories.includes(category)) {
+                                setFilterCategories(
+                                  filterCategories.filter((c: string) => c !== category)
+                                );
+                              } else {
+                                setFilterCategories([
+                                  ...filterCategories,
+                                  category,
+                                ]);
+                              }
+                            }}
+                          >
+                            {category}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
                 {/* Pharmacy Categories */}
                 {filterTypes.includes("pharmacy") && (
                   <div>
-                    <div className="font-semibold mb-1">Pharmacy</div>
-                    <div className="grid grid-cols-4 gap-3 max-h-24 overflow-hidden">
-                      {PHARMACY_CATEGORIES.map((category: string) => (
-                        <button
-                          key={category}
-                          type="button"
-                          className={`px-3 py-2 rounded-xl font-medium bg-gray-100 text-sm ${filterCategories.includes(category)
-                              ? "ring-2 ring-orange-500 bg-orange-50"
-                              : ""
-                            }`}
-                          onClick={() => {
-                            if (filterCategories.includes(category)) {
-                              setFilterCategories(
-                                filterCategories.filter((c: string) => c !== category)
-                              );
-                            } else {
-                              setFilterCategories([
-                                ...filterCategories,
-                                category,
-                              ]);
-                            }
-                          }}
-                        >
-                          {category}
-                        </button>
-                      ))}
+                    <div className="font-semibold mb-2">Pharmacy</div>
+                    <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {PHARMACY_CATEGORIES.map((category: string) => (
+                          <button
+                            key={category}
+                            type="button"
+                            className={`px-3 py-2 rounded-lg font-medium bg-gray-100 text-sm text-left ${filterCategories.includes(category)
+                                ? "ring-2 ring-orange-500 bg-orange-50"
+                                : ""
+                              }`}
+                            onClick={() => {
+                              if (filterCategories.includes(category)) {
+                                setFilterCategories(
+                                  filterCategories.filter((c: string) => c !== category)
+                                );
+                              } else {
+                                setFilterCategories([
+                                  ...filterCategories,
+                                  category,
+                                ]);
+                              }
+                            }}
+                          >
+                            {category}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
             </div>
-            {/* Step navigation */}
-            <div className="flex justify-end gap-2 pt-4">
-              <button
-                className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium"
-                onClick={() => onOpenChange(false)}
-                type="button"
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                onClick={handleApplyFilters}
-                disabled={isLoading}
-                type="button"
-              >
-                {isLoading && (
-                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                )}
-                {isLoading ? 'Applying...' : 'Apply'}
-              </button>
-            </div>
+        </div>
+        
+        {/* Sticky Bottom Buttons */}
+        <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200 bg-white">
+          <div className="flex justify-end gap-2">
+            <button
+              className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium"
+              onClick={() => onOpenChange(false)}
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
+              className="px-4 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              onClick={handleApplyFilters}
+              disabled={isLoading}
+              type="button"
+            >
+              {isLoading && (
+                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
+              {isLoading ? 'Applying...' : 'Apply'}
+            </button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
