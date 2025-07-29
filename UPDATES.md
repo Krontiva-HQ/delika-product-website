@@ -1218,3 +1218,527 @@ These updates have significantly improved the user experience by:
 8. **Providing better visual feedback** for user interactions
 
 The application now provides a modern, professional user experience with correct navigation, fast loading states, and intuitive interactions across all vendor pages. 
+
+---
+
+## Checkout Authentication Flow for Non-Logged-In Users
+
+### **Date**: Recent
+### **Files Modified**: 
+- `components/cart-modal.tsx`
+- `components/login-modal.tsx`
+- `app/cart/page.tsx`
+- `components/floating-cart.tsx`
+- `app/checkout/[branchId]/page.tsx`
+- `app/checkout/pharmacy/[id]/page.tsx`
+- `app/checkout/grocery/[id]/page.tsx`
+
+### **Changes Made**:
+
+#### **Comprehensive Authentication Flow**:
+- **Cart Preservation**: When non-logged-in users attempt to checkout, their cart data is preserved in localStorage
+- **Redirect to Login**: Users are automatically redirected to the login page with checkout context
+- **Post-Login Continuation**: After successful login, users are automatically redirected back to checkout
+- **Data Persistence**: All checkout data (cart items, delivery fees, wallet settings) is preserved during the authentication process
+
+#### **Authentication Flow Steps**:
+
+##### **1. Cart Modal Checkout Attempt**:
+```typescript
+const handleCheckout = () => {
+  if (!isAuthenticated) {
+    // Store checkout data for after login
+    const redirectUrl = getCheckoutUrl()
+    localStorage.setItem('loginRedirectUrl', redirectUrl)
+    localStorage.setItem('selectedDeliveryType', deliveryType)
+    localStorage.setItem('checkoutDeliveryFee', deliveryFee.toString())
+    localStorage.setItem('checkoutPlatformFee', platformFee.toString())
+    localStorage.setItem('useWalletBalance', useWallet.toString())
+    localStorage.setItem('walletDeduction', walletDeduction.toString())
+    localStorage.setItem('delikaBalance', useWallet.toString())
+    localStorage.setItem('delikaBalanceAmount', walletDeduction.toString())
+    localStorage.setItem('checkoutCartItems', JSON.stringify(cart))
+    
+    // Close cart modal and open login modal
+    onClose()
+    if (onLoginClick) {
+      onLoginClick()
+    } else {
+      setIsProcessingAuth(true)
+      router.push('/login')
+    }
+    return
+  }
+  // Proceed with checkout for authenticated users
+}
+```
+
+##### **2. Login Modal Authentication**:
+```typescript
+// After successful OTP verification
+if (data.otpValidate === 'otpFound') {
+  localStorage.setItem('authToken', authToken);
+  localStorage.setItem('userData', JSON.stringify(finalUserData));
+  onLoginSuccess(finalUserData);
+  
+  // Check for redirect URL from checkout
+  const redirectUrl = localStorage.getItem('loginRedirectUrl');
+  if (redirectUrl) {
+    localStorage.removeItem('loginRedirectUrl');
+    window.location.href = redirectUrl;
+  }
+}
+```
+
+##### **3. Floating Cart Interaction**:
+```typescript
+const handleClick = async () => {
+  if (!isAuthenticated) {
+    // Store current cart context for after login
+    localStorage.setItem('cartContext', JSON.stringify({
+      branchId,
+      total,
+      itemCount,
+      branchLocation
+    }))
+    
+    if (onLoginClick) {
+      onLoginClick()
+    }
+    return
+  }
+  // Proceed with cart display for authenticated users
+}
+```
+
+#### **Data Preservation Strategy**:
+
+##### **Cart Data**:
+- **Cart Items**: Complete cart with quantities, extras, and pricing
+- **Delivery Settings**: Delivery type (rider/pedestrian), fees, platform fees
+- **Wallet Settings**: Wallet balance usage, deduction amounts
+- **Location Data**: User location and branch coordinates
+
+##### **Checkout Context**:
+- **Redirect URL**: Specific checkout page URL based on store type
+- **Store Type**: Restaurant, grocery, or pharmacy checkout flow
+- **Branch Information**: Branch ID, name, and location data
+
+#### **Store-Specific Checkout URLs**:
+```typescript
+const getCheckoutUrl = () => {
+  switch (storeType) {
+    case 'pharmacy':
+      return `/checkout/pharmacy/${branchId}`
+    case 'grocery':
+      return `/checkout/grocery/${branchId}`
+    case 'restaurant':
+    default:
+      return `/checkout/${branchId}`
+  }
+}
+```
+
+#### **User Experience Benefits**:
+
+##### **Seamless Flow**:
+- **No Data Loss**: Cart items and settings are preserved during login
+- **Automatic Redirect**: Users are taken directly to checkout after login
+- **Context Preservation**: All checkout preferences are maintained
+- **Multiple Entry Points**: Works from cart modal, floating cart, and direct checkout pages
+
+##### **Visual Feedback**:
+- **Authentication Status**: Clear indication when login is required
+- **Progress Indicators**: Loading states during authentication process
+- **Error Handling**: Graceful handling of authentication failures
+- **Success Confirmation**: Clear feedback when login is successful
+
+##### **Cross-Platform Support**:
+- **All Store Types**: Restaurant, grocery, and pharmacy checkout flows
+- **All Cart Types**: Main cart, floating cart, and direct checkout
+- **All Authentication Methods**: Email and phone number login
+- **All Device Types**: Mobile and desktop experiences
+
+#### **Technical Implementation**:
+
+##### **localStorage Data Structure**:
+```typescript
+// Checkout context data
+localStorage.setItem('loginRedirectUrl', '/checkout/pharmacy/123')
+localStorage.setItem('selectedDeliveryType', 'rider')
+localStorage.setItem('checkoutDeliveryFee', '5.00')
+localStorage.setItem('checkoutPlatformFee', '2.00')
+localStorage.setItem('useWalletBalance', 'true')
+localStorage.setItem('walletDeduction', '10.00')
+localStorage.setItem('delikaBalance', 'true')
+localStorage.setItem('delikaBalanceAmount', '10.00')
+localStorage.setItem('checkoutCartItems', JSON.stringify(cartItems))
+
+// Cart context for floating cart
+localStorage.setItem('cartContext', JSON.stringify({
+  branchId: '123',
+  total: 25.50,
+  itemCount: 3,
+  branchLocation: { latitude: 5.123, longitude: -0.456 }
+}))
+```
+
+##### **Authentication State Management**:
+```typescript
+// Check authentication status on page load
+useEffect(() => {
+  if (isProcessingAuth) {
+    const userData = localStorage.getItem('userData')
+    if (userData) {
+      setIsProcessingAuth(false)
+      router.push(`/checkout/${branchId}`)
+    }
+  }
+}, [isProcessingAuth, branchId, router])
+```
+
+#### **Security Considerations**:
+- **Token Storage**: Secure storage of authentication tokens
+- **Data Validation**: Proper validation of stored checkout data
+- **Session Management**: Proper session handling and cleanup
+- **Error Recovery**: Graceful handling of authentication failures
+
+#### **Benefits**:
+- **Improved User Experience**: Seamless checkout flow without data loss
+- **Reduced Friction**: Users don't lose their cart when logging in
+- **Higher Conversion**: More users complete checkout after authentication
+- **Consistent Behavior**: Same flow across all store types and entry points
+- **Data Integrity**: All checkout preferences are preserved during authentication
+- **Professional Feel**: Smooth, app-like experience with proper state management
+
+---
+
+## Summary
+
+These updates have significantly improved the user experience by:
+1. **Fixing navigation issues** with correct URL routing for different vendor types
+2. **Implementing skeleton loading** for better perceived performance
+3. **Adding item click functionality** for easier product interaction
+4. **Enhancing filter modal design** with sticky buttons and scrollable categories
+5. **Improving URL parameter handling** with load-first approach
+6. **Optimizing mobile experience** with responsive layouts
+7. **Ensuring consistent behavior** across all vendor types
+8. **Providing better visual feedback** for user interactions
+9. **Implementing seamless checkout authentication** for non-logged-in users
+10. **Preserving cart data** during authentication flow
+11. **Enabling automatic redirect** to checkout after successful login
+12. **Supporting all store types** with consistent authentication behavior
+
+The application now provides a modern, professional user experience with correct navigation, fast loading states, intuitive interactions, and seamless authentication flows across all vendor pages and checkout processes. 
+
+---
+
+## Cart Authentication Modal for Unauthenticated Users
+
+### **Date**: Recent
+### **Files Modified**: 
+- `components/cart-auth-modal.tsx` (created)
+- `components/floating-cart.tsx`
+
+### **Changes Made**:
+
+#### **New Cart Authentication Modal**:
+- **Dedicated Modal**: Created a specialized authentication modal specifically for cart interactions
+- **Cart Context Display**: Shows cart information (item count, total) in the modal header
+- **Dual Authentication**: Supports both login and signup with email/phone options
+- **Cart Preservation**: Automatically preserves cart context during authentication
+- **Seamless Flow**: After successful authentication, automatically opens the cart modal
+
+#### **Features Added**:
+
+##### **Cart Context Display**:
+```typescript
+// Modal header shows cart information
+<DialogTitle className="flex items-center gap-2 text-xl">
+  <ShoppingCart className="w-6 h-6 text-orange-500" />
+  {cartContext ? (
+    <div>
+      <div className="font-semibold">Complete Your Order</div>
+      <div className="text-sm text-gray-500 font-normal">
+        {cartContext.itemCount} items • GH₵ {cartContext.total.toFixed(2)}
+      </div>
+    </div>
+  ) : (
+    "Access Your Cart"
+  )}
+</DialogTitle>
+```
+
+##### **Dual Authentication Tabs**:
+- **Login Tab**: Email/password and phone/OTP login options
+- **Signup Tab**: Email/password and phone/OTP signup options
+- **Visual Icons**: Clear icons for login (LogIn) and signup (UserPlus)
+- **Contextual Messaging**: Different messages for login vs signup
+
+##### **Authentication Methods**:
+```typescript
+// Email Login
+<form onSubmit={handleLoginSubmit} data-mode="email">
+  <Input type="email" placeholder="Enter your email" />
+  <Input type="password" placeholder="Enter your password" />
+  <Button type="submit">Login</Button>
+</form>
+
+// Phone Login
+<form onSubmit={handleLoginSubmit} data-mode="phone">
+  <Input type="tel" placeholder="Enter your phone number" />
+  <Button type="submit">Send Code</Button>
+</form>
+
+// Email Signup
+<form onSubmit={handleSignupSubmit} data-mode="email">
+  <Input type="text" placeholder="Enter your full name" />
+  <Input type="email" placeholder="Enter your email" />
+  <Input type="password" placeholder="Create a password" />
+  <Button type="submit">Create Account</Button>
+</form>
+
+// Phone Signup
+<form onSubmit={handleSignupSubmit} data-mode="phone">
+  <Input type="text" placeholder="Enter your full name" />
+  <Input type="tel" placeholder="Enter your phone number" />
+  <Button type="submit">Create Account</Button>
+</form>
+```
+
+##### **OTP Verification**:
+- **Auto-submit**: Automatically submits when 4-digit code is entered
+- **Error Handling**: Clear error messages for invalid codes
+- **Back Navigation**: Easy return to login/signup forms
+- **Method-specific**: Different OTP endpoints for email vs phone
+
+#### **FloatingCart Integration**:
+
+##### **Updated Click Handler**:
+```typescript
+const handleClick = async () => {
+  if (!isAuthenticated) {
+    // Store current cart context for after login
+    localStorage.setItem('cartContext', JSON.stringify({
+      branchId,
+      total,
+      itemCount,
+      branchLocation
+    }))
+    
+    // Open the new auth modal instead of using onLoginClick
+    setIsAuthModalOpen(true)
+    return
+  }
+  // Proceed with cart display for authenticated users
+}
+```
+
+##### **Login Success Handler**:
+```typescript
+const handleLoginSuccess = (userData: UserData) => {
+  // Update authentication state
+  setIsAuthenticated(true)
+  
+  // Dispatch event to notify other components
+  window.dispatchEvent(new CustomEvent('userDataUpdated', { detail: userData }))
+  
+  // Close auth modal
+  setIsAuthModalOpen(false)
+  
+  // Open cart modal after successful login
+  setTimeout(() => {
+    onClick()
+  }, 100)
+}
+```
+
+#### **User Experience Benefits**:
+
+##### **Contextual Design**:
+- **Cart-Focused**: Modal specifically designed for cart interactions
+- **Order Information**: Shows cart details in the header
+- **Clear Purpose**: Users understand they need to authenticate to access cart
+- **Professional Appearance**: Clean, modern modal design
+
+##### **Seamless Authentication**:
+- **Multiple Options**: Email/password and phone/OTP for both login and signup
+- **Auto-submit OTP**: Automatically processes 4-digit codes
+- **Error Recovery**: Clear error messages and easy retry
+- **Smooth Transitions**: Automatic cart opening after successful auth
+
+##### **Cart Preservation**:
+- **No Data Loss**: Cart context is preserved during authentication
+- **Automatic Restoration**: Cart opens automatically after successful login
+- **Context Awareness**: Modal shows cart information to user
+- **Backward Compatibility**: Maintains existing onLoginClick prop
+
+#### **Technical Implementation**:
+
+##### **Modal Structure**:
+```typescript
+interface CartAuthModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onLoginSuccess: (userData: UserData) => void
+  cartContext?: {
+    branchId: string
+    total: number
+    itemCount: number
+    branchLocation?: {
+      latitude: string
+      longitude: string
+    }
+  }
+}
+```
+
+##### **Authentication Flow**:
+1. **User clicks cart** → Check authentication status
+2. **If unauthenticated** → Store cart context and open auth modal
+3. **User authenticates** → Process login/signup with OTP verification
+4. **Success** → Store user data, close auth modal, open cart modal
+5. **Cart preserved** → All cart data and context maintained
+
+##### **State Management**:
+```typescript
+// Authentication states
+const [isAuthenticated, setIsAuthenticated] = useState(false)
+const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+
+// Login states
+const [email, setEmail] = useState("")
+const [password, setPassword] = useState("")
+const [phone, setPhone] = useState("")
+const [showOTP, setShowOTP] = useState(false)
+
+// Signup states
+const [signupEmail, setSignupEmail] = useState("")
+const [signupPhone, setSignupPhone] = useState("")
+const [signupPassword, setSignupPassword] = useState("")
+const [signupFullName, setSignupFullName] = useState("")
+const [showSignupOTP, setShowSignupOTP] = useState(false)
+```
+
+#### **Benefits**:
+- **Better User Experience**: Dedicated modal for cart authentication
+- **Contextual Information**: Users see their cart details during auth
+- **Multiple Auth Options**: Email/password and phone/OTP for flexibility
+- **Seamless Flow**: Automatic cart opening after successful authentication
+- **Cart Preservation**: No data loss during authentication process
+- **Professional Design**: Clean, modern modal with clear purpose
+- **Error Handling**: Comprehensive error handling and user feedback
+- **Backward Compatibility**: Maintains existing component interfaces
+
+---
+
+## Pharmacy Image URL Field Update
+
+### **Date**: Recent
+### **Files Modified**: 
+- `app/pharmacy/[id]/page.tsx`
+
+### **Changes Made**:
+- **Updated API Response Handling**: Modified pharmacy page to use the new `image_url` field from the updated API structure
+- **Simplified Image Logic**: Replaced the nested `pharmacyLogo.url` structure with direct `image_url` field access
+- **Enhanced Fallback Handling**: Maintained robust fallback to `/fallback/phamarcy.jpg` when `image_url` is not available
+- **Cleaner Code Structure**: Eliminated complex nested object checking for more straightforward image URL extraction
+
+### **API Structure Update**:
+
+#### **Previous Structure**:
+```typescript
+// Old nested structure
+if (pharmacyShop.pharmacyLogo && pharmacyShop.pharmacyLogo.url) {
+  setShopLogo(pharmacyShop.pharmacyLogo.url);
+} else {
+  setShopLogo("/fallback/phamarcy.jpg");
+}
+```
+
+#### **New Structure**:
+```typescript
+// New direct field access
+if (pharmacyShop.image_url) {
+  setShopLogo(pharmacyShop.image_url);
+} else {
+  setShopLogo("/fallback/phamarcy.jpg");
+}
+```
+
+### **Updated API Response Structure**:
+```typescript
+{
+  Pharmacy: [{
+    id, created_at, slug, pharmacyName, pharmacyEmail,
+    pharmacyPhoneNumber, pharmacyAddress, Inventory, 
+    Transactions, Reports, Overview, DeliveryReport,
+    FullService, WalkIn, OnDemand, Batch, Schedule,
+    AutoAssign, AutoCalculatePrice, image_url, // New direct field
+    pharmacyLogo: { // Legacy field (still available)
+      access, path, name, type, size, mime,
+      meta: { width, height }, url
+    }
+  }]
+}
+```
+
+### **Technical Implementation**:
+```typescript
+// Extract pharmacy shop details from Pharmacy array
+if (data.Pharmacy && Array.isArray(data.Pharmacy) && data.Pharmacy.length > 0) {
+  const pharmacyShop = data.Pharmacy[0];
+  setShopName(pharmacyShop.pharmacyName || data.slug?.pharmacybranchName || "Pharmacy Shop");
+  setShopAddress(pharmacyShop.pharmacyAddress || "");
+  
+  // Extract image from new image_url field
+  if (pharmacyShop.image_url) {
+    setShopLogo(pharmacyShop.image_url);
+  } else {
+    setShopLogo("/fallback/phamarcy.jpg");
+  }
+} else {
+  // Fallback to slug data
+  setShopName(data.slug?.pharmacybranchName || "Pharmacy Shop");
+  setShopAddress(data.slug?.pharmacybranchLocation || "");
+  setShopLogo("/fallback/phamarcy.jpg");
+}
+```
+
+### **Benefits**:
+- **Simplified Code**: Direct field access eliminates complex nested object checking
+- **Better Performance**: Reduced property access overhead
+- **Cleaner Structure**: More straightforward image URL extraction logic
+- **Backward Compatibility**: Maintains fallback to legacy structure if needed
+- **Future-Proof**: Ready for API structure evolution
+- **Consistent Behavior**: Same fallback handling and error management
+
+### **User Experience Benefits**:
+- **Faster Loading**: Simplified image URL extraction improves performance
+- **Reliable Display**: Robust fallback ensures images always display
+- **Consistent Branding**: Pharmacy logos display correctly from new API structure
+- **Professional Appearance**: Clean, modern pharmacy page headers with proper images
+
+---
+
+## Summary
+
+These updates have significantly improved the user experience by:
+1. **Fixing navigation issues** with correct URL routing for different vendor types
+2. **Implementing skeleton loading** for better perceived performance
+3. **Adding item click functionality** for easier product interaction
+4. **Enhancing filter modal design** with sticky buttons and scrollable categories
+5. **Improving URL parameter handling** with load-first approach
+6. **Optimizing mobile experience** with responsive layouts
+7. **Ensuring consistent behavior** across all vendor types
+8. **Providing better visual feedback** for user interactions
+9. **Implementing seamless checkout authentication** for non-logged-in users
+10. **Preserving cart data** during authentication flow
+11. **Enabling automatic redirect** to checkout after successful login
+12. **Supporting all store types** with consistent authentication behavior
+13. **Creating dedicated cart authentication modal** for better user experience
+14. **Providing contextual cart information** during authentication
+15. **Supporting multiple authentication methods** (email/password, phone/OTP)
+16. **Updating pharmacy image handling** to use new API structure
+
+The application now provides a modern, professional user experience with correct navigation, fast loading states, intuitive interactions, seamless authentication flows, dedicated cart authentication, and updated API integration across all vendor pages and checkout processes. 

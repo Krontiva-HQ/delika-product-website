@@ -2,19 +2,22 @@
 
 import Image from "next/image"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ShoppingCart, Minus, Plus, Trash2, AlertCircle, Bike, User, Store } from "lucide-react"
+import { ShoppingCart, Minus, Plus, Trash2, AlertCircle, Bike, User, Store, Lock, UserPlus, LogIn, AlertCircle as AlertCircleIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter } from "next/navigation"
 import { CartItem } from "@/types/cart"
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"
 import { calculateDistance } from "@/lib/distance"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { calculateDeliveryPrices, getCustomerDetails } from "@/lib/api"
 import { Wallet } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
+import { UserData } from "@/lib/api"
 
 interface CartModalProps {
   isOpen: boolean
@@ -42,6 +45,7 @@ interface CartModalProps {
   onLoginClick?: () => void
   onCheckout?: () => void
   storeType?: 'restaurant' | 'pharmacy' | 'grocery'
+  onLoginSuccess?: (userData: UserData) => void
 }
 
 export function CartModal({
@@ -59,10 +63,60 @@ export function CartModal({
   branchLocation,
   onLoginClick,
   onCheckout,
-  storeType = 'restaurant'
+  storeType = 'restaurant',
+  onLoginSuccess
 }: CartModalProps) {
+  // Console logging for cart modal vs user auth status
+  useEffect(() => {
+    console.log('🛒 [CartModal] Modal Status:', {
+      isOpen,
+      isAuthenticated,
+      storeType,
+      branchId,
+      branchName,
+      cartLength: cart.length,
+      cartTotal,
+      mode: isAuthenticated ? 'Mode 1: Authenticated User' : 'Mode 2: Non-Authenticated User'
+    });
+  }, [isOpen, isAuthenticated, storeType, branchId, branchName, cart.length, cartTotal]);
+
+  // Log authentication state changes
+  useEffect(() => {
+    console.log('🔐 [CartModal] Authentication State Changed:', {
+      isAuthenticated,
+      hasUserData: !!localStorage.getItem('userData'),
+      hasAuthToken: !!localStorage.getItem('authToken'),
+      userData: localStorage.getItem('userData') ? JSON.parse(localStorage.getItem('userData') || '{}') : null
+    });
+  }, [isAuthenticated]);
   const router = useRouter()
   const [isProcessingAuth, setIsProcessingAuth] = useState(false)
+  
+  // Authentication states for Mode 2
+  const [activeTab, setActiveTab] = useState("login")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+  
+  // Login states
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [phone, setPhone] = useState("")
+  const [showOTP, setShowOTP] = useState(false)
+  const [otpError, setOtpError] = useState("")
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email')
+  const [authToken, setAuthToken] = useState("")
+  const [userData, setUserData] = useState<UserData | null>(null)
+  
+  // Signup states
+  const [signupEmail, setSignupEmail] = useState("")
+  const [signupPhone, setSignupPhone] = useState("")
+  const [signupPassword, setSignupPassword] = useState("")
+  const [signupFullName, setSignupFullName] = useState("")
+  const [signupMethod, setSignupMethod] = useState<'email' | 'phone'>('email')
+  const [signupAuthToken, setSignupAuthToken] = useState("")
+  const [signupUserData, setSignupUserData] = useState<UserData | null>(null)
+  const [showSignupOTP, setShowSignupOTP] = useState(false)
+  const [signupOtpError, setSignupOtpError] = useState("")
   
   // Helper function to safely convert values to numbers
   const toNumber = (value: any): number => {
@@ -81,7 +135,7 @@ export function CartModal({
   const [platformFee, setPlatformFee] = useState<number>(0) // Platform fee from NEXT_PUBLIC_DELIVERY_PRICE API
 
   useEffect(() => {
-    console.log('Cart Items in CartModal:', cart.map(item => ({
+    console.log('📦 [CartModal] Cart Items:', cart.map(item => ({
       id: item.id,
       name: item.name,
       price: item.price,
@@ -94,7 +148,18 @@ export function CartModal({
   }, [cart]);
 
   useEffect(() => {
-  }, [deliveryType])
+    // Recalculate total when delivery fee changes
+    console.log('[Price Calculation] Delivery fee changed:', deliveryFee);
+  }, [deliveryType, deliveryFee, platformFee, walletBalance, useWallet])
+
+  // Update delivery fee when rider/pedestrian fees change
+  useEffect(() => {
+    if (riderFee > 0 || pedestrianFee > 0) {
+      const currentFee = deliveryType === 'rider' ? riderFee : pedestrianFee;
+      console.log('[Fee Update] Updating delivery fee to:', currentFee, 'for type:', deliveryType);
+      setDeliveryFee(currentFee);
+    }
+  }, [riderFee, pedestrianFee, deliveryType])
 
   // Fetch delikaBalance from customer details API when modal opens
   useEffect(() => {
@@ -247,9 +312,6 @@ export function CartModal({
           subTotal: currentCartTotal,
           userId: userId
         };
-        
-        console.log('[Delivery Calculation] Payload being sent to delivery API:', JSON.stringify(deliveryPayload, null, 2));
-        console.log('[Delivery Calculation] Additional payload details - Total:', currentCartTotal, 'SubTotal:', currentCartTotal, 'UserId:', userId);
 
         // Get delivery prices from API
         const deliveryResponse = await calculateDeliveryPrices(deliveryPayload);
@@ -297,6 +359,16 @@ export function CartModal({
           console.log('[Delivery Calculation] Setting delivery fee for', deliveryType, ':', currentFee);
           setDeliveryFee(toNumber(currentFee))
         }
+        
+        // Debug logging for price calculation
+        console.log('[Price Calculation] Final values:', {
+          cartTotal,
+          deliveryFee: toNumber(deliveryType === 'rider' ? newRiderFee : newPedestrianFee),
+          platformFee: numericPlatformFee,
+          walletBalance: toNumber(newDelikaBalance || 0),
+          useWallet,
+          finalTotal: Math.max(0, (cartTotal + toNumber(deliveryType === 'rider' ? newRiderFee : newPedestrianFee) + numericPlatformFee) - (useWallet ? Math.min(toNumber(newDelikaBalance || 0), cartTotal + toNumber(deliveryType === 'rider' ? newRiderFee : newPedestrianFee) + numericPlatformFee) : 0))
+        });
       } catch (error) {
         console.error('[Delivery Calculation] Error calculating delivery fee:', error);
         // Handle error silently
@@ -322,6 +394,359 @@ export function CartModal({
     }
   }, [isOpen, branchLocation, deliveryType, cartTotal, cart])
 
+  // Authentication handlers for Mode 2
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    setIsLoading(true)
+
+    console.log('🚀 [CartModal] Login attempt started:', {
+      method: e.currentTarget.getAttribute('data-mode') === 'email' ? 'email' : 'phone',
+      email: email || 'not provided',
+      phone: phone || 'not provided',
+      isAuthenticated: isAuthenticated,
+      cartLength: cart.length,
+      cartTotal
+    });
+
+    try {
+      // Determine login method based on active tab
+      const isEmailMode = e.currentTarget.getAttribute('data-mode') === 'email'
+      setLoginMethod(isEmailMode ? 'email' : 'phone')
+
+      let data: any;
+      if (isEmailMode) {
+        // Email login
+        const response = await fetch('/api/auth', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+        data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Login failed');
+        }
+      } else {
+        // Phone login
+        const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/auth/login/phoneNumber/customer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ phoneNumber: phone }),
+        });
+        data = await response.json();
+      }
+      
+      // Handle different response structures for email vs phone login
+      let token: string;
+      let phoneUserData: UserData | null = null;
+      
+      if (isEmailMode) {
+        // Email login returns: { authToken: "...", ... }
+        if (data.authToken) {
+          token = data.authToken;
+        } else {
+          if (data.message) {
+            setError(data.message)
+          } else {
+            setError("Invalid email or password")
+          }
+          return;
+        }
+      } else {
+        // Phone login returns: [{ id: "...", OTP: "token...", role: "Customer", ... }]
+        if (Array.isArray(data) && data.length > 0) {
+          const userData = data[0] as UserData;
+          
+          // Check if user role is Customer
+          if (userData.role !== 'Customer') {
+            setError('Invalid credentials');
+            return;
+          }
+          
+          // Extract token from OTP field
+          token = userData.OTP || '';
+          phoneUserData = userData;
+          
+          if (!token) {
+            setError('Authentication failed. Please try again.');
+            return;
+          }
+        } else {
+          setError('Sorry, you do not have an account with this phone number as a customer.');
+          return;
+        }
+      }
+      
+      if (token) {
+        setAuthToken(token)
+        
+        if (phoneUserData) {
+          // For phone login, we already have user data
+          setUserData(phoneUserData)
+          setOtpError("")
+          setShowOTP(true)
+        } else {
+          // For email login, try to fetch user data
+          try {
+            const userResponse = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/me', {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              
+              // Check if user role is Customer
+              if (userData.role !== 'Customer') {
+                setError('Invalid credentials');
+                return;
+              }
+              
+              setUserData(userData)
+              setOtpError("")
+              setShowOTP(true)
+            } else {
+              // Even if we can't fetch user data, we can still show OTP
+              setOtpError("")
+              setShowOTP(true);
+            }
+          } catch (userDataError) {
+            setOtpError("")
+            setShowOTP(true);
+          }
+        }
+      } else {
+        if (data.message) {
+          setError(data.message)
+        } else if (isEmailMode) {
+          setError("Invalid email or password")
+        } else {
+          setError("Invalid phone number")
+        }
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setError(error.message || 'Login failed. Please try again.');
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleOTPVerification = async (otp: string) => {
+    console.log('🔐 [CartModal] OTP verification started:', {
+      otpLength: otp.length,
+      loginMethod,
+      isAuthenticated,
+      hasAuthToken: !!authToken,
+      cartLength: cart.length
+    });
+
+    try {
+      setOtpError("")
+      setIsLoading(true)
+
+      const endpoint = loginMethod === 'email'
+        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code'
+        : 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code/phoneNumber';
+      
+      const payload = loginMethod === 'email'
+        ? {
+            OTP: parseInt(otp),
+            type: true,
+            contact: email
+          }
+        : {
+            OTP: parseInt(otp),
+            contact: phone
+          };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (data.otpValidate === 'otpFound') {
+        // Store auth token in localStorage
+        localStorage.setItem('authToken', authToken);
+        
+        // Use userData if available, otherwise try to fetch it
+        let finalUserData = userData;
+        if (!finalUserData && authToken) {
+          try {
+            const userResponse = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/me', {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+              }
+            });
+            
+            if (userResponse.ok) {
+              finalUserData = await userResponse.json();
+            }
+          } catch (userDataError) {
+            console.error('Failed to fetch user data:', userDataError);
+          }
+        }
+        
+        if (finalUserData) {
+          console.log('✅ [CartModal] OTP verification successful:', {
+            userId: finalUserData.id,
+            userEmail: finalUserData.email,
+            userPhone: finalUserData.phoneNumber,
+            cartLength: cart.length,
+            cartTotal,
+            branchId
+          });
+
+          localStorage.setItem('userData', JSON.stringify(finalUserData));
+          
+          // Store cart context for after login
+          localStorage.setItem('cartContext', JSON.stringify({
+            branchId,
+            total: cartTotal,
+            itemCount: cart.length,
+            branchLocation
+          }));
+          
+          if (onLoginSuccess) {
+            onLoginSuccess(finalUserData);
+          }
+        }
+        
+        setShowOTP(false);
+        onClose();
+      } else {
+        setOtpError('Invalid verification code. Please try again.');
+      }
+    } catch (error) {
+      console.error('OTP verification error:', error);
+      setOtpError('Failed to verify code. Please try again.');
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSignupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    setIsLoading(true)
+
+    try {
+      const endpoint = signupMethod === 'email'
+        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/signup'
+        : 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/signup/phoneNumber/customer';
+      
+      const payload = signupMethod === 'email'
+        ? {
+            email: signupEmail,
+            password: signupPassword,
+            fullName: signupFullName
+          }
+        : {
+            phoneNumber: signupPhone,
+            fullName: signupFullName
+          };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.authToken) {
+        setSignupAuthToken(data.authToken);
+        setSignupUserData(data);
+        setSignupOtpError("");
+        setShowSignupOTP(true);
+      } else {
+        setError(data.message || 'Signup failed. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      setError(error.message || 'Signup failed. Please try again.');
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSignupOTPVerification = async (otp: string) => {
+    try {
+      setSignupOtpError("")
+      setIsLoading(true)
+
+      const endpoint = signupMethod === 'email'
+        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code'
+        : 'https://api-server.krontiva.africa/api:uEBBwbSs/verify/otp/code/phoneNumber';
+      
+      const payload = signupMethod === 'email'
+        ? {
+            OTP: parseInt(otp),
+            type: true,
+            contact: signupEmail
+          }
+        : {
+            OTP: parseInt(otp),
+            contact: signupPhone
+          };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${signupAuthToken}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (data.otpValidate === 'otpFound' && signupUserData) {
+        localStorage.setItem('authToken', signupAuthToken);
+        localStorage.setItem('userData', JSON.stringify(signupUserData));
+        
+        // Store cart context for after signup
+        localStorage.setItem('cartContext', JSON.stringify({
+          branchId,
+          total: cartTotal,
+          itemCount: cart.length,
+          branchLocation
+        }));
+        
+        if (onLoginSuccess) {
+          onLoginSuccess(signupUserData);
+        }
+        setShowSignupOTP(false);
+        onClose();
+      } else {
+        setSignupOtpError('Invalid verification code. Please try again.');
+      }
+    } catch (error) {
+      console.error('Signup OTP verification error:', error);
+      setSignupOtpError('Failed to verify code. Please try again.');
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   // Check authentication status whenever the modal opens
   useEffect(() => {
     if (isOpen) {
@@ -334,7 +759,18 @@ export function CartModal({
   }, [isOpen, branchId, isProcessingAuth, router])
 
   const handleCheckout = () => {
+    console.log('💳 [CartModal] Checkout attempt:', {
+      isAuthenticated,
+      cartLength: cart.length,
+      cartTotal,
+      branchId,
+      storeType,
+      hasUserData: !!localStorage.getItem('userData'),
+      hasAuthToken: !!localStorage.getItem('authToken')
+    });
+
     if (!isAuthenticated) {
+      console.log('❌ [CartModal] Checkout blocked - user not authenticated, redirecting to login');
       // Store checkout data for after login
       const redirectUrl = getCheckoutUrl()
       localStorage.setItem('loginRedirectUrl', redirectUrl)
@@ -407,6 +843,105 @@ export function CartModal({
     return menuItem ? menuItem.available === false : item.available === false;
   })
 
+  // Mode 2: OTP Verification Screens
+  if (showOTP) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5" />
+              Verify Your Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              We've sent a verification code to your {loginMethod === 'email' ? 'email' : 'phone'}. Please enter it below.
+            </p>
+            {otpError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-start">
+                <AlertCircleIcon className="h-4 w-4 mr-2 mt-0.5" />
+                {otpError}
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="otp">Verification Code</Label>
+              <Input
+                id="otp"
+                type="text"
+                placeholder="Enter 4-digit code"
+                maxLength={4}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  if (value.length === 4) {
+                    handleOTPVerification(value);
+                  }
+                }}
+                className="text-center text-lg tracking-widest"
+              />
+            </div>
+            <Button 
+              onClick={() => setShowOTP(false)} 
+              variant="outline" 
+              className="w-full"
+            >
+              Back to Login
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  if (showSignupOTP) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5" />
+              Verify Your Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              We've sent a verification code to your {signupMethod === 'email' ? 'email' : 'phone'}. Please enter it below.
+            </p>
+            {signupOtpError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-start">
+                <AlertCircleIcon className="h-4 w-4 mr-2 mt-0.5" />
+                {signupOtpError}
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="signup-otp">Verification Code</Label>
+              <Input
+                id="signup-otp"
+                type="text"
+                placeholder="Enter 4-digit code"
+                maxLength={4}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  if (value.length === 4) {
+                    handleSignupOTPVerification(value);
+                  }
+                }}
+                className="text-center text-lg tracking-widest"
+              />
+            </div>
+            <Button 
+              onClick={() => setShowSignupOTP(false)} 
+              variant="outline" 
+              className="w-full"
+            >
+              Back to Signup
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[450px] p-0 gap-0 bg-white overflow-hidden max-h-[90vh] flex flex-col">
@@ -422,13 +957,229 @@ export function CartModal({
           </DialogTitle>
         </DialogHeader>
 
-        {cart.length > 0 ? (
+        {!isAuthenticated ? (
+          // Mode 2: Non-authenticated users - Show login interface
+          <div className="px-6 py-6">
+            {(() => { console.log('🔒 [CartModal] Rendering Mode 2: Non-authenticated user interface'); return null; })()}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-start mb-4">
+                <AlertCircleIcon className="h-4 w-4 mr-2 mt-0.5" />
+                {error}
+              </div>
+            )}
+
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login" className="flex items-center gap-2">
+                  <LogIn className="w-4 h-4" />
+                  Login
+                </TabsTrigger>
+                <TabsTrigger value="signup" className="flex items-center gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  Sign Up
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="login" className="space-y-4 mt-6">
+                <div className="text-center mb-4">
+                  <p className="text-sm text-gray-600">
+                    Already have an account? Log in to continue with your order.
+                  </p>
+                </div>
+                
+                <Tabs defaultValue="email" className="w-full" onValueChange={() => setError("")}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="email">Email</TabsTrigger>
+                    <TabsTrigger value="phone">Phone</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="email">
+                    <form onSubmit={handleLoginSubmit} data-mode="email" className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="login-email">Email</Label>
+                        <Input
+                          id="login-email"
+                          type="email"
+                          placeholder="Enter your email"
+                          value={email}
+                          onChange={(e) => {
+                            setEmail(e.target.value)
+                            setError("")
+                          }}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="login-password">Password</Label>
+                        <Input
+                          id="login-password"
+                          type="password"
+                          placeholder="Enter your password"
+                          value={password}
+                          onChange={(e) => {
+                            setPassword(e.target.value)
+                            setError("")
+                          }}
+                          required
+                        />
+                      </div>
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-orange-500 hover:bg-orange-600"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Logging in..." : "Login"}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                  
+                  <TabsContent value="phone">
+                    <form onSubmit={handleLoginSubmit} data-mode="phone" className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="login-phone">Phone Number</Label>
+                        <Input
+                          id="login-phone"
+                          type="tel"
+                          placeholder="Enter your phone number"
+                          value={phone}
+                          onChange={(e) => {
+                            setPhone(e.target.value)
+                            setError("")
+                          }}
+                          required
+                        />
+                      </div>
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-orange-500 hover:bg-orange-600"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Sending code..." : "Send Code"}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                </Tabs>
+              </TabsContent>
+
+              <TabsContent value="signup" className="space-y-4 mt-6">
+                <div className="text-center mb-4">
+                  <p className="text-sm text-gray-600">
+                    New to Delika? Create an account to start ordering.
+                  </p>
+                </div>
+                
+                <Tabs defaultValue="email" className="w-full" onValueChange={() => setError("")}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="email">Email</TabsTrigger>
+                    <TabsTrigger value="phone">Phone</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="email">
+                    <form onSubmit={handleSignupSubmit} data-mode="email" className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-fullname">Full Name</Label>
+                        <Input
+                          id="signup-fullname"
+                          type="text"
+                          placeholder="Enter your full name"
+                          value={signupFullName}
+                          onChange={(e) => {
+                            setSignupFullName(e.target.value)
+                            setError("")
+                          }}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-email">Email</Label>
+                        <Input
+                          id="signup-email"
+                          type="email"
+                          placeholder="Enter your email"
+                          value={signupEmail}
+                          onChange={(e) => {
+                            setSignupEmail(e.target.value)
+                            setError("")
+                          }}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-password">Password</Label>
+                        <Input
+                          id="signup-password"
+                          type="password"
+                          placeholder="Create a password"
+                          value={signupPassword}
+                          onChange={(e) => {
+                            setSignupPassword(e.target.value)
+                            setError("")
+                          }}
+                          required
+                        />
+                      </div>
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-orange-500 hover:bg-orange-600"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Creating account..." : "Create Account"}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                  
+                  <TabsContent value="phone">
+                    <form onSubmit={handleSignupSubmit} data-mode="phone" className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-fullname-phone">Full Name</Label>
+                        <Input
+                          id="signup-fullname-phone"
+                          type="text"
+                          placeholder="Enter your full name"
+                          value={signupFullName}
+                          onChange={(e) => {
+                            setSignupFullName(e.target.value)
+                            setError("")
+                          }}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-phone">Phone Number</Label>
+                        <Input
+                          id="signup-phone"
+                          type="tel"
+                          placeholder="Enter your phone number"
+                          value={signupPhone}
+                          onChange={(e) => {
+                            setSignupPhone(e.target.value)
+                            setError("")
+                          }}
+                          required
+                        />
+                      </div>
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-orange-500 hover:bg-orange-600"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Creating account..." : "Create Account"}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                </Tabs>
+              </TabsContent>
+            </Tabs>
+          </div>
+        ) : cart.length > 0 ? (
+          // Mode 1: Authenticated users - Show current cart design
           <>
+            {(() => { console.log('🛒 [CartModal] Rendering Mode 1: Authenticated user interface'); return null; })()}
             <div className="px-6 space-y-4 overflow-y-auto flex-1 py-6">
               {hasUnavailableItems && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <AlertCircleIcon className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-amber-800">
                       Some items in your cart are no longer available. <strong>Click the red trash icon</strong> to remove them and proceed with checkout.
                     </div>
@@ -650,7 +1401,15 @@ export function CartModal({
                   </div>
                   <RadioGroup
                     value={deliveryType}
-                    onValueChange={(value) => setDeliveryType(value as 'rider' | 'pedestrian')}
+                    onValueChange={(value) => {
+                      const newDeliveryType = value as 'rider' | 'pedestrian';
+                      setDeliveryType(newDeliveryType);
+                      
+                      // Update delivery fee based on the new delivery type
+                      const newFee = newDeliveryType === 'rider' ? riderFee : pedestrianFee;
+                      console.log('[Delivery Type Change] Switching to', newDeliveryType, 'with fee:', newFee);
+                      setDeliveryFee(newFee);
+                    }}
                     className="grid grid-cols-2 gap-2"
                   >
                     <div>
@@ -766,6 +1525,7 @@ export function CartModal({
           </>
         ) : (
           <div className="py-12 px-6 text-center">
+            {(() => { console.log('🛒 [CartModal] Rendering empty cart state'); return null; })()}
             <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
               <ShoppingCart className="w-8 h-8 text-gray-400" />
             </div>

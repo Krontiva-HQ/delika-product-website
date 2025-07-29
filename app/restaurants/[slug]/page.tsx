@@ -58,7 +58,7 @@ export default function RestaurantPage({ params }: PageProps) {
   }
 
   const handleHomeClick = () => {
-    router.push('/')
+    window.location.href = '/'
   }
 
   const handleBackToRestaurants = () => {

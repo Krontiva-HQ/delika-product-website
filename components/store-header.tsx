@@ -199,9 +199,11 @@ interface VendorData {
 
 interface StoreHeaderProps {
   vendorData?: VendorData | null;
+  onTabChange?: (tab: string) => void;
+  activeTab?: string;
 }
 
-export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
+export function StoreHeader({ vendorData, onTabChange, activeTab: externalActiveTab }: StoreHeaderProps = {}) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -230,7 +232,11 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
   const [filterOpenNow, setFilterOpenNow] = useState(false);
   const [filterDeliveryType, setFilterDeliveryType] = useState('all');
   const [filterSortBy, setFilterSortBy] = useState('best');
-  const [activeTab, setActiveTab] = useState("restaurants")
+  const [internalActiveTab, setInternalActiveTab] = useState("restaurants")
+  
+  // Use external activeTab if provided, otherwise use internal state
+  const activeTab = externalActiveTab || internalActiveTab;
+  const setActiveTab = onTabChange || setInternalActiveTab;
 
   // FilterModal state variables
   const [filterTypes, setFilterTypes] = useState<string[]>(['restaurant']);
@@ -287,9 +293,11 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
   useEffect(() => {
     const savedTab = localStorage.getItem('selectedStoreType');
     if (savedTab && ['restaurants', 'groceries', 'pharmacy'].includes(savedTab)) {
-      setActiveTab(savedTab);
+      if (!externalActiveTab) {
+        setInternalActiveTab(savedTab);
+      }
     }
-  }, []);
+  }, [externalActiveTab]);
 
   useEffect(() => {
     localStorage.setItem('selectedStoreType', activeTab);
@@ -1628,10 +1636,14 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     href={`/restaurants/${branch.slug}`}
                     onClick={(e) => {
                       e.preventDefault()
+                      if (!isOpen) {
+                        // Don't navigate if vendor is closed
+                        return
+                      }
                       handleBranchSelect(branch)
                     }}
-                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
-                      !isOpen ? 'opacity-50 grayscale' : ''
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
+                      !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
                     }`}
                   >
                     <button 
@@ -1654,13 +1666,17 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     )}
 
                     <div className="relative h-36">
-                      {branch.Restaurant?.[0]?.restaurantLogo?.url || 
+                      {branch.Restaurant?.[0]?.image_url || 
+                       branch._restaurantTable?.[0]?.image_url ||
+                       branch.Restaurant?.[0]?.restaurantLogo?.url || 
                        branch._restaurantTable?.[0]?.restaurantLogo?.url || 
                        branch.restaurantLogo?.url ||
                        branch.logo?.url ||
                        branch.image?.url ? (
                         <Image
-                          src={branch.Restaurant?.[0]?.restaurantLogo?.url ||
+                          src={branch.Restaurant?.[0]?.image_url ||
+                               branch._restaurantTable?.[0]?.image_url ||
+                               branch.Restaurant?.[0]?.restaurantLogo?.url ||
                                branch._restaurantTable?.[0]?.restaurantLogo?.url ||
                                branch.restaurantLogo?.url ||
                                branch.logo?.url ||
@@ -1727,10 +1743,14 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     href={`/groceries/${item.grocery.slug}`}
                     onClick={(e) => {
                       e.preventDefault()
+                      if (!isOpen) {
+                        // Don't navigate if vendor is closed
+                        return
+                      }
                       handleBranchSelect(item.grocery)
                     }}
-                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
-                      !isOpen ? 'opacity-50 grayscale' : ''
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
+                      !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
                     }`}
                   >
                     <div className="relative h-36">
@@ -1801,10 +1821,14 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     href={`/groceries/${item.grocery.slug}`}
                     onClick={(e) => {
                       e.preventDefault()
+                      if (!isOpen) {
+                        // Don't navigate if vendor is closed
+                        return
+                      }
                       handleBranchSelect(item.grocery)
                     }}
-                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
-                      !isOpen ? 'opacity-50 grayscale' : ''
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
+                      !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
                     }`}
                   >
                     <div className="relative h-36">
@@ -1845,10 +1869,14 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     href={`/groceries/${grocery.slug}`}
                     onClick={(e) => {
                       e.preventDefault()
+                      if (!isOpen) {
+                        // Don't navigate if vendor is closed
+                        return
+                      }
                       handleBranchSelect(grocery)
                     }}
-                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
-                      !isOpen ? 'opacity-50 grayscale' : ''
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
+                      !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
                     }`}
                   >
                     <button 
@@ -1929,10 +1957,14 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     href={`/pharmacy/${item.pharmacy.slug}`}
                     onClick={(e) => {
                       e.preventDefault()
+                      if (!isOpen) {
+                        // Don't navigate if vendor is closed
+                        return
+                      }
                       handleBranchSelect(item.pharmacy)
                     }}
-                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
-                      !isOpen ? 'opacity-50 grayscale' : ''
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
+                      !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
                     }`}
                   >
                     <div className="relative h-36">
@@ -2003,10 +2035,14 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     href={`/pharmacy/${item.pharmacy.slug}`}
                     onClick={(e) => {
                       e.preventDefault()
+                      if (!isOpen) {
+                        // Don't navigate if vendor is closed
+                        return
+                      }
                       handleBranchSelect(item.pharmacy)
                     }}
-                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
-                      !isOpen ? 'opacity-50 grayscale' : ''
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
+                      !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
                     }`}
                   >
                     <div className="relative h-36">
@@ -2047,10 +2083,14 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                     href={`/pharmacy/${pharmacy.slug}`}
                     onClick={(e) => {
                       e.preventDefault()
+                      if (!isOpen) {
+                        // Don't navigate if vendor is closed
+                        return
+                      }
                       handleBranchSelect(pharmacy)
                     }}
-                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
-                      !isOpen ? 'opacity-50 grayscale' : ''
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
+                      !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
                     }`}
                   >
                     <button 
@@ -2172,13 +2212,17 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                   )}
                   
               <div className="relative h-36">
-                    {branch.Restaurant?.[0]?.restaurantLogo?.url || 
+                    {branch.Restaurant?.[0]?.image_url || 
+                     branch._restaurantTable?.[0]?.image_url ||
+                     branch.Restaurant?.[0]?.restaurantLogo?.url || 
                      branch._restaurantTable?.[0]?.restaurantLogo?.url || 
                      branch.restaurantLogo?.url || 
                      branch.logo?.url || 
                      branch.image?.url ? (
                 <Image
-                        src={branch.Restaurant?.[0]?.restaurantLogo?.url || 
+                        src={branch.Restaurant?.[0]?.image_url || 
+                             branch._restaurantTable?.[0]?.image_url ||
+                             branch.Restaurant?.[0]?.restaurantLogo?.url || 
                              branch._restaurantTable?.[0]?.restaurantLogo?.url || 
                              branch.restaurantLogo?.url || 
                              branch.logo?.url || 
@@ -2241,9 +2285,9 @@ export function StoreHeader({ vendorData }: StoreHeaderProps = {}) {
                   )}
                   
                   <div className="relative h-36">
-                    {grocery.Grocery?.groceryshopLogo?.url ? (
+                    {grocery.Grocery?.image_url || grocery.Grocery?.groceryshopLogo?.url ? (
                       <Image
-                        src={grocery.Grocery.groceryshopLogo.url}
+                        src={grocery.Grocery.image_url || grocery.Grocery.groceryshopLogo.url}
                         alt={groceryName || 'Grocery'}
                         fill
                         className="object-cover"

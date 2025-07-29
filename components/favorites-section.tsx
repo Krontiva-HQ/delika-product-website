@@ -318,7 +318,7 @@ export function FavoritesSection() {
             </button>
             <div className="relative h-48">
               <Image
-                src={branch._restaurantTable[0].restaurantLogo.url}
+                src={branch._restaurantTable[0].image_url || branch._restaurantTable[0].restaurantLogo.url}
                 alt={branch._restaurantTable[0].restaurantName}
                 fill
                 className="object-cover"

@@ -493,7 +493,12 @@ export function GroceriesList() {
           <div key={branch.id} className="relative">
             <Link
               href={`/groceries/${branch.groceryshopID}?branchId=${branch.id}`}
-              onClick={() => {
+              onClick={(e) => {
+                if (!isOpen) {
+                  e.preventDefault();
+                  // Don't navigate if vendor is closed
+                  return;
+                }
                 localStorage.setItem("selectedGroceryBranchId", branch.id);
                 localStorage.setItem("selectedGroceryShopId", branch.groceryshopID);
                 // Store grocery shop name and logo for details page
@@ -509,8 +514,8 @@ export function GroceriesList() {
                   grocerybranchLocation: branch.grocerybranchLocation
                 }));
               }}
-              className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
-                !isOpen ? 'opacity-50 grayscale' : ''
+              className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
+                !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
               }`}
             >
               <div className="relative h-36">

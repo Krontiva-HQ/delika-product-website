@@ -25,7 +25,9 @@ import {
   Wallet,
   History,
   ArrowUpRight,
-  ArrowDownLeft
+  ArrowDownLeft,
+  AlertTriangle,
+  CheckCircle
 } from "lucide-react"
 import { UserData } from "@/components/auth-nav"
 
@@ -80,6 +82,17 @@ export function SettingsSection({ userData, onUserDataUpdate }: SettingsSectionP
   const [walletData, setWalletData] = useState({
     balance: 0,
   })
+
+  // Contact form state
+  const [showContactForm, setShowContactForm] = useState(false)
+  const [contactFormData, setContactFormData] = useState({
+    name: '',
+    email: '',
+    phoneNumber: '',
+    isDataRequest: false,
+    contactReason: ''
+  })
+  const [isSubmittingContact, setIsSubmittingContact] = useState(false)
 
   // Helper function to safely convert values to numbers
   const toNumber = (value: any): number => {
@@ -284,6 +297,53 @@ export function SettingsSection({ userData, onUserDataUpdate }: SettingsSectionP
     localStorage.setItem(setting, newValue.toString())
   }
 
+  const handleContactFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmittingContact(true)
+
+    try {
+      const payload = {
+        delika_user_id: userData?.id || null,
+        email: contactFormData.email,
+        phoneNumber: contactFormData.phoneNumber,
+        contactReason: contactFormData.contactReason
+      }
+
+      const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/emailSupport', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Request Submitted",
+          description: "Your data protection request has been submitted successfully. We'll get back to you soon.",
+        })
+        setShowContactForm(false)
+        setContactFormData({
+          name: '',
+          email: '',
+          phoneNumber: '',
+          isDataRequest: false,
+          contactReason: ''
+        })
+      } else {
+        throw new Error('Failed to submit request')
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit your request. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmittingContact(false)
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
@@ -295,12 +355,13 @@ export function SettingsSection({ userData, onUserDataUpdate }: SettingsSectionP
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="wallet">Wallet</TabsTrigger>
           <TabsTrigger value="delivery">Delivery</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="about">About</TabsTrigger>
         </TabsList>
 
         {/* Profile Tab */}
@@ -840,6 +901,260 @@ export function SettingsSection({ userData, onUserDataUpdate }: SettingsSectionP
             </div>
           </div>
         </TabsContent>
+
+        {/* About Tab */}
+        <TabsContent value="about">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div className="border-b border-gray-200 px-6 py-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Shield className="w-5 h-5 text-orange-500" />
+                About Delika
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">Learn more about Delika and our services</p>
+            </div>
+            <div className="p-6 space-y-6">
+              {/* App Information */}
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">About Delika</h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    Delika is your premier food delivery platform, connecting you with the best restaurants, 
+                    groceries, and pharmacies in your area. We bring convenience to your doorstep with 
+                    fast, reliable delivery services and a seamless ordering experience.
+                  </p>
+                </div>
+
+                <div className="bg-orange-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-gray-900">App Version</h4>
+                      <p className="text-sm text-gray-600">v1.01</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">Latest Release</p>
+                      <p className="text-sm font-medium text-orange-600">Current</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Legal Links */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Legal Information</h3>
+                
+                <div className="space-y-3">
+                  <a 
+                    href="/terms" 
+                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <div>
+                      <h4 className="font-medium text-gray-900">Terms of Use</h4>
+                      <p className="text-sm text-gray-500">Read our terms and conditions</p>
+                    </div>
+                    <ArrowUpRight className="w-4 h-4 text-gray-400" />
+                  </a>
+
+                  <a 
+                    href="/privacy-policy" 
+                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <div>
+                      <h4 className="font-medium text-gray-900">Privacy Policy</h4>
+                      <p className="text-sm text-gray-500">Learn how we protect your data</p>
+                    </div>
+                    <ArrowUpRight className="w-4 h-4 text-gray-400" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Contact & Support</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Mail className="w-4 h-4 text-orange-500" />
+                      <h4 className="font-medium text-gray-900">Email Support</h4>
+                    </div>
+                    <p className="text-sm text-gray-600">support@krontiva.africa</p>
+                  </div>
+
+                  <div className="p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Phone className="w-4 h-4 text-orange-500" />
+                      <h4 className="font-medium text-gray-900">Phone Support</h4>
+                    </div>
+                    <p className="text-sm text-gray-600">+233 256899200</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* App Features */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">What We Offer</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 border border-gray-200 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">🍽️ Restaurant Delivery</h4>
+                    <p className="text-sm text-gray-600">Order from your favorite restaurants with fast delivery</p>
+                  </div>
+
+                  <div className="p-4 border border-gray-200 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">🛒 Grocery Shopping</h4>
+                    <p className="text-sm text-gray-600">Fresh groceries delivered to your doorstep</p>
+                  </div>
+
+                  <div className="p-4 border border-gray-200 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">💊 Pharmacy Services</h4>
+                    <p className="text-sm text-gray-600">Medicines and health products delivered safely</p>
+                  </div>
+
+                  <div className="p-4 border border-gray-200 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">🚚 Fast Delivery</h4>
+                    <p className="text-sm text-gray-600">Reliable delivery with real-time tracking</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Data Protection Section */}
+              <div className="space-y-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-red-900 mb-2">Data Protection Rights</h3>
+                      <p className="text-red-700 mb-4">
+                        Contact support if you think we breached your rights. We take your privacy seriously 
+                        and are committed to protecting your personal data.
+                      </p>
+                      <Button 
+                        onClick={() => setShowContactForm(true)}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        Contact Data Protection Officer
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Contact Form Modal */}
+        {showContactForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <div className="border-b border-gray-200 px-6 py-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-orange-500" />
+                  Data Protection Request
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">Submit your data protection request</p>
+              </div>
+              
+              <form onSubmit={handleContactFormSubmit} className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contactName">Full Name *</Label>
+                  <Input
+                    id="contactName"
+                    value={contactFormData.name}
+                    onChange={(e) => setContactFormData({...contactFormData, name: e.target.value})}
+                    required
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactEmail">Email Address *</Label>
+                  <Input
+                    id="contactEmail"
+                    type="email"
+                    value={contactFormData.email}
+                    onChange={(e) => setContactFormData({...contactFormData, email: e.target.value})}
+                    required
+                    placeholder="Enter your email address"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactPhone">Phone Number *</Label>
+                  <Input
+                    id="contactPhone"
+                    type="tel"
+                    value={contactFormData.phoneNumber}
+                    onChange={(e) => setContactFormData({...contactFormData, phoneNumber: e.target.value})}
+                    required
+                    placeholder="Enter your phone number"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="isDataRequest"
+                      checked={contactFormData.isDataRequest}
+                      onChange={(e) => setContactFormData({...contactFormData, isDataRequest: e.target.checked})}
+                      className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="isDataRequest">Are you requesting for your data?</Label>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactReason">Request Type *</Label>
+                  <Select 
+                    value={contactFormData.contactReason} 
+                    onValueChange={(value) => setContactFormData({...contactFormData, contactReason: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your request type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Request access to my account data">Request access to my account data</SelectItem>
+                      <SelectItem value="Download a copy of my personal data (GDPR-style)">Download a copy of my personal data (GDPR-style)</SelectItem>
+                      <SelectItem value="Request deletion of my account and personal data">Request deletion of my account and personal data</SelectItem>
+                      <SelectItem value="Ask about how my data is used">Ask about how my data is used</SelectItem>
+                      <SelectItem value="Unsubscribe or stop marketing emails">Unsubscribe or stop marketing emails</SelectItem>
+                      <SelectItem value="Request to deactivate account temporarily">Request to deactivate account temporarily</SelectItem>
+                      <SelectItem value="Contact Krontiva's Data Protection Officer">Contact Krontiva's Data Protection Officer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowContactForm(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit"
+                    disabled={isSubmittingContact || !contactFormData.name || !contactFormData.email || !contactFormData.phoneNumber || !contactFormData.contactReason}
+                    className="flex-1 bg-orange-500 hover:bg-orange-600"
+                  >
+                    {isSubmittingContact ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Submit Request
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </Tabs>
     </div>
   )

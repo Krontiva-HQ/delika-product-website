@@ -23,6 +23,7 @@ interface BranchDetails {
       available: boolean
       description?: string
       foodImage?: { url: string }
+      image_url?: string // New field for direct image URL
       extras?: Array<{
         extrasTitle: string
         inventoryDetails: Array<{
@@ -44,6 +45,7 @@ interface BranchDetails {
     id: string
     restaurantLogo?: { url: string }
     restaurantName?: string
+    image_url?: string // New field for direct image URL
   }>
   branchLocation: string
   branchPhoneNumber: string
@@ -98,6 +100,7 @@ interface CartItem {
   price: string
   quantity: number
   image?: string
+  image_url?: string // New field for direct image URL
   selectedExtras?: Array<{
     id: string
     name: string
@@ -114,6 +117,7 @@ interface ItemDetailsModalProps {
     price: string
     description?: string
     foodImage?: { url: string }
+    image_url?: string // New field for direct image URL
     extras?: Array<{
       extrasTitle: string
       inventoryDetails: Array<{
@@ -336,7 +340,7 @@ function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsMod
       name: item.name,
       price: item.price,
       quantity: quantity,
-      image: item.foodImage?.url,
+      image: item.image_url || item.foodImage?.url,
       available: true,
       selectedExtras: selectedExtras
     });
@@ -348,10 +352,10 @@ function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsMod
       <DialogContent className="max-w-md p-0 overflow-hidden">
         <DialogTitle className="sr-only">Item Details</DialogTitle>
         {/* Item Image */}
-        {item.foodImage && (
+        {(item.image_url || item.foodImage) && (
           <div className="relative w-full h-48 sm:h-56 md:h-64">
             <Image
-              src={item.foodImage.url || (item.foodImage as any).path || "/placeholder-image.jpg"}
+              src={item.image_url || item.foodImage?.url || (item.foodImage as any).path || "/placeholder-image.jpg"}
               alt={item.name}
               fill
               className="object-cover w-full h-full"
@@ -866,7 +870,7 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
         <div className="mb-6">
           <div className="relative h-[220px] sm:h-[320px]">
             <Image
-              src={branch.restaurant?.[0]?.restaurantLogo?.url || '/placeholder-image.jpg'}
+              src={branch.restaurant?.[0]?.image_url || branch.restaurant?.[0]?.restaurantLogo?.url || '/placeholder-image.jpg'}
               alt={branch.restaurant?.[0]?.restaurantName || 'Restaurant'}
               fill
               priority
@@ -970,13 +974,17 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
                   return (
                     <div key={`${item.name}-${index}`} className={`flex flex-col gap-4 p-4 border rounded-lg ${!item.available || !isOpen ? 'opacity-50' : ''}`}>
                       <div className="relative w-full h-40 flex-shrink-0">
-                        {item.foodImage && (
+                        {item.image_url || item.foodImage ? (
                           <Image
-                            src={item.foodImage.url}
+                            src={item.image_url || item.foodImage.url}
                             alt={item.name}
                             fill
                             className={`object-cover rounded-lg ${!item.available ? 'grayscale' : ''}`}
                           />
+                        ) : (
+                          <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                            No Image
+                          </div>
                         )}
                       </div>
                       <div className="flex-1">
@@ -1086,7 +1094,7 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
             price: food.price,
             quantity: 0,
             available: food.available,
-            image: food.foodImage?.url
+            image: food.image_url || food.foodImage?.url
           }))
         })) || []}
         isAuthenticated={!!user}
@@ -1095,6 +1103,10 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
           longitude: parseFloat(branch.branchLongitude)
         }}
         onLoginClick={() => setIsLoginModalOpen(true)}
+        onLoginSuccess={(userData) => {
+          setUser(userData)
+          setIsCartModalOpen(false)
+        }}
         storeType="restaurant"
       />
 

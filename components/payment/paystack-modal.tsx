@@ -178,8 +178,8 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
   };
 
   const handleVerifyOtp = async () => {
-    if (!otp.match(/^[0-9]{6}$/)) {
-      setOtpError("OTP must be 6 digits");
+    if (!otp.match(/^[0-9]{4}$/)) {
+      setOtpError("OTP must be 4 digits");
       return;
     }
     setOtpError("");
@@ -352,10 +352,10 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
               <div className="space-y-4">
                 <input
                   className="w-full border rounded-lg px-4 py-3 text-lg text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-orange-400"
-                  placeholder="------"
+                  placeholder="----"
                   value={otp}
-                  onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
-                  maxLength={6}
+                  onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
+                  maxLength={4}
                 />
                 
                 {otpError && (
@@ -366,9 +366,9 @@ export function PaystackModal({ open, onClose, onComplete, amount, orderId, cust
 
                 <button
                   className={`w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-all text-lg ${
-                    otp.length !== 6 || isLoading ? 'opacity-60 cursor-not-allowed' : ''
+                    otp.length !== 4 || isLoading ? 'opacity-60 cursor-not-allowed' : ''
                   }`}
-                  disabled={otp.length !== 6 || isLoading}
+                  disabled={otp.length !== 4 || isLoading}
                   onClick={handleVerifyOtp}
                   type="button"
                 >

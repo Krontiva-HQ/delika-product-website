@@ -48,7 +48,7 @@ export default function ResultsPage() {
                     if (restaurant) {
                         displayResults.push({
                             id: branch.id,
-                            logo: restaurant.restaurantLogo?.url,
+                            logo: restaurant.image_url || restaurant.restaurantLogo?.url,
                             name: restaurant.restaurantName,
                             address: restaurant.restaurantAddress,
                             raw: branch,
@@ -69,7 +69,7 @@ export default function ResultsPage() {
                     if (grocery) {
                         displayResults.push({
                             id: item.id,
-                            logo: grocery.groceryshopLogo?.url,
+                            logo: grocery.image_url || grocery.groceryshopLogo?.url,
                             name: grocery.groceryshopName,
                             address: grocery.groceryshopAddress,
                             raw: item,
@@ -90,7 +90,7 @@ export default function ResultsPage() {
                     if (pharmacy) {
                         displayResults.push({
                             id: item.id,
-                            logo: pharmacy.pharmacyLogo?.url,
+                            logo: pharmacy.image_url || pharmacy.pharmacyLogo?.url,
                             name: pharmacy.pharmacyName,
                             address: pharmacy.pharmacyAddress,
                             raw: item,

@@ -23,6 +23,7 @@ interface PharmacyInventoryItem {
   description?: string;
   stockQuantity?: number;
   image: string | null;
+  image_url?: string; // New field for direct image URL
   pharmacyShopId?: string | null;
   pharmacyShopBranchId?: string | null;
   available?: boolean;
@@ -59,7 +60,14 @@ function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsMod
         <DialogTitle className="sr-only">Item Details</DialogTitle>
         {/* Item Image */}
         <div className="relative w-full h-48 sm:h-56 md:h-64">
-          {typeof item.image === 'object' && item.image && 'url' in item.image ? (
+          {item.image_url ? (
+            <Image
+              src={item.image_url}
+              alt={item.productName}
+              fill
+              className="object-cover w-full h-full"
+            />
+          ) : typeof item.image === 'object' && item.image && 'url' in item.image ? (
             <Image
               src={(item.image as { url: string }).url}
               alt={item.productName}
@@ -179,6 +187,12 @@ export default function PharmacyDetailsPage() {
   const [shopName, setShopName] = useState<string | null>(null);
   const [shopAddress, setShopAddress] = useState<string | null>(null);
   const [shopCoordinates, setShopCoordinates] = useState<{lat: number, lng: number} | null>(null);
+  const [activeHours, setActiveHours] = useState<Array<{
+    day: string;
+    openingTime: string;
+    closingTime: string;
+    isActive?: boolean;
+  }> | null>(null);
   
   useEffect(() => {
     async function fetchInventory() {
@@ -209,15 +223,21 @@ export default function PharmacyDetailsPage() {
           });
         }
         
+        // Extract active hours if available
+        if (data.slug?.activeHours) {
+          console.log('Pharmacy active hours:', data.slug.activeHours);
+          setActiveHours(data.slug.activeHours);
+        }
+        
         // Extract pharmacy shop details from Pharmacy array
         if (data.Pharmacy && Array.isArray(data.Pharmacy) && data.Pharmacy.length > 0) {
           const pharmacyShop = data.Pharmacy[0];
           setShopName(pharmacyShop.pharmacyName || data.slug?.pharmacybranchName || "Pharmacy Shop");
           setShopAddress(pharmacyShop.pharmacyAddress || "");
           
-          // Extract logo from pharmacyLogo object
-          if (pharmacyShop.pharmacyLogo && pharmacyShop.pharmacyLogo.url) {
-            setShopLogo(pharmacyShop.pharmacyLogo.url);
+          // Extract image from new image_url field
+          if (pharmacyShop.image_url) {
+            setShopLogo(pharmacyShop.image_url);
           } else {
             setShopLogo("/fallback/phamarcy.jpg");
           }
@@ -243,8 +263,8 @@ export default function PharmacyDetailsPage() {
           unitType: item.unitType,
           expiryDate: item.expiryDate,
           available: typeof item.available === "boolean" ? item.available : true,
-          // Handle image object structure
-          image: item.image?.url || item.image || null,
+          // Handle image: use image_url first, then fallback to image object or string
+          image: item.image_url || item.image?.url || item.image || null,
           // Map pharmacy IDs
           pharmacyShopId: item.pharmacyShopId || null,
           pharmacyShopBranchId: item.pharmacyBranchId || null,
@@ -285,11 +305,12 @@ export default function PharmacyDetailsPage() {
   const handleAddToCart = (item: any, quantity: number = 1) => {
     if (!item.productName || !item.price) return;
     const image =
-      typeof item.image === "object" && item.image && "url" in item.image
+      item.image_url || // Use image_url first
+      (typeof item.image === "object" && item.image && "url" in item.image
         ? item.image.url
         : typeof item.image === "string"
         ? item.image
-        : (item.foodImage && item.foodImage.url) || null;
+        : (item.foodImage && item.foodImage.url) || null);
     setCart(prev => {
       const updated = [
         ...prev,
@@ -452,7 +473,22 @@ export default function PharmacyDetailsPage() {
                   <Clock className="w-5 h-5 text-gray-400 mt-0.5" />
                   <div>
                     <h4 className="font-medium text-gray-900">Hours</h4>
-                    <p className="text-gray-600">Hours not available</p>
+                    {activeHours && activeHours.length > 0 ? (
+                      <div className="space-y-1">
+                        {activeHours.map((hours) => (
+                          <div key={hours.day} className="flex justify-between text-sm">
+                            <span className={`${hours.isActive !== false ? 'text-gray-900' : 'text-gray-400'}`}>
+                              {hours.day}:
+                            </span>
+                            <span className={`${hours.isActive !== false ? 'text-gray-600' : 'text-gray-400'}`}>
+                              {hours.isActive !== false ? `${hours.openingTime} - ${hours.closingTime}` : 'Closed'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-600">Hours not available</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -535,7 +571,14 @@ export default function PharmacyDetailsPage() {
                       }}
                     >
                       <div className="relative h-36 w-full">
-                        {typeof item.image === 'object' && item.image && 'url' in item.image ? (
+                        {item.image_url ? (
+                          <Image
+                            src={item.image_url}
+                            alt={item.productName}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : typeof item.image === 'object' && item.image && 'url' in item.image ? (
                           <Image
                             src={(item.image as { url: string }).url}
                             alt={item.productName}
@@ -633,6 +676,10 @@ export default function PharmacyDetailsPage() {
           longitude: shopCoordinates.lng 
         } : undefined}
         onLoginClick={() => setIsLoginModalOpen(true)}
+        onLoginSuccess={(userData) => {
+          setUser(userData);
+          setIsCartModalOpen(false);
+        }}
         storeType="pharmacy"
       />
 

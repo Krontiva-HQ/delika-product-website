@@ -49,8 +49,8 @@ export default function SignupPage() {
       const isEmailMode = e.currentTarget.getAttribute('data-mode') === 'email'
       setSignupMethod(isEmailMode ? 'email' : 'phone')
       const endpoint = isEmailMode
-        ? process.env.NEXT_PUBLIC_SIGNUP_EMAIL_API
-        : process.env.NEXT_PUBLIC_SIGNUP_PHONE_API
+        ? 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/signup'
+        : 'https://api-server.krontiva.africa/api:uEBBwbSs/auth/signup/phoneNumber/customer'
       const payload = isEmailMode
         ? { 
             email, 

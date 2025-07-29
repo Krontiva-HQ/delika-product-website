@@ -40,6 +40,7 @@ interface BranchDetails {
     restaurantLogo: {
       url: string
     }
+    image_url?: string
   }>
 }
 
@@ -95,7 +96,7 @@ export default function BranchPage({ params: paramsPromise }: { params: Promise<
             _restaurantTable: [{
               restaurantName: foundBranch._restaurantTable[0].restaurantName,
               restaurantLogo: {
-                url: foundBranch._restaurantTable[0].restaurantLogo.url
+                url: foundBranch._restaurantTable[0].image_url || foundBranch._restaurantTable[0].restaurantLogo.url
               }
             }]
           }

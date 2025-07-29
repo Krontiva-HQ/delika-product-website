@@ -170,7 +170,7 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
           displayLatitude: restaurant.branchLatitude,
           displayLongitude: restaurant.branchLongitude,
           displaySlug: restaurant.slug,
-          displayLogo: restaurant.Restaurant?.[0]?.restaurantLogo?.url,
+          displayLogo: restaurant.Restaurant?.[0]?.image_url || restaurant.Restaurant?.[0]?.restaurantLogo?.url,
           restaurantName: restaurant.Restaurant?.[0]?.restaurantName,
           active: restaurant.active,
           rating: getRatingForVendor(restaurant.id, vendorData.Ratings),
@@ -212,7 +212,7 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
           displayLatitude: grocery.grocerybranchLatitude,
           displayLongitude: grocery.grocerybranchLongitude,
           displaySlug: grocery.slug,
-          displayLogo: grocery.Grocery?.groceryshopLogo?.url,
+          displayLogo: grocery.Grocery?.image_url || grocery.Grocery?.groceryshopLogo?.url,
           groceryName: grocery.Grocery?.groceryshopName,
           active: grocery.active,
           rating: getRatingForVendor(grocery.id, vendorData.Ratings),
@@ -264,7 +264,7 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
           displayLatitude: pharmacy.pharmacybranchLatitude,
           displayLongitude: pharmacy.pharmacybranchLongitude,
           displaySlug: pharmacy.slug,
-          displayLogo: pharmacy.Pharmacy?.pharmacyLogo?.url,
+          displayLogo: pharmacy.Pharmacy?.image_url || pharmacy.Pharmacy?.pharmacyLogo?.url,
           pharmacyName: pharmacy.Pharmacy?.pharmacyName,
           active: pharmacy.active,
           rating: getRatingForVendor(pharmacy.id, vendorData.Ratings),
@@ -404,11 +404,15 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
         return (
         <div 
           key={vendor.id} 
-          className={`group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer ${
-            !isOpen ? 'opacity-50 grayscale' : ''
+          className={`group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden ${
+            !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
           }`}
           onClick={(e) => {
             e.preventDefault();
+            if (!isOpen) {
+              // Don't navigate if vendor is closed
+              return;
+            }
             handleVendorSelect(vendor);
           }}
         >

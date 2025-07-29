@@ -12,30 +12,121 @@ interface VendorData {
     Ratings: any[];
 }
 
+interface CachedData {
+    Restaurants?: any[];
+    Groceries?: any[];
+    Pharmacies?: any[];
+    Ratings?: any[];
+    lastFetched: { [key: string]: number };
+    [key: string]: any;
+}
+
 export default function VendorsPage() {
     const [vendorData, setVendorData] = useState<VendorData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [userCoordinates, setUserCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+    const [activeTab, setActiveTab] = useState<string>('restaurants');
+
+    // Cache duration in milliseconds (5 minutes)
+    const CACHE_DURATION = 5 * 60 * 1000;
+
+    const getCachedData = (): CachedData => {
+        try {
+            const cached = localStorage.getItem('vendorDataCache');
+            return cached ? JSON.parse(cached) : { lastFetched: {} };
+        } catch {
+            return { lastFetched: {} };
+        }
+    };
+
+    const setCachedData = (data: CachedData) => {
+        try {
+            localStorage.setItem('vendorDataCache', JSON.stringify(data));
+        } catch (error) {
+            console.warn('Failed to cache vendor data:', error);
+        }
+    };
+
+    const isDataStale = (category: string): boolean => {
+        const cached = getCachedData();
+        const lastFetched = cached.lastFetched[category] || 0;
+        return Date.now() - lastFetched > CACHE_DURATION;
+    };
+
+    const fetchCategoryData = async (category: string): Promise<any[]> => {
+        const cached = getCachedData();
+        
+        // Check if we have fresh cached data
+        if (cached[category] && !isDataStale(category)) {
+            console.log(`📦 Using cached ${category} data (${cached[category].length} items)`);
+            return cached[category];
+        }
+
+        // Fetch fresh data
+        const endpoints = {
+            restaurants: 'https://api-server.krontiva.africa/api:uEBBwbSs/allData_restaurants',
+            groceries: 'https://api-server.krontiva.africa/api:uEBBwbSs/allData_groceries',
+            pharmacies: 'https://api-server.krontiva.africa/api:uEBBwbSs/allData_phamarcies',
+            ratings: 'https://api-server.krontiva.africa/api:uEBBwbSs/allData'
+        };
+
+        const endpoint = endpoints[category as keyof typeof endpoints];
+        if (!endpoint) {
+            throw new Error(`Unknown category: ${category}`);
+        }
+
+        console.log(`🌐 Fetching ${category} data from:`, endpoint);
+        const response = await fetch(endpoint);
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch ${category} data`);
+        }
+
+        const data = await response.json();
+        console.log(`✅ Successfully fetched ${category} data:`, data[category.charAt(0).toUpperCase() + category.slice(1)]?.length || 0, 'items');
+        
+        // Cache the data
+        const updatedCache = getCachedData();
+        updatedCache[category] = category === 'ratings' ? data.Ratings : data[category.charAt(0).toUpperCase() + category.slice(1)];
+        updatedCache.lastFetched[category] = Date.now();
+        setCachedData(updatedCache);
+
+        return updatedCache[category];
+    };
 
     useEffect(() => {
+        console.log('🚀 VendorsPage: Starting data fetch...');
         const fetchVendorData = async () => {
             try {
                 setLoading(true);
-                const response = await fetch('https://api-server.krontiva.africa/api:uEBBwbSs/allData');
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch vendor data');
-                }
-
-                const data = await response.json();
-                setVendorData(data);
+                
+                console.log('🔄 Fetching all categories on page load...');
+                
+                // Fetch all categories in parallel for better performance
+                const [ratings, restaurants, groceries, pharmacies] = await Promise.all([
+                    fetchCategoryData('ratings'),
+                    fetchCategoryData('restaurants'),
+                    fetchCategoryData('groceries'),
+                    fetchCategoryData('pharmacies')
+                ]);
+                
+                // Initialize vendor data with all categories
+                const initialData: VendorData = {
+                    Restaurants: restaurants,
+                    Groceries: groceries,
+                    Pharmacies: pharmacies,
+                    Ratings: ratings
+                };
+                
+                setVendorData(initialData);
+                console.log('🎉 VendorsPage: Data fetch completed successfully');
 
                 // Store essential data in localStorage for detail pages to access
                 try {
                     // Store only essential data to avoid quota exceeded
                     const essentialData = {
-                        Restaurants: data.Restaurants?.map((restaurant: any) => ({
+                        Restaurants: initialData.Restaurants?.map((restaurant: any) => ({
                             id: restaurant.id,
                             slug: restaurant.slug,
                             branchName: restaurant.branchName,
@@ -48,7 +139,7 @@ export default function VendorsPage() {
                                 restaurantDescription: restaurant.Restaurant.restaurantDescription
                             } : null
                         })) || [],
-                        Groceries: data.Groceries?.map((grocery: any) => ({
+                        Groceries: initialData.Groceries?.map((grocery: any) => ({
                             id: grocery.id,
                             slug: grocery.slug,
                             grocerybranchName: grocery.grocerybranchName,
@@ -59,7 +150,7 @@ export default function VendorsPage() {
                                 groceryshopDescription: grocery.Grocery.groceryshopDescription
                             } : null
                         })) || [],
-                        Pharmacies: data.Pharmacies?.map((pharmacy: any) => ({
+                        Pharmacies: initialData.Pharmacies?.map((pharmacy: any) => ({
                             id: pharmacy.id,
                             slug: pharmacy.slug,
                             pharmacybranchName: pharmacy.pharmacybranchName,
@@ -70,7 +161,7 @@ export default function VendorsPage() {
                                 pharmacyDescription: pharmacy.Pharmacy.pharmacyDescription
                             } : null
                         })) || [],
-                        Ratings: data.Ratings || []
+                        Ratings: initialData.Ratings || []
                     };
                     
                     localStorage.setItem('allData', JSON.stringify(essentialData));
@@ -82,15 +173,34 @@ export default function VendorsPage() {
 
                 // Console log the complete data structure
                 console.log('=== COMPLETE ALLDATA STRUCTURE ===');
-                console.log('Total Restaurants:', data.Restaurants?.length || 0);
-                console.log('Total Groceries:', data.Groceries?.length || 0);
-                console.log('Total Pharmacies:', data.Pharmacies?.length || 0);
-                console.log('Total Ratings:', data.Ratings?.length || 0);
+                console.log('Total Restaurants:', initialData.Restaurants?.length || 0);
+                console.log('Total Groceries:', initialData.Groceries?.length || 0);
+                console.log('Total Pharmacies:', initialData.Pharmacies?.length || 0);
+                console.log('Total Ratings:', initialData.Ratings?.length || 0);
+                console.log('=== ENDPOINTS CALLED ===');
+                console.log('✅ Ratings endpoint called');
+                console.log('✅ Restaurants endpoint called');
+                console.log('✅ Groceries endpoint called');
+                console.log('✅ Pharmacies endpoint called');
+                console.log('🚀 All categories loaded in parallel for optimal performance');
 
                 // Log sample data from each category
-                if (data.Groceries && data.Groceries.length > 0) {
+                if (initialData.Restaurants && initialData.Restaurants.length > 0) {
+                    console.log('=== SAMPLE RESTAURANT DATA ===');
+                    const sampleRestaurant = initialData.Restaurants[0];
+                    console.log('Sample Restaurant:', {
+                        id: sampleRestaurant.id,
+                        slug: sampleRestaurant.slug,
+                        branchName: sampleRestaurant.branchName,
+                        Restaurant: sampleRestaurant.Restaurant,
+                        restaurantLogo: sampleRestaurant.Restaurant?.restaurantLogo,
+                        restaurantName: sampleRestaurant.Restaurant?.restaurantName
+                    });
+                }
+
+                if (initialData.Groceries && initialData.Groceries.length > 0) {
                     console.log('=== SAMPLE GROCERY DATA ===');
-                    const sampleGrocery = data.Groceries[0];
+                    const sampleGrocery = initialData.Groceries[0];
                     console.log('Sample Grocery:', {
                         id: sampleGrocery.id,
                         slug: sampleGrocery.slug,
@@ -107,9 +217,9 @@ export default function VendorsPage() {
                     }
                 }
 
-                if (data.Pharmacies && data.Pharmacies.length > 0) {
+                if (initialData.Pharmacies && initialData.Pharmacies.length > 0) {
                     console.log('=== SAMPLE PHARMACY DATA ===');
-                    const samplePharmacy = data.Pharmacies[0];
+                    const samplePharmacy = initialData.Pharmacies[0];
                     console.log('Sample Pharmacy:', {
                         id: samplePharmacy.id,
                         slug: samplePharmacy.slug,
@@ -134,6 +244,29 @@ export default function VendorsPage() {
 
         fetchVendorData();
     }, []);
+
+    // Function to load category data when tab changes
+    const loadCategoryData = async (category: string) => {
+        try {
+            const categoryData = await fetchCategoryData(category);
+            
+            setVendorData(prev => ({
+                ...prev!,
+                [category.charAt(0).toUpperCase() + category.slice(1)]: categoryData
+            }));
+        } catch (err) {
+            console.error(`Error loading ${category} data:`, err);
+        }
+    };
+
+    // Handle tab changes
+    const handleTabChange = (tab: string) => {
+        console.log(`🔄 Tab changed to: ${tab}`);
+        setActiveTab(tab);
+        
+        // All data is already loaded on page load, so just switch tabs
+        console.log(`📦 ${tab} data already loaded from initial fetch`);
+    };
 
     // Load user coordinates from localStorage
     useEffect(() => {
@@ -216,7 +349,11 @@ export default function VendorsPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <StoreHeader vendorData={vendorData} />
+            <StoreHeader 
+                vendorData={vendorData} 
+                onTabChange={handleTabChange}
+                activeTab={activeTab}
+            />
 
             {/* Main Content */}
             <div className="container mx-auto px-4 py-6">

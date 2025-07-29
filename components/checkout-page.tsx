@@ -78,11 +78,10 @@ interface BranchDetails {
     }>
     foodTypeImage?: { url: string }
   }>
-  restaurant?: Array<{
-    id: string
-    restaurantLogo?: { url: string }
-    restaurantName?: string
-  }>
+  restaurant?: {
+    restaurantName: string
+    image_url?: string
+  }
   branchLocation: string
   branchPhoneNumber: string
   branchName?: string

@@ -1,5 +1,7 @@
 import { calculateDeliveryPrices } from "@/lib/api"
 import { useEffect, useState } from "react"
+import { CartAuthModal } from "./cart-auth-modal"
+import { UserData } from "@/lib/api"
 
 interface FloatingCartProps {
   total: number
@@ -10,11 +12,12 @@ interface FloatingCartProps {
     longitude: string
   }
   branchId: string
-  onLoginClick?: () => void // Add optional login handler prop
+  onLoginClick?: () => void // Keep for backward compatibility
 }
 
 export function FloatingCart({ total, itemCount, onClick, branchLocation, branchId, onLoginClick }: FloatingCartProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
 
   // Check authentication status on mount and when localStorage changes
   useEffect(() => {
@@ -74,6 +77,22 @@ export function FloatingCart({ total, itemCount, onClick, branchLocation, branch
     };
   }, [branchId, onClick]);
 
+  const handleLoginSuccess = (userData: UserData) => {
+    // Update authentication state
+    setIsAuthenticated(true)
+    
+    // Dispatch event to notify other components
+    window.dispatchEvent(new CustomEvent('userDataUpdated', { detail: userData }))
+    
+    // Close auth modal
+    setIsAuthModalOpen(false)
+    
+    // Open cart modal after successful login
+    setTimeout(() => {
+      onClick()
+    }, 100)
+  }
+
   if (itemCount === 0) return null
 
   const handleClick = async () => {
@@ -87,15 +106,8 @@ export function FloatingCart({ total, itemCount, onClick, branchLocation, branch
         branchLocation
       }))
       
-      // If onLoginClick is provided, use it
-      if (onLoginClick) {
-        onLoginClick()
-      } else {
-        // Fallback: show a toast notification or redirect to login page
-        console.log('Please log in to view your cart')
-        // You could also redirect to a login page here
-        // window.location.href = '/login'
-      }
+      // Open the new auth modal instead of using onLoginClick
+      setIsAuthModalOpen(true)
       return
     }
 
@@ -153,21 +165,36 @@ export function FloatingCart({ total, itemCount, onClick, branchLocation, branch
   }
 
   return (
-    <div className="fixed bottom-4 inset-x-0 mx-auto px-4 z-50 flex justify-center">
-      <button
-        onClick={handleClick}
-        className="bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-full flex items-center gap-4 shadow-lg max-w-md w-full sm:w-auto"
-      >
-        <div className="flex items-center gap-2">
-          <div className="bg-orange-600 text-white rounded-full h-6 w-6 flex items-center justify-center text-sm">
-            {itemCount}
+    <>
+      <div className="fixed bottom-4 inset-x-0 mx-auto px-4 z-50 flex justify-center">
+        <button
+          onClick={handleClick}
+          className="bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-full flex items-center gap-4 shadow-lg max-w-md w-full sm:w-auto"
+        >
+          <div className="flex items-center gap-2">
+            <div className="bg-orange-600 text-white rounded-full h-6 w-6 flex items-center justify-center text-sm">
+              {itemCount}
+            </div>
+            <span className="font-medium">View Basket</span>
           </div>
-          <span className="font-medium">View Basket</span>
-        </div>
-        <span className="font-medium sm:border-l border-orange-400 sm:pl-4 pl-2">
-          GH₵ {total.toFixed(2)}
-        </span>
-      </button>
-    </div>
+          <span className="font-medium sm:border-l border-orange-400 sm:pl-4 pl-2">
+            GH₵ {total.toFixed(2)}
+          </span>
+        </button>
+      </div>
+
+      {/* Cart Authentication Modal */}
+      <CartAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+        cartContext={{
+          branchId,
+          total,
+          itemCount,
+          branchLocation
+        }}
+      />
+    </>
   )
 } 
