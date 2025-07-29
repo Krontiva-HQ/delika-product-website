@@ -7,9 +7,9 @@ import { Utensils, ShoppingBag, Pill } from "lucide-react"
 import { useState, useEffect } from "react"
 
 const sliderImages = [
-  { src: "/headerimage.png", alt: "Delika delivery illustration" },
-  { src: "/headerimage.png", alt: "Delika delivery illustration" },
-  { src: "/headerimage.png", alt: "Delika delivery illustration" },
+  { id: 1, src: "/headerimage.png", alt: "Delika delivery illustration" },
+  { id: 2, src: "/drugstore.png", alt: "Delika delivery illustration" },
+  { id: 3, src: "/grocery.png", alt: "Delika delivery illustration" },
 ]
 
 export function NewHero() {
@@ -94,7 +94,7 @@ export function NewHero() {
           <div className="relative w-full aspect-square max-w-[450px] md:max-w-[550px] lg:max-w-[700px] h-auto">
             {sliderImages.map((img, idx) => (
               <Image
-                key={img.src}
+                key={img.id}
                 src={img.src}
                 alt={img.alt}
                 fill
