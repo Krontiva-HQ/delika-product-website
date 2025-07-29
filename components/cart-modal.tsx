@@ -124,7 +124,7 @@ export function CartModal({
     const parsed = parseFloat(value?.toString());
     return isNaN(parsed) ? 0 : parsed;
   }
-  const [deliveryFee, setDeliveryFee] = useState<number>(20)
+  const [deliveryFee, setDeliveryFee] = useState<number>(0)
   const [distance, setDistance] = useState<number>(0)
   const [deliveryType, setDeliveryType] = useState<'rider' | 'pedestrian'>('rider')
   const [riderFee, setRiderFee] = useState<number>(0)
@@ -958,218 +958,408 @@ export function CartModal({
         </DialogHeader>
 
         {!isAuthenticated ? (
-          // Mode 2: Non-authenticated users - Show login interface
-          <div className="px-6 py-6">
-            {(() => { console.log('🔒 [CartModal] Rendering Mode 2: Non-authenticated user interface'); return null; })()}
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-start mb-4">
-                <AlertCircleIcon className="h-4 w-4 mr-2 mt-0.5" />
-                {error}
-              </div>
+          // Mode 2: Non-authenticated users - Show cart summary + login interface
+          <div className="flex flex-col h-full">
+            {/* Cart Summary Section for Mode 2 */}
+            {cart.length > 0 && (
+              <>
+                <div className="px-6 py-4 border-b">
+                  <h3 className="font-medium text-gray-900 mb-3">Your Order Summary</h3>
+                  <div className="space-y-3 max-h-40 overflow-y-auto">
+                    {cart.map((item, index) => {
+                      let isAvailable = true;
+                      if (!menuCategories || menuCategories.length === 0) {
+                        isAvailable = item.available !== false;
+                      } else {
+                        const menuItem = menuCategories
+                          .flatMap(cat => cat.foods)
+                          .find(food => food.name === item.name);
+                        isAvailable = menuItem ? menuItem.available !== false : item.available !== false;
+                      }
+                      
+                      return (
+                        <div key={`${item.id}-${index}`} className={`flex gap-3 p-3 rounded-lg border ${!isAvailable ? 'bg-gray-50 border-gray-200 opacity-75' : 'bg-gray-50 border-gray-100'}`}>
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                            {item.image ? (
+                              <Image
+                                src={item.image}
+                                alt={item.name}
+                                fill
+                                className={`object-cover ${!isAvailable ? 'grayscale' : ''}`}
+                              />
+                            ) : (
+                              <div className={`w-full h-full bg-gray-100 flex items-center justify-center ${!isAvailable ? 'grayscale' : ''}`}>
+                                <ShoppingCart className="w-4 h-4 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <h4 className="font-medium text-gray-900 truncate text-sm">{item.name}</h4>
+                                {!isAvailable && (
+                                  <span className="text-xs text-red-500 font-medium">No longer available</span>
+                                )}
+                              </div>
+                              <span className="text-sm font-medium">GH₵ {((parseFloat(item.price) + (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0)) * item.quantity).toFixed(2)}</span>
+                            </div>
+                            {item.selectedExtras && item.selectedExtras.length > 0 && (
+                              <div className="mt-1 pl-2 space-y-1 border-l-2 border-gray-200">
+                                {item.selectedExtras.map(extra => (
+                                  <div key={extra.id} className="flex justify-between text-xs text-gray-600">
+                                    <span>+{extra.quantity} × {extra.name}</span>
+                                    <span>GH₵ {(parseFloat(extra.price) * extra.quantity).toFixed(2)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Price Summary for Mode 2 */}
+                <div className="px-6 py-4 border-b bg-gray-50">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-600">Subtotal</span>
+                      <span className="font-medium">GH₵ {cart.reduce((total, item) => {
+                        const base = parseFloat(item.price) * item.quantity;
+                        const extrasTotal = (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0) * item.quantity;
+                        return total + base + extrasTotal;
+                      }, 0).toFixed(2)}</span>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600 font-medium">Choose Delivery Type</span>
+                      </div>
+                      <RadioGroup
+                        value={deliveryType}
+                        onValueChange={(value) => {
+                          const newDeliveryType = value as 'rider' | 'pedestrian';
+                          setDeliveryType(newDeliveryType);
+                          
+                          // Update delivery fee based on the new delivery type
+                          const newFee = newDeliveryType === 'rider' ? riderFee : pedestrianFee;
+                          console.log('[Delivery Type Change] Switching to', newDeliveryType, 'with fee:', newFee);
+                          setDeliveryFee(newFee);
+                        }}
+                        className="grid grid-cols-2 gap-2"
+                      >
+                        <div>
+                          <RadioGroupItem
+                            value="rider"
+                            id="rider-mode2"
+                            className="peer sr-only"
+                          />
+                          <Label
+                            htmlFor="rider-mode2"
+                            className={cn(
+                              "flex items-center gap-2 rounded-md border border-gray-200 p-2 hover:bg-gray-50 cursor-pointer",
+                              "peer-data-[state=checked]:border-orange-500 peer-data-[state=checked]:bg-orange-50",
+                              "transition-all duration-200"
+                            )}
+                          >
+                            <Bike className="h-4 w-4 text-gray-600" />
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">Rider</div>
+                              <div className="text-xs text-gray-500">GH₵ {riderFee.toFixed(2)}</div>
+                            </div>
+                          </Label>
+                        </div>
+                        <div>
+                          <RadioGroupItem
+                            value="pedestrian"
+                            id="pedestrian-mode2"
+                            className="peer sr-only"
+                            disabled={distance > 2}
+                          />
+                          <Label
+                            htmlFor="pedestrian-mode2"
+                            className={cn(
+                              "flex items-center gap-2 rounded-md border border-gray-200 p-2 cursor-pointer transition-all duration-200",
+                              distance > 2 
+                                ? "opacity-50 cursor-not-allowed bg-gray-100 border-gray-300" 
+                                : "hover:bg-gray-50 peer-data-[state=checked]:border-orange-500 peer-data-[state=checked]:bg-orange-50"
+                            )}
+                          >
+                            <User className={cn(
+                              "h-4 w-4",
+                              distance > 2 ? "text-gray-400" : "text-gray-600"
+                            )} />
+                            <div>
+                              <div className={cn(
+                                "text-sm font-medium",
+                                distance > 2 ? "text-gray-400" : "text-gray-900"
+                              )}>
+                                Pedestrian
+                                {distance > 2 && (
+                                  <span className="ml-1 text-xs text-red-500">(Not available)</span>
+                                )}
+                              </div>
+                              <div className={cn(
+                                "text-xs",
+                                distance > 2 ? "text-gray-400" : "text-gray-500"
+                              )}>
+                                {distance > 2 ? "Distance too far" : `GH₵ ${pedestrianFee.toFixed(2)}`}
+                              </div>
+                            </div>
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    <div className="flex justify-between items-center text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-600">Delivery Fee</span>
+                        {distance > 0 && (
+                          <span className="px-2 py-1 bg-green-100 rounded-full text-xs text-green-700">
+                            {distance.toFixed(1)}km
+                          </span>
+                        )}
+                      </div>
+                      <span className="font-medium">GH₵ {deliveryFee.toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-600">Platform Fee</span>
+                      <span className="font-medium">GH₵ {platformFee.toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="font-medium">Total</span>
+                      <span className="font-semibold text-lg">
+                        GH₵ {(() => {
+                          const finalTotal = Math.max(0, (cartTotal + deliveryFee + platformFee) - (useWallet ? Math.min(toNumber(walletBalance), cartTotal + deliveryFee + platformFee) : 0));
+                          console.log('[Cart Total Mode 2] Calculation: CartTotal(', cartTotal, ') + DeliveryFee(', deliveryFee, ') + PlatformFee(', platformFee, ') - WalletDeduction = ', finalTotal);
+                          return finalTotal.toFixed(2);
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login" className="flex items-center gap-2">
-                  <LogIn className="w-4 h-4" />
-                  Login
-                </TabsTrigger>
-                <TabsTrigger value="signup" className="flex items-center gap-2">
-                  <UserPlus className="w-4 h-4" />
-                  Sign Up
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="login" className="space-y-4 mt-6">
-                <div className="text-center mb-4">
-                  <p className="text-sm text-gray-600">
-                    Already have an account? Log in to continue with your order.
-                  </p>
+            {/* Login/Signup Interface for Mode 2 */}
+            <div className="px-6 py-6 flex-1">
+              {(() => { console.log('🔒 [CartModal] Rendering Mode 2: Non-authenticated user interface'); return null; })()}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-start mb-4">
+                  <AlertCircleIcon className="h-4 w-4 mr-2 mt-0.5" />
+                  {error}
                 </div>
-                
-                <Tabs defaultValue="email" className="w-full" onValueChange={() => setError("")}>
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="email">Email</TabsTrigger>
-                    <TabsTrigger value="phone">Phone</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="email">
-                    <form onSubmit={handleLoginSubmit} data-mode="email" className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="login-email">Email</Label>
-                        <Input
-                          id="login-email"
-                          type="email"
-                          placeholder="Enter your email"
-                          value={email}
-                          onChange={(e) => {
-                            setEmail(e.target.value)
-                            setError("")
-                          }}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="login-password">Password</Label>
-                        <Input
-                          id="login-password"
-                          type="password"
-                          placeholder="Enter your password"
-                          value={password}
-                          onChange={(e) => {
-                            setPassword(e.target.value)
-                            setError("")
-                          }}
-                          required
-                        />
-                      </div>
-                      <Button 
-                        type="submit" 
-                        className="w-full bg-orange-500 hover:bg-orange-600"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? "Logging in..." : "Login"}
-                      </Button>
-                    </form>
-                  </TabsContent>
-                  
-                  <TabsContent value="phone">
-                    <form onSubmit={handleLoginSubmit} data-mode="phone" className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="login-phone">Phone Number</Label>
-                        <Input
-                          id="login-phone"
-                          type="tel"
-                          placeholder="Enter your phone number"
-                          value={phone}
-                          onChange={(e) => {
-                            setPhone(e.target.value)
-                            setError("")
-                          }}
-                          required
-                        />
-                      </div>
-                      <Button 
-                        type="submit" 
-                        className="w-full bg-orange-500 hover:bg-orange-600"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? "Sending code..." : "Send Code"}
-                      </Button>
-                    </form>
-                  </TabsContent>
-                </Tabs>
-              </TabsContent>
+              )}
 
-              <TabsContent value="signup" className="space-y-4 mt-6">
-                <div className="text-center mb-4">
-                  <p className="text-sm text-gray-600">
-                    New to Delika? Create an account to start ordering.
-                  </p>
-                </div>
-                
-                <Tabs defaultValue="email" className="w-full" onValueChange={() => setError("")}>
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="email">Email</TabsTrigger>
-                    <TabsTrigger value="phone">Phone</TabsTrigger>
-                  </TabsList>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="login" className="flex items-center gap-2">
+                    <LogIn className="w-4 h-4" />
+                    Login
+                  </TabsTrigger>
+                  <TabsTrigger value="signup" className="flex items-center gap-2">
+                    <UserPlus className="w-4 h-4" />
+                    Sign Up
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="login" className="space-y-4 mt-6">
+                  <div className="text-center mb-4">
+                    <p className="text-sm text-gray-600">
+                      Already have an account? Log in to continue with your order.
+                    </p>
+                  </div>
                   
-                  <TabsContent value="email">
-                    <form onSubmit={handleSignupSubmit} data-mode="email" className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-fullname">Full Name</Label>
-                        <Input
-                          id="signup-fullname"
-                          type="text"
-                          placeholder="Enter your full name"
-                          value={signupFullName}
-                          onChange={(e) => {
-                            setSignupFullName(e.target.value)
-                            setError("")
-                          }}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-email">Email</Label>
-                        <Input
-                          id="signup-email"
-                          type="email"
-                          placeholder="Enter your email"
-                          value={signupEmail}
-                          onChange={(e) => {
-                            setSignupEmail(e.target.value)
-                            setError("")
-                          }}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-password">Password</Label>
-                        <Input
-                          id="signup-password"
-                          type="password"
-                          placeholder="Create a password"
-                          value={signupPassword}
-                          onChange={(e) => {
-                            setSignupPassword(e.target.value)
-                            setError("")
-                          }}
-                          required
-                        />
-                      </div>
-                      <Button 
-                        type="submit" 
-                        className="w-full bg-orange-500 hover:bg-orange-600"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? "Creating account..." : "Create Account"}
-                      </Button>
-                    </form>
-                  </TabsContent>
+                  <Tabs defaultValue="email" className="w-full" onValueChange={() => setError("")}>
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="email">Email</TabsTrigger>
+                      <TabsTrigger value="phone">Phone</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="email">
+                      <form onSubmit={handleLoginSubmit} data-mode="email" className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="login-email">Email</Label>
+                          <Input
+                            id="login-email"
+                            type="email"
+                            placeholder="Enter your email"
+                            value={email}
+                            onChange={(e) => {
+                              setEmail(e.target.value)
+                              setError("")
+                            }}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="login-password">Password</Label>
+                          <Input
+                            id="login-password"
+                            type="password"
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(e) => {
+                              setPassword(e.target.value)
+                              setError("")
+                            }}
+                            required
+                          />
+                        </div>
+                        <Button 
+                          type="submit" 
+                          className="w-full bg-orange-500 hover:bg-orange-600"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? "Logging in..." : "Login"}
+                        </Button>
+                      </form>
+                    </TabsContent>
+                    
+                    <TabsContent value="phone">
+                      <form onSubmit={handleLoginSubmit} data-mode="phone" className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="login-phone">Phone Number</Label>
+                          <Input
+                            id="login-phone"
+                            type="tel"
+                            placeholder="Enter your phone number"
+                            value={phone}
+                            onChange={(e) => {
+                              setPhone(e.target.value)
+                              setError("")
+                            }}
+                            required
+                          />
+                        </div>
+                        <Button 
+                          type="submit" 
+                          className="w-full bg-orange-500 hover:bg-orange-600"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? "Sending code..." : "Send Code"}
+                        </Button>
+                      </form>
+                    </TabsContent>
+                  </Tabs>
+                </TabsContent>
+
+                <TabsContent value="signup" className="space-y-4 mt-6">
+                  <div className="text-center mb-4">
+                    <p className="text-sm text-gray-600">
+                      New to Delika? Create an account to start ordering.
+                    </p>
+                  </div>
                   
-                  <TabsContent value="phone">
-                    <form onSubmit={handleSignupSubmit} data-mode="phone" className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-fullname-phone">Full Name</Label>
-                        <Input
-                          id="signup-fullname-phone"
-                          type="text"
-                          placeholder="Enter your full name"
-                          value={signupFullName}
-                          onChange={(e) => {
-                            setSignupFullName(e.target.value)
-                            setError("")
-                          }}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-phone">Phone Number</Label>
-                        <Input
-                          id="signup-phone"
-                          type="tel"
-                          placeholder="Enter your phone number"
-                          value={signupPhone}
-                          onChange={(e) => {
-                            setSignupPhone(e.target.value)
-                            setError("")
-                          }}
-                          required
-                        />
-                      </div>
-                      <Button 
-                        type="submit" 
-                        className="w-full bg-orange-500 hover:bg-orange-600"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? "Creating account..." : "Create Account"}
-                      </Button>
-                    </form>
-                  </TabsContent>
-                </Tabs>
-              </TabsContent>
-            </Tabs>
+                  <Tabs defaultValue="email" className="w-full" onValueChange={() => setError("")}>
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="email">Email</TabsTrigger>
+                      <TabsTrigger value="phone">Phone</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="email">
+                      <form onSubmit={handleSignupSubmit} data-mode="email" className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-fullname">Full Name</Label>
+                          <Input
+                            id="signup-fullname"
+                            type="text"
+                            placeholder="Enter your full name"
+                            value={signupFullName}
+                            onChange={(e) => {
+                              setSignupFullName(e.target.value)
+                              setError("")
+                            }}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-email">Email</Label>
+                          <Input
+                            id="signup-email"
+                            type="email"
+                            placeholder="Enter your email"
+                            value={signupEmail}
+                            onChange={(e) => {
+                              setSignupEmail(e.target.value)
+                              setError("")
+                            }}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-password">Password</Label>
+                          <Input
+                            id="signup-password"
+                            type="password"
+                            placeholder="Create a password"
+                            value={signupPassword}
+                            onChange={(e) => {
+                              setSignupPassword(e.target.value)
+                              setError("")
+                            }}
+                            required
+                          />
+                        </div>
+                        <Button 
+                          type="submit" 
+                          className="w-full bg-orange-500 hover:bg-orange-600"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? "Creating account..." : "Create Account"}
+                        </Button>
+                      </form>
+                    </TabsContent>
+                    
+                    <TabsContent value="phone">
+                      <form onSubmit={handleSignupSubmit} data-mode="phone" className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-fullname-phone">Full Name</Label>
+                          <Input
+                            id="signup-fullname-phone"
+                            type="text"
+                            placeholder="Enter your full name"
+                            value={signupFullName}
+                            onChange={(e) => {
+                              setSignupFullName(e.target.value)
+                              setError("")
+                            }}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="signup-phone">Phone Number</Label>
+                          <Input
+                            id="signup-phone"
+                            type="tel"
+                            placeholder="Enter your phone number"
+                            value={signupPhone}
+                            onChange={(e) => {
+                              setSignupPhone(e.target.value)
+                              setError("")
+                            }}
+                            required
+                          />
+                        </div>
+                        <Button 
+                          type="submit" 
+                          className="w-full bg-orange-500 hover:bg-orange-600"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? "Creating account..." : "Create Account"}
+                        </Button>
+                      </form>
+                    </TabsContent>
+                  </Tabs>
+                </TabsContent>
+              </Tabs>
+            </div>
           </div>
         ) : cart.length > 0 ? (
           // Mode 1: Authenticated users - Show current cart design
