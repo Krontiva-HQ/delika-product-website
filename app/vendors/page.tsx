@@ -291,7 +291,6 @@ export default function VendorsPage() {
                 vendorData={vendorData} 
                 onTabChange={handleTabChange}
                 activeTab={activeTab}
-                showVendorList={false} // Prevent duplicate vendor list
             />
 
             {/* Main Content */}

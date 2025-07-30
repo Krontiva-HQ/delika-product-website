@@ -19,7 +19,7 @@ import { BranchPage } from "@/components/branch-page"
 import { SearchSection } from "@/components/search-section"
 import { calculateDistance } from "@/utils/distance"
 import { FavoritesSection } from "@/components/favorites-section"
-import { getBranches, getCustomerDetails, updateFavorites } from "@/lib/api"
+import { getBranches, getCustomerDetails, updateFavorites, calculateDeliveryPrices } from "@/lib/api"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { LoadingSpinner } from "@/components/loading-spinner"
@@ -28,7 +28,7 @@ import { PharmacyList } from "@/components/pharmacy-list";
 import { FilterModal } from "@/components/FilterModal";
 import { ActiveFilters } from "@/components/ActiveFilters";
 import { VendorSkeleton } from "@/components/vendor-skeleton";
-import { Star, Clock, Plus, Minus, Share2, Store, X } from "lucide-react"
+import { Star, Clock, Plus, Minus, Share2, Store, X, Truck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FloatingCart } from "@/components/floating-cart"
 import { CartModal } from "@/components/cart-modal"
@@ -197,10 +197,9 @@ interface StoreHeaderProps {
   vendorData?: VendorData | null;
   onTabChange?: (tab: string) => void;
   activeTab?: string;
-  showVendorList?: boolean; // NEW PROP
 }
 
-export function StoreHeader({ vendorData, onTabChange, activeTab: externalActiveTab, showVendorList = true }: StoreHeaderProps = {}) {
+export function StoreHeader({ vendorData, onTabChange, activeTab: externalActiveTab }: StoreHeaderProps = {}) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -278,6 +277,238 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
   const [showMoreRestaurants, setShowMoreRestaurants] = useState(false);
   const [showMoreGroceries, setShowMoreGroceries] = useState(false);
   const [showMorePharmacies, setShowMorePharmacies] = useState(false);
+
+  // VendorGrid hover-based delivery calculation states
+  const [hoveredVendor, setHoveredVendor] = useState<string | null>(null);
+  const [calculatingVendors, setCalculatingVendors] = useState<Set<string>>(new Set());
+
+  // Helper function to safely convert values to numbers
+  const toNumber = (value: any): number => {
+    if (typeof value === 'number' && !isNaN(value)) return value;
+    const parsed = parseFloat(value?.toString());
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  // Function to calculate delivery fees for vendor on hover (from VendorGrid)
+  const calculateDeliveryFeesForVendor = async (vendor: any) => {
+    try {
+      console.log('[StoreHeader] 🚀 Starting delivery fee calculation for vendor:', {
+        id: vendor.id,
+        type: vendor.type,
+        name: vendor.displayName,
+        slug: vendor.displaySlug
+      });
+      
+      // Get user location from localStorage
+      const locationData = localStorage.getItem('userLocationData');
+      if (!locationData) {
+        console.log('[StoreHeader] ❌ No user location data found, skipping delivery calculation');
+        return;
+      }
+
+      const { lat, lng } = JSON.parse(locationData);
+      console.log('[StoreHeader] 📍 User coordinates:', { lat, lng });
+      
+      // Get branch coordinates based on vendor type
+      let branchLat, branchLng;
+      
+      if (vendor.type === 'restaurant') {
+        branchLat = parseFloat(vendor.branchLatitude);
+        branchLng = parseFloat(vendor.branchLongitude);
+      } else if (vendor.type === 'grocery') {
+        branchLat = parseFloat(vendor.grocerybranchLatitude);
+        branchLng = parseFloat(vendor.grocerybranchLongitude);
+      } else if (vendor.type === 'pharmacy') {
+        branchLat = parseFloat(vendor.pharmacybranchLatitude);
+        branchLng = parseFloat(vendor.pharmacybranchLongitude);
+      } else {
+        // Fallback to any available coordinates
+        branchLat = parseFloat(vendor.branchLatitude || vendor.grocerybranchLatitude || vendor.pharmacybranchLatitude);
+        branchLng = parseFloat(vendor.branchLongitude || vendor.grocerybranchLongitude || vendor.pharmacybranchLongitude);
+      }
+      
+      console.log('[StoreHeader] 🏪 Branch coordinates:', { branchLat, branchLng });
+      
+      if (isNaN(branchLat) || isNaN(branchLng)) {
+        console.log('[StoreHeader] ❌ Invalid branch coordinates, skipping delivery calculation');
+        return;
+      }
+      
+      // Calculate distance
+      console.log('[StoreHeader] 📏 Calculating distance...');
+      const calculatedDistance = calculateDistance(
+        lat,
+        lng,
+        branchLat,
+        branchLng
+      );
+      console.log('[StoreHeader] 📏 Calculated distance:', calculatedDistance, 'km');
+
+      // Get userId from localStorage userData
+      let userId = '';
+      try {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+          const parsedUserData = JSON.parse(userData);
+          userId = parsedUserData.id || '';
+          console.log('[StoreHeader] 👤 User ID:', userId);
+        }
+      } catch (error) {
+        console.log('[StoreHeader] ⚠️ Could not retrieve userId from userData:', error);
+      }
+
+      // Prepare the payload for delivery price calculation
+      const deliveryPayload = {
+        pickup: {
+          fromLatitude: branchLat.toString(),
+          fromLongitude: branchLng.toString(),
+        },
+        dropOff: {
+          toLatitude: lat.toString(),
+          toLongitude: lng.toString(),
+        },
+        rider: true,
+        pedestrian: true,
+        total: 0, // No cart items yet
+        subTotal: 0,
+        userId: userId
+      };
+
+      console.log('[StoreHeader] 📤 Sending delivery payload to API:', deliveryPayload);
+
+      // Get delivery prices from API
+      console.log('[StoreHeader] 🌐 Calling delivery API...');
+      const deliveryResponse = await calculateDeliveryPrices(deliveryPayload);
+      const { 
+        riderFee: newRiderFee, 
+        pedestrianFee: newPedestrianFee,
+        platformFee: newPlatformFee
+      } = deliveryResponse;
+      
+      console.log('[StoreHeader] 📥 Delivery API response:', {
+        riderFee: newRiderFee,
+        pedestrianFee: newPedestrianFee,
+        platformFee: newPlatformFee,
+        distance: calculatedDistance
+      });
+      
+      // Store delivery calculation results in localStorage with vendor-specific key
+      const deliveryCalculationData = {
+        riderFee: toNumber(newRiderFee),
+        pedestrianFee: toNumber(newPedestrianFee),
+        platformFee: toNumber(newPlatformFee),
+        distance: toNumber(calculatedDistance),
+        cartTotal: 0,
+        branchId: vendor.id,
+        branchSlug: vendor.slug || vendor.displaySlug,
+        vendorType: vendor.type,
+        timestamp: Date.now(),
+        deliveryType: 'rider' // Default to rider
+      };
+      
+      // Store with vendor-specific key for quick access
+      const vendorKey = `deliveryCalculationData_${vendor.type}_${vendor.id}`;
+      localStorage.setItem(vendorKey, JSON.stringify(deliveryCalculationData));
+      
+      // Also store in the generic key for backward compatibility
+      localStorage.setItem('deliveryCalculationData', JSON.stringify(deliveryCalculationData));
+      
+      console.log('[StoreHeader] 💾 Stored delivery calculation data:', {
+        vendorId: vendor.id,
+        vendorType: vendor.type,
+        storageKey: vendorKey,
+        data: deliveryCalculationData,
+        timestamp: new Date(deliveryCalculationData.timestamp).toLocaleString()
+      });
+      
+    } catch (error) {
+      console.error('[StoreHeader] ❌ Error calculating delivery fees:', error);
+    }
+  };
+
+  // Handle vendor hover with pre-calculation (from VendorGrid)
+  const handleVendorHover = useCallback(async (vendor: any) => {
+    if (!vendor || calculatingVendors.has(vendor.id)) {
+      console.log('[StoreHeader] 🚫 Hover blocked - vendor invalid or already calculating:', vendor?.id);
+      return; // Already calculating or invalid vendor
+    }
+
+    console.log('[StoreHeader] 🎯 Hover started for vendor:', {
+      id: vendor.id,
+      type: vendor.type,
+      name: vendor.displayName,
+      location: vendor.displayLocation,
+      slug: vendor.displaySlug,
+      coordinates: {
+        lat: vendor.displayLatitude,
+        lng: vendor.displayLongitude
+      },
+      userCoordinates: userCoordinates
+    });
+
+    setHoveredVendor(vendor.id);
+    setCalculatingVendors(prev => new Set([...prev, vendor.id]));
+
+    try {
+      // Check if we already have cached delivery data for this vendor
+      const vendorKey = `deliveryCalculationData_${vendor.type}_${vendor.id}`;
+      const cachedData = localStorage.getItem(vendorKey);
+      
+      if (cachedData) {
+        const parsed = JSON.parse(cachedData);
+        const isStale = Date.now() - parsed.timestamp > 5 * 60 * 1000; // 5 minutes
+        
+        console.log('[StoreHeader] 📦 Found cached delivery data:', {
+          vendorId: vendor.id,
+          vendorType: vendor.type,
+          cachedData: parsed,
+          isStale: isStale,
+          ageMinutes: Math.round((Date.now() - parsed.timestamp) / 60000)
+        });
+        
+        if (!isStale) {
+          console.log('[StoreHeader] ✅ Using cached delivery data for vendor:', vendor.id);
+          return;
+        } else {
+          console.log('[StoreHeader] ⏰ Cached data is stale, recalculating...');
+        }
+      } else {
+        console.log('[StoreHeader] ❌ No cached data found, calculating fresh...');
+      }
+
+      console.log('[StoreHeader] 🔄 Starting delivery calculation for vendor:', vendor.id);
+      // Calculate delivery fees on hover
+      await calculateDeliveryFeesForVendor(vendor);
+      
+      // Log the newly calculated data
+      const newCachedData = localStorage.getItem(vendorKey);
+      if (newCachedData) {
+        const newParsed = JSON.parse(newCachedData);
+        console.log('[StoreHeader] ✅ New delivery calculation completed:', {
+          vendorId: vendor.id,
+          vendorType: vendor.type,
+          calculatedData: newParsed,
+          timestamp: new Date(newParsed.timestamp).toLocaleString()
+        });
+      }
+      
+    } catch (error) {
+      console.error('[StoreHeader] ❌ Error calculating delivery fees on hover:', error);
+    } finally {
+      setCalculatingVendors(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(vendor.id);
+        return newSet;
+      });
+      console.log('[StoreHeader] 🏁 Hover calculation completed for vendor:', vendor.id);
+    }
+  }, [calculatingVendors, userCoordinates]);
+
+  // Handle vendor hover end (from VendorGrid)
+  const handleVendorHoverEnd = useCallback(() => {
+    console.log('[StoreHeader] 👋 Hover ended for vendor:', hoveredVendor);
+    setHoveredVendor(null);
+  }, [hoveredVendor]);
 
   // Reset "Show More" states when search query changes or tab changes
   useEffect(() => {
@@ -1387,32 +1618,65 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
             {filteredResults.map((vendor) => {
               // Check if vendor is open based on working hours
               const isOpen = isVendorOpen(vendor.activeHours);
+              const isHovered = hoveredVendor === vendor.id;
+              const isCalculating = calculatingVendors.has(vendor.id);
               
               return (
-              <Link
+              <div
                 key={vendor.id}
-                href={`/${vendor.type}s/${vendor.slug}`}
+                className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
+                  !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
+                } ${isHovered ? 'ring-2 ring-orange-500 ring-opacity-50' : ''}`}
                 onClick={(e) => {
                   e.preventDefault();
+                  if (!isOpen) {
+                    // Don't navigate if vendor is closed
+                    return;
+                  }
                   handleBranchSelect(vendor);
                 }}
-                  className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
-                    !isOpen ? 'opacity-50 grayscale' : ''
-                  }`}
+                onMouseEnter={() => handleVendorHover(vendor)}
+                onMouseLeave={handleVendorHoverEnd}
               >
                 <button 
-                  className="absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105"
-                  aria-label={`Like ${vendor.type}`}
+                  className="absolute top-2 right-2 z-10 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleLikeToggle(vendor.branchName || vendor.displayName, e);
+                  }}
                 >
-                  <Heart className="w-5 h-5 transition-all duration-200" />
+                  <Heart
+                    size={16}
+                    className={`${
+                      likedBranches.has(vendor.branchName || vendor.displayName)
+                        ? 'fill-red-500 text-red-500'
+                        : 'text-gray-400'
+                    } transition-colors`}
+                  />
                 </button>
-                  
-                  {/* Closed indicator */}
-                  {!isOpen && (
-                    <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                      Closed
-                    </div>
-                  )}
+
+                {/* Closed indicator */}
+                {!isOpen && (
+                  <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                    Closed
+                  </div>
+                )}
+
+                {/* Calculating indicator */}
+                {isCalculating && (
+                  <div className="absolute top-2 left-2 z-10 bg-blue-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                    Calculating...
+                  </div>
+                )}
+
+                {/* Type Badge */}
+                <div className="absolute top-2 left-2 z-10">
+                  <span className="px-2 py-1 text-xs font-medium bg-blue-600 text-white rounded-full">
+                    {vendor.type === 'restaurant' ? 'Restaurant' : vendor.type === 'grocery' ? 'Grocery' : 'Pharmacy'}
+                  </span>
+                </div>
                   
                 <div className="relative h-36">
                   {vendor.displayLogo ? (
@@ -1420,7 +1684,11 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                       src={vendor.displayLogo}
                       alt={vendor.displayName || vendor.type}
                       fill
-                      className="object-cover"
+                      className="object-cover group-hover:scale-105 transition-transform duration-200"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/fallbackResto.jpg';
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
@@ -1430,33 +1698,65 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                     </div>
                   )}
                 </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-gray-900 truncate">
+                <div className="p-3">
+                  <h3 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-1">
                     {vendor.restaurantName || vendor.groceryName || vendor.pharmacyName || vendor.displayName || vendor.type}
                   </h3>
-                  <span className="text-xs text-gray-600 truncate block">
-                    {vendor.displayName || vendor.type}
-                  </span>
-                  {vendor.rating && (
+                  
+                  <p className="text-gray-600 text-xs mb-2 line-clamp-1 flex items-center gap-1">
+                    <MapPin size={12} />
+                    {vendor.displayLocation || vendor.branchLocation || vendor.location}
+                  </p>
+
+                  {/* Rating, Delivery, and Distance Info */}
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1">
+                      <Star size={12} className="text-yellow-400 fill-current" />
+                      <span className="text-gray-700">{vendor.rating || '0'}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {vendor.deliveryTime && (
+                        <div className="flex items-center gap-1 text-gray-600">
+                          <Clock size={12} />
+                          <span>{vendor.deliveryTime}min</span>
+                        </div>
+                      )}
+                      
+                      {vendor.distance !== null && (
+                        <div className="flex items-center gap-1 text-gray-600">
+                          <MapPin size={12} />
+                          <span>{vendor.distance.toFixed(1)}km</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Pickup/Delivery Badge */}
+                  {vendor.pickup && (
+                    <div className="mt-2 flex items-center gap-1">
+                      <Truck size={12} className="text-green-600" />
+                      <span className="text-xs text-green-600">Pickup Available</span>
+                    </div>
+                  )}
+
+                  {/* Status indicator */}
+                  {!isOpen && (
                     <div className="flex items-center gap-1 mt-1">
-                      <span className="text-yellow-400">★</span>
-                      <span className="text-xs text-gray-600">{vendor.rating}</span>
+                      <Clock className="w-3 h-3 text-red-500" />
+                      <span className="text-xs text-red-500">Closed</span>
                     </div>
                   )}
-                  {vendor.deliveryTime && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {vendor.deliveryTime} min
+
+                  {/* Hover indicator */}
+                  {isHovered && !isCalculating && (
+                    <div className="mt-2 flex items-center gap-1">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-xs text-green-600">Ready to order</span>
                     </div>
                   )}
-                    {/* Status indicator */}
-                    {!isOpen && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <Clock className="w-3 h-3 text-red-500" />
-                        <span className="text-xs text-red-500">Closed</span>
-                      </div>
-                    )}
                 </div>
-              </Link>
+              </div>
               );
             })}
           </div>
@@ -2533,68 +2833,6 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
           </div>
         );
       default:
-        // Only render the vendor list if showVendorList is true
-        if (!showVendorList) {
-          // Just render the search section and filter modal, but NOT the vendor list
-          return (
-            <div>
-              {/* Search Section with Tabs */}
-              <SearchSection
-                onSearch={setSearchQuery}
-                userLocation={userLocation}
-                onLocationClick={() => setIsLocationModalOpen(true)}
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                onFilterClick={() => setIsFilterModalOpen(true)}
-                branches={branches}
-              />
-              {/* Advanced Filter Modal */}
-              <FilterModal
-                open={isFilterModalOpen}
-                onOpenChange={setIsFilterModalOpen}
-                filterTypes={filterTypes}
-                setFilterTypes={setFilterTypes}
-                filterCategories={filterCategories}
-                setFilterCategories={setFilterCategories}
-                filterRating={filterRating}
-                setFilterRating={setFilterRating}
-                filterDeliveryTime={filterDeliveryTime}
-                setFilterDeliveryTime={setFilterDeliveryTime}
-                filterPickup={filterPickup}
-                setFilterPickup={setFilterPickup}
-                foodPage={0}
-                setFoodPage={() => {}}
-                groceryPage={0}
-                setGroceryPage={() => {}}
-                pharmacyPage={0}
-                setPharmacyPage={() => {}}
-                RESTAURANT_CATEGORIES={RESTAURANT_CATEGORIES}
-                GROCERY_CATEGORIES={GROCERY_CATEGORIES}
-                PHARMACY_CATEGORIES={PHARMACY_CATEGORIES}
-                PAGE_SIZE={PAGE_SIZE}
-                vendorData={vendorData}
-                ratings={vendorData?.Ratings}
-                isLoading={isFilterLoading}
-                onApply={async (filteredResults) => {
-                  console.log('StoreHeader: onApply called with filteredResults:', filteredResults);
-                  setIsFilterLoading(true);
-                  try {
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    setFilteredResults(filteredResults || []);
-                    setIsShowingFilteredResults(true);
-                    setCurrentView('stores');
-                    setIsFilterModalOpen(false);
-                  } catch (error) {
-                    console.error('Error applying filters:', error);
-                  } finally {
-                    setIsFilterLoading(false);
-                  }
-                }}
-              />
-            </div>
-          );
-        }
-        // ... existing vendor list rendering ...
         return (
           <div>
             {/* Search Section with Tabs */}
@@ -2607,6 +2845,7 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
               onFilterClick={() => setIsFilterModalOpen(true)}
               branches={branches}
             />
+
             {/* Advanced Filter Modal */}
             <FilterModal
               open={isFilterModalOpen}
@@ -2615,6 +2854,7 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
               setFilterTypes={setFilterTypes}
               filterCategories={filterCategories}
               setFilterCategories={setFilterCategories}
+
               filterRating={filterRating}
               setFilterRating={setFilterRating}
               filterDeliveryTime={filterDeliveryTime}
@@ -2638,10 +2878,18 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                 console.log('StoreHeader: onApply called with filteredResults:', filteredResults);
                 setIsFilterLoading(true);
                 try {
+                  // Small delay to show loading state
                   await new Promise(resolve => setTimeout(resolve, 500));
+                  
+                  // Store filtered results in state
                   setFilteredResults(filteredResults || []);
                   setIsShowingFilteredResults(true);
+                  console.log('StoreHeader: setFilteredResults and setIsShowingFilteredResults called');
+                  
+                  // Update the current view to show filtered results
                   setCurrentView('stores');
+                  
+                  // Only close the modal after data is set
                   setIsFilterModalOpen(false);
                 } catch (error) {
                   console.error('Error applying filters:', error);
@@ -2650,12 +2898,13 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                 }
               }}
             />
-            {/* Tab Content */}
+
+                        {/* Tab Content */}
             <div className="container mx-auto px-4 py-4">
               {renderRestaurantList()}
             </div>
           </div>
-        );
+        )
     }
   }
 
