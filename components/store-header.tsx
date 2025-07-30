@@ -19,7 +19,6 @@ import { BranchPage } from "@/components/branch-page"
 import { SearchSection } from "@/components/search-section"
 import { calculateDistance } from "@/utils/distance"
 import { FavoritesSection } from "@/components/favorites-section"
-import { SettingsSection } from "@/components/settings-section"
 import { getBranches, getCustomerDetails, updateFavorites } from "@/lib/api"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -2519,7 +2518,14 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
       case 'profile':
         return <div>Profile content here</div>
       case 'settings':
-        return <SettingsSection userData={user} onUserDataUpdate={(userData) => setUser(userData)} />
+        return (
+          <div className="flex flex-col items-center justify-center py-12">
+            <p className="mb-4 text-lg">Settings have moved to a dedicated page.</p>
+            <Link href="/settings">
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white">Go to Settings</Button>
+            </Link>
+          </div>
+        );
       default:
         return (
           <div>

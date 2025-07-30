@@ -599,7 +599,7 @@ export function CheckoutPage({
       // Prepare order data
       const orderData = {
         id: orderId,
-        restaurantId: branchDetails?.restaurant?.[0]?.id || '',
+        restaurantId: branchDetails?.restaurant?.restaurantName || '',
         branchId: branchId,
         customerName: customerInfo.name,
         customerPhoneNumber: customerInfo.phone,

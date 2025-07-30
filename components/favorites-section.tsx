@@ -20,6 +20,7 @@ interface Branch {
     restaurantLogo: {
       url: string
     }
+    image_url?: string
   }>
 }
 
