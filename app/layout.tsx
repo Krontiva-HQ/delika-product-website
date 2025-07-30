@@ -12,8 +12,8 @@ const rubik = Rubik({
 });
 
 export const metadata: Metadata = {
-  title: "Delika - Built for restaurants",
-  description: "Delika - Built for restaurants",
+  title: "Delika - Driven by you",
+  description: "Delika - Driven by you",
 };
 
 export default function RootLayout({

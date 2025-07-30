@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Heart, MapPin, Star, Clock, Truck, Expand } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -43,33 +43,25 @@ const toNumber = (value: any): number => {
   return isNaN(parsed) ? 0 : parsed;
 }
 
-// Function to calculate delivery fees for restaurant vendors
+// Function to calculate delivery fees for vendor on hover
 const calculateDeliveryFeesForVendor = async (vendor: any) => {
   try {
-    console.log('[VendorGrid] Starting delivery fee calculation for vendor:', vendor.id);
-    console.log('[VendorGrid] Vendor data structure:', {
+    console.log('[VendorGrid] 🚀 Starting delivery fee calculation for vendor:', {
       id: vendor.id,
       type: vendor.type,
-      slug: vendor.slug,
-      displaySlug: vendor.displaySlug,
-      branchName: vendor.branchName,
-      restaurantName: vendor.restaurantName,
-      branchLatitude: vendor.branchLatitude,
-      branchLongitude: vendor.branchLongitude,
-      grocerybranchLatitude: vendor.grocerybranchLatitude,
-      grocerybranchLongitude: vendor.grocerybranchLongitude,
-      pharmacybranchLatitude: vendor.pharmacybranchLatitude,
-      pharmacybranchLongitude: vendor.pharmacybranchLongitude
+      name: vendor.displayName,
+      slug: vendor.displaySlug
     });
     
     // Get user location from localStorage
     const locationData = localStorage.getItem('userLocationData');
     if (!locationData) {
-      console.log('[VendorGrid] No user location data found, skipping delivery calculation');
+      console.log('[VendorGrid] ❌ No user location data found, skipping delivery calculation');
       return;
     }
 
     const { lat, lng } = JSON.parse(locationData);
+    console.log('[VendorGrid] 📍 User coordinates:', { lat, lng });
     
     // Get branch coordinates based on vendor type
     let branchLat, branchLng;
@@ -89,21 +81,20 @@ const calculateDeliveryFeesForVendor = async (vendor: any) => {
       branchLng = parseFloat(vendor.branchLongitude || vendor.grocerybranchLongitude || vendor.pharmacybranchLongitude);
     }
     
+    console.log('[VendorGrid] 🏪 Branch coordinates:', { branchLat, branchLng });
+    
     if (isNaN(branchLat) || isNaN(branchLng)) {
-      console.log('[VendorGrid] Invalid branch coordinates, skipping delivery calculation');
+      console.log('[VendorGrid] ❌ Invalid branch coordinates, skipping delivery calculation');
       return;
     }
     
-    console.log('[VendorGrid] User coordinates:', { lat, lng });
-    console.log('[VendorGrid] Branch coordinates:', { branchLat, branchLng });
-    
     // Calculate distance
+    console.log('[VendorGrid] 📏 Calculating distance...');
     const calculatedDistance = await calculateDistance(
       { latitude: lat, longitude: lng },
       { latitude: branchLat, longitude: branchLng }
     );
-    
-    console.log('[VendorGrid] Calculated distance:', calculatedDistance, 'km');
+    console.log('[VendorGrid] 📏 Calculated distance:', calculatedDistance, 'km');
 
     // Get userId from localStorage userData
     let userId = '';
@@ -112,9 +103,10 @@ const calculateDeliveryFeesForVendor = async (vendor: any) => {
       if (userData) {
         const parsedUserData = JSON.parse(userData);
         userId = parsedUserData.id || '';
+        console.log('[VendorGrid] 👤 User ID:', userId);
       }
     } catch (error) {
-      console.log('[VendorGrid] Could not retrieve userId from userData:', error);
+      console.log('[VendorGrid] ⚠️ Could not retrieve userId from userData:', error);
     }
 
     // Prepare the payload for delivery price calculation
@@ -134,19 +126,25 @@ const calculateDeliveryFeesForVendor = async (vendor: any) => {
       userId: userId
     };
 
-    console.log('[VendorGrid] Sending delivery payload to API:', deliveryPayload);
+    console.log('[VendorGrid] 📤 Sending delivery payload to API:', deliveryPayload);
 
     // Get delivery prices from API
+    console.log('[VendorGrid] 🌐 Calling delivery API...');
     const deliveryResponse = await calculateDeliveryPrices(deliveryPayload);
     const { 
       riderFee: newRiderFee, 
       pedestrianFee: newPedestrianFee,
       platformFee: newPlatformFee
     } = deliveryResponse;
-
-    console.log('[VendorGrid] Delivery API response:', deliveryResponse);
     
-    // Store delivery calculation results in localStorage with a generic key
+    console.log('[VendorGrid] 📥 Delivery API response:', {
+      riderFee: newRiderFee,
+      pedestrianFee: newPedestrianFee,
+      platformFee: newPlatformFee,
+      distance: calculatedDistance
+    });
+    
+    // Store delivery calculation results in localStorage with vendor-specific key
     const deliveryCalculationData = {
       riderFee: toNumber(newRiderFee),
       pedestrianFee: toNumber(newPedestrianFee),
@@ -159,125 +157,141 @@ const calculateDeliveryFeesForVendor = async (vendor: any) => {
       timestamp: Date.now(),
       deliveryType: 'rider' // Default to rider
     };
+    
+    // Store with vendor-specific key for quick access
+    const vendorKey = `deliveryCalculationData_${vendor.type}_${vendor.id}`;
+    localStorage.setItem(vendorKey, JSON.stringify(deliveryCalculationData));
+    
+    // Also store in the generic key for backward compatibility
     localStorage.setItem('deliveryCalculationData', JSON.stringify(deliveryCalculationData));
-    console.log('[VendorGrid] ✅ Stored delivery calculation data in localStorage with key: deliveryCalculationData', deliveryCalculationData);
+    
+    console.log('[VendorGrid] 💾 Stored delivery calculation data:', {
+      vendorId: vendor.id,
+      vendorType: vendor.type,
+      storageKey: vendorKey,
+      data: deliveryCalculationData,
+      timestamp: new Date(deliveryCalculationData.timestamp).toLocaleString()
+    });
     
   } catch (error) {
-    console.error('[VendorGrid] Error calculating delivery fees:', error);
+    console.error('[VendorGrid] ❌ Error calculating delivery fees:', error);
   }
 };
 
-export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', userCoordinates }: VendorGridProps) {
+export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'restaurants', userCoordinates }: VendorGridProps) {
   const router = useRouter();
   const [likedVendors, setLikedVendors] = useState<Set<string>>(new Set());
   const [searchRadius, setSearchRadius] = useState<number>(8); // Default 8km radius
   const [showExpandSearch, setShowExpandSearch] = useState<boolean>(false);
+  const [hoveredVendor, setHoveredVendor] = useState<string | null>(null);
+  const [calculatingVendors, setCalculatingVendors] = useState<Set<string>>(new Set());
 
-  // Handle vendor selection with data storage
-  const handleVendorSelect = async (vendor: any) => {
-    try {
-      // Validate vendor data
-      if (!vendor) {
-        throw new Error('Vendor is undefined');
-      }
+  // Memoized helper functions to get rating data
+  const getRatingForVendor = useCallback((vendorId: string, ratings: any[]) => {
+    const rating = ratings?.find(r => r.delika_branches_table_id === vendorId);
+    return rating?.OverallRating || '0';
+  }, []);
 
-      // Handle different data structures
-      let vendorId = vendor.id;
-      let vendorSlug = vendor.displaySlug;
-      let vendorName = '';
+  const getDeliveryTimeForVendor = useCallback((vendorId: string, ratings: any[]) => {
+    const rating = ratings?.find(r => r.delika_branches_table_id === vendorId);
+    return rating?.deliveryTime || '';
+  }, []);
 
-      // Calculate delivery fees for all vendor types
-      await calculateDeliveryFeesForVendor(vendor);
+  const getPickupForVendor = useCallback((vendorId: string, ratings: any[]) => {
+    const rating = ratings?.find(r => r.delika_branches_table_id === vendorId);
+    return rating?.pickup || false;
+  }, []);
 
-      // For restaurant vendors
-      if (vendor.type === 'restaurant') {
-        vendorName = vendor.restaurantName || vendor.displayName || 'Restaurant';
-        
-        // Store restaurant data
-        localStorage.setItem('selectedBranchId', vendorId);
-        localStorage.setItem('branchSlug', vendorSlug);
-        localStorage.setItem('currentView', 'branch');
-        await router.push(`/restaurants/${vendorSlug}`);
-      }
-      // For grocery vendors
-      else if (vendor.type === 'grocery') {
-        vendorName = vendor.groceryName || vendor.displayName || 'Grocery';
-        
-        // Get main shop data from Grocery object
-        const mainShopId = vendor.Grocery?.id || vendorId;
-        const mainShopSlug = vendor.Grocery?.slug || vendorSlug;
-        
-        // Store main shop data instead of branch data
-        localStorage.setItem('selectedGroceryShopId', mainShopId);
-        localStorage.setItem('selectedGroceryShopData', JSON.stringify({
-          id: mainShopId,
-          slug: mainShopSlug,
-          groceryshopName: vendor.Grocery?.groceryshopName || 'Grocery Store',
-          groceryshopLogo: vendor.Grocery?.groceryshopLogo,
-          groceryshopAddress: vendor.Grocery?.groceryshopAddress,
-          groceryshopPhoneNumber: vendor.Grocery?.groceryshopPhoneNumber,
-          groceryshopEmail: vendor.Grocery?.groceryshopEmail,
-          GroceryItem: vendor.GroceryItem || []
-        }));
-        
-        console.log('Storing main grocery shop data:', {
-          id: mainShopId,
-          slug: mainShopSlug,
-          name: vendor.Grocery?.groceryshopName,
-          itemCount: vendor.GroceryItem?.length || 0
-        });
-        console.log('Navigating to grocery with main shop slug:', mainShopSlug);
-        await router.push(`/groceries/${mainShopSlug}`);
-      }
-      // For pharmacy vendors
-      else if (vendor.type === 'pharmacy') {
-        vendorName = vendor.pharmacyName || vendor.displayName || 'Pharmacy';
-        
-        // Get main shop data from Pharmacy object
-        const mainShopId = vendor.Pharmacy?.id || vendorId;
-        const mainShopSlug = vendor.Pharmacy?.slug || vendorSlug;
-        
-        // Store main shop data instead of branch data
-        localStorage.setItem('selectedPharmacyShopId', mainShopId);
-        localStorage.setItem('selectedPharmacyShopData', JSON.stringify({
-          id: mainShopId,
-          slug: mainShopSlug,
-          pharmacyName: vendor.Pharmacy?.pharmacyName || 'Pharmacy',
-          pharmacyLogo: vendor.Pharmacy?.pharmacyLogo,
-          pharmacyAddress: vendor.Pharmacy?.pharmacyAddress,
-          pharmacyPhoneNumber: vendor.Pharmacy?.pharmacyPhoneNumber,
-          pharmacyEmail: vendor.Pharmacy?.pharmacyEmail,
-          PharmacyItem: vendor.PharmacyItem || []
-        }));
-        
-        console.log('Storing main pharmacy shop data:', {
-          id: mainShopId,
-          slug: mainShopSlug,
-          name: vendor.Pharmacy?.pharmacyName,
-          itemCount: vendor.PharmacyItem?.length || 0
-        });
-        console.log('Navigating to pharmacy with main shop slug:', mainShopSlug);
-        await router.push(`/pharmacy/${mainShopSlug}`);
-      }
-      // For other vendors (fallback)
-      else {
-        vendorName = vendor.displayName || vendor.name || 'Store';
-        localStorage.setItem('selectedBranchId', vendorId);
-        localStorage.setItem('branchSlug', vendorSlug);
-        localStorage.setItem('currentView', 'branch');
-        await router.push(`/restaurants/${vendorSlug}`);
-      }
-    } catch (error) {
-      console.error('Navigation error:', error);
+  // Handle vendor hover with pre-calculation
+  const handleVendorHover = useCallback(async (vendor: any) => {
+    if (!vendor || calculatingVendors.has(vendor.id)) {
+      console.log('[VendorGrid] 🚫 Hover blocked - vendor invalid or already calculating:', vendor?.id);
+      return; // Already calculating or invalid vendor
     }
-  };
 
-  // Combine all vendors with their type and calculate distances
-  const allVendors = useMemo(() => {
+    console.log('[VendorGrid] 🎯 Hover started for vendor:', {
+      id: vendor.id,
+      type: vendor.type,
+      name: vendor.displayName,
+      location: vendor.displayLocation,
+      slug: vendor.displaySlug,
+      coordinates: {
+        lat: vendor.displayLatitude,
+        lng: vendor.displayLongitude
+      },
+      userCoordinates: userCoordinates
+    });
+
+    setHoveredVendor(vendor.id);
+    setCalculatingVendors(prev => new Set([...prev, vendor.id]));
+
+    try {
+      // Check if we already have cached delivery data for this vendor
+      const vendorKey = `deliveryCalculationData_${vendor.type}_${vendor.id}`;
+      const cachedData = localStorage.getItem(vendorKey);
+      
+      if (cachedData) {
+        const parsed = JSON.parse(cachedData);
+        const isStale = Date.now() - parsed.timestamp > 5 * 60 * 1000; // 5 minutes
+        
+        console.log('[VendorGrid] 📦 Found cached delivery data:', {
+          vendorId: vendor.id,
+          vendorType: vendor.type,
+          cachedData: parsed,
+          isStale: isStale,
+          ageMinutes: Math.round((Date.now() - parsed.timestamp) / 60000)
+        });
+        
+        if (!isStale) {
+          console.log('[VendorGrid] ✅ Using cached delivery data for vendor:', vendor.id);
+          return;
+        } else {
+          console.log('[VendorGrid] ⏰ Cached data is stale, recalculating...');
+        }
+      } else {
+        console.log('[VendorGrid] ❌ No cached data found, calculating fresh...');
+      }
+
+      console.log('[VendorGrid] 🔄 Starting delivery calculation for vendor:', vendor.id);
+      // Calculate delivery fees on hover
+      await calculateDeliveryFeesForVendor(vendor);
+      
+      // Log the newly calculated data
+      const newCachedData = localStorage.getItem(vendorKey);
+      if (newCachedData) {
+        const newParsed = JSON.parse(newCachedData);
+        console.log('[VendorGrid] ✅ New delivery calculation completed:', {
+          vendorId: vendor.id,
+          vendorType: vendor.type,
+          calculatedData: newParsed,
+          timestamp: new Date(newParsed.timestamp).toLocaleString()
+        });
+      }
+      
+    } catch (error) {
+      console.error('[VendorGrid] ❌ Error calculating delivery fees on hover:', error);
+    } finally {
+      setCalculatingVendors(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(vendor.id);
+        return newSet;
+      });
+      console.log('[VendorGrid] 🏁 Hover calculation completed for vendor:', vendor.id);
+    }
+  }, [calculatingVendors, userCoordinates]);
+
+  // Handle vendor hover end
+  const handleVendorHoverEnd = useCallback(() => {
+    console.log('[VendorGrid] 👋 Hover ended for vendor:', hoveredVendor);
+    setHoveredVendor(null);
+  }, [hoveredVendor]);
+
+  // Process only the active tab vendors for display
+  const processedVendors = useMemo(() => {
     const vendors: any[] = [];
     
-    // Add restaurants
-    if (vendorData.Restaurants) {
+    // Only process vendors for the active tab to optimize performance
+    if (activeTab === 'restaurants' && vendorData.Restaurants) {
       vendorData.Restaurants.forEach(restaurant => {
         let distance = null;
         if (userCoordinates && restaurant.branchLatitude && restaurant.branchLongitude) {
@@ -316,10 +330,7 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
           distance,
         });
       });
-    }
-    
-    // Add groceries
-    if (vendorData.Groceries) {
+    } else if (activeTab === 'groceries' && vendorData.Groceries) {
       vendorData.Groceries.forEach(grocery => {
         let distance = null;
         if (userCoordinates && grocery.grocerybranchLatitude && grocery.grocerybranchLongitude) {
@@ -357,21 +368,8 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
           pickup: getPickupForVendor(grocery.id, vendorData.Ratings),
           distance,
         });
-        
-        // Debug log for grocery data structure
-        console.log('Grocery data structure:', {
-          id: grocery.id,
-          name: grocery.grocerybranchName,
-          slug: grocery.slug,
-          Grocery: grocery.Grocery,
-          groceryshopLogo: grocery.Grocery?.groceryshopLogo,
-          groceryshopName: grocery.Grocery?.groceryshopName
-        });
       });
-    }
-    
-    // Add pharmacies
-    if (vendorData.Pharmacies) {
+    } else if (activeTab === 'pharmacies' && vendorData.Pharmacies) {
       vendorData.Pharmacies.forEach(pharmacy => {
         let distance = null;
         if (userCoordinates && pharmacy.pharmacybranchLatitude && pharmacy.pharmacybranchLongitude) {
@@ -409,26 +407,15 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
           pickup: getPickupForVendor(pharmacy.id, vendorData.Ratings),
           distance,
         });
-        
-        // Debug log for pharmacy slug
-        console.log('Pharmacy slug data:', {
-          id: pharmacy.id,
-          name: pharmacy.pharmacybranchName,
-          slug: pharmacy.slug,
-          displaySlug: pharmacy.slug
-        });
       });
     }
     
     return vendors;
-  }, [vendorData]);
+  }, [vendorData, activeTab, userCoordinates, getRatingForVendor, getDeliveryTimeForVendor, getPickupForVendor]);
 
-  // Filter vendors based on search query, active tab, and distance
+  // Filter vendors based on search query and distance
   const filteredVendors = useMemo(() => {
-    let filtered = allVendors;
-    
-    // Filter by active tab (always filter by type since no "all" option)
-    filtered = filtered.filter(vendor => vendor.type === activeTab);
+    let filtered = processedVendors;
     
     // Filter by search query
     if (searchQuery) {
@@ -450,48 +437,155 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
     }
     
     return filtered;
-  }, [allVendors, searchQuery, activeTab, userCoordinates, searchRadius]);
+  }, [processedVendors, searchQuery, userCoordinates, searchRadius]);
 
-  // Calculate vendors outside current radius but within expanded radius
-  const vendorsOutsideRadius = useMemo(() => {
-    if (!userCoordinates) return [];
-    
-    return allVendors.filter(vendor => {
-      if (vendor.type !== activeTab) return false;
+  // Handle vendor selection with data storage (now uses pre-calculated data)
+  const handleVendorSelect = useCallback(async (vendor: any) => {
+    try {
+      // Validate vendor data
+      if (!vendor) {
+        throw new Error('Vendor is undefined');
+      }
+
+      console.log('[VendorGrid] 🖱️ Vendor clicked:', {
+        id: vendor.id,
+        type: vendor.type,
+        name: vendor.displayName,
+        slug: vendor.displaySlug
+      });
+
+      // Check if we have pre-calculated delivery data
+      const vendorKey = `deliveryCalculationData_${vendor.type}_${vendor.id}`;
+      const cachedData = localStorage.getItem(vendorKey);
       
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchesSearch = vendor.displayName?.toLowerCase().includes(query) ||
-          vendor.displayLocation?.toLowerCase().includes(query) ||
-          vendor.restaurantName?.toLowerCase().includes(query) ||
-          vendor.groceryName?.toLowerCase().includes(query) ||
-          vendor.pharmacyName?.toLowerCase().includes(query);
-        if (!matchesSearch) return false;
+      if (cachedData) {
+        const parsed = JSON.parse(cachedData);
+        const isStale = Date.now() - parsed.timestamp > 5 * 60 * 1000; // 5 minutes
+        
+        console.log('[VendorGrid] 📦 Found pre-calculated delivery data:', {
+          vendorId: vendor.id,
+          vendorType: vendor.type,
+          cachedData: parsed,
+          isStale: isStale,
+          ageMinutes: Math.round((Date.now() - parsed.timestamp) / 60000)
+        });
+        
+        if (!isStale) {
+          console.log('[VendorGrid] ✅ Using pre-calculated delivery data for vendor:', vendor.id);
+        } else {
+          console.log('[VendorGrid] ⏰ Pre-calculated data is stale, recalculating...');
+          await calculateDeliveryFeesForVendor(vendor);
+        }
+      } else {
+        // If no pre-calculated data, calculate it now
+        console.log('[VendorGrid] ❌ No pre-calculated data found, calculating now...');
+        await calculateDeliveryFeesForVendor(vendor);
+      }
+
+      // Handle different data structures
+      let vendorId = vendor.id;
+      let vendorSlug = vendor.displaySlug;
+      let vendorName = '';
+
+      // For restaurant vendors
+      if (vendor.type === 'restaurant') {
+        vendorName = vendor.restaurantName || vendor.displayName || 'Restaurant';
+        
+        console.log('[VendorGrid] 🍽️ Navigating to restaurant:', {
+          vendorId: vendorId,
+          vendorSlug: vendorSlug,
+          vendorName: vendorName
+        });
+        
+        // Store restaurant data
+        localStorage.setItem('selectedBranchId', vendorId);
+        localStorage.setItem('branchSlug', vendorSlug);
+        localStorage.setItem('currentView', 'branch');
+        await router.push(`/restaurants/${vendorSlug}`);
+      }
+      // For grocery vendors
+      else if (vendor.type === 'grocery') {
+        vendorName = vendor.groceryName || vendor.displayName || 'Grocery';
+        
+        // Get main shop data from Grocery object
+        const mainShopId = vendor.Grocery?.id || vendorId;
+        const mainShopSlug = vendor.Grocery?.slug || vendorSlug;
+        
+        console.log('[VendorGrid] 🛒 Navigating to grocery:', {
+          vendorId: vendorId,
+          mainShopId: mainShopId,
+          mainShopSlug: mainShopSlug,
+          vendorName: vendorName
+        });
+        
+        // Store main shop data instead of branch data
+        localStorage.setItem('selectedGroceryShopId', mainShopId);
+        localStorage.setItem('selectedGroceryShopData', JSON.stringify({
+          id: mainShopId,
+          slug: mainShopSlug,
+          groceryshopName: vendor.Grocery?.groceryshopName || 'Grocery Store',
+          groceryshopLogo: vendor.Grocery?.groceryshopLogo,
+          groceryshopAddress: vendor.Grocery?.groceryshopAddress,
+          groceryshopPhoneNumber: vendor.Grocery?.groceryshopPhoneNumber,
+          groceryshopEmail: vendor.Grocery?.groceryshopEmail,
+          GroceryItem: vendor.GroceryItem || []
+        }));
+        
+        await router.push(`/groceries/${mainShopSlug}`);
+      }
+      // For pharmacy vendors
+      else if (vendor.type === 'pharmacy') {
+        vendorName = vendor.pharmacyName || vendor.displayName || 'Pharmacy';
+        
+        // Get main shop data from Pharmacy object
+        const mainShopId = vendor.Pharmacy?.id || vendorId;
+        const mainShopSlug = vendor.Pharmacy?.slug || vendorSlug;
+        
+        console.log('[VendorGrid] 💊 Navigating to pharmacy:', {
+          vendorId: vendorId,
+          mainShopId: mainShopId,
+          mainShopSlug: mainShopSlug,
+          vendorName: vendorName
+        });
+        
+        // Store main shop data instead of branch data
+        localStorage.setItem('selectedPharmacyShopId', mainShopId);
+        localStorage.setItem('selectedPharmacyShopData', JSON.stringify({
+          id: mainShopId,
+          slug: mainShopSlug,
+          pharmacyName: vendor.Pharmacy?.pharmacyName || 'Pharmacy',
+          pharmacyLogo: vendor.Pharmacy?.pharmacyLogo,
+          pharmacyAddress: vendor.Pharmacy?.pharmacyAddress,
+          pharmacyPhoneNumber: vendor.Pharmacy?.pharmacyPhoneNumber,
+          pharmacyEmail: vendor.Pharmacy?.pharmacyEmail,
+          PharmacyItem: vendor.PharmacyItem || []
+        }));
+        
+        await router.push(`/pharmacy/${mainShopSlug}`);
+      }
+      // For other vendors (fallback)
+      else {
+        vendorName = vendor.displayName || vendor.name || 'Store';
+        
+        console.log('[VendorGrid] 🏪 Navigating to generic store:', {
+          vendorId: vendorId,
+          vendorSlug: vendorSlug,
+          vendorName: vendorName
+        });
+        
+        localStorage.setItem('selectedBranchId', vendorId);
+        localStorage.setItem('branchSlug', vendorSlug);
+        localStorage.setItem('currentView', 'branch');
+        await router.push(`/restaurants/${vendorSlug}`);
       }
       
-      return vendor.distance !== null && 
-             vendor.distance > searchRadius && 
-             vendor.distance <= searchRadius + 4; // 4km additional radius
-    });
-  }, [allVendors, searchQuery, activeTab, userCoordinates, searchRadius]);
+      console.log('[VendorGrid] ✅ Navigation completed for vendor:', vendor.id);
+    } catch (error) {
+      console.error('[VendorGrid] ❌ Navigation error:', error);
+    }
+  }, [router]);
 
-  // Helper functions to get rating data
-  function getRatingForVendor(vendorId: string, ratings: any[]) {
-    const rating = ratings?.find(r => r.delika_branches_table_id === vendorId);
-    return rating?.OverallRating || '0';
-  }
-
-  function getDeliveryTimeForVendor(vendorId: string, ratings: any[]) {
-    const rating = ratings?.find(r => r.delika_branches_table_id === vendorId);
-    return rating?.deliveryTime || '';
-  }
-
-  function getPickupForVendor(vendorId: string, ratings: any[]) {
-    const rating = ratings?.find(r => r.delika_branches_table_id === vendorId);
-    return rating?.pickup || false;
-  }
-
-  const handleLikeToggle = (vendorId: string, e: React.MouseEvent) => {
+  const handleLikeToggle = useCallback((vendorId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -504,22 +598,9 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
       }
       return newSet;
     });
-  };
+  }, []);
 
-  const getVendorLink = (vendor: any) => {
-    switch (vendor.type) {
-      case 'restaurant':
-        return `/restaurants/${vendor.displaySlug}`;
-      case 'grocery':
-        return `/groceries/${vendor.displaySlug}`;
-      case 'pharmacy':
-        return `/pharmacy/${vendor.displaySlug}`;
-      default:
-        return '#';
-    }
-  };
-
-  const getVendorTypeLabel = (type: string) => {
+  const getVendorTypeLabel = useCallback((type: string) => {
     switch (type) {
       case 'restaurant':
         return 'Restaurant';
@@ -530,20 +611,22 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
       default:
         return 'Vendor';
     }
-  };
+  }, []);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
       {filteredVendors.map((vendor) => {
         // Check if vendor is open based on working hours
         const isOpen = isVendorOpen(vendor.activeHours);
+        const isHovered = hoveredVendor === vendor.id;
+        const isCalculating = calculatingVendors.has(vendor.id);
         
         return (
         <div 
           key={vendor.id} 
           className={`group relative bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden ${
             !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
-          }`}
+          } ${isHovered ? 'ring-2 ring-orange-500 ring-opacity-50' : ''}`}
           onClick={(e) => {
             e.preventDefault();
             if (!isOpen) {
@@ -552,6 +635,8 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
             }
             handleVendorSelect(vendor);
           }}
+          onMouseEnter={() => handleVendorHover(vendor)}
+          onMouseLeave={handleVendorHoverEnd}
         >
           {/* Like Button */}
           <button
@@ -572,6 +657,14 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
           {!isOpen && (
             <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
               Closed
+            </div>
+          )}
+
+          {/* Calculating indicator */}
+          {isCalculating && (
+            <div className="absolute top-2 left-2 z-10 bg-blue-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+              <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+              Calculating...
             </div>
           )}
 
@@ -643,6 +736,14 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
               <div className="flex items-center gap-1 mt-1">
                 <Clock className="w-3 h-3 text-red-500" />
                 <span className="text-xs text-red-500">Closed</span>
+              </div>
+            )}
+
+            {/* Hover indicator */}
+            {isHovered && !isCalculating && (
+              <div className="mt-2 flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-green-600">Ready to order</span>
               </div>
             )}
           </div>

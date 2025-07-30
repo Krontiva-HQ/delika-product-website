@@ -2390,7 +2390,7 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
               className="mb-4 text-orange-500 hover:text-orange-600 flex items-center gap-1"
             >
               <ChevronLeft className="w-4 h-4" />
-              Back to Restaurants
+              Back to Vendors
             </Link>
             {currentBranch && <BranchPage params={{ id: currentBranch.id }} urlParams={{}} />}
           </div>
