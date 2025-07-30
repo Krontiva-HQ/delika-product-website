@@ -12,12 +12,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { UserData } from "@/types/user"
 
 export function SiteHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isJoinDropdownOpen, setIsJoinDropdownOpen] = useState(false)
   const [isSignInDropdownOpen, setIsSignInDropdownOpen] = useState(false)
-  const [userData, setUserData] = useState<any>(null)
+  const [userData, setUserData] = useState<UserData | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const pathname = usePathname()
 

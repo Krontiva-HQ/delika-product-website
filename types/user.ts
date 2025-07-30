@@ -28,6 +28,7 @@ export interface UserData {
     id: string;
     userId: string;
     created_at: number;
+    privacyPolicyAccepted?: boolean;
     deliveryAddress: {
       fromAddress: string;
       fromLatitude: string;
