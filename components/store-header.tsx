@@ -197,9 +197,10 @@ interface StoreHeaderProps {
   vendorData?: VendorData | null;
   onTabChange?: (tab: string) => void;
   activeTab?: string;
+  showVendorList?: boolean; // NEW PROP
 }
 
-export function StoreHeader({ vendorData, onTabChange, activeTab: externalActiveTab }: StoreHeaderProps = {}) {
+export function StoreHeader({ vendorData, onTabChange, activeTab: externalActiveTab, showVendorList = true }: StoreHeaderProps = {}) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -2532,6 +2533,68 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
           </div>
         );
       default:
+        // Only render the vendor list if showVendorList is true
+        if (!showVendorList) {
+          // Just render the search section and filter modal, but NOT the vendor list
+          return (
+            <div>
+              {/* Search Section with Tabs */}
+              <SearchSection
+                onSearch={setSearchQuery}
+                userLocation={userLocation}
+                onLocationClick={() => setIsLocationModalOpen(true)}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                onFilterClick={() => setIsFilterModalOpen(true)}
+                branches={branches}
+              />
+              {/* Advanced Filter Modal */}
+              <FilterModal
+                open={isFilterModalOpen}
+                onOpenChange={setIsFilterModalOpen}
+                filterTypes={filterTypes}
+                setFilterTypes={setFilterTypes}
+                filterCategories={filterCategories}
+                setFilterCategories={setFilterCategories}
+                filterRating={filterRating}
+                setFilterRating={setFilterRating}
+                filterDeliveryTime={filterDeliveryTime}
+                setFilterDeliveryTime={setFilterDeliveryTime}
+                filterPickup={filterPickup}
+                setFilterPickup={setFilterPickup}
+                foodPage={0}
+                setFoodPage={() => {}}
+                groceryPage={0}
+                setGroceryPage={() => {}}
+                pharmacyPage={0}
+                setPharmacyPage={() => {}}
+                RESTAURANT_CATEGORIES={RESTAURANT_CATEGORIES}
+                GROCERY_CATEGORIES={GROCERY_CATEGORIES}
+                PHARMACY_CATEGORIES={PHARMACY_CATEGORIES}
+                PAGE_SIZE={PAGE_SIZE}
+                vendorData={vendorData}
+                ratings={vendorData?.Ratings}
+                isLoading={isFilterLoading}
+                onApply={async (filteredResults) => {
+                  console.log('StoreHeader: onApply called with filteredResults:', filteredResults);
+                  setIsFilterLoading(true);
+                  try {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    setFilteredResults(filteredResults || []);
+                    setIsShowingFilteredResults(true);
+                    setCurrentView('stores');
+                    setIsFilterModalOpen(false);
+                  } catch (error) {
+                    console.error('Error applying filters:', error);
+                  } finally {
+                    setIsFilterLoading(false);
+                  }
+                }}
+              />
+            </div>
+          );
+        }
+        // ... existing vendor list rendering ...
         return (
           <div>
             {/* Search Section with Tabs */}
@@ -2544,7 +2607,6 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
               onFilterClick={() => setIsFilterModalOpen(true)}
               branches={branches}
             />
-
             {/* Advanced Filter Modal */}
             <FilterModal
               open={isFilterModalOpen}
@@ -2553,7 +2615,6 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
               setFilterTypes={setFilterTypes}
               filterCategories={filterCategories}
               setFilterCategories={setFilterCategories}
-
               filterRating={filterRating}
               setFilterRating={setFilterRating}
               filterDeliveryTime={filterDeliveryTime}
@@ -2577,18 +2638,10 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                 console.log('StoreHeader: onApply called with filteredResults:', filteredResults);
                 setIsFilterLoading(true);
                 try {
-                  // Small delay to show loading state
                   await new Promise(resolve => setTimeout(resolve, 500));
-                  
-                  // Store filtered results in state
                   setFilteredResults(filteredResults || []);
                   setIsShowingFilteredResults(true);
-                  console.log('StoreHeader: setFilteredResults and setIsShowingFilteredResults called');
-                  
-                  // Update the current view to show filtered results
                   setCurrentView('stores');
-                  
-                  // Only close the modal after data is set
                   setIsFilterModalOpen(false);
                 } catch (error) {
                   console.error('Error applying filters:', error);
@@ -2597,13 +2650,12 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                 }
               }}
             />
-
-                        {/* Tab Content */}
+            {/* Tab Content */}
             <div className="container mx-auto px-4 py-4">
               {renderRestaurantList()}
             </div>
           </div>
-        )
+        );
     }
   }
 
