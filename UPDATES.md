@@ -21,6 +21,8 @@ This document tracks all the major updates and improvements made to the Delika p
 - [Comprehensive Delivery Calculation Fixes for All Vendor Types](#comprehensive-delivery-calculation-fixes-for-all-vendor-types)
 - [Delivery Fee Storage with Unique Identifiers](#delivery-fee-storage-with-unique-identifiers)
 - [Next.js Image Optimization Fixes](#next-js-image-optimization-fixes)
+- [Delivery Calculation Refactor: Single Key Storage & Unified Retrieval](#delivery-calculation-refactor-single-key-storage-unified-retrieval)
+- [Delivery Calculation Logic Reset (Vendor Click Logic Removed)](#delivery-calculation-logic-reset-vendor-click-logic-removed)
 
 ---
 
@@ -2257,3 +2259,65 @@ const deliveryDataKey = `deliveryCalculationData_pharmacy_${params?.id}`;
 ---
 
 ## Summary
+
+---
+
+## Delivery Calculation Refactor: Single Key Storage & Unified Retrieval
+
+### **Date**: Recent
+### **Files Modified**:
+- `components/vendor-grid.tsx`
+- `components/cart-modal.tsx`
+- `components/branch-page.tsx`
+
+### **Problem Identified**:
+Previously, delivery fee data was stored in localStorage using a unique key for each vendor (e.g., `deliveryCalculationData_{storeType}_{branchId}`). This caused confusion and potential mismatches, especially when navigating between vendors or branches, and made the logic for reading delivery data more complex.
+
+### **Solution Implemented**:
+- **Single Generic Key**: Now, delivery calculation results are always stored in localStorage under the single key `deliveryCalculationData`.
+- **Unified Retrieval**: All pages/components (vendor grid, cart modal, branch page, etc.) now read from this single key, removing the need for vendor-specific logic.
+- **Overwrite on Each Calculation**: Each time a vendor is clicked, the previous delivery calculation is overwritten with the new one.
+- **Simplified Validation**: Pages now only check if the data is less than 5 minutes old before using it.
+
+### **How the Flow Works Now**:
+1. **User clicks a vendor** on the vendors page.
+2. **Delivery calculation is triggered** immediately:
+   - User and vendor locations are used to calculate distance.
+   - The delivery price API is called.
+   - The result (fees, distance, etc.) is stored in localStorage as `deliveryCalculationData`.
+3. **User is navigated to the vendor page** (restaurant/grocery/pharmacy).
+4. **Vendor page reads delivery data** from the generic key. If the data is fresh, it is used; if not, it is cleared and a new calculation is expected.
+5. **Cart modal and other components** also read from the same key, ensuring consistency.
+
+### **Benefits**:
+- **Simplicity**: No more vendor-specific key logic; all code reads from the same place.
+- **Consistency**: The most recent delivery calculation is always used.
+- **Predictability**: No risk of showing the wrong vendor's delivery fee.
+- **Easier Maintenance**: Less code to maintain and debug.
+
+### **Technical Implementation**:
+- All `localStorage.setItem` and `getItem` calls for delivery calculation now use `'deliveryCalculationData'`.
+- All branch/vendor/cart pages updated to use the generic key.
+- Data is considered valid for 5 minutes; after that, it is cleared and recalculated.
+
+### **User Experience Benefits**:
+- **Instant Delivery Fee Display**: When navigating to a vendor, the delivery fee is already calculated and ready to show.
+- **No Stale Data**: Old or mismatched delivery data is automatically cleared.
+- **Unified Experience**: All parts of the app show the same delivery fee for the most recent vendor selection.
+
+---
+
+## Delivery Calculation Logic Reset (Vendor Click Logic Removed)
+
+### **Date**: Recent
+### **Context**:
+- The previous logic for calculating and storing delivery fees on vendor click (in the vendor grid) has been **removed**.
+- The codebase is being reset to allow for a new delivery calculation approach, to be defined in upcoming instructions.
+- All previous logic that triggered delivery calculation on vendor click and stored results in localStorage has been deleted.
+
+### **Next Steps**:
+- Awaiting new instructions for the updated delivery calculation flow and requirements.
+
+---
+
+</rewritten_file>

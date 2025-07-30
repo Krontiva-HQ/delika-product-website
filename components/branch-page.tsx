@@ -1037,7 +1037,7 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
                       <div className="relative w-full h-40 flex-shrink-0">
                         {item.image_url || item.foodImage ? (
                           <Image
-                            src={item.image_url || item.foodImage.url}
+                            src={item.image_url || item.foodImage?.url || '/placeholder-image.jpg'}
                             alt={item.name}
                             fill
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
