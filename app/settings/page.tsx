@@ -1,38 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
-import { getCustomerDetails } from "@/lib/api";
-import { 
-  User, 
-  MapPin, 
-  Bell, 
-  Shield,
-  Mail,
-  Phone,
-  Save,
-  Edit3,
-  Lock,
-  Eye,
-  EyeOff,
-  Settings as SettingsIcon,
-  Wallet,
-  History,
-  ArrowUpRight,
-  ArrowDownLeft,
-  AlertTriangle,
-  CheckCircle
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { SettingsSection } from "@/components/settings-section";
 import { UserData } from "@/components/auth-nav";
 
 export default function SettingsPage() {
-  // If userData is needed, retrieve from localStorage or context
+  const router = useRouter();
+  
+  // User data state
   const [userData, setUserData] = useState<UserData | null>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('userData');
@@ -40,9 +16,51 @@ export default function SettingsPage() {
     }
     return null;
   });
-  const [isEditing, setIsEditing] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoadingBalance, setIsLoadingBalance] = useState(false)
-  // ... (rest of the SettingsSection code, unchanged, but without props)
+
+  // Check authentication on mount
+  useEffect(() => {
+    const authToken = localStorage.getItem('authToken');
+    const storedUserData = localStorage.getItem('userData');
+    
+    if (!authToken || !storedUserData) {
+      // Redirect to home page if not authenticated
+      router.push('/');
+      return;
+    }
+
+    try {
+      const parsedUserData = JSON.parse(storedUserData);
+      setUserData(parsedUserData);
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      router.push('/');
+    }
+  }, [router]);
+
+  // Handle user data updates
+  const handleUserDataUpdate = (updatedUserData: UserData) => {
+    setUserData(updatedUserData);
+    localStorage.setItem('userData', JSON.stringify(updatedUserData));
+  };
+
+  // Show loading state while checking authentication
+  if (!userData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <SettingsSection 
+        userData={userData} 
+        onUserDataUpdate={handleUserDataUpdate}
+      />
+    </div>
+  );
 } 

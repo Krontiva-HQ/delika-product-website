@@ -23,6 +23,7 @@ This document tracks all the major updates and improvements made to the Delika p
 - [Next.js Image Optimization Fixes](#next-js-image-optimization-fixes)
 - [Delivery Calculation Refactor: Single Key Storage & Unified Retrieval](#delivery-calculation-refactor-single-key-storage-unified-retrieval)
 - [Delivery Calculation Logic Reset (Vendor Click Logic Removed)](#delivery-calculation-logic-reset-vendor-click-logic-removed)
+- [Privacy Policy Acceptance Feature Implementation](#privacy-policy-acceptance-feature-implementation)
 
 ---
 
@@ -2320,4 +2321,272 @@ Previously, delivery fee data was stored in localStorage using a unique key for 
 
 ---
 
-</rewritten_file>
+## Privacy Policy Acceptance Feature Implementation
+
+### **Date**: Recent
+### **Files Modified**: 
+- `types/user.ts`
+- `components/auth-nav.tsx`
+- `hooks/use-policy-acceptance.ts` (created)
+- `components/policy-acceptance-modal.tsx` (created)
+- `app/api/auth/update-policy-acceptance/route.ts` (created)
+- `components/store-header.tsx`
+- `components/site-header.tsx`
+
+### **Changes Made**:
+
+#### **Privacy Policy Acceptance System**:
+- **User Data Structure**: Updated `UserData` interface to include `privacyPolicyAccepted` field in the `customerTable` array
+- **Policy Check Hook**: Created `usePolicyAcceptance` hook to manage policy acceptance state and modal display
+- **Acceptance Modal**: Built `PolicyAcceptanceModal` component with terms summary, checkbox acceptance, and accept/decline actions
+- **API Integration**: Created `/api/auth/update-policy-acceptance` endpoint to update policy acceptance on backend
+- **Modal Integration**: Moved policy acceptance modal from `site-header.tsx` to `store-header.tsx` for better user context
+
+#### **Data Structure Updates**:
+```typescript
+// Updated UserData interface
+interface UserData {
+  // ... existing fields ...
+  customerTable: Array<{
+    id: string;
+    userId: string;
+    created_at: number;
+    privacyPolicyAccepted?: boolean; // NEW: Policy acceptance field
+    deliveryAddress: DeliveryAddress;
+    favoriteRestaurants: FavoriteRestaurant[];
+  }>;
+}
+```
+
+#### **Policy Acceptance Hook**:
+```typescript
+export function usePolicyAcceptance(userData: UserData | null) {
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const [hasCheckedPolicy, setHasCheckedPolicy] = useState(false);
+
+  useEffect(() => {
+    if (userData && !hasCheckedPolicy) {
+      // Check if user has accepted the policy in customerTable
+      const customerTable = userData.customerTable;
+      const policyAccepted = customerTable && customerTable.length > 0 && 
+        customerTable.some(customer => customer.privacyPolicyAccepted === true);
+      
+      if (!policyAccepted) {
+        setShowPolicyModal(true);
+      }
+      
+      setHasCheckedPolicy(true);
+    }
+  }, [userData, hasCheckedPolicy]);
+
+  const handlePolicyAccept = async () => {
+    // Update policy acceptance via API and localStorage
+  };
+
+  const handlePolicyDecline = () => {
+    // Log out user if they decline
+  };
+
+  return { showPolicyModal, handlePolicyAccept, handlePolicyDecline };
+}
+```
+
+#### **Policy Acceptance Modal**:
+```typescript
+interface PolicyAcceptanceModalProps {
+  isOpen: boolean;
+  onAccept: () => void;
+  onDecline: () => void;
+}
+
+export function PolicyAcceptanceModal({ isOpen, onAccept, onDecline }: PolicyAcceptanceModalProps) {
+  const [hasAccepted, setHasAccepted] = useState(false);
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={() => {}}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-gray-900">
+            Terms of Use Acceptance Required
+          </DialogTitle>
+        </DialogHeader>
+        
+        {/* Terms summary content */}
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="policy-acceptance"
+            checked={hasAccepted}
+            onCheckedChange={(checked) => setHasAccepted(checked as boolean)}
+          />
+          <Label htmlFor="policy-acceptance">
+            I have read and agree to the Terms of Use
+          </Label>
+        </div>
+        
+        <div className="flex justify-end space-x-3 pt-4">
+          <Button variant="outline" onClick={handleDecline}>Decline</Button>
+          <Button 
+            onClick={handleAccept} 
+            disabled={!hasAccepted}
+            className="bg-orange-500 hover:bg-orange-600"
+          >
+            Accept & Continue
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+#### **API Endpoint**:
+```typescript
+// POST /api/auth/update-policy-acceptance
+export async function POST(request: NextRequest) {
+  try {
+    const { authToken, userId } = await request.json();
+    
+    const response = await fetch(`https://api-server.krontiva.africa/api:uEBBwbSs/AcceptPolicy/${userId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        privacyPolicyAccepted: true,
+        user: userId
+      })
+    });
+    
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to update policy acceptance' }, { status: 500 });
+  }
+}
+```
+
+#### **Modal Integration in Store Header**:
+```typescript
+// In store-header.tsx
+import { PolicyAcceptanceModal } from "@/components/policy-acceptance-modal"
+import { usePolicyAcceptance } from "@/hooks/use-policy-acceptance"
+
+export function StoreHeader({ vendorData, onTabChange, activeTab: externalActiveTab }: StoreHeaderProps = {}) {
+  // ... existing state ...
+  
+  // Policy acceptance check
+  const { showPolicyModal, handlePolicyAccept, handlePolicyDecline } = usePolicyAcceptance(user)
+  
+  return (
+    <div>
+      {/* ... existing JSX ... */}
+      
+      {/* Policy Acceptance Modal */}
+      {showPolicyModal && (
+        <PolicyAcceptanceModal
+          isOpen={showPolicyModal}
+          onAccept={handlePolicyAccept}
+          onDecline={handlePolicyDecline}
+        />
+      )}
+    </div>
+  )
+}
+```
+
+### **Features Added**:
+
+#### **Automatic Policy Check**:
+- **Login Detection**: Automatically checks policy acceptance when user logs in
+- **Modal Display**: Shows policy acceptance modal if user hasn't accepted terms
+- **Blocking Behavior**: Prevents user from using the app until policy is accepted
+
+#### **Policy Acceptance Flow**:
+1. **User logs in** → System checks `privacyPolicyAccepted` in `customerTable`
+2. **If not accepted** → Policy acceptance modal appears
+3. **User reads terms** → Must check checkbox to proceed
+4. **User accepts** → API call updates backend, localStorage updated, modal closes
+5. **User declines** → User is logged out and redirected to home page
+
+#### **API Integration**:
+- **Correct Endpoint**: Uses `https://api-server.krontiva.africa/api:uEBBwbSs/AcceptPolicy/{userId}`
+- **Proper Request Body**: Sends `{ privacyPolicyAccepted: true, user: userId }`
+- **Error Handling**: Graceful fallback to localStorage update if API fails
+- **Authentication**: Includes auth token in request headers
+
+#### **Modal Design**:
+- **Terms Summary**: Clear summary of key terms and conditions
+- **Links to Full Terms**: Direct links to Privacy Policy and Terms of Use pages
+- **Checkbox Requirement**: User must actively check box to accept
+- **Dual Actions**: Accept & Continue or Decline options
+- **Responsive Design**: Works well on mobile and desktop
+
+### **User Experience Benefits**:
+- **Legal Compliance**: Ensures users accept terms before using the app
+- **Clear Communication**: Users understand what they're accepting
+- **Easy Access**: Direct links to full terms and privacy policy
+- **Professional Flow**: Smooth, app-like experience
+- **Security**: Proper authentication and data handling
+
+### **Technical Benefits**:
+- **Proper Data Structure**: Policy acceptance stored in correct location (`customerTable`)
+- **API Integration**: Correct endpoint with proper request format
+- **Error Handling**: Robust error handling with fallbacks
+- **Type Safety**: Proper TypeScript interfaces and type checking
+- **Component Reusability**: Modal can be used in other contexts if needed
+
+### **Security Considerations**:
+- **Authentication Required**: Only authenticated users can accept policy
+- **Token Validation**: Proper auth token validation in API calls
+- **Data Integrity**: Policy acceptance stored in both backend and localStorage
+- **Logout on Decline**: Proper cleanup when user declines policy
+
+---
+
+## Summary
+
+These updates have significantly improved the user experience by:
+1. **Fixing navigation issues** with correct URL routing for different vendor types
+2. **Implementing skeleton loading** for better perceived performance
+3. **Adding item click functionality** for easier product interaction
+4. **Enhancing filter modal design** with sticky buttons and scrollable categories
+5. **Improving URL parameter handling** with load-first approach
+6. **Optimizing mobile experience** with responsive layouts
+7. **Ensuring consistent behavior** across all vendor types
+8. **Providing better visual feedback** for user interactions
+9. **Implementing seamless checkout authentication** for non-logged-in users
+10. **Preserving cart data** during authentication flow
+11. **Enabling automatic redirect** to checkout after successful login
+12. **Supporting all store types** with consistent authentication behavior
+13. **Creating dedicated cart authentication modal** for better user experience
+14. **Providing contextual cart information** during authentication
+15. **Supporting multiple authentication methods** (email/password, phone/OTP)
+16. **Updating pharmacy image handling** to use new API structure
+17. **Optimizing delivery calculation logic** for better performance
+18. **Moving delivery calculation to vendor click** for faster branch page loading
+19. **Extending cache duration** to 30 minutes for improved performance
+20. **Implementing localStorage-based delivery fee loading** for immediate display
+21. **Managing localStorage quota** to prevent storage exceeded errors
+22. **Optimizing Google Maps API loading** with proper async patterns
+23. **Preventing duplicate Google Maps elements** for cleaner DOM
+24. **Implementing LCP image optimization** for better Core Web Vitals
+25. **Adding comprehensive debugging tools** for storage and performance monitoring
+26. **Eliminating all Google Maps duplicate element warnings** with comprehensive cleanup
+27. **Preventing multiple Google Maps script loading** for better performance
+28. **Centralizing Google Maps management** across all components
+29. **Implementing smart LCP image priority detection** for better Core Web Vitals
+30. **Providing automatic image optimization** without manual configuration
+31. **Implementing universal delivery calculation** for all vendor types (restaurants, groceries, pharmacies)
+32. **Adding vendor type detection** with proper coordinate field handling
+33. **Enhancing delivery fee display** across all vendor page types
+34. **Providing robust error handling** for delivery calculation failures
+35. **Ensuring cross-page compatibility** for delivery data persistence
+36. **Implementing privacy policy acceptance** with automatic modal display
+37. **Creating policy acceptance modal** with terms summary and checkbox requirement
+38. **Integrating policy acceptance API** with proper authentication and error handling
+39. **Moving policy modal to store header** for better user context and experience
+40. **Ensuring legal compliance** with proper terms acceptance flow
+
+The application now provides a modern, professional user experience with correct navigation, fast loading states, intuitive interactions, seamless authentication flows, dedicated cart authentication, updated API integration, optimized delivery calculation logic, localStorage quota management, comprehensive Google Maps optimization, advanced LCP image optimization, universal delivery calculation support, and comprehensive privacy policy acceptance system across all vendor pages and checkout processes.
