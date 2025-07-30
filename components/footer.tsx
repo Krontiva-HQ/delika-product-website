@@ -17,6 +17,7 @@ export function Footer() {
                 width={100}
                 height={100}
                 className="rounded-lg"
+                style={{ height: "auto" }}
               />
               {/* <span className="text-xl font-bold">Delika</span> */}
             </div>
@@ -163,6 +164,26 @@ export function Footer() {
                 Cookie Policy
               </Link>
             </div>
+          </div>
+          
+          {/* Powered by Krontiva */}
+          <div className="mt-6 flex justify-center">
+            <a 
+              href="https://krontiva.africa" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
+            >
+              <span className="text-sm">Powered by</span>
+              <Image
+                src="/krontiva.png"
+                alt="Krontiva"
+                width={80}
+                height={24}
+                className="h-6 w-auto"
+                style={{ height: "auto" }}
+              />
+            </a>
           </div>
         </div>
       </div>

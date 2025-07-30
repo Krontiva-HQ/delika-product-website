@@ -11,6 +11,7 @@ export function NewFeature() {
           src="/new-feature.webp"
           alt="Experience the future of delivery"
           fill
+          sizes="(max-width: 768px) 100vw, 1200px"
           className="object-cover"
         />
         {/* Dark overlay for better text readability */}

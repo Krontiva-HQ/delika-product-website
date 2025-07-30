@@ -165,6 +165,68 @@ export default function GroceryDetailsPage() {
     closingTime: string;
     isActive?: boolean;
   }> | null>(null);
+
+  // Delivery calculation state
+  const [riderFee, setRiderFee] = useState(0);
+  const [pedestrianFee, setPedestrianFee] = useState(0);
+  const [platformFee, setPlatformFee] = useState(0);
+  const [distance, setDistance] = useState(0);
+
+  // Helper function to convert values to numbers
+  const toNumber = (value: any): number => {
+    if (typeof value === 'number' && !isNaN(value)) return value;
+    const parsed = parseFloat(value?.toString());
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  // Function to load delivery fees from localStorage
+  const loadDeliveryFeesFromStorage = () => {
+    try {
+      const deliveryDataKey = `deliveryCalculationData_grocery_${params?.id}`;
+      const deliveryData = localStorage.getItem(deliveryDataKey);
+      if (deliveryData) {
+        const parsed = JSON.parse(deliveryData);
+        console.log('[GroceryPage] Loading delivery fees from localStorage with key:', deliveryDataKey, parsed);
+        console.log('[GroceryPage] Current grocery params:', { id: params?.id });
+        
+        // Check if cached data is for this grocery (by ID or slug)
+        const isForThisGrocery = parsed.branchId === params?.id || 
+                                 parsed.branchSlug === params?.id;
+        
+        // Also check if the vendor type matches
+        const isCorrectVendorType = !parsed.vendorType || parsed.vendorType === 'grocery';
+        
+        if (isForThisGrocery && isCorrectVendorType) {
+          setRiderFee(toNumber(parsed.riderFee));
+          setPedestrianFee(toNumber(parsed.pedestrianFee));
+          setPlatformFee(toNumber(parsed.platformFee));
+          setDistance(toNumber(parsed.distance));
+          console.log('[GroceryPage] ✅ Loaded delivery fees from localStorage for grocery:', params?.id);
+        } else {
+          console.log('[GroceryPage] Cached delivery data is for different grocery or vendor type, clearing');
+          console.log('[GroceryPage] Cached branchId:', parsed.branchId, 'vs current params.id:', params?.id);
+          console.log('[GroceryPage] Cached branchSlug:', parsed.branchSlug, 'vs current params.id:', params?.id);
+          console.log('[GroceryPage] Cached vendorType:', parsed.vendorType, 'vs expected: grocery');
+          setRiderFee(0);
+          setPedestrianFee(0);
+          setPlatformFee(0);
+          setDistance(0);
+        }
+      } else {
+        console.log('[GroceryPage] No delivery calculation data found in localStorage for key:', deliveryDataKey);
+        setRiderFee(0);
+        setPedestrianFee(0);
+        setPlatformFee(0);
+        setDistance(0);
+      }
+    } catch (error) {
+      console.error('[GroceryPage] Error loading delivery fees from localStorage:', error);
+      setRiderFee(0);
+      setPedestrianFee(0);
+      setPlatformFee(0);
+      setDistance(0);
+    }
+  };
   
   useEffect(() => {
     async function fetchInventory() {
@@ -261,6 +323,14 @@ export default function GroceryDetailsPage() {
     }
     if (shopId) fetchInventory();
   }, [shopId]);
+
+  // Load delivery fees from localStorage after grocery data is loaded
+  useEffect(() => {
+    if (!isLoading) {
+      console.log('[GroceryPage] Grocery data loaded, loading delivery fees from localStorage');
+      loadDeliveryFeesFromStorage();
+    }
+  }, [isLoading]);
 
   const [cart, setCart] = useState<any[]>([]);
 

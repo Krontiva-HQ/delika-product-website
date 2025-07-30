@@ -10,7 +10,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useLoadScript } from "@react-google-maps/api"
 import { LocationSearchModal } from "@/components/location-search-modal"
 import { LoginModal } from "@/components/login-modal"
 import { SignupModal } from "@/components/signup-modal"
@@ -110,10 +109,6 @@ interface Branch {
     }[];
   }[];
 }
-
-type Libraries = ("places" | "geocoding")[]
-
-const libraries: Libraries = ["places", "geocoding"]
 
 interface AddressComponent {
   long_name: string
@@ -357,11 +352,6 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
       }
     }
   }, [activeTab, vendorData]);
-
-  useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
-    libraries: libraries
-  })
 
   useEffect(() => {
     async function fetchBranchesDirect() {
@@ -1688,6 +1678,7 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                                branch.branchName ||
                                'Restaurant'}
                           fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                           className="object-cover"
                         />
                       ) : (
@@ -2234,6 +2225,7 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                              branch.branchName || 
                              'Restaurant'}
                   fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                   className="object-cover"
                 />
                     ) : (

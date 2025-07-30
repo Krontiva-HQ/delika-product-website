@@ -6,6 +6,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { isVendorOpen } from "@/lib/utils"
+import { calculateDeliveryPrices } from "@/lib/api"
+import { calculateDistance } from "@/lib/distance"
 
 interface VendorData {
   Restaurants: any[];
@@ -22,7 +24,7 @@ interface VendorGridProps {
 }
 
 // Calculate distance between two points using Haversine formula
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+function calculateVendorDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Radius of the Earth in kilometers
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -33,6 +35,137 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c; // Distance in kilometers
 }
+
+// Helper function to safely convert values to numbers
+const toNumber = (value: any): number => {
+  if (typeof value === 'number' && !isNaN(value)) return value;
+  const parsed = parseFloat(value?.toString());
+  return isNaN(parsed) ? 0 : parsed;
+}
+
+// Function to calculate delivery fees for restaurant vendors
+const calculateDeliveryFeesForVendor = async (vendor: any) => {
+  try {
+    console.log('[VendorGrid] Starting delivery fee calculation for vendor:', vendor.id);
+    console.log('[VendorGrid] Vendor data structure:', {
+      id: vendor.id,
+      type: vendor.type,
+      slug: vendor.slug,
+      displaySlug: vendor.displaySlug,
+      branchName: vendor.branchName,
+      restaurantName: vendor.restaurantName,
+      branchLatitude: vendor.branchLatitude,
+      branchLongitude: vendor.branchLongitude,
+      grocerybranchLatitude: vendor.grocerybranchLatitude,
+      grocerybranchLongitude: vendor.grocerybranchLongitude,
+      pharmacybranchLatitude: vendor.pharmacybranchLatitude,
+      pharmacybranchLongitude: vendor.pharmacybranchLongitude
+    });
+    
+    // Get user location from localStorage
+    const locationData = localStorage.getItem('userLocationData');
+    if (!locationData) {
+      console.log('[VendorGrid] No user location data found, skipping delivery calculation');
+      return;
+    }
+
+    const { lat, lng } = JSON.parse(locationData);
+    
+    // Get branch coordinates based on vendor type
+    let branchLat, branchLng;
+    
+    if (vendor.type === 'restaurant') {
+      branchLat = parseFloat(vendor.branchLatitude);
+      branchLng = parseFloat(vendor.branchLongitude);
+    } else if (vendor.type === 'grocery') {
+      branchLat = parseFloat(vendor.grocerybranchLatitude);
+      branchLng = parseFloat(vendor.grocerybranchLongitude);
+    } else if (vendor.type === 'pharmacy') {
+      branchLat = parseFloat(vendor.pharmacybranchLatitude);
+      branchLng = parseFloat(vendor.pharmacybranchLongitude);
+    } else {
+      // Fallback to any available coordinates
+      branchLat = parseFloat(vendor.branchLatitude || vendor.grocerybranchLatitude || vendor.pharmacybranchLatitude);
+      branchLng = parseFloat(vendor.branchLongitude || vendor.grocerybranchLongitude || vendor.pharmacybranchLongitude);
+    }
+    
+    if (isNaN(branchLat) || isNaN(branchLng)) {
+      console.log('[VendorGrid] Invalid branch coordinates, skipping delivery calculation');
+      return;
+    }
+    
+    console.log('[VendorGrid] User coordinates:', { lat, lng });
+    console.log('[VendorGrid] Branch coordinates:', { branchLat, branchLng });
+    
+    // Calculate distance
+    const calculatedDistance = await calculateDistance(
+      { latitude: lat, longitude: lng },
+      { latitude: branchLat, longitude: branchLng }
+    );
+    
+    console.log('[VendorGrid] Calculated distance:', calculatedDistance, 'km');
+
+    // Get userId from localStorage userData
+    let userId = '';
+    try {
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const parsedUserData = JSON.parse(userData);
+        userId = parsedUserData.id || '';
+      }
+    } catch (error) {
+      console.log('[VendorGrid] Could not retrieve userId from userData:', error);
+    }
+
+    // Prepare the payload for delivery price calculation
+    const deliveryPayload = {
+      pickup: {
+        fromLatitude: branchLat.toString(),
+        fromLongitude: branchLng.toString(),
+      },
+      dropOff: {
+        toLatitude: lat.toString(),
+        toLongitude: lng.toString(),
+      },
+      rider: true,
+      pedestrian: true,
+      total: 0, // No cart items yet
+      subTotal: 0,
+      userId: userId
+    };
+
+    console.log('[VendorGrid] Sending delivery payload to API:', deliveryPayload);
+
+    // Get delivery prices from API
+    const deliveryResponse = await calculateDeliveryPrices(deliveryPayload);
+    const { 
+      riderFee: newRiderFee, 
+      pedestrianFee: newPedestrianFee,
+      platformFee: newPlatformFee
+    } = deliveryResponse;
+
+    console.log('[VendorGrid] Delivery API response:', deliveryResponse);
+    
+    // Store delivery calculation results in localStorage with a generic key
+    const deliveryCalculationData = {
+      riderFee: toNumber(newRiderFee),
+      pedestrianFee: toNumber(newPedestrianFee),
+      platformFee: toNumber(newPlatformFee),
+      distance: toNumber(calculatedDistance),
+      cartTotal: 0,
+      branchId: vendor.id,
+      branchSlug: vendor.slug || vendor.displaySlug,
+      vendorType: vendor.type,
+      timestamp: Date.now(),
+      deliveryType: 'rider' // Default to rider
+    };
+    localStorage.setItem('deliveryCalculationData', JSON.stringify(deliveryCalculationData));
+    console.log('[VendorGrid] ✅ Stored delivery calculation data in localStorage with key: deliveryCalculationData', deliveryCalculationData);
+    
+  } catch (error) {
+    console.error('[VendorGrid] Error calculating delivery fees:', error);
+  }
+};
 
 export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', userCoordinates }: VendorGridProps) {
   const router = useRouter();
@@ -53,9 +186,13 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
       let vendorSlug = vendor.displaySlug;
       let vendorName = '';
 
+      // Calculate delivery fees for all vendor types
+      await calculateDeliveryFeesForVendor(vendor);
+
       // For restaurant vendors
       if (vendor.type === 'restaurant') {
         vendorName = vendor.restaurantName || vendor.displayName || 'Restaurant';
+        
         // Store restaurant data
         localStorage.setItem('selectedBranchId', vendorId);
         localStorage.setItem('branchSlug', vendorSlug);
@@ -148,7 +285,7 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
             const lat = parseFloat(restaurant.branchLatitude);
             const lng = parseFloat(restaurant.branchLongitude);
             if (!isNaN(lat) && !isNaN(lng)) {
-              distance = calculateDistance(
+              distance = calculateVendorDistance(
                 userCoordinates.lat, 
                 userCoordinates.lng, 
                 lat, 
@@ -190,7 +327,7 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
             const lat = parseFloat(grocery.grocerybranchLatitude);
             const lng = parseFloat(grocery.grocerybranchLongitude);
             if (!isNaN(lat) && !isNaN(lng)) {
-              distance = calculateDistance(
+              distance = calculateVendorDistance(
                 userCoordinates.lat, 
                 userCoordinates.lng, 
                 lat, 
@@ -242,7 +379,7 @@ export function VendorGrid({ vendorData, searchQuery = '', activeTab = 'all', us
             const lat = parseFloat(pharmacy.pharmacybranchLatitude);
             const lng = parseFloat(pharmacy.pharmacybranchLongitude);
             if (!isNaN(lat) && !isNaN(lng)) {
-              distance = calculateDistance(
+              distance = calculateVendorDistance(
                 userCoordinates.lat, 
                 userCoordinates.lng, 
                 lat, 

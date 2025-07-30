@@ -37,6 +37,7 @@ export function SplitHero() {
               src={split.image}
               alt={split.title}
               fill
+              sizes="(max-width: 768px) 100vw, 33vw"
               className="object-cover object-center absolute inset-0 z-0 transition-transform duration-500 group-hover:scale-105"
               priority={i === 0}
             />

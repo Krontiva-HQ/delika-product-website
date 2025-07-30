@@ -56,19 +56,24 @@ export function loadGoogleMaps(): Promise<void> {
 
   loadPromise = new Promise((resolve, reject) => {
     try {
+      // Set up the callback function
       window.initMap = () => {
         isLoaded = true;
         isLoading = false;
         resolve();
       };
 
+      // Create script element with proper async loading
       const script = document.createElement("script");
       script.id = "google-maps-custom";
-      const url = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding&callback=initMap`;
+      
+      // Use the recommended loading pattern with loading=async
+      const url = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding&callback=initMap&loading=async`;
       script.src = url;
       script.async = true;
       script.defer = true;
       
+      // Add error handling
       script.onerror = (error) => {
         console.error('Failed to load Google Maps script:', error);
         isLoading = false;
@@ -76,6 +81,13 @@ export function loadGoogleMaps(): Promise<void> {
         reject(new Error("Failed to load Google Maps API"));
       };
 
+      // Add load event handler
+      script.onload = () => {
+        // The script has loaded, but we need to wait for the callback
+        // The initMap callback will handle the actual resolution
+      };
+
+      // Append to head
       document.head.appendChild(script);
     } catch (error) {
       console.error('Error in loadGoogleMaps:', error);

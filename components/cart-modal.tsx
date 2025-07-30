@@ -146,7 +146,7 @@ export function CartModal({
       return true; // Indicate that we loaded pre-calculated data
     }
 
-    // Otherwise, try to load stored data
+    // Otherwise, try to load stored data using the generic key
     try {
       const storedData = localStorage.getItem('deliveryCalculationData');
       if (storedData) {
@@ -155,9 +155,9 @@ export function CartModal({
         const dataAge = now - data.timestamp;
         const maxAge = 5 * 60 * 1000; // 5 minutes in milliseconds
         
-        // Check if data is still valid (not too old and for the same branch)
-        if (dataAge < maxAge && data.branchId === branchId) {
-          console.log('[Delivery Calculation] Loading stored data:', data);
+        // Check if data is still valid (not too old)
+        if (dataAge < maxAge) {
+          console.log('[Delivery Calculation] Loading stored data with key: deliveryCalculationData', data);
           console.log('[Delivery Calculation] Data age:', Math.round(dataAge / 1000), 'seconds');
           
           setRiderFee(data.riderFee || 0);
@@ -173,7 +173,7 @@ export function CartModal({
           console.log('[Delivery Calculation] ✅ Loaded stored delivery data successfully');
           return true; // Indicate that we loaded stored data
         } else {
-          console.log('[Delivery Calculation] Stored data is too old or for different branch, will recalculate');
+          console.log('[Delivery Calculation] Stored data is too old, will recalculate');
           localStorage.removeItem('deliveryCalculationData');
         }
       }
@@ -441,8 +441,11 @@ export function CartModal({
           deliveryType: deliveryType
         };
         
-        localStorage.setItem('deliveryCalculationData', JSON.stringify(deliveryCalculationData));
-        console.log('[Delivery Calculation] ✅ Stored delivery calculation data in localStorage:', deliveryCalculationData);
+        // Create unique identifier for this branch's delivery data
+        const deliveryDataKey = `deliveryCalculationData_${storeType}_${branchId}`;
+        
+        localStorage.setItem(deliveryDataKey, JSON.stringify(deliveryCalculationData));
+        console.log('[Delivery Calculation] ✅ Stored delivery calculation data in localStorage with key:', deliveryDataKey, deliveryCalculationData);
         
         // Update wallet balance if provided by API (more up-to-date than localStorage)
         if (newDelikaBalance !== undefined && newDelikaBalance !== null) {
@@ -615,8 +618,11 @@ export function CartModal({
               deliveryType: deliveryType
             };
             
-            localStorage.setItem('deliveryCalculationData', JSON.stringify(deliveryCalculationData));
-            console.log('[Mode 2] ✅ Stored delivery calculation data in localStorage:', deliveryCalculationData);
+            // Create unique identifier for this branch's delivery data
+            const deliveryDataKey = `deliveryCalculationData_${storeType}_${branchId}`;
+            
+            localStorage.setItem(deliveryDataKey, JSON.stringify(deliveryCalculationData));
+            console.log('[Mode 2] ✅ Stored delivery calculation data in localStorage with key:', deliveryDataKey, deliveryCalculationData);
             
             console.log('[Mode 2] ✅ Fees updated successfully');
           } catch (error) {

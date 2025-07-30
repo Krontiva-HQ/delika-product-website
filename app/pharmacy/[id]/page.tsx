@@ -136,12 +136,13 @@ export default function PharmacyDetailsPage() {
   
   const [inventory, setInventory] = useState<PharmacyInventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [cart, setCart] = useState<any[]>([]);
-  const [isCartModalOpen, setIsCartModalOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [selectedItem, setSelectedItem] = useState<PharmacyInventoryItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 24;
+  const totalPages = Math.ceil(inventory.length / ITEMS_PER_PAGE);
+  const paginatedInventory = inventory.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   // Group inventory by category
   const categories = Array.from(new Set(inventory.map(item => item.category || "Uncategorized")));
@@ -156,32 +157,6 @@ export default function PharmacyDetailsPage() {
   
   const filteredInventory = inventory.filter(item => (item.category || "Uncategorized") === selectedCategory);
 
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem('pharmacyCart');
-    if (savedCart) {
-      try {
-        setCart(JSON.parse(savedCart));
-      } catch {}
-    }
-  }, []);
-
-  // Check authentication status
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    const userData = localStorage.getItem('userData');
-    if (token && userData) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch {}
-    }
-  }, []);
-
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('pharmacyCart', JSON.stringify(cart));
-  }, [cart]);
-
   // Get shop info from API response
   const [shopLogo, setShopLogo] = useState<string | null>(null);
   const [shopName, setShopName] = useState<string | null>(null);
@@ -193,6 +168,76 @@ export default function PharmacyDetailsPage() {
     closingTime: string;
     isActive?: boolean;
   }> | null>(null);
+
+  // Delivery calculation state
+  const [riderFee, setRiderFee] = useState(0);
+  const [pedestrianFee, setPedestrianFee] = useState(0);
+  const [platformFee, setPlatformFee] = useState(0);
+  const [distance, setDistance] = useState(0);
+
+  // Cart and modal state
+  const [cart, setCart] = useState<any[]>([]);
+  const [isCartModalOpen, setIsCartModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<PharmacyInventoryItem | null>(null);
+
+  // Helper function to convert values to numbers
+  const toNumber = (value: any): number => {
+    if (typeof value === 'number' && !isNaN(value)) return value;
+    const parsed = parseFloat(value?.toString());
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  // Function to load delivery fees from localStorage
+  const loadDeliveryFeesFromStorage = () => {
+    try {
+      const deliveryDataKey = `deliveryCalculationData_pharmacy_${params?.id}`;
+      const deliveryData = localStorage.getItem(deliveryDataKey);
+      if (deliveryData) {
+        const parsed = JSON.parse(deliveryData);
+        console.log('[PharmacyPage] Loading delivery fees from localStorage with key:', deliveryDataKey, parsed);
+        console.log('[PharmacyPage] Current pharmacy params:', { id: params?.id });
+        
+        // Check if cached data is for this pharmacy (by ID or slug)
+        const isForThisPharmacy = parsed.branchId === params?.id || 
+                                  parsed.branchSlug === params?.id;
+        
+        // Also check if the vendor type matches
+        const isCorrectVendorType = !parsed.vendorType || parsed.vendorType === 'pharmacy';
+        
+        if (isForThisPharmacy && isCorrectVendorType) {
+          setRiderFee(toNumber(parsed.riderFee));
+          setPedestrianFee(toNumber(parsed.pedestrianFee));
+          setPlatformFee(toNumber(parsed.platformFee));
+          setDistance(toNumber(parsed.distance));
+          console.log('[PharmacyPage] ✅ Loaded delivery fees from localStorage for pharmacy:', params?.id);
+        } else {
+          console.log('[PharmacyPage] Cached delivery data is for different pharmacy or vendor type, clearing');
+          console.log('[PharmacyPage] Cached branchId:', parsed.branchId, 'vs current params.id:', params?.id);
+          console.log('[PharmacyPage] Cached branchSlug:', parsed.branchSlug, 'vs current params.id:', params?.id);
+          console.log('[PharmacyPage] Cached vendorType:', parsed.vendorType, 'vs expected: pharmacy');
+          setRiderFee(0);
+          setPedestrianFee(0);
+          setPlatformFee(0);
+          setDistance(0);
+        }
+      } else {
+        console.log('[PharmacyPage] No delivery calculation data found in localStorage for key:', deliveryDataKey);
+        setRiderFee(0);
+        setPedestrianFee(0);
+        setPlatformFee(0);
+        setDistance(0);
+      }
+    } catch (error) {
+      console.error('[PharmacyPage] Error loading delivery fees from localStorage:', error);
+      setRiderFee(0);
+      setPedestrianFee(0);
+      setPlatformFee(0);
+      setDistance(0);
+    }
+  };
   
   useEffect(() => {
     async function fetchInventory() {
@@ -291,6 +336,40 @@ export default function PharmacyDetailsPage() {
     }
     if (shopId) fetchInventory();
   }, [shopId]);
+
+  // Load delivery fees from localStorage after pharmacy data is loaded
+  useEffect(() => {
+    if (!isLoading) {
+      console.log('[PharmacyPage] Pharmacy data loaded, loading delivery fees from localStorage');
+      loadDeliveryFeesFromStorage();
+    }
+  }, [isLoading]);
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    const savedCart = localStorage.getItem('pharmacyCart');
+    if (savedCart) {
+      try {
+        setCart(JSON.parse(savedCart));
+      } catch {}
+    }
+  }, []);
+
+  // Check authentication status
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const userData = localStorage.getItem('userData');
+    if (token && userData) {
+      try {
+        setUser(JSON.parse(userData));
+      } catch {}
+    }
+  }, []);
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('pharmacyCart', JSON.stringify(cart));
+  }, [cart]);
 
   // Optionally, get a banner image (use logo as fallback)
   const bannerImage = shopLogo;

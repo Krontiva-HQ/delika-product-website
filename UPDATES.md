@@ -18,6 +18,9 @@ This document tracks all the major updates and improvements made to the Delika p
 - [Banner Improvements](#banner-improvements)
 - [Skeleton Loading Implementation](#skeleton-loading-implementation)
 - [URL Parameters and Category Enhancement](#url-parameters-and-category-enhancement)
+- [Comprehensive Delivery Calculation Fixes for All Vendor Types](#comprehensive-delivery-calculation-fixes-for-all-vendor-types)
+- [Delivery Fee Storage with Unique Identifiers](#delivery-fee-storage-with-unique-identifiers)
+- [Next.js Image Optimization Fixes](#next-js-image-optimization-fixes)
 
 ---
 
@@ -1216,8 +1219,12 @@ These updates have significantly improved the user experience by:
 6. **Optimizing mobile experience** with responsive layouts
 7. **Ensuring consistent behavior** across all vendor types
 8. **Providing better visual feedback** for user interactions
+9. **Implementing seamless checkout authentication** for non-logged-in users
+10. **Preserving cart data** during authentication flow
+11. **Enabling automatic redirect** to checkout after successful login
+12. **Supporting all store types** with consistent authentication behavior
 
-The application now provides a modern, professional user experience with correct navigation, fast loading states, and intuitive interactions across all vendor pages. 
+The application now provides a modern, professional user experience with correct navigation, fast loading states, intuitive interactions, seamless authentication flows, dedicated cart authentication, updated API integration, and optimized delivery calculation logic across all vendor pages and checkout processes. 
 
 ---
 
@@ -1429,7 +1436,7 @@ These updates have significantly improved the user experience by:
 11. **Enabling automatic redirect** to checkout after successful login
 12. **Supporting all store types** with consistent authentication behavior
 
-The application now provides a modern, professional user experience with correct navigation, fast loading states, intuitive interactions, and seamless authentication flows across all vendor pages and checkout processes. 
+The application now provides a modern, professional user experience with correct navigation, fast loading states, intuitive interactions, seamless authentication flows, dedicated cart authentication, updated API integration, and optimized delivery calculation logic across all vendor pages and checkout processes. 
 
 ---
 
@@ -1740,5 +1747,513 @@ These updates have significantly improved the user experience by:
 14. **Providing contextual cart information** during authentication
 15. **Supporting multiple authentication methods** (email/password, phone/OTP)
 16. **Updating pharmacy image handling** to use new API structure
+17. **Optimizing delivery calculation logic** for better performance
+18. **Moving delivery calculation to vendor click** for faster branch page loading
+19. **Extending cache duration** to 30 minutes for improved performance
+20. **Implementing localStorage-based delivery fee loading** for immediate display
 
-The application now provides a modern, professional user experience with correct navigation, fast loading states, intuitive interactions, seamless authentication flows, dedicated cart authentication, and updated API integration across all vendor pages and checkout processes. 
+The application now provides a modern, professional user experience with correct navigation, fast loading states, intuitive interactions, seamless authentication flows, dedicated cart authentication, updated API integration, and optimized delivery calculation logic across all vendor pages and checkout processes. 
+
+---
+
+## Comprehensive Delivery Calculation Fixes for All Vendor Types
+
+### **Date**: Recent
+### **Files Modified**: 
+- `components/vendor-grid.tsx`
+- `components/branch-page.tsx`
+- `app/groceries/[id]/page.tsx`
+- `app/pharmacy/[id]/page.tsx`
+
+### **Changes Made**:
+
+#### **Universal Delivery Calculation**:
+- **All Vendor Types**: Now calculates delivery fees for restaurants, groceries, and pharmacies
+- **Vendor Type Detection**: Properly handles different coordinate fields for each vendor type:
+  - **Restaurants**: `branchLatitude` / `branchLongitude`
+  - **Groceries**: `grocerybranchLatitude` / `grocerybranchLongitude`
+  - **Pharmacies**: `pharmacybranchLatitude` / `pharmacybranchLongitude`
+- **Enhanced Logging**: Added detailed debugging to track vendor data structure and calculation process
+
+#### **Vendor Grid Enhancements**:
+```typescript
+// Enhanced vendor type handling in calculateDeliveryFeesForVendor
+if (vendor.type === 'restaurant') {
+  branchLat = parseFloat(vendor.branchLatitude);
+  branchLng = parseFloat(vendor.branchLongitude);
+} else if (vendor.type === 'grocery') {
+  branchLat = parseFloat(vendor.grocerybranchLatitude);
+  branchLng = parseFloat(vendor.grocerybranchLongitude);
+} else if (vendor.type === 'pharmacy') {
+  branchLat = parseFloat(vendor.pharmacybranchLatitude);
+  branchLng = parseFloat(vendor.pharmacybranchLongitude);
+}
+
+// Enhanced localStorage data structure
+const deliveryCalculationData = {
+  riderFee: toNumber(newRiderFee),
+  pedestrianFee: toNumber(newPedestrianFee),
+  platformFee: toNumber(newPlatformFee),
+  distance: toNumber(calculatedDistance),
+  cartTotal: 0,
+  branchId: vendor.id,
+  branchSlug: vendor.slug || vendor.displaySlug,
+  vendorType: vendor.type, // NEW: Track vendor type
+  timestamp: Date.now(),
+  deliveryType: 'rider'
+};
+```
+
+#### **Branch Page Improvements**:
+- **Multi-Vendor Support**: Now checks both by ID and by slug for all vendor types
+- **Vendor Type Matching**: Ensures delivery data matches the current vendor type
+- **Enhanced Debugging**: Better logging to identify why delivery data is cleared
+- **Path-Based Validation**: Checks current URL path to validate vendor type
+
+```typescript
+// Check if cached data is for this branch (by ID or slug)
+const isForThisBranch = parsed.branchId === params.id || 
+                       parsed.branchSlug === params.id ||
+                       parsed.branchSlug === params.slug;
+
+// Also check if the vendor type matches (for grocery/pharmacy pages)
+const isCorrectVendorType = !parsed.vendorType || 
+                           (parsed.vendorType === 'restaurant' && window.location.pathname.includes('/restaurants/')) ||
+                           (parsed.vendorType === 'grocery' && window.location.pathname.includes('/groceries/')) ||
+                           (parsed.vendorType === 'pharmacy' && window.location.pathname.includes('/pharmacy/'));
+
+if (isForThisBranch && isCorrectVendorType) {
+  // Load delivery fees
+} else {
+  // Clear delivery fees with detailed logging
+}
+```
+
+#### **Grocery Page Delivery Support**:
+- **Delivery State Management**: Added `riderFee`, `pedestrianFee`, `platformFee`, `distance` state
+- **localStorage Integration**: Loads delivery fees from localStorage after grocery data loads
+- **Vendor Type Validation**: Ensures delivery data is for grocery vendors
+- **Null Safety**: Added proper null checks for TypeScript compliance
+
+```typescript
+// Function to load delivery fees from localStorage
+const loadDeliveryFeesFromStorage = () => {
+  try {
+    const deliveryData = localStorage.getItem('deliveryCalculationData');
+    if (deliveryData) {
+      const parsed = JSON.parse(deliveryData);
+      
+      // Check if cached data is for this grocery (by ID or slug)
+      const isForThisGrocery = parsed.branchId === params?.id || 
+                               parsed.branchSlug === params?.id ||
+                               parsed.branchSlug === params?.slug;
+      
+      // Also check if the vendor type matches
+      const isCorrectVendorType = !parsed.vendorType || parsed.vendorType === 'grocery';
+      
+      if (isForThisGrocery && isCorrectVendorType) {
+        setRiderFee(toNumber(parsed.riderFee));
+        setPedestrianFee(toNumber(parsed.pedestrianFee));
+        setPlatformFee(toNumber(parsed.platformFee));
+        setDistance(toNumber(parsed.distance));
+      } else {
+        // Clear delivery fees with detailed logging
+      }
+    }
+  } catch (error) {
+    console.error('[GroceryPage] Error loading delivery fees from localStorage:', error);
+  }
+};
+```
+
+#### **Pharmacy Page Delivery Support**:
+- **Delivery State Management**: Added same delivery fee state variables
+- **localStorage Integration**: Loads delivery fees from localStorage after pharmacy data loads
+- **Vendor Type Validation**: Ensures delivery data is for pharmacy vendors
+- **Complete Integration**: Added all necessary useEffects for cart, authentication, and delivery
+
+```typescript
+// Function to load delivery fees from localStorage
+const loadDeliveryFeesFromStorage = () => {
+  try {
+    const deliveryData = localStorage.getItem('deliveryCalculationData');
+    if (deliveryData) {
+      const parsed = JSON.parse(deliveryData);
+      
+      // Check if cached data is for this pharmacy (by ID or slug)
+      const isForThisPharmacy = parsed.branchId === params?.id || 
+                                parsed.branchSlug === params?.id ||
+                                parsed.branchSlug === params?.slug;
+      
+      // Also check if the vendor type matches
+      const isCorrectVendorType = !parsed.vendorType || parsed.vendorType === 'pharmacy';
+      
+      if (isForThisPharmacy && isCorrectVendorType) {
+        setRiderFee(toNumber(parsed.riderFee));
+        setPedestrianFee(toNumber(parsed.pedestrianFee));
+        setPlatformFee(toNumber(parsed.platformFee));
+        setDistance(toNumber(parsed.distance));
+      } else {
+        // Clear delivery fees with detailed logging
+      }
+    }
+  } catch (error) {
+    console.error('[PharmacyPage] Error loading delivery fees from localStorage:', error);
+  }
+};
+```
+
+#### **Universal Vendor Click Handler**:
+```typescript
+const handleVendorSelect = async (vendor: any) => {
+  try {
+    // Calculate delivery fees for ALL vendor types
+    await calculateDeliveryFeesForVendor(vendor);
+
+    // For restaurant vendors
+    if (vendor.type === 'restaurant') {
+      // Store restaurant data and navigate
+    }
+    // For grocery vendors
+    else if (vendor.type === 'grocery') {
+      // Store grocery data and navigate
+    }
+    // For pharmacy vendors
+    else if (vendor.type === 'pharmacy') {
+      // Store pharmacy data and navigate
+    }
+  } catch (error) {
+    console.error('Navigation error:', error);
+  }
+};
+```
+
+### **Technical Implementation**:
+
+#### **Enhanced Debugging**:
+```typescript
+console.log('[VendorGrid] Vendor data structure:', {
+  id: vendor.id,
+  type: vendor.type,
+  slug: vendor.slug,
+  displaySlug: vendor.displaySlug,
+  branchName: vendor.branchName,
+  restaurantName: vendor.restaurantName,
+  branchLatitude: vendor.branchLatitude,
+  branchLongitude: vendor.branchLongitude,
+  grocerybranchLatitude: vendor.grocerybranchLatitude,
+  grocerybranchLongitude: vendor.grocerybranchLongitude,
+  pharmacybranchLatitude: vendor.pharmacybranchLatitude,
+  pharmacybranchLongitude: vendor.pharmacybranchLongitude
+});
+```
+
+#### **Coordinate Field Handling**:
+```typescript
+// Get branch coordinates based on vendor type
+let branchLat, branchLng;
+
+if (vendor.type === 'restaurant') {
+  branchLat = parseFloat(vendor.branchLatitude);
+  branchLng = parseFloat(vendor.branchLongitude);
+} else if (vendor.type === 'grocery') {
+  branchLat = parseFloat(vendor.grocerybranchLatitude);
+  branchLng = parseFloat(vendor.grocerybranchLongitude);
+} else if (vendor.type === 'pharmacy') {
+  branchLat = parseFloat(vendor.pharmacybranchLatitude);
+  branchLng = parseFloat(vendor.pharmacybranchLongitude);
+} else {
+  // Fallback to any available coordinates
+  branchLat = parseFloat(vendor.branchLatitude || vendor.grocerybranchLatitude || vendor.pharmacybranchLatitude);
+  branchLng = parseFloat(vendor.branchLongitude || vendor.grocerybranchLongitude || vendor.pharmacybranchLongitude);
+}
+```
+
+### **Benefits**:
+- ✅ **Universal Coverage**: Delivery calculation now works for all vendor types
+- ✅ **Proper Data Flow**: Delivery fees are calculated on vendor click and loaded on page load
+- ✅ **Type Safety**: Proper handling of different coordinate field names
+- ✅ **Enhanced Debugging**: Clear logging to track the delivery calculation process
+- ✅ **Consistent Experience**: All vendor types now have delivery fee display capability
+- ✅ **Robust Error Handling**: Graceful handling when delivery data is unavailable
+- ✅ **Cross-Page Compatibility**: Delivery data works across all vendor page types
+- ✅ **Performance Optimized**: Pre-calculated delivery fees for faster page loads
+
+### **User Experience Benefits**:
+- **Seamless Navigation**: Delivery calculation happens during vendor selection
+- **Immediate Display**: Pre-calculated fees show instantly on all vendor pages
+- **Consistent Behavior**: Same delivery calculation logic across all vendor types
+- **Error Resilience**: Graceful handling when delivery data is unavailable
+- **Professional Feel**: Fast, responsive vendor page loading experience
+
+---
+
+## Summary
+
+These updates have significantly improved the user experience by:
+1. **Fixing navigation issues** with correct URL routing for different vendor types
+2. **Implementing skeleton loading** for better perceived performance
+3. **Adding item click functionality** for easier product interaction
+4. **Enhancing filter modal design** with sticky buttons and scrollable categories
+5. **Improving URL parameter handling** with load-first approach
+6. **Optimizing mobile experience** with responsive layouts
+7. **Ensuring consistent behavior** across all vendor types
+8. **Providing better visual feedback** for user interactions
+9. **Implementing seamless checkout authentication** for non-logged-in users
+10. **Preserving cart data** during authentication flow
+11. **Enabling automatic redirect** to checkout after successful login
+12. **Supporting all store types** with consistent authentication behavior
+13. **Creating dedicated cart authentication modal** for better user experience
+14. **Providing contextual cart information** during authentication
+15. **Supporting multiple authentication methods** (email/password, phone/OTP)
+16. **Updating pharmacy image handling** to use new API structure
+17. **Optimizing delivery calculation logic** for better performance
+18. **Moving delivery calculation to vendor click** for faster branch page loading
+19. **Extending cache duration** to 30 minutes for improved performance
+20. **Implementing localStorage-based delivery fee loading** for immediate display
+21. **Managing localStorage quota** to prevent storage exceeded errors
+22. **Optimizing Google Maps API loading** with proper async patterns
+23. **Preventing duplicate Google Maps elements** for cleaner DOM
+24. **Implementing LCP image optimization** for better Core Web Vitals
+25. **Adding comprehensive debugging tools** for storage and performance monitoring
+26. **Eliminating all Google Maps duplicate element warnings** with comprehensive cleanup
+27. **Preventing multiple Google Maps script loading** for better performance
+28. **Centralizing Google Maps management** across all components
+29. **Implementing smart LCP image priority detection** for better Core Web Vitals
+30. **Providing automatic image optimization** without manual configuration
+31. **Implementing universal delivery calculation** for all vendor types (restaurants, groceries, pharmacies)
+32. **Adding vendor type detection** with proper coordinate field handling
+33. **Enhancing delivery fee display** across all vendor page types
+34. **Providing robust error handling** for delivery calculation failures
+35. **Ensuring cross-page compatibility** for delivery data persistence
+
+The application now provides a modern, professional user experience with correct navigation, fast loading states, intuitive interactions, seamless authentication flows, dedicated cart authentication, updated API integration, optimized delivery calculation logic, localStorage quota management, comprehensive Google Maps optimization, advanced LCP image optimization, and universal delivery calculation support across all vendor pages and checkout processes.
+
+---
+
+## Delivery Fee Storage with Unique Identifiers
+
+### **Date**: Recent
+### **Files Modified**: 
+- `components/vendor-grid.tsx`
+- `components/cart-modal.tsx`
+- `components/branch-page.tsx`
+- `app/groceries/[id]/page.tsx`
+- `app/pharmacy/[id]/page.tsx`
+
+### **Problem Identified**:
+The delivery fee data was being stored with a single key `'deliveryCalculationData'` in localStorage, which caused the wrong delivery fees to be loaded for different branches. When a user clicked on one vendor and then another, the delivery data from the first vendor would overwrite the data for the second vendor.
+
+### **Solution Implemented**:
+- **Unique Identifiers**: Created unique localStorage keys for each vendor's delivery data using the format: `deliveryCalculationData_{storeType}_{branchId}`
+- **Store Type Detection**: Added logic to determine store type from URL path (restaurant/grocery/pharmacy)
+- **Vendor-Specific Storage**: Each vendor now has its own delivery fee data that doesn't interfere with other vendors
+
+### **Changes Made**:
+
+#### **Vendor Grid Component**:
+```typescript
+// Create unique identifier for this vendor's delivery data
+const deliveryDataKey = `deliveryCalculationData_${vendor.type}_${vendor.id}`;
+
+// Store delivery calculation results in localStorage with unique key
+localStorage.setItem(deliveryDataKey, JSON.stringify(deliveryCalculationData));
+```
+
+#### **Cart Modal Component**:
+```typescript
+// Create unique identifier for this branch's delivery data
+const deliveryDataKey = `deliveryCalculationData_${storeType}_${branchId}`;
+
+// Store and load delivery data using unique key
+localStorage.setItem(deliveryDataKey, JSON.stringify(deliveryCalculationData));
+const storedData = localStorage.getItem(deliveryDataKey);
+```
+
+#### **Branch Page Component**:
+```typescript
+// Determine store type from URL path
+const pathname = window.location.pathname;
+let storeType = 'restaurant'; // default
+
+if (pathname.includes('/groceries/')) {
+  storeType = 'grocery';
+} else if (pathname.includes('/pharmacy/')) {
+  storeType = 'pharmacy';
+} else if (pathname.includes('/restaurants/')) {
+  storeType = 'restaurant';
+}
+
+const deliveryDataKey = `deliveryCalculationData_${storeType}_${params.id}`;
+const deliveryData = localStorage.getItem(deliveryDataKey);
+```
+
+#### **Grocery and Pharmacy Pages**:
+```typescript
+// Use store-specific keys for delivery data
+const deliveryDataKey = `deliveryCalculationData_grocery_${params?.id}`;
+const deliveryDataKey = `deliveryCalculationData_pharmacy_${params?.id}`;
+```
+
+### **Benefits**:
+- **Correct Delivery Fees**: Each vendor now loads its own specific delivery fee data
+- **No Data Overwriting**: Delivery data from one vendor doesn't affect another vendor
+- **Store Type Awareness**: Different store types (restaurant/grocery/pharmacy) have separate data
+- **Backward Compatibility**: Existing delivery data is gracefully handled with fallbacks
+- **Improved User Experience**: Users see accurate delivery fees for each vendor they visit
+
+### **Technical Implementation**:
+- **Key Format**: `deliveryCalculationData_{storeType}_{branchId}`
+- **Store Types**: `restaurant`, `grocery`, `pharmacy`
+- **URL Path Detection**: Automatic store type detection from current URL
+- **Fallback Handling**: Graceful handling when delivery data is not found
+- **Error Recovery**: Proper error handling and logging for debugging
+
+### **User Experience Benefits**:
+- **Accurate Pricing**: Users see correct delivery fees for each vendor
+- **Consistent Behavior**: Same delivery calculation logic across all vendor types
+- **Fast Loading**: Pre-calculated delivery fees load instantly for each vendor
+- **No Confusion**: No more wrong delivery fees showing for different vendors
+
+---
+
+## Summary
+
+---
+
+## Next.js Image Optimization Fixes
+
+### **Date**: Recent
+### **Files Modified**: 
+- `components/new-hero.tsx`
+- `components/your-favorites.tsx`
+- `components/footer.tsx`
+- `components/main-cta.tsx`
+- `components/split-hero.tsx`
+- `components/new-feature.tsx`
+- `components/top-rated-section.tsx`
+
+### **Issues Fixed**:
+
+#### **1. Missing `sizes` Prop for Images with `fill`**:
+- **Problem**: Next.js requires the `sizes` prop for images with `fill` to optimize loading performance
+- **Solution**: Added appropriate `sizes` attributes for all Image components with `fill`
+
+#### **2. Missing `priority` Prop for LCP Images**:
+- **Problem**: Largest Contentful Paint (LCP) images need the `priority` prop for optimal Core Web Vitals
+- **Solution**: Ensured first/hero images have `priority={true}`
+
+#### **3. Aspect Ratio Issue in Footer Logo**:
+- **Problem**: Footer logo had width modified but not height, causing aspect ratio issues
+- **Solution**: Added `style={{ height: "auto" }}` to maintain aspect ratio
+
+#### **4. Google Maps Script Duplication**:
+- **Problem**: Multiple Google Maps script tags were being loaded
+- **Solution**: Enhanced existing script deduplication logic in Google Maps provider
+
+### **Changes Made**:
+
+#### **New Hero Component**:
+```typescript
+<Image
+  src={img.src}
+  alt={img.alt}
+  fill
+  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+  className={`object-contain rounded-3xl border-4 border-white absolute inset-0 transition-opacity duration-700 ${idx === current ? "opacity-100 z-10" : "opacity-0 z-0"}`}
+  priority={idx === 0}
+/>
+```
+
+#### **Your Favorites Component**:
+```typescript
+<Image
+  src={vendor.image}
+  alt={vendor.name}
+  fill
+  sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
+  className="object-cover"
+/>
+```
+
+#### **Footer Logo Fix**:
+```typescript
+<Image
+  src="/Delika-Logo.png"
+  alt="Delika Logo"
+  width={100}
+  height={100}
+  className="rounded-lg"
+  style={{ height: "auto" }}
+/>
+```
+
+#### **Main CTA Component**:
+```typescript
+<Image
+  src="/burger.webp"
+  alt="Delika illustration"
+  fill
+  sizes="(max-width: 768px) 100vw, 450px"
+  className="object-contain object-right-bottom opacity-20 md:opacity-100"
+  priority
+/>
+```
+
+#### **Split Hero Component**:
+```typescript
+<Image
+  src={split.image}
+  alt={split.title}
+  fill
+  sizes="(max-width: 768px) 100vw, 33vw"
+  className="object-cover object-center absolute inset-0 z-0 transition-transform duration-500 group-hover:scale-105"
+  priority={i === 0}
+/>
+```
+
+#### **New Feature Component**:
+```typescript
+<Image
+  src="/new-feature.webp"
+  alt="Experience the future of delivery"
+  fill
+  sizes="(max-width: 768px) 100vw, 1200px"
+  className="object-cover"
+/>
+```
+
+#### **Top Rated Section Component**:
+```typescript
+<Image
+  src={restaurant.image || "/main.jpg"}
+  alt={restaurant.name}
+  fill
+  sizes="(max-width: 768px) 280px, 280px"
+  className="object-cover"
+/>
+```
+
+### **Benefits**:
+- **Improved Core Web Vitals**: Better LCP (Largest Contentful Paint) scores
+- **Optimized Loading**: Proper image sizing for different screen sizes
+- **Reduced Layout Shift**: Better aspect ratio handling
+- **Enhanced Performance**: Faster image loading with appropriate sizes
+- **Better SEO**: Improved page performance metrics
+- **Cleaner Console**: Eliminated Next.js Image warnings
+
+### **Technical Implementation**:
+- **Responsive Sizing**: Used appropriate `sizes` values for different viewport widths
+- **Priority Loading**: Applied `priority` to above-the-fold images
+- **Aspect Ratio**: Fixed footer logo aspect ratio issues
+- **Script Deduplication**: Enhanced Google Maps script management
+
+### **Performance Improvements**:
+- **Faster LCP**: Priority loading for hero images
+- **Reduced Bandwidth**: Optimized image sizes for different devices
+- **Better UX**: No more layout shifts from image loading
+- **Cleaner Code**: Eliminated all Next.js Image warnings
+
+---
+
+## Summary

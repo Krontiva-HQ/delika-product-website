@@ -8,8 +8,8 @@ import { useState, useEffect } from "react"
 
 const sliderImages = [
   { id: 1, src: "/headerimage.png", alt: "Delika delivery illustration" },
-  { id: 2, src: "/drugstore.png", alt: "Delika delivery illustration" },
-  { id: 3, src: "/grocery.png", alt: "Delika delivery illustration" },
+  { id: 2, src: "/fast-food.jpg", alt: "Delika delivery illustration" },
+  { id: 3, src: "/shopping-bag.jpg", alt: "Delika delivery illustration" },
 ]
 
 export function NewHero() {
@@ -26,7 +26,7 @@ export function NewHero() {
     <section 
       className="relative flex items-center justify-center overflow-hidden" 
       style={{ 
-        minHeight: 'calc(-24rem + 100vh)',
+        minHeight: 'calc(-4rem + 100vh)',
         height: 'calc(-84rem + 100vh)'
       }}
     >
@@ -98,6 +98,7 @@ export function NewHero() {
                 src={img.src}
                 alt={img.alt}
                 fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className={`object-contain rounded-3xl border-4 border-white absolute inset-0 transition-opacity duration-700 ${idx === current ? "opacity-100 z-10" : "opacity-0 z-0"}`}
                 priority={idx === 0}
               />

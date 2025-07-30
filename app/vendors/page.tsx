@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { StoreHeader } from "@/components/store-header";
 import { VendorGrid } from "@/components/vendor-grid";
 import { VendorSkeleton } from "@/components/vendor-skeleton";
+import { safeSetLocalStorage, safeGetLocalStorage, getLocalStorageUsage } from '@/lib/utils';
 
 interface VendorData {
     Restaurants: any[];
@@ -28,23 +29,25 @@ export default function VendorsPage() {
     const [userCoordinates, setUserCoordinates] = useState<{ lat: number; lng: number } | null>(null);
     const [activeTab, setActiveTab] = useState<string>('restaurants');
 
-    // Cache duration in milliseconds (5 minutes)
-    const CACHE_DURATION = 5 * 60 * 1000;
+    // Cache duration in milliseconds (30 minutes)
+    const CACHE_DURATION = 30 * 60 * 1000;
 
     const getCachedData = (): CachedData => {
         try {
-            const cached = localStorage.getItem('vendorDataCache');
-            return cached ? JSON.parse(cached) : { lastFetched: {} };
+            return safeGetLocalStorage('vendorDataCache', { lastFetched: {} });
         } catch {
             return { lastFetched: {} };
         }
     };
 
     const setCachedData = (data: CachedData) => {
-        try {
-            localStorage.setItem('vendorDataCache', JSON.stringify(data));
-        } catch (error) {
-            console.warn('Failed to cache vendor data:', error);
+        // Log localStorage usage before storing
+        const usage = getLocalStorageUsage();
+        console.log(`localStorage usage: ${usage.percentage.toFixed(1)}% (${usage.used} bytes used, ${usage.available} bytes available)`);
+        
+        const success = safeSetLocalStorage('vendorDataCache', data);
+        if (!success) {
+            console.warn('Failed to cache vendor data due to size constraints');
         }
     };
 

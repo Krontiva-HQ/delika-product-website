@@ -139,6 +139,7 @@ export function TopRatedSection() {
                       src={restaurant.image || "/main.jpg"}
                       alt={restaurant.name}
                       fill
+                      sizes="(max-width: 768px) 280px, 280px"
                       className="object-cover"
                     />
                     <div className="absolute bottom-2 left-2 bg-white px-2 py-1 rounded-md text-sm font-medium flex items-center gap-1">

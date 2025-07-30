@@ -156,75 +156,65 @@ function parseTimeToMinutes(timeStr?: string): number | null {
   return hour * 60 + minute;
 }
 
-const isRestaurantOpen = (activeHours?: Array<{day: string, openingTime: string, closingTime: string, isActive?: boolean}>): boolean => {
-  if (!activeHours || activeHours.length === 0) {
-    console.log('No activeHours data available');
-    return false;
-  }
-
-  console.log('ActiveHours data:', activeHours);
-
-  const now = new Date();
-  const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const currentDayName = dayNames[currentDay];
-
-  console.log('Current day:', currentDayName, 'Day index:', currentDay);
-
-  // Find today's hours - try multiple matching strategies
-  let todayHours = activeHours.find(hour => 
-    hour.day.toLowerCase() === currentDayName.toLowerCase()
-  );
-
-  // If not found, try matching just the first 3 characters (Mon, Tue, etc.)
-  if (!todayHours) {
-    todayHours = activeHours.find(hour => 
-      hour.day.toLowerCase().substring(0, 3) === currentDayName.toLowerCase().substring(0, 3)
-    );
-  }
-
-  console.log('Found today hours:', todayHours);
-
-  if (!todayHours) {
-    console.log('No hours found for today');
-    return false;
-  }
-
-  // Check if isActive field exists and is false
-  if (todayHours.hasOwnProperty('isActive') && !todayHours.isActive) {
-    console.log('Restaurant is not active today (isActive: false)');
-    return false;
-  }
-
-  // Get current time in minutes
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-  const currentTimeInMinutes = currentHour * 60 + currentMinute;
-
-  console.log('Current time:', `${currentHour}:${currentMinute}`, 'Minutes:', currentTimeInMinutes);
-
-  const openTimeInMinutes = parseTimeToMinutes(todayHours.openingTime);
-  const closeTimeInMinutes = parseTimeToMinutes(todayHours.closingTime);
-  
-  console.log('Opening time:', todayHours.openingTime, 'Minutes:', openTimeInMinutes);
-  console.log('Closing time:', todayHours.closingTime, 'Minutes:', closeTimeInMinutes);
-  
-  if (openTimeInMinutes === null || closeTimeInMinutes === null) {
-    console.log('Failed to parse opening/closing times');
-    return false;
-  }
-
-  // Handle cases where closing time is next day (e.g., open until 2 AM)
-  if (closeTimeInMinutes < openTimeInMinutes) {
-    const isOpen = currentTimeInMinutes >= openTimeInMinutes || currentTimeInMinutes <= closeTimeInMinutes;
-    console.log('Cross-midnight hours - Is open:', isOpen);
-    return isOpen;
-  }
-
-  const isOpen = currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes <= closeTimeInMinutes;
-  console.log('Regular hours - Is open:', isOpen);
+// Replace isRestaurantOpen with a client-only hook
+function useRestaurantOpen(activeHours?: Array<{day: string, openingTime: string, closingTime: string, isActive?: boolean}>) {
+  const [isOpen, setIsOpen] = useState(false);
+  useEffect(() => {
+    if (!activeHours || activeHours.length === 0) {
+      setIsOpen(false);
+      return;
+    }
+    const now = new Date();
+    const currentDay = now.getDay();
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const currentDayName = dayNames[currentDay];
+    let todayHours = activeHours.find(hour => hour.day.toLowerCase() === currentDayName.toLowerCase());
+    if (!todayHours) {
+      todayHours = activeHours.find(hour => hour.day.toLowerCase().substring(0, 3) === currentDayName.toLowerCase().substring(0, 3));
+    }
+    if (!todayHours) {
+      setIsOpen(false);
+      return;
+    }
+    if (todayHours.hasOwnProperty('isActive') && !todayHours.isActive) {
+      setIsOpen(false);
+      return;
+    }
+    const parseTimeToMinutes = (timeStr?: string): number | null => {
+      if (!timeStr) return null;
+      let hour = 0, minute = 0;
+      let isPM = false;
+      let isAM = false;
+      let time = timeStr.trim();
+      if (time.toLowerCase().includes('am') || time.toLowerCase().includes('pm')) {
+        isPM = time.toLowerCase().includes('pm');
+        isAM = time.toLowerCase().includes('am');
+        time = time.replace(/am|pm|AM|PM/, '').trim();
+      }
+      const [h, m] = time.split(':');
+      hour = parseInt(h, 10);
+      minute = m ? parseInt(m, 10) : 0;
+      if (isPM && hour < 12) hour += 12;
+      if (isAM && hour === 12) hour = 0;
+      return hour * 60 + minute;
+    };
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    const openTimeInMinutes = parseTimeToMinutes(todayHours.openingTime);
+    const closeTimeInMinutes = parseTimeToMinutes(todayHours.closingTime);
+    if (openTimeInMinutes === null || closeTimeInMinutes === null) {
+      setIsOpen(false);
+      return;
+    }
+    if (closeTimeInMinutes < openTimeInMinutes) {
+      setIsOpen(currentTimeInMinutes >= openTimeInMinutes || currentTimeInMinutes <= closeTimeInMinutes);
+      return;
+    }
+    setIsOpen(currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes <= closeTimeInMinutes);
+  }, [activeHours]);
   return isOpen;
-};
+}
 
 function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsModalProps) {
   // --- NEW STATE FOR EXTRAS SELECTION ---
@@ -359,6 +349,7 @@ function ItemDetailsModal({ isOpen, onClose, item, onAddToCart }: ItemDetailsMod
               src={item.image_url || item.foodImage?.url || (item.foodImage as any).path || "/placeholder-image.jpg"}
               alt={item.name}
               fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover w-full h-full"
             />
           </div>
@@ -489,116 +480,47 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
     return isNaN(parsed) ? 0 : parsed;
   }
 
-  // Function to calculate delivery fees when branch page loads
-  const calculateDeliveryFees = async () => {
-    if (!branch) return;
-    
+  // Function to load delivery fees from localStorage (now uses generic key)
+  const loadDeliveryFeesFromStorage = () => {
     try {
-      setIsLoadingDelivery(true);
-      const locationData = localStorage.getItem('userLocationData');
-      
-      console.log('[BranchPage] Starting delivery fee calculation for branch:', params.id);
-      console.log('[BranchPage] Branch location:', branch.branchLatitude, branch.branchLongitude);
-      console.log('[BranchPage] User location data:', locationData);
-      
-      if (!locationData) {
-        console.log('[BranchPage] No user location data found, skipping delivery calculation');
-        setIsLoadingDelivery(false);
-        return;
-      }
-
-      const { lat, lng } = JSON.parse(locationData);
-      const branchLat = parseFloat(branch.branchLatitude);
-      const branchLng = parseFloat(branch.branchLongitude);
-      
-      console.log('[BranchPage] User coordinates:', { lat, lng });
-      console.log('[BranchPage] Branch coordinates:', { branchLat, branchLng });
-      
-      const calculatedDistance = await calculateDistance(
-        { latitude: lat, longitude: lng },
-        { latitude: branchLat, longitude: branchLng }
-      );
-      
-      console.log('[BranchPage] Calculated distance:', calculatedDistance, 'km');
-      setDistance(toNumber(calculatedDistance));
-
-      // Get userId from localStorage userData
-      let userId = '';
-      try {
-        const userData = localStorage.getItem('userData');
-        if (userData) {
-          const parsedUserData = JSON.parse(userData);
-          userId = parsedUserData.id || '';
+      const deliveryData = localStorage.getItem('deliveryCalculationData');
+      if (deliveryData) {
+        const parsed = JSON.parse(deliveryData);
+        console.log('[BranchPage] Loading delivery fees from localStorage with key: deliveryCalculationData', parsed);
+        // Only check if data is not too old (5 min)
+        const now = Date.now();
+        const dataAge = now - parsed.timestamp;
+        const maxAge = 30 * 60 * 1000; // 30 minutes
+        if (dataAge < maxAge) {
+          setRiderFee(toNumber(parsed.riderFee));
+          setPedestrianFee(toNumber(parsed.pedestrianFee));
+          setPlatformFee(toNumber(parsed.platformFee));
+          setDistance(toNumber(parsed.distance));
+          console.log('[BranchPage] ✅ Loaded delivery fees from localStorage');
+        } else {
+          console.log('[BranchPage] Cached delivery data is too old, clearing');
+          setRiderFee(0);
+          setPedestrianFee(0);
+          setPlatformFee(0);
+          setDistance(0);
+          localStorage.removeItem('deliveryCalculationData');
         }
-      } catch (error) {
-        console.log('[BranchPage] Could not retrieve userId from userData:', error);
+      } else {
+        console.log('[BranchPage] No delivery calculation data found in localStorage for key: deliveryCalculationData');
+        setRiderFee(0);
+        setPedestrianFee(0);
+        setPlatformFee(0);
+        setDistance(0);
       }
-
-      // Calculate current cart total (if any items in cart)
-      const currentCartTotal = cart.reduce((total, item) => {
-        const base = parseFloat(item.price) * item.quantity;
-        const extrasTotal = (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0) * item.quantity;
-        return total + base + extrasTotal;
-      }, 0);
-
-      console.log('[BranchPage] Current cart total for delivery calculation:', currentCartTotal);
-
-      // Prepare the payload for delivery price calculation
-      const deliveryPayload = {
-        pickup: {
-          fromLatitude: branchLat.toString(),
-          fromLongitude: branchLng.toString(),
-        },
-        dropOff: {
-          toLatitude: lat.toString(),
-          toLongitude: lng.toString(),
-        },
-        rider: true,
-        pedestrian: true,
-        total: currentCartTotal,
-        subTotal: currentCartTotal,
-        userId: userId
-      };
-
-      console.log('[BranchPage] Sending delivery payload to API:', deliveryPayload);
-
-      // Get delivery prices from API
-      const deliveryResponse = await calculateDeliveryPrices(deliveryPayload);
-      const { 
-        riderFee: newRiderFee, 
-        pedestrianFee: newPedestrianFee,
-        platformFee: newPlatformFee
-      } = deliveryResponse;
-
-      console.log('[BranchPage] Delivery API response:', deliveryResponse);
-      console.log('[BranchPage] Extracted fees - Rider:', newRiderFee, 'Pedestrian:', newPedestrianFee, 'Platform:', newPlatformFee);
-      
-      setRiderFee(toNumber(newRiderFee));
-      setPedestrianFee(toNumber(newPedestrianFee));
-      setPlatformFee(toNumber(newPlatformFee));
-      
-      // Store delivery calculation results in localStorage for persistence
-      const deliveryCalculationData = {
-        riderFee: toNumber(newRiderFee),
-        pedestrianFee: toNumber(newPedestrianFee),
-        platformFee: toNumber(newPlatformFee),
-        distance: toNumber(calculatedDistance),
-        cartTotal: currentCartTotal,
-        branchId: params.id,
-        timestamp: Date.now(),
-        deliveryType: 'rider' // Default to rider
-      };
-      
-      localStorage.setItem('deliveryCalculationData', JSON.stringify(deliveryCalculationData));
-      console.log('[BranchPage] ✅ Stored delivery calculation data in localStorage:', deliveryCalculationData);
-      
-      console.log('[BranchPage] ✅ Delivery fees calculated successfully');
     } catch (error) {
-      console.error('[BranchPage] Error calculating delivery fees:', error);
-    } finally {
-      setIsLoadingDelivery(false);
+      console.error('[BranchPage] Error loading delivery fees from localStorage:', error);
+      setRiderFee(0);
+      setPedestrianFee(0);
+      setPlatformFee(0);
+      setDistance(0);
+      localStorage.removeItem('deliveryCalculationData');
     }
-  };
+  }
 
   // Handle URL parameters for category selection
   useEffect(() => {
@@ -612,6 +534,14 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
       }
     }
   }, [urlParams?.category, branch]);
+
+  // Load delivery fees from localStorage after branch data is loaded
+  useEffect(() => {
+    if (branch && !isLoading) {
+      console.log('[BranchPage] Branch data loaded, loading delivery fees from localStorage');
+      loadDeliveryFeesFromStorage();
+    }
+  }, [branch, isLoading]);
 
   // Check authentication status on mount and when localStorage changes
   useEffect(() => {
@@ -645,7 +575,7 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
       window.removeEventListener('userDataUpdated', checkAuth)
       window.removeEventListener('storage', checkAuth)
     }
-  }, [branch])
+  }, []) // Removed branch dependency
 
   // Check if current branch is in user's favorites
   const checkIfBranchIsLiked = async (userId: string) => {
@@ -730,25 +660,13 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
   }, [params.id])
 
   // Add this effect to check restaurant status
-  useEffect(() => {
-    if (branch) {
-      setIsOpen(isRestaurantOpen(branch.activeHours));
-    }
-  }, [branch]);
+  const isRestaurantOpen = useRestaurantOpen(branch?.activeHours);
 
-  // Calculate delivery fees when branch data is loaded
-  useEffect(() => {
-    if (branch && !isLoading) {
-      console.log('[BranchPage] Branch data loaded, calculating delivery fees');
-      calculateDeliveryFees();
-    }
-  }, [branch, isLoading]);
-
-  // Recalculate delivery fees when cart changes
+  // Reload delivery fees when cart changes (but don't recalculate)
   useEffect(() => {
     if (branch && cart.length > 0) {
-      console.log('[BranchPage] Cart changed, recalculating delivery fees');
-      calculateDeliveryFees();
+      console.log('[BranchPage] Cart changed, reloading delivery fees from localStorage');
+      loadDeliveryFeesFromStorage();
     }
   }, [cart, branch]);
 
@@ -1015,6 +933,7 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
               src={branch.restaurant?.[0]?.image_url || branch.restaurant?.[0]?.restaurantLogo?.url || '/placeholder-image.jpg'}
               alt={branch.restaurant?.[0]?.restaurantName || 'Restaurant'}
               fill
+              sizes="100vw"
               priority
               className="object-cover rounded-2xl"
             />
@@ -1045,8 +964,8 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
               <span>•</span>
               <span>{branch.branchCity}</span>
               <span>•</span>
-              <span className={isOpen ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                {isOpen ? 'Open Now' : 'Closed'}
+              <span className={isRestaurantOpen ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                {isRestaurantOpen ? 'Open Now' : 'Closed'}
               </span>
             </div>
             <div className="mt-3 flex justify-center">
@@ -1103,7 +1022,7 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
             {/* Menu Items */}
             <div className="bg-white rounded-lg p-4 sm:p-6">
               <h2 className="font-semibold mb-4 sm:mb-6">{selectedCategory}</h2>
-              {!isOpen && (
+              {!isRestaurantOpen && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
                   This restaurant is currently closed. Orders can only be placed during operating hours.
                 </div>
@@ -1114,13 +1033,14 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
                   const quantity = itemInCart?.quantity || 0;
                   
                   return (
-                    <div key={`${item.name}-${index}`} className={`flex flex-col gap-4 p-4 border rounded-lg ${!item.available || !isOpen ? 'opacity-50' : ''}`}>
+                    <div key={`${item.name}-${index}`} className={`flex flex-col gap-4 p-4 border rounded-lg ${!item.available || !isRestaurantOpen ? 'opacity-50' : ''}`}>
                       <div className="relative w-full h-40 flex-shrink-0">
                         {item.image_url || item.foodImage ? (
                           <Image
                             src={item.image_url || item.foodImage.url}
                             alt={item.name}
                             fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                             className={`object-cover rounded-lg ${!item.available ? 'grayscale' : ''}`}
                           />
                         ) : (
@@ -1136,7 +1056,7 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
                         <div className="flex items-center justify-between mt-2">
                           <span className="font-medium text-gray-900">GH₵ {item.price}</span>
                           <div className="flex items-center gap-2">
-                            {item.available && isOpen ? (
+                            {item.available && isRestaurantOpen ? (
                               quantity > 0 ? (
                                 <div className="flex items-center gap-2">
                                   <Button 

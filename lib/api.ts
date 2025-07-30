@@ -3,6 +3,7 @@
  */
 
 import { formatOrderData } from './utils/orderUtils';
+import { safeSetLocalStorage, getLocalStorageUsage } from './utils';
 
 /**
  * Interface for auth token response
@@ -273,52 +274,55 @@ export async function getAllData<T = any>(): Promise<T> {
     
     // Store essential data in localStorage for detail pages to access
     if (typeof window !== 'undefined') {
-      try {
-        // Store only essential data to avoid quota exceeded
-        const essentialData = {
-          Restaurants: data.Restaurants?.map((restaurant: any) => ({
-            id: restaurant.id,
-            slug: restaurant.slug,
-            branchName: restaurant.branchName,
-            branchLocation: restaurant.branchLocation,
-            branchCity: restaurant.branchCity,
-            active: restaurant.active,
-            Restaurant: restaurant.Restaurant ? {
-              restaurantLogo: restaurant.Restaurant.restaurantLogo,
-              restaurantName: restaurant.Restaurant.restaurantName,
-              restaurantDescription: restaurant.Restaurant.restaurantDescription
-            } : null
-          })) || [],
-          Groceries: data.Groceries?.map((grocery: any) => ({
-            id: grocery.id,
-            slug: grocery.slug,
-            grocerybranchName: grocery.grocerybranchName,
-            active: grocery.active,
-            Grocery: grocery.Grocery ? {
-              groceryshopLogo: grocery.Grocery.groceryshopLogo,
-              groceryshopName: grocery.Grocery.groceryshopName,
-              groceryshopDescription: grocery.Grocery.groceryshopDescription
-            } : null
-          })) || [],
-          Pharmacies: data.Pharmacies?.map((pharmacy: any) => ({
-            id: pharmacy.id,
-            slug: pharmacy.slug,
-            pharmacybranchName: pharmacy.pharmacybranchName,
-            active: pharmacy.active,
-            Pharmacy: pharmacy.Pharmacy ? {
-              pharmacyLogo: pharmacy.Pharmacy.pharmacyLogo,
-              pharmacyName: pharmacy.Pharmacy.pharmacyName,
-              pharmacyDescription: pharmacy.Pharmacy.pharmacyDescription
-            } : null
-          })) || [],
-          Ratings: data.Ratings || []
-        };
-        
-        localStorage.setItem('allData', JSON.stringify(essentialData));
+      // Log localStorage usage before storing
+      const usage = getLocalStorageUsage();
+      console.log(`localStorage usage before storing allData: ${usage.percentage.toFixed(1)}% (${usage.used} bytes used, ${usage.available} bytes available)`);
+      
+      // Store only essential data to avoid quota exceeded
+      const essentialData = {
+        Restaurants: data.Restaurants?.map((restaurant: any) => ({
+          id: restaurant.id,
+          slug: restaurant.slug,
+          branchName: restaurant.branchName,
+          branchLocation: restaurant.branchLocation,
+          branchCity: restaurant.branchCity,
+          active: restaurant.active,
+          Restaurant: restaurant.Restaurant ? {
+            restaurantLogo: restaurant.Restaurant.restaurantLogo,
+            restaurantName: restaurant.Restaurant.restaurantName,
+            restaurantDescription: restaurant.Restaurant.restaurantDescription
+          } : null
+        })) || [],
+        Groceries: data.Groceries?.map((grocery: any) => ({
+          id: grocery.id,
+          slug: grocery.slug,
+          grocerybranchName: grocery.grocerybranchName,
+          active: grocery.active,
+          Grocery: grocery.Grocery ? {
+            groceryshopLogo: grocery.Grocery.groceryshopLogo,
+            groceryshopName: grocery.Grocery.groceryshopName,
+            groceryshopDescription: grocery.Grocery.groceryshopDescription
+          } : null
+        })) || [],
+        Pharmacies: data.Pharmacies?.map((pharmacy: any) => ({
+          id: pharmacy.id,
+          slug: pharmacy.slug,
+          pharmacybranchName: pharmacy.pharmacybranchName,
+          active: pharmacy.active,
+          Pharmacy: pharmacy.Pharmacy ? {
+            pharmacyLogo: pharmacy.Pharmacy.pharmacyLogo,
+            pharmacyName: pharmacy.Pharmacy.pharmacyName,
+            pharmacyDescription: pharmacy.Pharmacy.pharmacyDescription
+          } : null
+        })) || [],
+        Ratings: data.Ratings || []
+      };
+      
+      const success = safeSetLocalStorage('allData', essentialData);
+      if (success) {
         console.log('Stored essential allData in localStorage for detail pages');
-      } catch (storageError) {
-        console.warn('Failed to store allData in localStorage:', storageError);
-        // Continue without storing if localStorage fails
+      } else {
+        console.warn('Failed to store allData due to size constraints');
       }
     }
     

@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { Rubik } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster"
-import Script from "next/script"
-import { OrderStatusWidget } from '@/components/order-status-widget';
+import { OrderStatusWidget } from "@/components/order-status-widget";
+import { Toaster } from "@/components/ui/toaster";
+import Script from "next/script";
+import { GoogleMapsProvider } from "@/components/google-maps-provider";
 
 const rubik = Rubik({
   subsets: ["latin"],
   variable: "--font-rubik",
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -24,9 +24,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${rubik.variable} antialiased font-rubik`}>
-        {children}
-        <OrderStatusWidget />
-        <Toaster />
+        <GoogleMapsProvider>
+          {children}
+          <OrderStatusWidget />
+          <Toaster />
+        </GoogleMapsProvider>
         <Script
           src="https://js.paystack.co/v1/inline.js"
           strategy="beforeInteractive"

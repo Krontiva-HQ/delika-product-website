@@ -99,6 +99,7 @@ export function MainCTA() {
               src="/burger.webp"
               alt="Delika illustration"
               fill
+              sizes="(max-width: 768px) 100vw, 450px"
               className="object-contain object-right-bottom opacity-20 md:opacity-100"
               priority
             />

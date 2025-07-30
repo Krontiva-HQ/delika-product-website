@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
-import { useLoadScript, Autocomplete } from "@react-google-maps/api"
+import { loadGoogleMaps } from "@/lib/google-maps"
 
 interface BetaTesterForm {
   full_name: string
@@ -56,12 +56,21 @@ export function BetaTesterForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState(false)
-  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null)
+  const [isMapsLoaded, setIsMapsLoaded] = useState(false)
 
-  const { isLoaded } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
-    libraries: ["places"]
-  })
+  // Load Google Maps
+  useEffect(() => {
+    const loadMaps = async () => {
+      try {
+        await loadGoogleMaps();
+        setIsMapsLoaded(true);
+      } catch (error) {
+        console.error('Failed to load Google Maps:', error);
+      }
+    };
+
+    loadMaps();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement
@@ -90,23 +99,6 @@ export function BetaTesterForm() {
       ...prev,
       [name]: value
     }))
-  }
-
-  const onPlaceSelected = () => {
-    if (autocomplete) {
-      const place = autocomplete.getPlace()
-      if (place.geometry && place.geometry.location) {
-        const lat = place.geometry.location.lat()
-        const lng = place.geometry.location.lng()
-        
-        setFormData(prev => ({
-          ...prev,
-          delivery_address: place.formatted_address || "",
-          latitude: lat || null,
-          longitude: lng || null
-        }))
-      }
-    }
   }
 
   const validateForm = () => {
@@ -184,7 +176,7 @@ export function BetaTesterForm() {
     }
   }
 
-  if (!isLoaded) {
+  if (!isMapsLoaded) {
     return <div>Loading...</div>
   }
 
@@ -271,19 +263,36 @@ export function BetaTesterForm() {
               <MapPin className="w-4 h-4" />
               Delivery Address / Zone
             </Label>
-            <Autocomplete
-              onLoad={setAutocomplete}
-              onPlaceChanged={onPlaceSelected}
-            >
-              <Input
-                id="delivery_address"
-                name="delivery_address"
-                value={formData.delivery_address}
-                onChange={handleInputChange}
-                required
-                placeholder="Enter your delivery address"
-              />
-            </Autocomplete>
+            <Input
+              id="delivery_address"
+              name="delivery_address"
+              value={formData.delivery_address}
+              onChange={handleInputChange}
+              required
+              placeholder="Enter your delivery address"
+              ref={(input) => {
+                if (input && isMapsLoaded && window.google?.maps?.places) {
+                  const autocomplete = new window.google.maps.places.Autocomplete(input, {
+                    types: ['address'],
+                    componentRestrictions: { country: 'gh' }
+                  });
+                  autocomplete.addListener('place_changed', () => {
+                    const place = autocomplete.getPlace();
+                    if (place.geometry && place.geometry.location) {
+                      const lat = place.geometry.location.lat();
+                      const lng = place.geometry.location.lng();
+                      
+                      setFormData(prev => ({
+                        ...prev,
+                        delivery_address: place.formatted_address || "",
+                        latitude: lat || null,
+                        longitude: lng || null
+                      }));
+                    }
+                  });
+                }
+              }}
+            />
           </div>
 
           <div className="space-y-2">

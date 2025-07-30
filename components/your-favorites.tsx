@@ -98,6 +98,7 @@ export function YourFavorites() {
                     src={vendor.image}
                     alt={vendor.name}
                     fill
+                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
                     className="object-cover"
                   />
                   <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded-full text-xs font-medium text-gray-700">
