@@ -183,13 +183,6 @@ export function SiteHeader() {
               {isSignInDropdownOpen && (
                 <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2">
                   <Link
-                    href="/login"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
-                    onClick={() => setIsSignInDropdownOpen(false)}
-                  >
-                    as User
-                  </Link>
-                  <Link
                     href="https://manage.delika.app"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
                     onClick={() => setIsSignInDropdownOpen(false)}
@@ -306,13 +299,6 @@ export function SiteHeader() {
               <div className="space-y-2">
                 <div className="text-lg font-medium text-gray-900">Sign In</div>
                 <div className="pl-4 space-y-2">
-                  <Link
-                    href="/login"
-                    className="block text-base text-gray-600 hover:text-orange-500 transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    as User
-                  </Link>
                   <Link
                     href="https://manage.delika.app"
                     className="block text-base text-gray-600 hover:text-orange-500 transition-colors"

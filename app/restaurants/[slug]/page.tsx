@@ -2,6 +2,7 @@
 
 import { BranchPage } from "@/components/branch-page"
 import { AuthNav, UserData } from "@/components/auth-nav"
+import { BrowserHistoryManager } from "@/components/browser-history-manager"
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
@@ -54,14 +55,15 @@ export default function RestaurantPage({ params }: PageProps) {
     localStorage.removeItem('branchSlug')
     localStorage.removeItem('authToken')
     setUserData(null)
-    window.location.href = '/'
+    router.push('/')
   }
 
   const handleHomeClick = () => {
-    window.location.href = '/'
+    router.push('/')
   }
 
   const handleBackToRestaurants = () => {
+    // Use router.push for proper browser history management
     router.push('/vendors')
   }
 
@@ -74,6 +76,7 @@ export default function RestaurantPage({ params }: PageProps) {
       }
       return (
         <div className="flex flex-col min-h-screen">
+          <BrowserHistoryManager pageType="restaurant" slug={resolvedParams.slug} />
           <AuthNav
             userData={userData}
             onViewChange={handleViewChange}
@@ -100,6 +103,7 @@ export default function RestaurantPage({ params }: PageProps) {
     // Pass the actual branch ID to BranchPage
     return (
       <div className="flex flex-col min-h-screen">
+        <BrowserHistoryManager pageType="restaurant" slug={resolvedParams.slug} />
         <AuthNav
           userData={userData}
           onViewChange={handleViewChange}
@@ -125,6 +129,7 @@ export default function RestaurantPage({ params }: PageProps) {
     console.error('Error in RestaurantPage:', error)
     return (
       <div className="flex flex-col min-h-screen">
+        <BrowserHistoryManager pageType="restaurant" slug={resolvedParams.slug} />
         <AuthNav
           userData={userData}
           onViewChange={handleViewChange}

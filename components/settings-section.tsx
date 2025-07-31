@@ -191,13 +191,13 @@ export function SettingsSection({ userData, onUserDataUpdate }: SettingsSectionP
     }, [userData?.id]); // Re-fetch when user ID changes
 
     // Mock transaction history
-    const [transactions] = useState([
-        { id: '1', type: 'credit', amount: 100, description: 'Added to wallet', date: '2024-01-15', status: 'completed' },
-        { id: '2', type: 'debit', amount: 25.50, description: 'Order #ORD-2024-001', date: '2024-01-14', status: 'completed' },
-        { id: '3', type: 'credit', amount: 50, description: 'Auto-reload', date: '2024-01-13', status: 'completed' },
-        { id: '4', type: 'debit', amount: 15.75, description: 'Order #ORD-2024-002', date: '2024-01-12', status: 'completed' },
-        { id: '5', type: 'debit', amount: 32.25, description: 'Order #ORD-2024-003', date: '2024-01-10', status: 'completed' },
-    ])
+    // const [transactions] = useState([
+    //     { id: '1', type: 'credit', amount: 100, description: 'Added to wallet', date: '2024-01-15', status: 'completed' },
+    //     { id: '2', type: 'debit', amount: 25.50, description: 'Order #ORD-2024-001', date: '2024-01-14', status: 'completed' },
+    //     { id: '3', type: 'credit', amount: 50, description: 'Auto-reload', date: '2024-01-13', status: 'completed' },
+    //     { id: '4', type: 'debit', amount: 15.75, description: 'Order #ORD-2024-002', date: '2024-01-12', status: 'completed' },
+    //     { id: '5', type: 'debit', amount: 32.25, description: 'Order #ORD-2024-003', date: '2024-01-10', status: 'completed' },
+    // ])
 
     const handleSaveProfile = async () => {
         setIsSaving(true)
@@ -542,53 +542,6 @@ export function SettingsSection({ userData, onUserDataUpdate }: SettingsSectionP
                                             {isLoadingBalance ? 'Refreshing...' : 'Refresh Balance'}
                                         </Button>
                                     </div>
-                                </div>
-
-
-                            </div>
-                        </div>
-
-
-
-                        {/* Transaction History */}
-                        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-                            <div className="border-b border-gray-200 px-6 py-4">
-                                <h3 className="text-lg font-semibold flex items-center gap-2">
-                                    <History className="w-5 h-5 text-orange-500" />
-                                    Recent Transactions
-                                </h3>
-                                <p className="text-sm text-gray-600 mt-1">Your latest wallet activity</p>
-                            </div>
-                            <div className="p-6">
-                                <div className="space-y-3">
-                                    {transactions.map((transaction) => (
-                                        <div key={transaction.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`p-2 rounded-full ${transaction.type === 'credit' ? 'bg-green-100' : 'bg-red-100'}`}>
-                                                    {transaction.type === 'credit' ? (
-                                                        <ArrowDownLeft className="w-4 h-4 text-green-600" />
-                                                    ) : (
-                                                        <ArrowUpRight className="w-4 h-4 text-red-600" />
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium text-sm">{transaction.description}</p>
-                                                    <p className="text-xs text-gray-500">{transaction.date}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className={`font-semibold ${transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {transaction.type === 'credit' ? '+' : '-'}₵{transaction.amount.toFixed(2)}
-                                                </p>
-                                                <p className="text-xs text-gray-500 capitalize">{transaction.status}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="mt-4 text-center">
-                                    <Button variant="outline" size="sm">
-                                        View All Transactions
-                                    </Button>
                                 </div>
                             </div>
                         </div>

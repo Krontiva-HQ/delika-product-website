@@ -80,7 +80,6 @@ export const isVendorOpen = (activeHours?: Array<{
     return null;
   };
 
-  // Get current time in minutes
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
   const currentTimeInMinutes = currentHour * 60 + currentMinute;
@@ -98,6 +97,30 @@ export const isVendorOpen = (activeHours?: Array<{
   }
 
   return currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes <= closeTimeInMinutes;
+};
+
+/**
+ * Check if a vendor is currently open based on their working hours and type
+ * @param activeHours - Array of working hours for each day
+ * @param vendorType - Type of vendor (restaurant, grocery, pharmacy)
+ * @returns boolean - true if vendor is open, false otherwise
+ */
+export const isVendorOpenByType = (
+  activeHours?: Array<{
+    day: string;
+    openingTime: string;
+    closingTime: string;
+    isActive?: boolean;
+  }>,
+  vendorType?: string
+): boolean => {
+  // Pharmacies are always open
+  if (vendorType === 'pharmacy') {
+    return true;
+  }
+
+  // For other vendor types, use the original isVendorOpen logic
+  return isVendorOpen(activeHours);
 };
 
 /**

@@ -1,6 +1,7 @@
 "use client"
 
 import { ChevronDown } from "lucide-react"
+import Link from "next/link"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -211,12 +212,12 @@ export function AuthNav({
         <div className="flex flex-col">
           <div className="flex items-center justify-between h-16 border-b">
             <div className="flex items-center gap-8">
-              <button 
-                onClick={onHomeClick}
+              <Link 
+                href="/"
                 className={`font-semibold ${currentView === 'stores' ? 'text-orange-500' : 'text-gray-600 hover:text-gray-900'}`}
               >
                 Delika
-              </button>
+              </Link>
               {userName && (
                 <>
                   <button 
@@ -256,9 +257,11 @@ export function AuthNav({
                         <div className="text-xs text-gray-500">{userData?.phoneNumber}</div>
                       </div>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onSelect={() => onViewChange('settings')}>
-                        Settings
-                      </DropdownMenuItem>
+                      <Link href="/settings" passHref>
+                        <DropdownMenuItem>
+                          Settings
+                        </DropdownMenuItem>
+                      </Link>
                       <DropdownMenuItem className="text-red-600" onSelect={handleLogoutClick}>
                         Logout
                       </DropdownMenuItem>

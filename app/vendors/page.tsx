@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { StoreHeader } from "@/components/store-header";
-import { VendorGrid } from "@/components/vendor-grid";
 import { VendorSkeleton } from "@/components/vendor-skeleton";
+import { BrowserHistoryManager } from "@/components/browser-history-manager";
 import { safeSetLocalStorage, safeGetLocalStorage, getLocalStorageUsage } from '@/lib/utils';
 
 interface VendorData {
@@ -287,23 +287,12 @@ export default function VendorsPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
+            <BrowserHistoryManager pageType="vendors" />
             <StoreHeader 
                 vendorData={vendorData} 
                 onTabChange={handleTabChange}
                 activeTab={activeTab}
             />
-
-            {/* Main Content */}
-            <div className="container mx-auto px-4 py-6">
-                {/* Vendor Grid */}
-                {vendorData && (
-                    <VendorGrid
-                        vendorData={vendorData}
-                        userCoordinates={userCoordinates}
-                        activeTab={activeTab}
-                    />
-                )}
-            </div>
         </div>
     );
 } 

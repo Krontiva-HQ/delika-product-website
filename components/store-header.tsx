@@ -32,7 +32,7 @@ import { Star, Clock, Plus, Minus, Share2, Store, X, Truck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FloatingCart } from "@/components/floating-cart"
 import { CartModal } from "@/components/cart-modal"
-import { isVendorOpen } from "@/lib/utils"
+import { isVendorOpen, isVendorOpenByType } from "@/lib/utils"
 import { PolicyAcceptanceModal } from "@/components/policy-acceptance-modal"
 // import { usePolicyAcceptance } from "@/hooks/use-policy-acceptance"
 
@@ -198,9 +198,15 @@ interface StoreHeaderProps {
   vendorData?: VendorData | null;
   onTabChange?: (tab: string) => void;
   activeTab?: string;
+  hideCards?: boolean;
 }
 
-export function StoreHeader({ vendorData, onTabChange, activeTab: externalActiveTab }: StoreHeaderProps = {}) {
+export function StoreHeader({ 
+  vendorData, 
+  onTabChange, 
+  activeTab: externalActiveTab,
+  hideCards = false 
+}: StoreHeaderProps = {}) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -1346,12 +1352,13 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
     }));
   };
 
-  // Modify handleBackToStores to use router navigation
+  // Modify handleBackToStores to use proper browser history management
   const handleBackToStores = () => {
     setCurrentView('stores')
     setSelectedBranchId(null)
     localStorage.removeItem('selectedBranchId')
     localStorage.removeItem('currentView')
+    // Use router.push for proper browser history management
     router.push('/vendors')
   }
 
@@ -1423,7 +1430,7 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
       await new Promise(resolve => setTimeout(resolve, 100));
       
       // Redirect to home page
-      window.location.href = '/';
+      router.push('/');
     } catch (error) {
       console.error('Error during logout:', error);
     }
@@ -1442,6 +1449,7 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
     setSelectedBranchId(null)
     localStorage.removeItem('selectedBranchId')
     localStorage.removeItem('currentView')
+    router.push('/')
   }
 
   // Update handleLikeToggle to handle the response properly
@@ -1793,11 +1801,14 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                     key={`food-${index}`}
                     href={`/restaurants/${item.branch.slug}?name=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent((item.foodCategory || 'food').trim())}`}
                     onClick={(e) => {
-                      e.preventDefault()
-                      handleBranchSelect(item.branch)
+                      e.preventDefault();
+                      if (!isOpen) {
+                        return; // Don't navigate if closed
+                      }
+                      handleBranchSelect(item.branch);
                     }}
-                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
-                      !isOpen ? 'opacity-50 grayscale' : ''
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
+                      !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
                     }`}
                   >
                     <div className="relative h-36">
@@ -1867,11 +1878,14 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                     key={`category-${index}`}
                     href={`/restaurants/${item.branch.slug}?category=${encodeURIComponent((item.categoryName || '').trim())}`}
                     onClick={(e) => {
-                      e.preventDefault()
-                      handleBranchSelect(item.branch)
+                      e.preventDefault();
+                      if (!isOpen) {
+                        return; // Don't navigate if closed
+                      }
+                      handleBranchSelect(item.branch);
                     }}
-                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
-                      !isOpen ? 'opacity-50 grayscale' : ''
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
+                      !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
                     }`}
                   >
                     <div className="relative h-36">
@@ -1928,12 +1942,11 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                     key={branch.id}
                     href={`/restaurants/${branch.slug}`}
                     onClick={(e) => {
-                      e.preventDefault()
+                      e.preventDefault();
                       if (!isOpen) {
-                        // Don't navigate if vendor is closed
-                        return
+                        return; // Don't navigate if closed
                       }
-                      handleBranchSelect(branch)
+                      handleBranchSelect(branch);
                     }}
                     className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
                       !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
@@ -2036,12 +2049,11 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                     key={`grocery-item-${index}`}
                     href={`/groceries/${item.grocery.slug}`}
                     onClick={(e) => {
-                      e.preventDefault()
+                      e.preventDefault();
                       if (!isOpen) {
-                        // Don't navigate if vendor is closed
-                        return
+                        return; // Don't navigate if closed
                       }
-                      handleBranchSelect(item.grocery)
+                      handleBranchSelect(item.grocery);
                     }}
                     className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
                       !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
@@ -2114,12 +2126,11 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                     key={`grocery-category-${index}`}
                     href={`/groceries/${item.grocery.slug}`}
                     onClick={(e) => {
-                      e.preventDefault()
+                      e.preventDefault();
                       if (!isOpen) {
-                        // Don't navigate if vendor is closed
-                        return
+                        return; // Don't navigate if closed
                       }
-                      handleBranchSelect(item.grocery)
+                      handleBranchSelect(item.grocery);
                     }}
                     className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
                       !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
@@ -2162,12 +2173,11 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                     key={grocery.id}
                     href={`/groceries/${grocery.slug}`}
                     onClick={(e) => {
-                      e.preventDefault()
+                      e.preventDefault();
                       if (!isOpen) {
-                        // Don't navigate if vendor is closed
-                        return
+                        return; // Don't navigate if closed
                       }
-                      handleBranchSelect(grocery)
+                      handleBranchSelect(grocery);
                     }}
                     className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
                       !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
@@ -2242,54 +2252,48 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
               <h2 className="text-xl font-bold text-gray-900 mb-4">Products Available</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {organizedSearchResults.pharmacyItems.slice(0, showAllFoods ? undefined : 6).map((item, index) => {
-                  // Check if vendor is open based on working hours
-                  const isOpen = isVendorOpen(item.pharmacy.activeHours);
+                  // Use isVendorOpenByType for pharmacy
+                  const isOpen = isVendorOpenByType(item.pharmacy.activeHours, 'pharmacy');
                   
                   return (
-                  <Link
-                    key={`pharmacy-item-${index}`}
-                    href={`/pharmacy/${item.pharmacy.slug}`}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      if (!isOpen) {
-                        // Don't navigate if vendor is closed
-                        return
-                      }
-                      handleBranchSelect(item.pharmacy)
-                    }}
-                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
-                      !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
-                    }`}
-                  >
-                    <div className="relative h-36">
-                      {item.itemImage?.url ? (
-                        <Image
-                          src={item.itemImage.url}
-                          alt={item.itemName}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                          <span className="text-blue-600 text-3xl">💊</span>
-                        </div>
-                      )}
+                    <Link
+                      key={`pharmacy-item-${index}`}
+                      href={`/pharmacy/${item.pharmacy.slug}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleBranchSelect(item.pharmacy);
+                      }}
+                      className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block cursor-pointer"
+                    >
+                      <div className="relative h-36">
+                        {item.itemImage?.url ? (
+                          <Image
+                            src={item.itemImage.url}
+                            alt={item.itemName}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                            <span className="text-blue-600 text-3xl">💊</span>
+                          </div>
+                        )}
 
-                      {/* Closed indicator */}
-                      {!isOpen && (
-                        <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                          Closed
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 truncate">{item.itemName}</h3>
-                      <span className="text-xs text-gray-600 truncate block">{item.pharmacyName}</span>
-                      <span className="text-xs font-bold text-blue-600">₵{typeof item.itemPrice === 'number' ? item.itemPrice.toFixed(2) : '0.00'}</span>
-                    </div>
-                  </Link>
-                );
-              })}
+                        {/* Closed indicator */}
+                        {!isOpen && (
+                          <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                            Closed
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-bold text-gray-900 truncate">{item.itemName}</h3>
+                        <span className="text-xs text-gray-600 truncate block">{item.pharmacyName}</span>
+                        <span className="text-xs font-bold text-blue-600">₵{typeof item.itemPrice === 'number' ? item.itemPrice.toFixed(2) : '0.00'}</span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
               {organizedSearchResults.pharmacyItems.length > 6 && !showAllFoods && (
                 <div className="flex justify-center mt-6">
@@ -2320,44 +2324,38 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
               <h2 className="text-xl font-bold text-gray-900 mb-4">Categories</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {organizedSearchResults.pharmacyCategories.map((item, index) => {
-                  // Check if vendor is open based on working hours
-                  const isOpen = isVendorOpen(item.pharmacy.activeHours);
+                  // Use isVendorOpenByType for pharmacy
+                  const isOpen = isVendorOpenByType(item.pharmacy.activeHours, 'pharmacy');
                   
                   return (
-                  <Link
-                    key={`pharmacy-category-${index}`}
-                    href={`/pharmacy/${item.pharmacy.slug}`}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      if (!isOpen) {
-                        // Don't navigate if vendor is closed
-                        return
-                      }
-                      handleBranchSelect(item.pharmacy)
-                    }}
-                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
-                      !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
-                    }`}
-                  >
-                    <div className="relative h-36">
-                      <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                        <span className="text-blue-600 text-3xl">📂</span>
-                      </div>
-
-                      {/* Closed indicator */}
-                      {!isOpen && (
-                        <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                          Closed
+                    <Link
+                      key={`pharmacy-category-${index}`}
+                      href={`/pharmacy/${item.pharmacy.slug}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleBranchSelect(item.pharmacy);
+                      }}
+                      className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block cursor-pointer"
+                    >
+                      <div className="relative h-36">
+                        <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                          <span className="text-blue-600 text-3xl">📂</span>
                         </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 truncate">{item.categoryName}</h3>
-                      <span className="text-xs text-gray-600 truncate block">{item.pharmacyName}</span>
-                    </div>
-                  </Link>
-                );
-              })}
+
+                        {/* Closed indicator */}
+                        {!isOpen && (
+                          <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                            Closed
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-bold text-gray-900 truncate">{item.categoryName}</h3>
+                        <span className="text-xs text-gray-600 truncate block">{item.pharmacyName}</span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -2368,68 +2366,62 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
               <h2 className="text-xl font-bold text-gray-900 mb-4">Pharmacies</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {organizedSearchResults.pharmacies.slice(0, showMorePharmacies ? undefined : 12).map((pharmacy) => {
-                  // Check if vendor is open based on working hours
-                  const isOpen = isVendorOpen(pharmacy.activeHours);
+                  // Use isVendorOpenByType for pharmacy
+                  const isOpen = isVendorOpenByType(pharmacy.activeHours, 'pharmacy');
                   
                   return (
-                  <Link
-                    key={pharmacy.id}
-                    href={`/pharmacy/${pharmacy.slug}`}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      if (!isOpen) {
-                        // Don't navigate if vendor is closed
-                        return
-                      }
-                      handleBranchSelect(pharmacy)
-                    }}
-                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
-                      !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
-                    }`}
-                  >
-                    <button 
-                      className="absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform text-gray-400 hover:text-blue-500 hover:bg-white hover:scale-105"
-                      aria-label="Like pharmacy"
+                    <Link
+                      key={pharmacy.id}
+                      href={`/pharmacy/${pharmacy.slug}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleBranchSelect(pharmacy);
+                      }}
+                      className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block cursor-pointer"
                     >
-                      <Heart className="w-5 h-5 transition-all duration-200" />
-                    </button>
+                      <button 
+                        className="absolute top-2 right-2 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform text-gray-400 hover:text-blue-500 hover:bg-white hover:scale-105"
+                        aria-label="Like pharmacy"
+                      >
+                        <Heart className="w-5 h-5 transition-all duration-200" />
+                      </button>
 
-                    {/* Closed indicator */}
-                    {!isOpen && (
-                      <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                        Closed
-                      </div>
-                    )}
+                      {/* Closed indicator */}
+                      {!isOpen && (
+                        <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                          Closed
+                        </div>
+                      )}
 
-                    <div className="relative h-36">
-                      {pharmacy.Pharmacy?.pharmacyLogo?.url ? (
-                        <Image
-                          src={pharmacy.Pharmacy.pharmacyLogo.url}
-                          alt={pharmacy.Pharmacy?.pharmacyName || 'Pharmacy'}
-                          fill
-                          className="object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            target.nextElementSibling?.classList.remove('hidden');
-                          }}
-                        />
-                      ) : null}
-                      <div className={`w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center ${pharmacy.Pharmacy?.pharmacyLogo?.url ? 'hidden' : ''}`}>
-                        <span className="text-blue-600 text-3xl">💊</span>
+                      <div className="relative h-36">
+                        {pharmacy.Pharmacy?.pharmacyLogo?.url ? (
+                          <Image
+                            src={pharmacy.Pharmacy.pharmacyLogo.url}
+                            alt={pharmacy.Pharmacy?.pharmacyName || 'Pharmacy'}
+                            fill
+                            className="object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              target.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center ${pharmacy.Pharmacy?.pharmacyLogo?.url ? 'hidden' : ''}`}>
+                          <span className="text-blue-600 text-3xl">💊</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 truncate">
-                        {pharmacy.Pharmacy?.pharmacyName}
-                      </h3>
-                      <span className="text-xs text-gray-600 truncate block">
-                        {pharmacy.Pharmacy?.pharmacyAddress || pharmacy.branchName || pharmacy.location || 'Location'}
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
+                      <div className="p-4">
+                        <h3 className="font-bold text-gray-900 truncate">
+                          {pharmacy.Pharmacy?.pharmacyName}
+                        </h3>
+                        <span className="text-xs text-gray-600 truncate block">
+                          {pharmacy.Pharmacy?.pharmacyAddress || pharmacy.branchName || pharmacy.location || 'Location'}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
               
               {/* Show More Button for Pharmacies */}
@@ -2475,16 +2467,19 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
               const isOpen = isVendorOpen(branch.activeHours);
               
               return (
-            <Link
-              key={branch.id}
-              href={`/restaurants/${branch.slug}`}
-              onClick={(e) => {
-                e.preventDefault()
-                handleBranchSelect(branch)
-              }}
-                  className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
-                    !isOpen ? 'opacity-50 grayscale' : ''
-                  }`}
+                              <Link
+                    key={branch.id}
+                    href={`/restaurants/${branch.slug}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (!isOpen) {
+                        return; // Don't navigate if closed
+                      }
+                      handleBranchSelect(branch);
+                    }}
+                    className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
+                      !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
+                    }`}
             >
               <button
                 className={`absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform ${
@@ -2561,8 +2556,15 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
                 <Link
                   key={grocery.id}
                   href={`/groceries/${grocery.slug}`}
-                  className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
-                    !isOpen ? 'opacity-50 grayscale' : ''
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (!isOpen) {
+                      return; // Don't navigate if closed
+                    }
+                    handleBranchSelect(grocery);
+                  }}
+                  className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block ${
+                    !isOpen ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'
                   }`}
                 >
                   <button 
@@ -2606,15 +2608,17 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
             } else if (activeTab === "pharmacy") {
               const pharmacy = item;
               const pharmacyName = pharmacy.Pharmacy?.pharmacyName || pharmacy.pharmacybranchName;
-              const isOpen = isVendorOpen(pharmacy.activeHours);
+              const isOpen = isVendorOpenByType(pharmacy.activeHours, 'pharmacy');
               
               return (
                 <Link
                   key={pharmacy.id}
                   href={`/pharmacy/${pharmacy.slug}`}
-                  className={`bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative cursor-pointer block ${
-                    !isOpen ? 'opacity-50 grayscale' : ''
-                  }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleBranchSelect(pharmacy);
+                  }}
+                  className="bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow text-left relative block cursor-pointer"
                 >
               <button
                     className="absolute top-2 right-2 z-1 p-2 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-200 transform text-gray-400 hover:text-orange-500 hover:bg-white hover:scale-105"
@@ -2671,6 +2675,10 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
   )
 
   const renderContent = () => {
+    if (hideCards) {
+      return null; // Don't render any cards if hideCards is true
+    }
+
     if (isLoading && currentView === 'branch') {
       return null // Don't render content while loading branch page
     }
@@ -2821,15 +2829,6 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
         return <FavoritesSection />
       case 'profile':
         return <div>Profile content here</div>
-      case 'settings':
-        return (
-          <div className="flex flex-col items-center justify-center py-12">
-            <p className="mb-4 text-lg">Settings have moved to a dedicated page.</p>
-            <Link href="/settings">
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white">Go to Settings</Button>
-            </Link>
-          </div>
-        );
       default:
         return (
           <div>

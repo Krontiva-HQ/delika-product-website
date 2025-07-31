@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SettingsSection } from "@/components/settings-section";
 import { UserData } from "@/components/auth-nav";
+import { StoreHeader } from "@/components/store-header";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -57,10 +58,13 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SettingsSection 
-        userData={userData} 
-        onUserDataUpdate={handleUserDataUpdate}
-      />
+      <StoreHeader hideCards={true} />
+      <div className="container mx-auto px-4 py-8">
+        <SettingsSection 
+          userData={userData} 
+          onUserDataUpdate={handleUserDataUpdate}
+        />
+      </div>
     </div>
   );
 } 

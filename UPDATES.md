@@ -25,6 +25,7 @@ This document tracks all the major updates and improvements made to the Delika p
 - [Delivery Calculation Logic Reset (Vendor Click Logic Removed)](#delivery-calculation-logic-reset-vendor-click-logic-removed)
 - [Privacy Policy Acceptance Feature Implementation](#privacy-policy-acceptance-feature-implementation)
 - [VendorGrid Features Integration into StoreHeader](#vendorgrid-features-integration-into-storeheader)
+- [Site Header Updates](#site-header-updates)
 
 ---
 
@@ -3150,153 +3151,51 @@ The application now provides a modern, professional user experience with correct
 
 ---
 
-## Login and Signup Pages Header and Footer Integration
+## Site Header Updates
 
 ### **Date**: Recent
 ### **Files Modified**: 
-- `app/login/page.tsx`
-- `app/signup/page.tsx`
 - `components/site-header.tsx`
-- `components/footer.tsx`
 
 ### **Changes Made**:
-
-#### **Layout Restructuring**:
-- **Flexbox Layout**: Implemented `min-h-screen flex flex-col` for full-height layout
-- **Header Integration**: Added `SiteHeader` component to both login and signup pages
-- **Footer Integration**: Added `Footer` component to both login and signup pages
-- **Content Centering**: Wrapped existing form content in centered main sections
-
-#### **Component Imports**:
-```typescript
-import { SiteHeader } from "@/components/site-header"
-import { Footer } from "@/components/footer"
-```
-
-#### **New Layout Structure**:
-```tsx
-<div className="min-h-screen flex flex-col">
-  <SiteHeader />
-  <main className="flex-1 flex items-center justify-center py-8">
-    <div className="max-w-md mx-auto p-4 w-full">
-      {/* Existing form content */}
-    </div>
-  </main>
-  <Footer />
-</div>
-```
-
-### **Features Added**:
-
-#### **Header Components**:
-- **Delika Logo**: Prominent branding with clickable logo link
-- **Navigation Menu**: Links to Vendors and About pages
-- **Join Delika Dropdown**: Options for Vendor and Courier partnerships
-- **Sign In Dropdown**: User authentication options
-- **Mobile Responsive**: Collapsible mobile menu with hamburger icon
-- **Authentication Status**: Dynamic display based on user login state
-
-#### **Footer Components**:
-- **Company Information**: Delika logo and mission statement
-- **Social Media Links**: Facebook, Twitter, Instagram, TikTok, LinkedIn
-- **Product Links**: Features and Request Demo pages
-- **Company Links**: About Us and Contact pages
-- **Contact Information**: Phone number with clickable link
-- **Legal Links**: Privacy Policy, Terms of Use, Cookie Policy
-- **Powered By**: Krontiva attribution with link
+- **Removed "Sign in only as user" Option**: Simplified the sign-in dropdown by removing the "as User" option
+- **Streamlined Authentication Flow**: Sign-in dropdown now only shows:
+  - "as Vendor" → Links to `https://manage.delika.app`
+  - "as Courier" → Links to `https://web.delika.app`
+- **Mobile Menu Updates**: Also removed "as User" option from mobile menu sign-in section
+- **Cleaner UI**: More focused authentication options for business partners
 
 ### **Technical Implementation**:
-
-#### **Responsive Design**:
-- **Flexbox Layout**: Uses `min-h-screen flex flex-col` for full-height layout
-- **Centered Content**: Main content is centered both horizontally and vertically
-- **Proper Spacing**: Added padding and margins for better visual hierarchy
-- **Component Reuse**: Leverages existing `SiteHeader` and `Footer` components
-
-#### **Styling Consistency**:
-- **Header**: White background with orange accent colors
-- **Footer**: Dark gray background with white text
-- **Typography**: Consistent font weights and text hierarchy
-- **Hover Effects**: Smooth transitions for interactive elements
+```typescript
+// Desktop sign-in dropdown now only shows vendor and courier options
+{isSignInDropdownOpen && (
+  <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-2">
+    <Link
+      href="https://manage.delika.app"
+      className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+      onClick={() => setIsSignInDropdownOpen(false)}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      as Vendor
+    </Link>
+    <Link
+      href="https://web.delika.app"
+      className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+      onClick={() => setIsSignInDropdownOpen(false)}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      as Courier
+    </Link>
+  </div>
+)}
+```
 
 ### **Benefits**:
-
-#### **User Experience**:
-- **Consistent Branding**: Both pages now have the same header and footer as the rest of the site
-- **Better Navigation**: Users can easily navigate to other parts of the site from the header
-- **Professional Appearance**: The pages look more complete and professional with proper header and footer
-- **Brand Recognition**: The Delika logo and branding are prominently displayed
-- **Social Links**: Footer provides access to social media and other important links
-- **Responsive Design**: The layout works well on both desktop and mobile devices
-
-#### **Technical Benefits**:
-- **Component Reuse**: Leverages existing, well-tested components
-- **Maintainability**: Changes to header/footer automatically apply to login/signup pages
-- **Performance**: No additional bundle size impact
-- **Accessibility**: Inherits accessibility features from existing components
-- **SEO**: Proper semantic HTML structure with header and footer elements
-
-### **Build Verification**:
-- **✅ Successful Compilation**: No TypeScript or compilation errors
-- **✅ Linting Passed**: ESLint passes with no errors
-- **✅ All Pages Generated**: Login and signup pages successfully built
-- **✅ Production Ready**: Optimized layout with proper responsive design
-- **✅ Component Integration**: Header and footer properly integrated without conflicts
+- **Cleaner Interface**: More focused authentication options
+- **Better UX**: Clearer distinction between business partner logins
+- **Simplified Navigation**: Removed redundant user authentication option
+- **Professional Appearance**: More streamlined header design
 
 ---
-
-## Summary
-
-These updates have significantly improved the user experience by:
-1. **Fixing navigation issues** with correct URL routing for different vendor types
-2. **Implementing skeleton loading** for better perceived performance
-3. **Adding item click functionality** for easier product interaction
-4. **Enhancing filter modal design** with sticky buttons and scrollable categories
-5. **Improving URL parameter handling** with load-first approach
-6. **Optimizing mobile experience** with responsive layouts
-7. **Ensuring consistent behavior** across all vendor types
-8. **Providing better visual feedback** for user interactions
-9. **Implementing seamless checkout authentication** for non-logged-in users
-10. **Preserving cart data** during authentication flow
-11. **Enabling automatic redirect** to checkout after successful login
-12. **Supporting all store types** with consistent authentication behavior
-13. **Creating dedicated cart authentication modal** for better user experience
-14. **Providing contextual cart information** during authentication
-15. **Supporting multiple authentication methods** (email/password, phone/OTP)
-16. **Updating pharmacy image handling** to use new API structure
-17. **Optimizing delivery calculation logic** for better performance
-18. **Moving delivery calculation to vendor click** for faster branch page loading
-19. **Extending cache duration** to 30 minutes for improved performance
-20. **Implementing localStorage-based delivery fee loading** for immediate display
-21. **Managing localStorage quota** to prevent storage exceeded errors
-22. **Optimizing Google Maps API loading** with proper async patterns
-23. **Preventing duplicate Google Maps elements** for cleaner DOM
-24. **Implementing LCP image optimization** for better Core Web Vitals
-25. **Adding comprehensive debugging tools** for storage and performance monitoring
-26. **Eliminating all Google Maps duplicate element warnings** with comprehensive cleanup
-27. **Preventing multiple Google Maps script loading** for better performance
-28. **Centralizing Google Maps management** across all components
-29. **Implementing smart LCP image priority detection** for better Core Web Vitals
-30. **Providing automatic image optimization** without manual configuration
-31. **Implementing universal delivery calculation** for all vendor types (restaurants, groceries, pharmacies)
-32. **Adding vendor type detection** with proper coordinate field handling
-33. **Enhancing delivery fee display** across all vendor page types
-34. **Providing robust error handling** for delivery calculation failures
-35. **Ensuring cross-page compatibility** for delivery data persistence
-36. **Implementing privacy policy acceptance** with automatic modal display
-37. **Creating policy acceptance modal** with terms summary and checkbox requirement
-38. **Integrating policy acceptance API** with proper authentication and error handling
-39. **Moving policy modal to store header** for better user context and experience
-40. **Ensuring legal compliance** with proper terms acceptance flow
-41. **Integrating VendorGrid features into StoreHeader** for unified vendor display
-42. **Implementing hover-based delivery calculation** for pre-calculated fees
-43. **Adding enhanced visual states** with hover effects and status indicators
-44. **Improving vendor information display** with better typography and icons
-45. **Hiding VendorGrid component** while preserving all functionality
-46. **Achieving successful build completion** with no errors and optimized performance
-47. **Adding headers and footers to login and signup pages** for consistent branding and navigation
-48. **Implementing responsive layout** with proper flexbox structure
-49. **Integrating existing components** for maintainability and consistency
-50. **Providing professional appearance** with complete page layouts
-
-The application now provides a modern, professional user experience with correct navigation, fast loading states, intuitive interactions, seamless authentication flows, dedicated cart authentication, updated API integration, optimized delivery calculation logic, localStorage quota management, comprehensive Google Maps optimization, advanced LCP image optimization, universal delivery calculation support, comprehensive privacy policy acceptance system, unified vendor display with hover-based delivery calculation, and complete page layouts with headers and footers across all vendor pages, checkout processes, and authentication pages.
