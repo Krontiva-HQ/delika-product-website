@@ -78,10 +78,12 @@ interface BranchDetails {
     }>
     foodTypeImage?: { url: string }
   }>
-  restaurant?: {
-    restaurantName: string
+  restaurant?: Array<{
+    id: string
+    restaurantLogo?: { url: string }
+    restaurantName?: string
     image_url?: string
-  }
+  }>
   branchLocation: string
   branchPhoneNumber: string
   branchName?: string
@@ -599,7 +601,7 @@ export function CheckoutPage({
       // Prepare order data
       const orderData = {
         id: orderId,
-        restaurantId: branchDetails?.restaurant?.restaurantName || '',
+        restaurantId: branchDetails?.restaurant?.[0]?.id || '',
         branchId: branchId,
         customerName: customerInfo.name,
         customerPhoneNumber: customerInfo.phone,
