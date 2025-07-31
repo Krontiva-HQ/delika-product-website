@@ -29,61 +29,63 @@ interface Branch {
 
 export function FavoritesModal({ isOpen, onClose }: FavoritesModalProps) {
   const [favoriteBranches, setFavoriteBranches] = useState<Branch[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [userCoordinates, setUserCoordinates] = useState<{lat: number, lng: number} | null>(null)
   const [removingFavorites, setRemovingFavorites] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (isOpen) {
-      // Load saved location
+      loadFavoritesFromStorage()
+    }
+  }, [isOpen])
+
+  const loadFavoritesFromStorage = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Load user location
       const savedLocationData = localStorage.getItem('userLocationData')
       if (savedLocationData) {
         const { lat, lng } = JSON.parse(savedLocationData)
         setUserCoordinates({ lat, lng })
       }
 
-      // Fetch favorites
-      fetchFavorites()
-    }
-  }, [isOpen])
-
-  const fetchFavorites = async () => {
-    try {
-      setIsLoading(true)
+      // Get favorites from stored user data
       const userData = JSON.parse(localStorage.getItem('userData') || '{}')
-      
       if (!userData.id) {
         setFavoriteBranches([])
         return
       }
 
-      const customerResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_CUSTOMER_DETAILS_API}?userId=${userData.id}`,
-        {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        }
-      )
-
-      if (!customerResponse.ok) throw new Error('Failed to fetch favorites')
-
-      const customerData = await customerResponse.json()
-      const favoriteIds = customerData.favoriteRestaurants?.map((fav: { branchName: string }) => fav.branchName) || []
+      // Get favorite IDs from stored user data
+      const favoriteIds = userData.customerTable?.[0]?.favoriteRestaurants?.map((fav: { branchName: string }) => fav.branchName) || 
+                         userData.favoriteRestaurants?.map((fav: { branchName: string }) => fav.branchName) || []
 
       if (favoriteIds.length === 0) {
         setFavoriteBranches([])
         return
       }
 
-      const branchesResponse = await fetch(process.env.NEXT_PUBLIC_BRANCHES_API!)
-      if (!branchesResponse.ok) throw new Error('Failed to fetch branches')
+      // Get all branches from localStorage if available, otherwise fetch
+      let allBranches = []
+      const cachedBranches = localStorage.getItem('allBranches')
+      if (cachedBranches) {
+        allBranches = JSON.parse(cachedBranches)
+      } else {
+        // Fallback to API if no cached data
+        const branchesResponse = await fetch(process.env.NEXT_PUBLIC_BRANCHES_API!)
+        if (branchesResponse.ok) {
+          allBranches = await branchesResponse.json()
+          localStorage.setItem('allBranches', JSON.stringify(allBranches))
+        }
+      }
 
-      const allBranches = await branchesResponse.json()
       let userFavorites = allBranches.filter((branch: Branch) => 
         favoriteIds.includes(branch.id)
       )
 
-      if (userCoordinates) {
+      // Filter by distance if user location is available
+      if (userCoordinates && userFavorites.length > 0) {
         userFavorites = userFavorites.filter(branch => {
           const distance = calculateDistance(
             userCoordinates.lat,
@@ -97,7 +99,7 @@ export function FavoritesModal({ isOpen, onClose }: FavoritesModalProps) {
 
       setFavoriteBranches(userFavorites)
     } catch (error) {
-      console.error('Error fetching favorites:', error)
+      console.error('Error loading favorites:', error)
     } finally {
       setIsLoading(false)
     }
@@ -126,8 +128,19 @@ export function FavoritesModal({ isOpen, onClose }: FavoritesModalProps) {
         })
       })
       
+      // Update local state
       setFavoriteBranches(prev => prev.filter(branch => branch.id !== branchId))
+      
+      // Update localStorage count
       localStorage.setItem('filteredFavoritesCount', (favoriteBranches.length - 1).toString())
+      
+      // Update stored user data to reflect the change
+      if (userData.customerTable?.[0]?.favoriteRestaurants) {
+        userData.customerTable[0].favoriteRestaurants = userData.customerTable[0].favoriteRestaurants.filter(
+          (fav: { branchName: string }) => fav.branchName !== branchId
+        )
+        localStorage.setItem('userData', JSON.stringify(userData))
+      }
     } catch (error) {
       console.error('Error removing favorite:', error)
     } finally {
