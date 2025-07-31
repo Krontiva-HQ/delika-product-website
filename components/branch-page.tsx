@@ -968,13 +968,29 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
                 {isRestaurantOpen ? 'Open Now' : 'Closed'}
               </span>
             </div>
-            <div className="mt-3 flex justify-center">
+            <div className="mt-3 flex justify-center gap-2">
               <button
                 onClick={() => setIsDetailsModalOpen(true)}
                 className="px-4 py-1 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium shadow-sm transition"
               >
                 View Details
               </button>
+              {!user ? (
+                <>
+                  <button
+                    onClick={() => setIsLoginModalOpen(true)}
+                    className="px-4 py-1 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium shadow-sm transition"
+                  >
+                    Login
+                  </button>
+                  <button
+                    onClick={() => setIsSignupModalOpen(true)}
+                    className="px-4 py-1 rounded-full border border-orange-500 bg-orange-500 text-white hover:bg-orange-600 text-sm font-medium shadow-sm transition"
+                  >
+                    Sign Up
+                  </button>
+                </>
+              ) : null}
             </div>
           </div>
         </div>
