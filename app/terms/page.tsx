@@ -195,6 +195,25 @@ export default function TermsPage() {
                       <p>
                         These Terms and Conditions ("Terms") constitute a legally binding agreement between you ("you" or "User") and Krontiva Africa Ltd, governing your use of Delika. By accessing or using the Platform, you agree that you have read, understood, and consented to these Terms, including any supplemental agreements or third-party terms referenced herein, such as those of Perjuma Ghana.
                       </p>
+                      <p>
+                        Supplemental terms and conditions or documents that may be posted on the Services from time to time are hereby expressly incorporated herein by reference. These include:
+                      </p>
+                      <ul className="list-disc list-inside space-y-2 ml-4">
+                        <li>Data Protection and Privacy Policies: Detailing how we collect, use, and protect user data.</li>
+                        <li>User Guidelines: Outlining acceptable use and conduct while using the Services.</li>
+                        <li>Service Level Agreements (SLAs): Defining our commitments regarding service availability and performance.</li>
+                        <li>Refund Policy: Explaining the conditions under which refunds are processed.</li>
+                        <li>Consumer Protection Policy: Explaining the rights and interests of customers who use our services.</li>
+                      </ul>
+                      <p>
+                        We reserve the right, in our sole discretion, to make changes or modifications to these Legal Terms from time to time. We will alert you about any changes by updating the "Last updated" date of these Legal Terms, and you waive any right to receive specific notice of each such change. It is your responsibility to periodically review these Legal Terms to stay informed of updates. You will be subject to, and will be deemed to have been made aware of and to have accepted, the changes in any revised Legal Terms by your continued use of the Services after the date such revised Legal Terms are posted.
+                      </p>
+                      <p>
+                        You must be at least 18 years old to use our Services (or the greater age required in your country or territory for you to be authorized to register for and use our Services without parental approval). All users who are minors, as defined by applicable law in their jurisdiction, must have the permission of and be directly supervised by their parent or guardian to use the Services. If you are a minor, you must have your parent or guardian read and agree to these Legal Terms prior to using the Services.
+                      </p>
+                      <p>
+                        We recommend that you print a copy of these Legal Terms for your records.
+                      </p>
                       <p className="font-bold">
                         IF YOU DO NOT AGREE WITH THESE TERMS, YOU MUST IMMEDIATELY DISCONTINUE USING THE PLATFORM.
                       </p>

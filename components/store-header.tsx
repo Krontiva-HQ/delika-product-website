@@ -256,8 +256,7 @@ export function StoreHeader({
   // Category constants for FilterModal
   const RESTAURANT_CATEGORIES = [
     'Alcohol', 'Angwamo Dishes', 'Appetizer', 'Assorted Fried Rice', 'Bake', 'Bakery', 'Beef Pizza', 'Beer', 'Beverages', 
-    'Boba - Fruit Tea (Reg / Large)', 'Boba - Milk Tea (Reg/ Large)', 'Boba Tea', 'Boiled Yam', 'Bread', 'Breakfast', 
-    'Burger', 'Burger Size', 'Burgers', 'Burgers & Sandwiches', 'Cakes & Pastries', 'Chicken', 'Chicken Meals', 
+    'Boba - Fruit Tea (Reg / Large)', 'Boba - Milk Tea (Reg/ Large)', 'Boba Tea', 'Boiled Yam', 'Bread', 'Breakfast', 'Burgers & Sandwiches', 'Cakes & Pastries', 'Chicken', 'Chicken Meals', 
     'Chicken Noodles', 'Chicken Pizza', 'Classic Cocktails', 'Classic Cocktails / Mocktails', 'Cocktail Mixes', 
     'Coffee', 'Coffee & Tea', 'Crispy Fries', 'Croissant', 'Day Time "Tucker" Menu', 'Dessert', 'Desserts & Sweets', 
     'Doughnuts', 'Drink', 'Drinks', 'Drinks / Beer', 'Energy Drinks', 'Evening Menu', 'Fast Food', 'Flour', 
@@ -266,13 +265,13 @@ export function StoreHeader({
     'Krontiva Menu', 'Light Soup', 'Loaded Fries', 'Local Dish', 'Local Dishes', 'Local Food', 'Local Foods', 
     'Lunch', 'Lunch Special', 'Main Menu', 'Margherita Pizza', 'Menu For Classic Plate- Rice Dishes', 'Milk Series', 
     'Milk Shakes', 'Milkshake', 'Milkshakes', 'Morning Menu', 'Nigerian Local Food', 'Noodles', 'Okro Soup', 
-    'Other Dishes', 'Pastries', 'Pizza', 'Pork', 'Protein', 'Proteins', 'Ribs', 'Rice', 'Rice & Grains', 
+    'Other Dishes', 'Pastries', 'Pizza', 'Pork', 'Proteins', 'Ribs', 'Rice', 'Rice & Grains', 
     'Rice Dishes', 'Rice Meals', 'Rice Menu', 'Rich Dishes', 'Salad', 'Salad Dressing', 'Salads', 'Sandwich', 
     'Sandwiches', 'Sauce / Soups', 'Sauces', 'Sausage Pizza', 'Seafood Lovers', 'Self- Treat Dishes', 'Shawarma', 
     'Side Dish', 'Side Meals', 'Signature Cocktails / Mocktails', 'Smoothies', 'Smoothies (Reg / Large)', 
-    'Snack', 'Snack Bar', 'Snack Bites', 'Sobolo', 'Soft Drinks', 'Soup', 'Soups', 'Soups Only', 'Spaghetti', 
+    'Snack', 'Snack Bar', 'Snack Bites', 'Sobolo', 'Soft Drinks', 'Soups', 'Soups Only', 'Spaghetti', 
     'Special Stir Fries', 'Springrolls And Samosa', 'Starter', 'Starters', 'Starters / Appetizers / Small Bites', 
-    'Stew', 'Stir Fry Noodles', 'Stir Fry Spaghetti', 'Swallow Dish', 'Test Foods', 'Traditional Foods', 
+    'Stew', 'Stir Fry Noodles', 'Stir Fry Spaghetti', 'Swallow Dish', 'Traditional Foods', 
     'Unique Series', 'Vegetarian Pizza', 'Waakye', 'Wine', 'Wrap', 'Wrap & Sandwich', 'Wraps', 'Yam/Plantain',
     '면류 (Noodles)', '식사류 (Meal)', '한식요리 (Korean Dish_Meats & Others)'
   ];

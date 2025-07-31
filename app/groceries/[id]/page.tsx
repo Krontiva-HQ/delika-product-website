@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import { ProductSkeleton } from "@/components/product-skeleton";
 import { CategorySkeleton } from "@/components/category-skeleton";
+import { MobileCategories } from "@/components/mobile-categories";
 import {
   Pagination,
   PaginationContent,
@@ -18,6 +19,7 @@ import { CartModal } from "@/components/cart-modal";
 import { LoginModal } from "@/components/login-modal";
 import { SignupModal } from "@/components/signup-modal";
 import { AuthNav } from "@/components/auth-nav";
+import { SearchField } from "@/components/search-field";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Minus, ChevronLeft, MapPin, Phone, Clock } from "lucide-react";
@@ -134,6 +136,7 @@ export default function GroceryDetailsPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
   const ITEMS_PER_PAGE = 24;
   const totalPages = Math.ceil(inventory.length / ITEMS_PER_PAGE);
   const paginatedInventory = inventory.slice(
@@ -152,7 +155,18 @@ export default function GroceryDetailsPage() {
     }
   }, [categories, selectedCategory, isLoading]);
   
-  const filteredInventory = inventory.filter(item => (item.category || "Uncategorized") === selectedCategory);
+  const filteredInventory = inventory.filter(item => {
+    const matchesCategory = (item.category || "Uncategorized") === selectedCategory;
+    if (!searchQuery) return matchesCategory;
+    
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = 
+      item.productName.toLowerCase().includes(searchLower) ||
+      item.description?.toLowerCase().includes(searchLower) ||
+      item.category?.toLowerCase().includes(searchLower);
+    
+    return matchesCategory && matchesSearch;
+  });
 
   // Get shop info from API response
   const [shopLogo, setShopLogo] = useState<string | null>(null);
@@ -427,13 +441,29 @@ export default function GroceryDetailsPage() {
 
   // Check authentication status
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    const userData = localStorage.getItem('userData');
-    if (token && userData) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch {}
-    }
+    const checkAuth = () => {
+      const token = localStorage.getItem('authToken');
+      const userData = localStorage.getItem('userData');
+      if (token && userData) {
+        try {
+          setUser(JSON.parse(userData));
+        } catch {}
+      } else {
+        setUser(null);
+      }
+    };
+
+    // Initial check
+    checkAuth();
+
+    // Listen for auth state changes
+    window.addEventListener('userDataUpdated', checkAuth);
+    window.addEventListener('storage', checkAuth);
+
+    return () => {
+      window.removeEventListener('userDataUpdated', checkAuth);
+      window.removeEventListener('storage', checkAuth);
+    };
   }, []);
 
   // Placeholder handlers and userData for AuthNav
@@ -569,6 +599,14 @@ export default function GroceryDetailsPage() {
           </Dialog>
         )}
         <hr className="my-6 border-gray-200" />
+        
+        {/* Search Field */}
+        <SearchField
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search grocery items..."
+        />
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
           {/* Categories Sidebar (desktop) */}
           <div className="lg:col-span-3">
@@ -593,24 +631,12 @@ export default function GroceryDetailsPage() {
             </div>
           </div>
           {/* Categories Horizontal (mobile) */}
-          <div className="bg-white rounded-lg p-4 mb-6 block lg:hidden">
-            <h2 className="font-semibold mb-4">Categories</h2>
-            <div className="flex overflow-x-auto whitespace-nowrap pb-2 gap-2">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, index) => (
-                  <CategorySkeleton key={index} />
-                ))
-              ) : categories.map(category => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-3 py-2 rounded-md hover:bg-gray-100 text-sm flex-shrink-0 ${selectedCategory === category ? 'bg-gray-100' : ''}`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-          </div>
+          <MobileCategories
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            isLoading={isLoading}
+          />
           {/* Items Grid */}
           <div className="lg:col-span-9">
             <div className="bg-white rounded-lg p-4 sm:p-6">

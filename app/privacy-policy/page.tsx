@@ -64,7 +64,7 @@ function CollapsibleSection({ id, title, children, openSection, onToggle }: Coll
       </button>
       <div
         id={id + '-content'}
-        className={`transition-all duration-300 overflow-hidden bg-white rounded-b-lg shadow-inner ${isOpen ? 'max-h-[4000px] opacity-100 py-2 px-4' : 'max-h-0 opacity-0 py-0 px-4'}`}
+        className={`transition-all duration-300 bg-white rounded-b-lg shadow-inner ${isOpen ? 'opacity-100 py-2 px-4' : 'max-h-0 opacity-0 overflow-hidden py-0 px-4'}`}
       >
         <div>{children}</div>
       </div>
@@ -149,7 +149,7 @@ export default function PrivacyPolicyPage() {
             </nav>
           </aside>
           {/* Main Content */}
-          <main ref={mainRef} className="flex-1 bg-white rounded-2xl shadow-lg p-6 md:p-12 overflow-y-auto">
+          <main ref={mainRef} className="flex-1 bg-white rounded-2xl shadow-lg p-6 md:p-12">
             <header className="mb-10 text-center">
               <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
               <p className="text-gray-500 text-lg">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
@@ -256,15 +256,616 @@ export default function PrivacyPolicyPage() {
                       </table>
                     </div>
                   ) : item.id === "dataprocess" ? (
-                    <div className="space-y-4">
-                      <p className="text-gray-600">
-                        We collect and process personal data:
-                      </p>
-                      <ul className="list-disc pl-6 space-y-2 text-gray-600">
-                        <li>provided by you to Krontiva Africa;</li>
-                        <li>when you use the Delika Platforms; and</li>
-                        <li>from other sources such as authorised third parties who administer services on behalf of Krontiva Africa, and in some countries, governmental or public databases.</li>
-                      </ul>
+                    <div className="space-y-8">
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">4.1. Where does Krontiva Africa collect my Personal Data from?</h3>
+                        <p className="text-gray-600">
+                          In most circumstances we collect Personal Data directly from you when you:
+                        </p>
+                        <ul className="list-disc pl-6 space-y-2 text-gray-600">
+                          <li>Buy from any businesses signed onto the Delika platform</li>
+                          <li>Use our platforms</li>
+                          <li>Subscribe to newsletters, alerts or other services from us</li>
+                          <li>Contact us through various channels, or ask for information about a product or service</li>
+                          <li>Take part in a competition, draw, event or survey</li>
+                          <li>Visit or browse our website</li>
+                          <li>Have given permission to other companies to share information about you</li>
+                          <li>Where your information is publicly available</li>
+                          <li>Are the customer of a subsidiary or a business that we acquire</li>
+                        </ul>
+                        <p className="text-gray-600 mt-4">
+                          We may also collect information from certain organizations, where appropriate and to the extent we have legal grounds to do so. These include:
+                        </p>
+                        <ul className="list-disc pl-6 space-y-2 text-gray-600">
+                          <li>Credit check or vetting agencies</li>
+                          <li>Fraud-prevention agencies</li>
+                          <li>Social media platforms</li>
+                          <li>Marketing agencies</li>
+                          <li>Resellers in respect of the Personal Data of customers, users and suppliers</li>
+                          <li>Third parties providing supplier and reseller references</li>
+                        </ul>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">4.2. Personal data provided by you to Krontiva Africa</h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full border border-gray-300 rounded-lg bg-white">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Category of Personal Data</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Description of Personal Data</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Profile Data</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  We collect personal data about you when you register to access the various Delika Platforms and/or use the Delika App including:
+                                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                                    <li>Full name</li>
+                                    <li>Email address</li>
+                                    <li>Phone number</li>
+                                    <li>Saved favorite delivery addresses (optional)</li>
+                                    <li>Preferences and settings related to the account, such as language preferences, communication preferences and notification settings</li>
+                                  </ul>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Payment Data</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  We collect details of your payment methods including payment card type, bank name, bank account number, bank account sort code, Momo numbers, related payment verification information and transaction history on the Delika Platform.
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Identification / Verification Data</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  We collect identification documents including government-issued or national identity documents (such as passports, driver's licenses or national ID cards) and photographs/pictures (such as a selfie). This data is submitted by you when you are required by Krontiva to verify your age and identity when ordering age-restricted goods.
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Demographic Data</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  We collect demographic data such as your age when you are required to verify your age by Krontiva.
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Survey / Interview Data</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  We collect the content of your replies or attachments you may send us, during the course of surveys and interviews that we conduct.
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">4.3. Personal data we collect about you when you use the Delika App and Web Platform</h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full border border-gray-300 rounded-lg bg-white">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Category of personal data</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Description of personal data</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Geolocation Data</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  We collect data about your precise and/or approximate geolocation (including GPS and IP addresses) from your mobile device depending on your app settings and device permissions, when you log in to, open, and use the Delika Platform.
+                                  <br /><br />
+                                  You may use the Delika App without enabling collection of Geolocation Data from your mobile device. This may affect some features on the Delika App, and you may have, for example, to enter your delivery address.
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Order Data</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  We collect personal data via the Delika Platform about your use of the Delika's services. This includes:
+                                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                                    <li>Details of orders or order history (including date and time of the order, delivery addresses and geolocation data, details of the food or other delivery items ordered, your special instructions or preferences, the restaurant or store name and location, order price, currency and your delivery notes)</li>
+                                    <li>Loyalty card information (including whether you used any coupons, loyalty cards or promotional codes)</li>
+                                  </ul>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">App Usage Data</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  We collect personal data via the Delika App about your use of the Delika Platform. This includes:
+                                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                                    <li>Log-in history (dates and times you log-in and log-off the Delika Platform)</li>
+                                    <li>Interaction with the Delika Platform (features or pages viewed or proposed to be viewed, time spent interacting with a page, browser type and other system activity)</li>
+                                  </ul>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Communication Data</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  We collect communication and correspondence data when you:
+                                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                                    <li>Engage with our Customer Support Team via the in-app chat function</li>
+                                    <li>Report an incident</li>
+                                    <li>Communicate via emails, web forms, or speak with our Customer Support agents</li>
+                                    <li>Communicate with Delivery Partners via the Delika Platform using the in-app chat function or via internet calls (where available)</li>
+                                  </ul>
+                                  <br />
+                                  We record the date and time of the communications and its content and your phone number (where you use the call feature).
+                                  <br /><br />
+                                  We will record calls, only where you are notified in advance that the call may be recorded.
+                                  <br /><br />
+                                  In the markets where we facilitate phone calls and text messages between Clients and Delivery Partners without sharing either party's actual phone number with the other, we protect your personal data by using a masked numbers application.
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">User Generated Data</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  We collect personal data when you use certain features. This includes:
+                                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                                    <li>Content like pictures, videos, files in connection with a Customer Support request</li>
+                                    <li>Ratings and feedback about:
+                                      <ul className="list-disc pl-6 mt-1 space-y-1">
+                                        <li>the Partners by evaluating the order on a scale from 1 (poor) to 10 (excellent), and optional comments, when your order is delivered</li>
+                                        <li>the delivery experience inside the Delika App by evaluating the Delivery Partners with thumbs up or thumbs down, and optional comments, when your order is delivered</li>
+                                      </ul>
+                                    </li>
+                                  </ul>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Warning and Suspension Data</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  We collect details of warnings and suspensions that have been issued to a client. This includes:
+                                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                                    <li>Date(s) on which warnings or suspensions have been issued</li>
+                                    <li>Date of expiry of a suspension</li>
+                                    <li>Reason for the warning or suspension</li>
+                                  </ul>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Device Data</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  We collect data about the devices you use to access the Delika Platforms, including:
+                                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                                    <li>Hardware model</li>
+                                    <li>Device IP address</li>
+                                    <li>Other unique device identifiers (such as your UUID and advertising identifiers)</li>
+                                    <li>Device operating system</li>
+                                    <li>Browser version</li>
+                                    <li>Device vendor name</li>
+                                    <li>App version</li>
+                                    <li>Identity of carrier and manufacturer and preferred languages</li>
+                                  </ul>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">4.4. What purposes do we use your personal data for and what is our legal basis for processing?</h3>
+                        <p className="text-gray-600">
+                          The table below sets out:
+                        </p>
+                        <ul className="list-disc pl-6 space-y-2 text-gray-600">
+                          <li>our purpose for processing your personal data;</li>
+                          <li>our legal grounds (known as a 'legal basis') under data protection law, for each purpose; and</li>
+                          <li>the categories of personal data we use for each purpose.</li>
+                        </ul>
+                        <p className="text-gray-600 mt-4">
+                          Here is a general explanation of each 'legal basis' that Krontiva relies on to process your personal data to help you understand the table below:
+                        </p>
+                        <div className="bg-orange-50 rounded-lg p-4 space-y-3">
+                          <div>
+                            <strong>Performance of a Contract:</strong> When it is necessary for Krontiva (or a third party) to process your personal data to provide you with the Delika services we promised you and meet our obligations under the Terms and Conditions for Clients. Where the legal basis for processing your personal data is performance of a contract, and you choose not to provide the information, you may be unable to use the Delika services.
+                          </div>
+                          <div>
+                            <strong>Legitimate Interests:</strong> When we process your personal data relying on legitimate interest grounds. This includes our commercial and non-commercial interests in providing an innovative, personalized and safe service to you, other Clients, and other third parties (including Delivery Partners or Restaurants). Where the table below states that we rely on legitimate interests, we have provided a brief description of the legitimate interest. If you would like more information about this, please contact us using the methods set out in Section 12 "How do you contact us?" below. In countries where legitimate interest is not an available lawful basis for Krontiva's processing activities, we will instead rely on an alternative valid legal basis.
+                          </div>
+                          <div>
+                            <strong>Consent:</strong> When we ask you to actively indicate your agreement to our use of your personal data for a certain purpose of which you have been informed of. Where we rely on consent to process your personal data, you can withdraw your consent to such activities at any time. Withdrawal of the consent does not affect the lawfulness of any processing which took place prior to you giving your consent to us.
+                          </div>
+                          <div>
+                            <strong>Compliance with Legal Obligations:</strong> When we must process your personal data because it is required by a law or regulation in the markets we operate in, such as to comply with our licensing conditions and our obligations under tax and accounting laws. Where the legal basis for processing your personal data is compliance with legal obligations, and you choose not to provide the information, you may be unable to use the Delika services.
+                          </div>
+                          <div>
+                            <strong>Vital Interests:</strong> When we process your personal data where it is necessary to protect your vital interests or those of others, for example in the event of an emergency or an imminent threat to life.
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">4.5. For the provision of the Delika services</h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full border border-gray-300 rounded-lg bg-white">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Purpose of processing</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Legal Basis</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Categories of Personal Data</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">To create, update and maintain your Delika account</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">Performance of a Contract</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">Profile Data<br/>Device Data</td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  To authenticate your account and verify your identity<br/><br/>
+                                  We collect information to verify who you say you are and in certain circumstances to verify your age and eligibility for Delika services (such as purchasing age-restricted items), when required by local law. If we ask you to verify your identity (either upon registration or as a result of unusual activity being detected on your Delika account) and you are not able to verify, the Delika ordering services will be suspended to prevent fraud until the verification process is completed. As part of the verification process, you may be asked to submit a selfie and/or ID document to prove your identity.<br/><br/>
+                                  To verify your identity quickly and securely, we use facial recognition technology to confirm that your selfie shows a clear face and matches the face on your identity document. This involves processing your facial measurements.<br/><br/>
+                                  Your biometric data may be shared with trusted verification providers to confirm your identity. You can withdraw consent at any time by contacting our Customer Support.<br/><br/>
+                                  We retain your selfie and identity document as long as you have an active user account.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Compliance with Legal Obligations<br/><br/>
+                                  Legitimate Interests - It is in our interest and in the interest of our clients to prevent and address unauthorized uses of Delika accounts and violations of our Terms and Conditions for Clients.<br/><br/>
+                                  Consent - Your opt-in consent will be required in order for us to proceed with biometric verification checks.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Profile Data<br/>
+                                  Identification / Verification Data<br/>
+                                  Demographic Data<br/>
+                                  Device Data<br/>
+                                  Geolocation Data<br/>
+                                  App Usage Data<br/>
+                                  Suspension Data
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  To make sure the Delika App works optimally<br/><br/>
+                                  We use your Profile Data to notify you of updates to the Delika App so you can keep using the Delika services. We also use Device Data and App Usage Data to ensure you can connect to the Delika Platform and to help keep your account safe through authentication and verification checks.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Performance of a Contract<br/><br/>
+                                  Consent - Your opt-in consent is required for the use of Analytics, and Third-Party Technologies Data<br/><br/>
+                                  Legitimate Interest
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Profile Data<br/>
+                                  Device data<br/>
+                                  App Usage Data<br/>
+                                  Identification / Verification data<br/>
+                                  Analytics, and Third-Party Technologies Data
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  To improve our websites and apps<br/><br/>
+                                  We collect and may use your App Usage Data to improve our websites and Delika App (including their security features) by analyzing it to better understand our business and services.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">Legitimate Interest</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">App Usage Data</td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  To calculate prices and process payments<br/><br/>
+                                  We collect Payment Data to process and facilitate payment between Clients and restaurants and stores and Delivery Partners, and Geolocation Data to calculate prices based on the delivery address of the Clients taking into account distance, duration and other factors.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">Performance of a Contract</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Payment Data<br/>
+                                  Geolocation Data
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  To administer the use of and payment for the Delika services you are offered by a Delika Business Client or another Delika account owner<br/><br/>
+                                  We collect your Contact Data if you use Delika services through your employer who is a Delika Business Client.<br/><br/>
+                                  In addition, if an organization or another Delika account owner has made an order for you, we will collect from them your Contact Data, Order Data and Geolocation Data.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">Performance of a contract</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Contact Data<br/>
+                                  Order Data<br/>
+                                  Geolocation Data
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  To get your feedback on your level of satisfaction with Delika services through surveys and interviews<br/><br/>
+                                  These surveys and interviews are designed to understand your feedback on our services, to measure customer satisfaction and enable us to take actions to improve the experience. The Survey and Interview Data may be shared with research partners we use to understand your feedback.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Consent - Your opt-in consent will be required.<br/><br/>
+                                  Legitimate Interests - It is in our interest and in the interest of our Clients to provide a satisfying delivery experience.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Profile Data<br/>
+                                  Demographic Data<br/>
+                                  Survey/Interview Data
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">4.6. For Customer Support</h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full border border-gray-300 rounded-lg bg-white">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Purpose of processing</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Legal Basis</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Categories of Personal Data</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  To provide customer support services and receive and process feedback<br/><br/>
+                                  We process your personal data to investigate and address your queries including reported safety incidents/alleged criminal acts and complaints (including resolving disputes between Clients and restaurants and Delivery Partners). We also use the data you share to address quality issues and to improve our services.<br/><br/>
+                                  For safety related incidents, your Suspension Data will only be reviewed by Krontiva's Customer Support and/or Safety Teams when investigating a safety/criminal incident on the Delika Platform involving you. The teams will also review the circumstances surrounding potential safety incidents.<br/><br/>
+                                  We may use automated processes for complaint resolution purposes via our automated chat function. For further information regarding how to object to the above activities, please see Section 9 "What are your rights?" below.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Performance of a Contract<br/><br/>
+                                  Legitimate Interests - It is in our interest and in the interest of our Clients to support them throughout their use of the Delika Platform and continuously improve and develop the customer support we provide. In addition, it is in our interest and interest of our Clients and Delivery Partners to address threats and abuse and promote safety, integrity and security on the Delika Platform to ensure our services are used in accordance with the Terms and Conditions for Clients<br/><br/>
+                                  Compliance with Legal Obligations - We process personal data to comply with our legal obligation to cooperate with law enforcement when there is a safety incident.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Profile Data<br/>
+                                  Order Data<br/>
+                                  Communication Data<br/>
+                                  User Generated Data<br/>
+                                  Suspension Data
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">4.7. For safety and security</h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full border border-gray-300 rounded-lg bg-white">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Purpose of processing</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Legal Basis</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Categories of Personal Data</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  To prevent, detect and investigate fraudulent accounts, fraudulent payments or other unlawful use of the Delika Platform and apply suspensions and blocks as needed<br/><br/>
+                                  Our automated anti-fraud system will identify fraudulent accounts, payments, abuse of Delika's services and other malicious activity on the Delika Platform, like, for example, when you top up your balance, request multiple refunds or go through authentication processes. To enable us to investigate, a temporary suspension may be applied to a Delika account.<br/><br/>
+                                  While the Delika Platform may use automated processes for fraud detection purposes, decisions to block a Client are taken following human review by our staff, and no account is blocked automatically without first undergoing a verification process. For further information regarding how to object to the above activities, please see Section 9 "What are your rights?" below.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Legitimate Interests - It is in our interest and in the interests of our Clients to detect, prevent and address fraud, unauthorized use of Delika accounts or other harmful or illegal activity and maintain the safety and security of our systems, by responding to suspected or actual criminal acts. It is also in our interest and in the interests of our Clients to prevent and address violations of our Terms and Conditions.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Profile Data<br/>
+                                  Identification / Verification Data<br/>
+                                  Device Data<br/>
+                                  Geolocation Data<br/>
+                                  App Usage Data<br/>
+                                  Payment Data<br/>
+                                  Communication Data<br/>
+                                  Order Data
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  To issue temporary suspensions<br/><br/>
+                                  In order to provide a safe and reliable marketplace, we monitor Clients' compliance with our Terms and Conditions for Clients and use App Usage Data to temporarily suspend access to any of the Delika Platforms:<br/>
+                                  - If the Client causes any abuse or harm to the Delika Platform<br/>
+                                  - If Krontiva has reasonable belief of fraudulent acts by the Client when using the Delika Platform<br/>
+                                  - If the Client otherwise fails to comply with his/her obligations under the General Terms<br/>
+                                  - If the Client creates any safety concerns or risks to the Delivery Partners
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Performance of a Contract<br/><br/>
+                                  Legitimate interests - It is in our interest and in the interests of our Clients and Delivery Partners to ensure a reliable and trustworthy service and Platform sustainability. It is also in our interest to ensure and to enforce our services are used in accordance with the Terms and Conditions for Clients.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Profile Data<br/>
+                                  Suspension Data<br/>
+                                  App Usage Data
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">4.8. For marketing and advertising</h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full border border-gray-300 rounded-lg bg-white">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Purpose of processing</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Legal Basis</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Categories of Personal Data</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  To market and advertise Delika services and those of partners according to your preferences and measure the effectiveness of ads<br/><br/>
+                                  This includes using your personal data to send you targeted emails, text messages (including WhatsApp messages), push notifications, in-app messages and other communications marketing Krontiva's and its partners' products, services, features, offers, promotions, sweepstakes, news and events that could be of interest.<br/><br/>
+                                  It also includes using your App Usage Data like order history, Device Data and Geolocation Data to show you targeted or personalized advertisements or personalized recommendations through the Delika services. For example, we may display ads for restaurants or stores that are available on the Delika Platform. We may also display ads on the Delika App based on observed or inferred data such as location, interests and behaviors and ads for third party products that are not available on our Apps.<br/><br/>
+                                  We will further display personalized ads about our products on third- party apps and collect data about your visits and actions on these third-party apps or websites.<br/><br/>
+                                  We will use pixels and similar technologies to track which emails were opened and which links were clicked by you, to help us measure the results of our campaigns and we will also use data to measure the effectiveness of our ads, and of third parties' displayed in the Delika Platform or in connection with Delika's services.<br/><br/>
+                                  In addition, we will analyse, aggregate your App Usage Data and provide it to you in a summarised way each year for the wrap-up marketing campaign connected to the End of Year campaign.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Legitimate Interests - It is in our interest and in the interest of our Clients to inform them about our services and features or those offered by Krontiva partners. It is also in our interest to promote and advertise our services, including engaging in contextual (non-data driven) and personalized advertising, analytics, and measurement of ad performance, in order to expand our user base by deepening relationships with existing Clients and developing new ones. You can opt out of these communications at any time by clicking the 'unsubscribe' link at the bottom of our emails, typing "STOP" for messages and SMS, or updating your communication preferences in your account settings.<br/><br/>
+                                  Consent - Your opt-in consent will be required for example, when the law requires consent for email marketing and for certain tracking technologies.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Contact Data<br/>
+                                  Profile Data<br/>
+                                  Order Data<br/>
+                                  App Usage Data<br/>
+                                  Device Data<br/>
+                                  Geolocation Data<br/>
+                                  Analytics, and Third-Party Technologies Data
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">4.9. For Service Communications</h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full border border-gray-300 rounded-lg bg-white">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Purpose of processing</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Legal Basis</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Categories of Personal Data</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  To communicate with you, including sending you service-related communications and to keep you informed<br/><br/>
+                                  Your name, phone number and email address will be used to communicate with you to send you order confirmation emails and receipts, to provide you with delivery updates, to let you know that your order has been completed, and to inform you about important service updates.<br/><br/>
+                                  For guest users, if you share your email address, we will use it just to send you a cost summary
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">Performance of a Contract</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Profile Data<br/>
+                                  Contact Data
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">4.10. For research and improvement of the Delika Platform</h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full border border-gray-300 rounded-lg bg-white">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Purpose of processing</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Legal Basis</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Categories of Personal Data</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  To perform research, testing, and analytics to better understand and improve our business and services<br/><br/>
+                                  For example, we use Geolocation Data, Order Data, Communication Data and App Usage Data to conduct research to develop or improve our products, services, technology, algorithms, machine learning, and other modelling.<br/><br/>
+                                  We use Communication Data related to incidents to monitor our security practices and improve our operations and processes.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Legitimate Interests - It is in our interest to measure the use of our services in order to inform business decisions and to enable provision of accurate and reliable reporting and to continuously improve and develop the services we provide.<br/><br/>
+                                  Consent - For certain analytics we may require your consent. If so, you'll be prompted to provide consent for specific purposes and processing activities, with details on how to withdraw consent, including through your profile settings.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Geolocation Data<br/>
+                                  Order Data<br/>
+                                  App Usage Data<br/>
+                                  Communication Data<br/>
+                                  User Generated Content<br/>
+                                  Device Data
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">To develop new products, features, partnerships and services</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">Legitimate Interests - It is in our interest and in the interest of our Clients to develop and adopt new features to improve the Delika Platform.</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Profile Data<br/>
+                                  Geolocation Data<br/>
+                                  App Usage Data<br/>
+                                  Communication Data<br/>
+                                  User Generated Content<br/>
+                                  Device Data
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">To prevent, find, and resolve software or hardware bugs and issues</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">Legitimate Interests - It is in our interest and in the interest of our Clients to provide a hassle free and reliable service.</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Profile Data<br/>
+                                  Geolocation Data<br/>
+                                  User Generated Content<br/>
+                                  Communication Data<br/>
+                                  Device Data<br/>
+                                  App Usage Data
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900">4.11. For legal proceedings and compliance with the law</h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full border border-gray-300 rounded-lg bg-white">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Purpose of processing</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Legal Basis</th>
+                                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Categories of Personal Data</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  To investigate and respond to claims and disputes relating to the use of Delika services, and/or necessary for compliance with applicable legal requirements or with requests from government/law enforcement bodies<br/><br/>
+                                  Depending on the claim, All Data may be processed for establishing, exercising or defending legal claims, including:<br/>
+                                  - supporting our own internal investigations<br/>
+                                  - the assignment of claims and the use of debt collecting agencies<br/>
+                                  - the use of legal advisors<br/><br/>
+                                  In some circumstances, we are legally obliged to share information with external recipients. For example, under a Court Order or where we cooperate with a data protection supervisory authority in handling complaints or investigations. We also respond to requests, such as those from law enforcement agencies, when the response is required by law or furthers a public interest task such as an emergency situation or where someone's life is at risk. We will take steps to ensure that we have a lawful basis on which to share the information, and we'll make sure that we document our decision.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Compliance with Legal Obligations - We process personal data to comply with an obligation, when there is a request from a regulator, law enforcement or other governmental body.<br/><br/>
+                                  Legitimate Interests - In the context of litigation or other disputes, it is in our interest to protect our interests and rights, our Clients or others, including as part of investigations, regulatory inquiries or litigation.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">All Data</td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">To fulfill our tax obligations and comply with tax legislation</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">Compliance with a Legal Obligation</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  Profile Data<br/>
+                                  Payment Data<br/>
+                                  App Usage Data
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">To reorganize or make changes to our business</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">Legitimate Interests - It is in our interest to process personal data for organizational and business planning purposes.</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">All Data</td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                  To ensure the security of the Delika services (including the Delika Web Platform and Delika App)<br/><br/>
+                                  Depending on the issue, All Data may be used for technical and cyber security reasons: for example measures for combating piracy and ensuring the security of the service, website, Delika Platform for making and storing back-up copies and preventing/repairing technical issues.
+                                </td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">Legitimate Interests - It is in our interest and in the interest of our Clients to protect, guard and maintain Delika's security systems, respond to suspected or actual criminal acts and repair any technical issues.</td>
+                                <td className="px-4 py-3 border-b border-gray-200 align-top">All Data</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <p className="text-gray-600">
+                          When we process your personal data for a new purpose different from the purpose your personal data was originally collected for and we haven't asked for your consent, we will have to ensure that this new purpose is compatible with the initial purpose we collected it for. We will take into account any link between the two purposes and decide if the personal data can be used for this new purpose. Otherwise, we will take appropriate steps to ask for your consent or refrain from processing your personal data.
+                        </p>
+                      </div>
                     </div>
                   ) : item.id === "collect" ? (
                     <div className="space-y-4">
@@ -515,69 +1116,105 @@ export default function PrivacyPolicyPage() {
                       <p className="text-gray-600 mb-4">
                         We retain your personal data for as long as necessary to fulfill the purposes for which it was collected, including for the purposes of satisfying any legal, accounting, or reporting requirements.
                       </p>
-                      <p className="text-gray-600">
-                        The specific retention periods for different types of personal data are as follows:
+                      <p className="text-gray-600 mb-4">
+                        To determine the appropriate retention period for personal data, we consider:
                       </p>
-                      <div className="overflow-x-auto">
+                      <ul className="list-disc pl-6 space-y-2 text-gray-600 mb-6">
+                        <li>The amount, nature, and sensitivity of the personal data</li>
+                        <li>The potential risk of harm from unauthorized use or disclosure of your personal data</li>
+                        <li>The purposes for which we process your personal data and whether we can achieve those purposes through other means</li>
+                        <li>The applicable legal, regulatory, tax, accounting, or other requirements</li>
+                      </ul>
+                      <div className="overflow-x-auto mb-8">
                         <table className="min-w-full border border-gray-300 rounded-lg bg-white">
                           <thead>
                             <tr className="bg-gray-100">
-                              <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Category of Personal Data</th>
+                              <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Category</th>
                               <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Retention Period</th>
                             </tr>
                           </thead>
                           <tbody>
                             <tr>
-                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Profile Data</td>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Active Account Data</td>
                               <td className="px-4 py-3 border-b border-gray-200 align-top">
-                                Retained until you request deletion of your account.
+                                Retained for the duration of your active account plus any additional period required by law
                               </td>
                             </tr>
                             <tr>
-                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Payment Data</td>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Transaction History</td>
                               <td className="px-4 py-3 border-b border-gray-200 align-top">
-                                Retained for the duration of the transaction and for a period of 7 years for tax and accounting purposes.
+                                Retained for 5 years from the date of transaction for tax and accounting purposes
                               </td>
                             </tr>
                             <tr>
-                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Identification / Verification Data</td>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Communication Records</td>
                               <td className="px-4 py-3 border-b border-gray-200 align-top">
-                                Retained for the duration of the verification process and for a period of 5 years for tax and accounting purposes.
+                                Retained for 2 years from the last interaction
                               </td>
                             </tr>
                             <tr>
-                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Order Data</td>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Marketing Preferences</td>
                               <td className="px-4 py-3 border-b border-gray-200 align-top">
-                                Retained for a period of 7 years for tax and accounting purposes.
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Communication Data</td>
-                              <td className="px-4 py-3 border-b border-gray-200 align-top">
-                                Retained for a period of 5 years for tax and accounting purposes.
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">User Generated Data</td>
-                              <td className="px-4 py-3 border-b border-gray-200 align-top">
-                                Retained for a period of 5 years for tax and accounting purposes.
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Warning and Suspension Data</td>
-                              <td className="px-4 py-3 border-b border-gray-200 align-top">
-                                Retained for a period of 5 years for tax and accounting purposes.
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Device Data</td>
-                              <td className="px-4 py-3 border-b border-gray-200 align-top">
-                                Retained for a period of 5 years for tax and accounting purposes.
+                                Retained until you withdraw consent or request deletion
                               </td>
                             </tr>
                           </tbody>
                         </table>
                       </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">8.1 We have listed below the specific retention periods that apply to the personal data we process about you:</h3>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full border border-gray-300 rounded-lg bg-white">
+                          <thead>
+                            <tr className="bg-gray-100">
+                              <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Category of Retention Periods</th>
+                              <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Description</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Tax, accounting and financial reporting purposes</td>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                We retain your financial data for up to 5 years after the last order if your personal data is necessary for tax, accounting and financial reporting purposes.
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Provision of services purposes</td>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                We retain your data as long as you have an active account. If your account is deleted, personal data will be deleted (according to our retention schedule and rules), unless such data is still required to meet any legal obligation, or for accounting, dispute resolution or fraud prevention purposes.<br/><br/>
+                                You may request deletion of your account at any time through the Krontiva Website. See Section 9 "What are your rights?" below for more information.
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Formal investigations of a criminal offence, fraud or false information</td>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                We retain data for as long as necessary for the purposes of investigating and detecting fraudulent, criminal or unlawful activities, or false information having been provided.
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Disputes</td>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                We retain data for the purpose of exercising or defending legal claims, including supporting our own internal investigations, including claims related to the unlawful processing or collection of user's consent, until the claim is satisfied or the expiry date of such claims.
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Instant Messages</td>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                We retain data about instant messages between you and the Customer Support Team directly in the Delika App for 60 days from the last communication and in Krontiva's databases for 3 years from the last communication.<br/><br/>
+                                Instant messages between Clients and Delivery Partners are kept in the Delika App only until the order is completed and for 30 days after in our systems.
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Customer Support</td>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top">
+                                We retain data in relation to support tickets submitted via instant messages, phone calls, web forms, and emails for 3 years from the last communication.
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className="text-gray-600 mt-4">
+                        Please note that the deinstallation of Delika App in your device does not cause the deletion of your personal data. See Section 9 "What are your rights?" to exercise your Right of Erasure.
+                      </p>
                     </>
                   ) : item.id === "rights" ? (
                     <>

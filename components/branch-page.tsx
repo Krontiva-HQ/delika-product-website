@@ -447,6 +447,8 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
   const [user, setUser] = useState<UserData | null>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  
   const [selectedItem, setSelectedItem] = useState<{
     name: string
     price: string
@@ -994,6 +996,40 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
             </div>
           </div>
         </div>
+        {/* Search Bar */}
+        <div className="bg-white rounded-lg p-4 mb-6">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search menu items..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+            <svg
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Mobile Menu Categories - below details, outside grid */}
         <div className="bg-white rounded-lg p-4 mb-6 block lg:hidden">
           <h2 className="font-semibold mb-4">Menu Categories</h2>
@@ -1044,7 +1080,16 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                {currentCategory?.foods?.map((item, index) => {
+                {currentCategory?.foods
+                  ?.filter(item => {
+                    if (!searchQuery) return true;
+                    const searchLower = searchQuery.toLowerCase();
+                    return (
+                      item.name.toLowerCase().includes(searchLower) ||
+                      item.description?.toLowerCase().includes(searchLower)
+                    );
+                  })
+                  .map((item, index) => {
                   const itemInCart = cart.find(cartItem => getCartItemKey(cartItem) === getCartItemKey({ id: item.name, name: item.name, price: item.price, quantity: 0 }));
                   const quantity = itemInCart?.quantity || 0;
                   
