@@ -39,18 +39,82 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
   // Function to check if user has accepted policy
   const checkPolicyAcceptance = (userData: UserData) => {
     const customerTable = userData.customerTable;
-    const policyAccepted = customerTable && customerTable.length > 0 && 
-      customerTable.some(customer => customer.privacyPolicyAccepted === true);
     
-    return policyAccepted;
+    // Check if user has any customer records
+    if (!customerTable || customerTable.length === 0) {
+      return false; // No customer records, show policy modal
+    }
+    
+    // Find the customer record that belongs to this user
+    const userCustomer = customerTable.find(customer => customer.userId === userData.id);
+    
+    if (!userCustomer) {
+      return false; // No matching customer record, show policy modal
+    }
+    
+    // Check if this specific user has accepted the policy
+    return userCustomer.privacyPolicyAccepted === true;
   };
 
   // Function to handle policy acceptance
   const handlePolicyAccept = async () => {
     if (!userData) return;
 
+    // Immediately close modal and show loading
+    setShowPolicyModal(false);
+    
+    // Update user data in localStorage immediately
+    const updatedUserData = {
+      ...userData,
+      customerTable: userData.customerTable.map(customer => ({
+        ...customer,
+        privacyPolicyAccepted: true
+      }))
+    };
+    localStorage.setItem('userData', JSON.stringify(updatedUserData));
+    
+    // Show loading screen
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'policy-loading-overlay';
+    loadingOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      color: white;
+      font-family: system-ui, -apple-system, sans-serif;
+    `;
+    
+    loadingOverlay.innerHTML = `
+      <div style="text-align: center;">
+        <div style="width: 50px; height: 50px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+        <h3 style="margin: 0 0 10px; font-size: 18px;">Processing...</h3>
+        <p style="margin: 0; font-size: 14px; opacity: 0.8;">Redirecting to vendors page</p>
+      </div>
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+    `;
+    
+    document.body.appendChild(loadingOverlay);
+    
+    // Redirect after brief delay for visual feedback
+    setTimeout(() => {
+      window.location.href = '/vendors';
+    }, 1500); // 1.5 second delay
+    
+    // Make API call in background (don't await)
     try {
-      // Get auth token from localStorage
       const authToken = localStorage.getItem('authToken');
       
       if (!authToken) {
@@ -58,8 +122,8 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         return;
       }
 
-      // Call API to update policy acceptance
-      const response = await fetch('/api/auth/update-policy-acceptance', {
+      // Call API to update policy acceptance in background
+      fetch('/api/auth/update-policy-acceptance', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,83 +132,16 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
           authToken,
           userId: userData.id 
         }),
+      }).then(response => {
+        if (!response.ok) {
+          console.error('Failed to update policy acceptance in background');
+        }
+      }).catch(error => {
+        console.error('Background API call failed:', error);
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to update policy acceptance');
-      }
-
-      // Update user data in localStorage
-      const updatedUserData = {
-        ...userData,
-        customerTable: userData.customerTable.map(customer => ({
-          ...customer,
-          privacyPolicyAccepted: true
-        }))
-      };
-      localStorage.setItem('userData', JSON.stringify(updatedUserData));
       
-      setShowPolicyModal(false);
-      onLoginSuccess(updatedUserData);
-      
-      // Check for cart context and trigger cart modal if needed
-      const cartContext = localStorage.getItem('cartContext');
-      if (cartContext) {
-        try {
-          const context = JSON.parse(cartContext);
-          localStorage.removeItem('cartContext');
-          
-          // Dispatch a custom event to notify that login was successful and cart should be shown
-          window.dispatchEvent(new CustomEvent('loginSuccessWithCart', { 
-            detail: context 
-          }));
-        } catch (error) {
-          console.error('Error parsing cart context:', error);
-        }
-      }
-
-      // Check for redirect URL
-      const redirectUrl = localStorage.getItem('loginRedirectUrl');
-      if (redirectUrl) {
-        localStorage.removeItem('loginRedirectUrl');
-        window.location.href = redirectUrl;
-      }
     } catch (error) {
-      console.error('Failed to update policy acceptance:', error);
-      // Still update localStorage even if API call fails
-      const updatedUserData = {
-        ...userData,
-        customerTable: userData.customerTable.map(customer => ({
-          ...customer,
-          privacyPolicyAccepted: true
-        }))
-      };
-      localStorage.setItem('userData', JSON.stringify(updatedUserData));
-      setShowPolicyModal(false);
-      onLoginSuccess(updatedUserData);
-      
-      // Check for cart context and trigger cart modal if needed
-      const cartContext = localStorage.getItem('cartContext');
-      if (cartContext) {
-        try {
-          const context = JSON.parse(cartContext);
-          localStorage.removeItem('cartContext');
-          
-          // Dispatch a custom event to notify that login was successful and cart should be shown
-          window.dispatchEvent(new CustomEvent('loginSuccessWithCart', { 
-            detail: context 
-          }));
-        } catch (error) {
-          console.error('Error parsing cart context:', error);
-        }
-      }
-
-      // Check for redirect URL
-      const redirectUrl = localStorage.getItem('loginRedirectUrl');
-      if (redirectUrl) {
-        localStorage.removeItem('loginRedirectUrl');
-        window.location.href = redirectUrl;
-      }
+      console.error('Failed to initiate background API call:', error);
     }
   };
 
