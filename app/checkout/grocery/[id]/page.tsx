@@ -9,7 +9,6 @@ export default function GroceryCheckoutPage() {
   const shopId = params?.id as string
 
   const [cart, setCart] = useState<any[]>([])
-  const [inventory, setInventory] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
   const [shopData, setShopData] = useState<any>(null)
   const [branchData, setBranchData] = useState<any>(null)
@@ -48,59 +47,7 @@ export default function GroceryCheckoutPage() {
     }
   }, [])
 
-  // Fetch inventory for "Add More Items" section using API
-  useEffect(() => {
-    async function fetchInventory() {
-      try {
-        // Use the new slug-based API endpoint
-        const apiUrl = `https://api-server.krontiva.africa/api:uEBBwbSs/groceries/${shopId}`;
-        console.log("Fetching grocery inventory for checkout from:", apiUrl);
-        
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch grocery data: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log("Grocery checkout API response:", data);
-        
-        const normalize = (item: any) => ({
-          ...item,
-          id: item.id,
-          productName: item.productName,
-          price: item.price?.toString() || "0",
-          category: item.category,
-          description: item.description,
-          available: typeof item.available === "boolean" ? item.available : true,
-          image: item.image_url || item.image?.url || item.image || null,
-        });
-        
-        if (Array.isArray(data.ShopsInventory)) {
-          // Take 6 random items from the inventory
-          const randomItems = data.ShopsInventory
-            .map(normalize)
-            .sort(() => Math.random() - 0.5)
-            .slice(0, 6);
-          setInventory(randomItems);
-        } else if (data.ShopsInventory && typeof data.ShopsInventory === 'object') {
-          setInventory([normalize(data.ShopsInventory)]);
-        } else {
-          setInventory([]);
-        }
-      } catch (error) {
-        console.error('Error fetching inventory for checkout:', error);
-        setInventory([]);
-      }
-    }
-
-    if (shopId) {
-      fetchInventory();
-    }
-  }, [shopId])
+  // Remove inventory fetching - CheckoutPage component will handle "Add More Items" section internally
 
   const handleAddItem = (item: any) => {
     setCart(prev => {
@@ -161,7 +108,7 @@ export default function GroceryCheckoutPage() {
       branchPhone=""
       initialFullName={user?.fullName || ""}
       initialPhoneNumber={user?.phoneNumber || ""}
-      inventory={inventory}
+      inventory={[]}
       storeType="grocery"
     />
   )

@@ -594,6 +594,22 @@ const transformOrderData = (orderData: any, storeType: string) => {
         ? localStorage.getItem('selectedGroceryShopId') 
         : null;
       
+      console.log('🛒 Grocery transformation:', {
+        originalBranchId: baseData.branchId,
+        groceryBranchIdFromStorage: groceryBranchId,
+        groceryShopIdFromStorage: groceryShopIdFromStorage,
+        finalGroceryShopId: groceryShopIdFromStorage || baseData.branchId,
+        finalGroceryBranchId: groceryBranchId || baseData.branchId
+      });
+
+      // Validate that we have required UUIDs
+      if (!groceryShopIdFromStorage) {
+        console.error('❌ Missing groceryShopId from localStorage!');
+      }
+      if (!groceryBranchId) {
+        console.error('❌ Missing groceryBranchId from localStorage!');
+      }
+      
       console.log('🛒 Grocery order totalPrice (after wallet deduction):', baseData.finalAmount?.toString() || baseData.totalPrice?.toString() || "0");
       
       // Transform to match grocery orders table schema exactly
@@ -699,6 +715,29 @@ export const submitOrder = async (orderData: any, storeType: string = 'restauran
       }
     }
 
+    // Additional validation for grocery orders
+    if (storeType === 'grocery') {
+      const groceryShopId = typeof window !== 'undefined' ? localStorage.getItem('selectedGroceryShopId') : null;
+      const groceryBranchId = typeof window !== 'undefined' ? localStorage.getItem('selectedGroceryBranchId') : null;
+      
+      console.log('🛒 GROCERY ORDER DEBUG:');
+      console.log('- API Endpoint:', endpoint);
+      console.log('- Environment variable NEXT_PUBLIC_GROCERIES_ORDERS_API:', process.env.NEXT_PUBLIC_GROCERIES_ORDERS_API);
+      console.log('- Grocery Shop ID from localStorage:', groceryShopId);
+      console.log('- Grocery Branch ID from localStorage:', groceryBranchId);
+      console.log('- Original branchId from orderData:', orderData.branchId);
+      
+      if (!endpoint) {
+        throw new Error('❌ NEXT_PUBLIC_GROCERIES_ORDERS_API environment variable is not set!');
+      }
+      if (!groceryShopId) {
+        throw new Error('❌ Missing groceryShopId in localStorage!');
+      }
+      if (!groceryBranchId) {
+        throw new Error('❌ Missing groceryBranchId in localStorage!');
+      }
+    }
+
     const transformedData = transformOrderData(orderData, storeType);
 
     // 🔍 DETAILED PRICE ANALYSIS LOGGING
@@ -750,7 +789,8 @@ export const submitOrder = async (orderData: any, storeType: string = 'restauran
     console.log('Request method: POST');
     console.log('Request headers:', { 'Content-Type': 'application/json' });
     console.log('Request body length:', requestBody.length, 'characters');
-    console.log('Request body:', requestBody);
+    console.log('📋 DETAILED ORDER DATA BEING POSTED TO DATABASE:');
+    console.log(JSON.stringify(transformedData, null, 2));
     console.log('📦 === END PAYLOAD LOG ===');
 
     const response = await fetch(endpoint, {

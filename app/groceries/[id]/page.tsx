@@ -281,6 +281,16 @@ export default function GroceryDetailsPage() {
           setShopName(groceryShop.groceryshopName || data.slug?.grocerybranchName || "Grocery Shop");
           setShopAddress(groceryShop.groceryshopAddress || "");
           
+          // Store grocery IDs in localStorage for order submission
+          if (groceryShop.id) {
+            localStorage.setItem('selectedGroceryShopId', groceryShop.id);
+            console.log('🛒 Stored selectedGroceryShopId:', groceryShop.id);
+          }
+          if (data.slug?.id) {
+            localStorage.setItem('selectedGroceryBranchId', data.slug.id);
+            console.log('🛒 Stored selectedGroceryBranchId:', data.slug.id);
+          }
+          
           // Extract logo from image_url first, then fallback to groceryshopLogo
           if (groceryShop.image_url) {
             setShopLogo(groceryShop.image_url);
@@ -294,6 +304,12 @@ export default function GroceryDetailsPage() {
           setShopName(data.slug?.grocerybranchName || "Grocery Shop");
           setShopAddress(data.slug?.grocerybranchLocation || "");
           setShopLogo("/fallback/grocery.jpg");
+          
+          // Store fallback IDs if available
+          if (data.slug?.id) {
+            localStorage.setItem('selectedGroceryBranchId', data.slug.id);
+            console.log('🛒 Stored selectedGroceryBranchId (fallback):', data.slug.id);
+          }
         }
         
         const normalize = (item: any) => ({

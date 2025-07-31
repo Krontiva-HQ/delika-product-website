@@ -9,7 +9,6 @@ export default function PharmacyCheckoutPage() {
   const shopId = params?.id as string
 
   const [cart, setCart] = useState<any[]>([])
-  const [inventory, setInventory] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
   const [shopData, setShopData] = useState<any>(null)
   const [branchData, setBranchData] = useState<any>(null)
@@ -48,30 +47,7 @@ export default function PharmacyCheckoutPage() {
     }
   }, [])
 
-  // Fetch inventory for "Add More Items" section
-  useEffect(() => {
-    async function fetchInventory() {
-      try {
-        const branchId = localStorage.getItem('selectedPharmacyBranchId')
-        const baseUrl = process.env.NEXT_PUBLIC_PHARMACIES_SHOPS_INVENTORY_API
-        if (!baseUrl || !branchId) return
-
-        const apiUrl = `${baseUrl}?pharmacyShopId=${shopId}&pharmacyBranchId=${branchId}`
-        const response = await fetch(apiUrl, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        })
-        const data = await response.json()
-        setInventory(Array.isArray(data) ? data : [])
-      } catch (error) {
-        console.error('Error fetching inventory:', error)
-      }
-    }
-
-    if (shopId) {
-      fetchInventory()
-    }
-  }, [shopId])
+  // Remove inventory fetching - CheckoutPage component will handle "Add More Items" section internally
 
   const handleAddItem = (item: any) => {
     setCart(prev => {
@@ -132,7 +108,7 @@ export default function PharmacyCheckoutPage() {
       branchPhone=""
       initialFullName={user?.fullName || ""}
       initialPhoneNumber={user?.phoneNumber || ""}
-      inventory={inventory}
+      inventory={[]}
       storeType="pharmacy"
     />
   )

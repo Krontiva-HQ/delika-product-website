@@ -292,6 +292,16 @@ export default function PharmacyDetailsPage() {
           setShopName(pharmacyShop.pharmacyName || data.slug?.pharmacybranchName || "Pharmacy Shop");
           setShopAddress(pharmacyShop.pharmacyAddress || "");
           
+          // Store pharmacy IDs in localStorage for order submission
+          if (pharmacyShop.id) {
+            localStorage.setItem('selectedPharmacyShopId', pharmacyShop.id);
+            console.log('🏥 Stored selectedPharmacyShopId:', pharmacyShop.id);
+          }
+          if (data.slug?.id) {
+            localStorage.setItem('selectedPharmacyBranchId', data.slug.id);
+            console.log('🏥 Stored selectedPharmacyBranchId:', data.slug.id);
+          }
+          
           // Extract image from new image_url field
           if (pharmacyShop.image_url) {
             setShopLogo(pharmacyShop.image_url);
@@ -303,6 +313,12 @@ export default function PharmacyDetailsPage() {
           setShopName(data.slug?.pharmacybranchName || "Pharmacy Shop");
           setShopAddress(data.slug?.pharmacybranchLocation || "");
           setShopLogo("/fallback/phamarcy.jpg");
+          
+          // Store fallback IDs if available
+          if (data.slug?.id) {
+            localStorage.setItem('selectedPharmacyBranchId', data.slug.id);
+            console.log('🏥 Stored selectedPharmacyBranchId (fallback):', data.slug.id);
+          }
         }
         
         const normalize = (item: any) => ({

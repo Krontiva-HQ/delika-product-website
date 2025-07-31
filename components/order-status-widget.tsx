@@ -139,7 +139,7 @@ export function OrderStatusWidget() {
   const fetchOrderStatus = async (orderNumber: string) => {
     try {
       console.log('Fetching order status for number:', orderNumber);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderNumber}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}?orderNumber=${orderNumber}`);
       
       if (!response.ok) {
         console.error('Error response:', response.status, response.statusText);

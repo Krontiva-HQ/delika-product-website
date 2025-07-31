@@ -358,28 +358,35 @@ export function CheckoutPage({
         setIsLoadingMenu(true);
         setMenuError(null);
 
-        const response = await fetch(
-          `https://api-server.krontiva.africa/api:uEBBwbSs/get/branch/details?branchId=${branchId}`,
-          {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
+        // For restaurants, fetch branch details
+        if (actualStoreType === 'restaurant') {
+          const response = await fetch(
+            `https://api-server.krontiva.africa/api:uEBBwbSs/get/branch/details?branchId=${branchId}`,
+            {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+              }
             }
+          );
+
+          const data = await response.json();
+
+          if (!data || !data._menutable) {
+            setMenuError("Failed to load menu items");
+            return;
           }
-        );
 
-        const data = await response.json();
-
-        if (!data || !data._menutable) {
-          setMenuError("Failed to load menu items");
-          return;
-        }
-
-        setBranchDetails(data);
-        // Only set selected category if it's not already set
-        if (!selectedCategory && data._menutable?.[0]) {
-          setSelectedCategory(data._menutable[0].foodType);
+          setBranchDetails(data);
+          // Only set selected category if it's not already set
+          if (!selectedCategory && data._menutable?.[0]) {
+            setSelectedCategory(data._menutable[0].foodType);
+          }
+        } else {
+          // For grocery and pharmacy, we don't need to fetch branch details for "Add More Items"
+          // The checkout pages for these stores don't have a complex menu structure
+          setBranchDetails(null);
         }
       } catch (error) {
         setMenuError("Failed to load menu items");
@@ -389,7 +396,7 @@ export function CheckoutPage({
     }
 
     fetchBranchDetails();
-  }, [branchId, selectedCategory]);
+  }, [branchId, selectedCategory, actualStoreType]);
 
   useEffect(() => {
     const storedFee = localStorage.getItem('checkoutDeliveryFee')
@@ -662,7 +669,15 @@ export function CheckoutPage({
       localStorage.setItem('delikaBalanceAmount', walletDeduction.toString()); // Number
 
       // Submit order to the appropriate endpoint based on store type
+      console.log(`🎯 [CHECKOUT] Submitting ${actualStoreType} order to endpoint for store type: ${actualStoreType}`);
       const orderResponse = await submitOrder(orderData, actualStoreType);
+
+      // Store the order submission response for the success page to use
+      localStorage.setItem('orderSubmissionResponse', JSON.stringify({
+        response: orderResponse,
+        storeType: actualStoreType,
+        timestamp: Date.now()
+      }));
 
       // Extract order ID based on store type and response structure
       let backendOrderId = orderId; // fallback to generated orderId
@@ -679,7 +694,7 @@ export function CheckoutPage({
       if (isFullyPaidByWallet) {
 
         // Redirect directly to success page
-        router.push(`/checkout/success?orderId=${backendOrderId}&walletPaid=true`);
+        router.push(`/checkout/success?orderId=${backendOrderId}&walletPaid=true&storeType=${actualStoreType}`);
       } else {
         // Redirect to /pay page with amount, orderId from backend, customerId and storeType
         router.push(`/pay?amount=${totalAmount}&orderId=${backendOrderId}&customerId=${userData?.id || ''}&storeType=${actualStoreType}`);
@@ -1142,7 +1157,8 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
             </div>
           </div>
 
-          {/* Add More Items Section */}
+          {/* Add More Items Section - Only show for restaurants */}
+          {actualStoreType === 'restaurant' && (
           <div>
             <div className="bg-white rounded-3xl shadow-sm p-6 hover:shadow-md transition-all duration-300 border border-orange-100/50">
               <div className="flex items-center justify-between mb-8">
@@ -1266,6 +1282,7 @@ Platform Fee: GH₵${platformFee.toFixed(2)}
               )}
             </div>
           </div>
+          )}
         </div>
       </div>
 

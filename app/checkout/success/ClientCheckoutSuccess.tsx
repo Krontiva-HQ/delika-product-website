@@ -27,7 +27,7 @@ interface OrderDetails {
   dropOff: Array<{
     toAddress: string
   }>
-  pickup: Array<{
+  pickUp: Array<{
     fromAddress: string
   }>
   orderDate: string
@@ -52,6 +52,19 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
   const [isWalletPayment, setIsWalletPayment] = useState(false)
   const [reverifying, setReverifying] = useState(false)
 
+  // Helper function to get the appropriate order status endpoint based on store type
+  const getOrderStatusEndpoint = (storeType?: string) => {
+    switch (storeType) {
+      case 'grocery':
+        return process.env.NEXT_PUBLIC_GROCERY_ORDER_STATUS_API;
+      case 'pharmacy':
+        return process.env.NEXT_PUBLIC_PHARMACY_ORDER_STATUS_API;
+      case 'restaurant':
+      default:
+        return process.env.NEXT_PUBLIC_ORDER_STATUS_API;
+    }
+  }
+
   useEffect(() => {
     const verifyPayment = async () => {
       try {
@@ -59,6 +72,10 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
         const reference = propReference || (searchParams?.get('reference') ?? null)
         const orderId = propOrderId || (searchParams?.get('orderId') ?? null)
         const walletPaid = searchParams?.get('walletPaid') === 'true'
+        const storeType = searchParams?.get('storeType') || 'restaurant'
+        
+        console.log('[Success Page] Store type from URL:', storeType)
+        console.log('[Success Page] Order status endpoint:', getOrderStatusEndpoint(storeType))
         
         if (!reference && !orderId) {
           console.error('No reference or orderId found')
@@ -79,42 +96,55 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
           // since there's no walletPaymentResponse in localStorage
           if (orderId) {
             try {
-              // First, we need to get the orderNumber from the backend response
+              // Get the appropriate identifier based on store type
               // Check if we have the order submission response in localStorage
               const orderSubmissionData = localStorage.getItem('orderSubmissionResponse');
-              let orderNumber = null;
+              let orderIdentifier = null;
               
               if (orderSubmissionData) {
                 try {
-                  const { response } = JSON.parse(orderSubmissionData);
+                  const { response, storeType: responseStoreType } = JSON.parse(orderSubmissionData);
                   console.log('[Success Page] Full order submission response:', response);
+                  console.log('[Success Page] Store type from response:', responseStoreType);
                   
-                  // For restaurant orders: { result1: { id: "...", orderNumber: "..." } }
-                  // For pharmacy/grocery orders: { id: "...", orderNumber: "..." }
-                  orderNumber = response?.result1?.orderNumber || response?.orderNumber;
-                  console.log('[Success Page] Extracted orderNumber from localStorage:', orderNumber);
+                  if (responseStoreType === 'restaurant') {
+                    // For restaurant orders: use orderNumber from result1
+                    orderIdentifier = response?.result1?.orderNumber;
+                    console.log('[Success Page] Using restaurant orderNumber:', orderIdentifier);
+                  } else {
+                    // For pharmacy/grocery orders: use id field as orderNumber
+                    orderIdentifier = response?.id;
+                    console.log('[Success Page] Using grocery/pharmacy id as orderNumber:', orderIdentifier);
+                  }
+                  
                   console.log('[Success Page] Response structure:', {
                     hasResult1: !!response?.result1,
                     result1OrderNumber: response?.result1?.orderNumber,
                     directOrderNumber: response?.orderNumber,
-                    finalOrderNumber: orderNumber
+                    responseId: response?.id,
+                    finalOrderIdentifier: orderIdentifier,
+                    storeType: responseStoreType
                   });
                 } catch (error) {
                   console.error('Error parsing order submission data:', error);
                 }
               }
               
-              // If we don't have orderNumber, try using orderId as fallback
-              if (!orderNumber) {
-                orderNumber = orderId;
-                console.log('[Success Page] Using orderId as fallback for orderNumber:', orderNumber);
+              // If we don't have orderIdentifier, try using orderId as fallback
+              if (!orderIdentifier) {
+                orderIdentifier = orderId;
+                console.log('[Success Page] Using orderId as fallback for orderIdentifier:', orderIdentifier);
               }
+              
+              const orderNumber = orderIdentifier;
               
               console.log('[Success Page] Final orderNumber being used for API call:', orderNumber);
               console.log('[Success Page] API endpoint:', `${process.env.NEXT_PUBLIC_ORDER_STATUS_API}?orderNumber=${orderNumber}`);
               
-              // Use the same API endpoint as the order status widget, but pass orderNumber as query parameter
-              const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}?orderNumber=${orderNumber}`)
+              // Use the appropriate API endpoint based on store type, pass orderNumber as query parameter
+              const endpoint = getOrderStatusEndpoint(storeType)
+              console.log('[Success Page] Using endpoint for wallet payment:', endpoint)
+              const response = await fetch(`${endpoint}?orderNumber=${orderNumber}`)
               if (!response.ok) {
                 throw new Error('Failed to fetch order details')
               }
@@ -190,42 +220,55 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
         } 
         // If we have an orderId, fetch order details
         else if (orderId) {
-          // First, we need to get the orderNumber from the backend response
+          // Get the appropriate identifier based on store type (fallback)
           // Check if we have the order submission response in localStorage
           const orderSubmissionData = localStorage.getItem('orderSubmissionResponse');
-          let orderNumber = null;
+          let orderIdentifier = null;
           
           if (orderSubmissionData) {
             try {
-              const { response } = JSON.parse(orderSubmissionData);
+              const { response, storeType: responseStoreType } = JSON.parse(orderSubmissionData);
               console.log('[Success Page] Full order submission response (fallback):', response);
+              console.log('[Success Page] Store type from response (fallback):', responseStoreType);
               
-              // For restaurant orders: { result1: { id: "...", orderNumber: "..." } }
-              // For pharmacy/grocery orders: { id: "...", orderNumber: "..." }
-              orderNumber = response?.result1?.orderNumber || response?.orderNumber;
-              console.log('[Success Page] Extracted orderNumber from localStorage (fallback):', orderNumber);
+              if (responseStoreType === 'restaurant') {
+                // For restaurant orders: use orderNumber from result1
+                orderIdentifier = response?.result1?.orderNumber;
+                console.log('[Success Page] Using restaurant orderNumber (fallback):', orderIdentifier);
+              } else {
+                // For pharmacy/grocery orders: use id field as orderNumber
+                orderIdentifier = response?.id;
+                console.log('[Success Page] Using grocery/pharmacy id as orderNumber (fallback):', orderIdentifier);
+              }
+              
               console.log('[Success Page] Response structure (fallback):', {
                 hasResult1: !!response?.result1,
                 result1OrderNumber: response?.result1?.orderNumber,
                 directOrderNumber: response?.orderNumber,
-                finalOrderNumber: orderNumber
+                responseId: response?.id,
+                finalOrderIdentifier: orderIdentifier,
+                storeType: responseStoreType
               });
             } catch (error) {
               console.error('Error parsing order submission data:', error);
             }
           }
           
-          // If we don't have orderNumber, try using orderId as fallback
-          if (!orderNumber) {
-            orderNumber = orderId;
-            console.log('[Success Page] Using orderId as fallback for orderNumber (fallback):', orderNumber);
+          // If we don't have orderIdentifier, try using orderId as fallback
+          if (!orderIdentifier) {
+            orderIdentifier = orderId;
+            console.log('[Success Page] Using orderId as fallback for orderIdentifier (fallback):', orderIdentifier);
           }
+          
+          const orderNumber = orderIdentifier;
           
           console.log('[Success Page] Final orderNumber being used for API call (fallback):', orderNumber);
           console.log('[Success Page] API endpoint (fallback):', `${process.env.NEXT_PUBLIC_ORDER_STATUS_API}?orderNumber=${orderNumber}`);
           
-          // Use the same API endpoint as the order status widget, but pass orderNumber as query parameter
-          const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}?orderNumber=${orderNumber}`)
+          // Use the appropriate API endpoint based on store type, pass orderNumber as query parameter
+          const endpoint = getOrderStatusEndpoint(storeType)
+          console.log('[Success Page] Using endpoint for fallback:', endpoint)
+          const response = await fetch(`${endpoint}?orderNumber=${orderNumber}`)
           if (!response.ok) {
             throw new Error('Failed to fetch order details')
           }
@@ -283,6 +326,7 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
       const reference = propReference || (searchParams?.get('reference') ?? null)
       const orderId = propOrderId || (searchParams?.get('orderId') ?? null)
       const walletPaid = searchParams?.get('walletPaid') === 'true'
+      const storeType = searchParams?.get('storeType') || 'restaurant'
       
       if (!reference && !orderId) {
         throw new Error('No payment reference or order ID found')
@@ -293,25 +337,33 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
         console.log('💰 Re-verifying wallet payment...');
         
         if (orderId) {
-          // Get orderNumber from localStorage or use orderId as fallback
+          // Get appropriate identifier from localStorage or use orderId as fallback
           const orderSubmissionData = localStorage.getItem('orderSubmissionResponse');
-          let orderNumber = null;
+          let orderIdentifier = null;
           
           if (orderSubmissionData) {
             try {
-              const { response } = JSON.parse(orderSubmissionData);
-              orderNumber = response?.result1?.orderNumber || response?.orderNumber;
+              const { response, storeType: responseStoreType } = JSON.parse(orderSubmissionData);
+              if (responseStoreType === 'restaurant') {
+                orderIdentifier = response?.result1?.orderNumber;
+              } else {
+                orderIdentifier = response?.id;
+              }
             } catch (error) {
               console.error('Error parsing order submission data:', error);
             }
           }
           
-          if (!orderNumber) {
-            orderNumber = orderId;
+          if (!orderIdentifier) {
+            orderIdentifier = orderId;
           }
           
-          // Re-verify using the order status API
-          const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}?orderNumber=${orderNumber}`)
+          const orderNumber = orderIdentifier;
+          
+          // Re-verify using the appropriate order status API
+          const endpoint = getOrderStatusEndpoint(storeType)
+          console.log('[Success Page] Re-verifying with endpoint:', endpoint)
+          const response = await fetch(`${endpoint}?orderNumber=${orderNumber}`)
           if (!response.ok) {
             throw new Error('Failed to fetch order details')
           }
@@ -367,22 +419,30 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
       } else if (orderId) {
         // Re-verify using orderId
         const orderSubmissionData = localStorage.getItem('orderSubmissionResponse');
-        let orderNumber = null;
+        let orderIdentifier = null;
         
         if (orderSubmissionData) {
           try {
-            const { response } = JSON.parse(orderSubmissionData);
-            orderNumber = response?.result1?.orderNumber || response?.orderNumber;
+            const { response, storeType: responseStoreType } = JSON.parse(orderSubmissionData);
+            if (responseStoreType === 'restaurant') {
+              orderIdentifier = response?.result1?.orderNumber;
+            } else {
+              orderIdentifier = response?.id;
+            }
           } catch (error) {
             console.error('Error parsing order submission data:', error);
           }
         }
         
-        if (!orderNumber) {
-          orderNumber = orderId;
+        if (!orderIdentifier) {
+          orderIdentifier = orderId;
         }
         
-        const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}?orderNumber=${orderNumber}`)
+        const orderNumber = orderIdentifier;
+        
+        const endpoint = getOrderStatusEndpoint(storeType)
+        console.log('[Success Page] Final re-verification with endpoint:', endpoint)
+        const response = await fetch(`${endpoint}?orderNumber=${orderNumber}`)
         if (!response.ok) {
           throw new Error('Failed to fetch order details')
         }
@@ -426,7 +486,7 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
   const handleShare = () => {
     if (orderDetails) {
       const paymentMethod = isWalletPayment ? 'Delika Balance' : 'Mobile Money';
-      const message = `🧾 Order Receipt #${orderDetails.id}\n\n📱 Customer: ${orderDetails.customerName}\n💰 Total: GH₵${orderDetails.totalPrice}\n💳 Payment: ${paymentMethod}\n📍 From: ${orderDetails.pickup[0]?.fromAddress}\n🏠 To: ${orderDetails.dropOff[0]?.toAddress}\n\n✅ Order confirmed successfully!`
+      const message = `🧾 Order Receipt #${orderDetails.id}\n\n📱 Customer: ${orderDetails.customerName}\n💰 Total: GH₵${orderDetails.totalPrice}\n💳 Payment: ${paymentMethod}\n📍 From: ${orderDetails.pickUp?.[0]?.fromAddress}\n🏠 To: ${orderDetails.dropOff?.[0]?.toAddress}\n\n✅ Order confirmed successfully!`
       
       if (navigator.share) {
         navigator.share({
@@ -608,14 +668,14 @@ export default function ClientCheckoutSuccess({ reference: propReference, orderI
                     <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">From</p>
-                      <p className="text-gray-700 font-medium">{orderDetails.pickup[0]?.fromAddress}</p>
+                      <p className="text-gray-700 font-medium">{orderDetails.pickUp?.[0]?.fromAddress}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">To</p>
-                      <p className="text-gray-700 font-medium">{orderDetails.dropOff[0]?.toAddress}</p>
+                      <p className="text-gray-700 font-medium">{orderDetails.dropOff?.[0]?.toAddress}</p>
                     </div>
                   </div>
                 </div>
