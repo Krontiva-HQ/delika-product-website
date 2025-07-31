@@ -470,9 +470,26 @@ export default function PharmacyDetailsPage() {
     });
   };
 
-  // Placeholder handlers and userData for AuthNav
+  // Auth navigation handlers
   const userData = user;
-  const handleViewChange = () => {};
+  const handleViewChange = (view: 'stores' | 'orders' | 'favorites' | 'profile' | 'settings') => {
+    switch (view) {
+      case 'orders':
+        window.location.href = '/orders';
+        break;
+      case 'favorites':
+        window.location.href = '/favorites';
+        break;
+      case 'settings':
+        window.location.href = '/settings';
+        break;
+      case 'stores':
+        window.location.href = '/vendors';
+        break;
+      default:
+        break;
+    }
+  };
   const handleLoginClick = () => setIsLoginModalOpen(true);
   const handleSignupClick = () => setIsSignupModalOpen(true);
   const handleLogout = () => {
@@ -507,24 +524,45 @@ export default function PharmacyDetailsPage() {
         {/* Header section styled like branch-page */}
         <div className="mb-8">
           <div className="relative w-full h-56 sm:h-72 rounded-2xl overflow-hidden shadow-lg bg-white border mx-auto">
-            {bannerImage ? (
+            {isLoading ? (
+              <div className="w-full h-full bg-gray-100 animate-pulse" />
+            ) : bannerImage ? (
               <img src={bannerImage} alt={shopName || "Pharmacy Shop"} className="object-cover w-full h-full" />
             ) : (
-              <img src="/fallback/phamarcy.jpg" alt="Pharmacy Shop" className="object-cover w-full h-full" />
+              <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-lg">
+                No Image Available
+              </div>
             )}
-            {/* Optionally, add a like button at top-right */}
           </div>
           <div className="text-center py-4">
             <h1 className="text-4xl font-bold text-gray-900 mb-1">{shopName || "Pharmacy Shop"}</h1>
             <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-gray-600 mb-2">
               {shopAddress && <span>{shopAddress}</span>}
             </div>
-            <button
-              onClick={() => setIsDetailsModalOpen(true)}
-              className="px-4 py-1 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium shadow-sm transition"
-            >
-              View Details
-            </button>
+            <div className="mt-3 flex justify-center gap-2">
+              <button
+                onClick={() => setIsDetailsModalOpen(true)}
+                className="px-4 py-1 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium shadow-sm transition"
+              >
+                View Details
+              </button>
+              {!user ? (
+                <>
+                  <button
+                    onClick={() => setIsLoginModalOpen(true)}
+                    className="px-4 py-1 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium shadow-sm transition"
+                  >
+                    Login
+                  </button>
+                  <button
+                    onClick={() => setIsSignupModalOpen(true)}
+                    className="px-4 py-1 rounded-full border border-orange-500 bg-orange-500 text-white hover:bg-orange-600 text-sm font-medium shadow-sm transition"
+                  >
+                    Sign Up
+                  </button>
+                </>
+              ) : null}
+            </div>
           </div>
         </div>
         {/* Placeholder for View Details modal */}

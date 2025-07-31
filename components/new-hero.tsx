@@ -24,10 +24,10 @@ export function NewHero() {
 
   return (
     <section 
-      className="relative flex items-center justify-center overflow-hidden" 
+      className="relative flex items-center justify-center overflow-hidden pt-16 md:pt-0" 
       style={{ 
-        minHeight: 'calc(-4rem + 100vh)',
-        height: 'calc(-84rem + 100vh)'
+        minHeight: 'calc(100vh - 4rem)',
+        height: 'auto'
       }}
     >
       <div className="container mx-auto px-4 md:px-8 flex flex-col-reverse md:flex-row items-center justify-between gap-12 h-full">

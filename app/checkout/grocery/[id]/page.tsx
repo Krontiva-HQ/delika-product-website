@@ -48,28 +48,57 @@ export default function GroceryCheckoutPage() {
     }
   }, [])
 
-  // Fetch inventory for "Add More Items" section
+  // Fetch inventory for "Add More Items" section using API
   useEffect(() => {
     async function fetchInventory() {
       try {
-        const branchId = localStorage.getItem('selectedGroceryBranchId')
-        const baseUrl = process.env.NEXT_PUBLIC_GROCERIES_SHOPS_INVENTORY_API
-        if (!baseUrl || !branchId) return
-
-        const apiUrl = `${baseUrl}?groceryShopId=${shopId}&groceryBranchId=${branchId}`
+        // Use the new slug-based API endpoint
+        const apiUrl = `https://api-server.krontiva.africa/api:uEBBwbSs/groceries/${shopId}`;
+        console.log("Fetching grocery inventory for checkout from:", apiUrl);
+        
         const response = await fetch(apiUrl, {
-          method: "GET",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-        })
-        const data = await response.json()
-        setInventory(Array.isArray(data) ? data : [])
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch grocery data: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("Grocery checkout API response:", data);
+        
+        const normalize = (item: any) => ({
+          ...item,
+          id: item.id,
+          productName: item.productName,
+          price: item.price?.toString() || "0",
+          category: item.category,
+          description: item.description,
+          available: typeof item.available === "boolean" ? item.available : true,
+          image: item.image_url || item.image?.url || item.image || null,
+        });
+        
+        if (Array.isArray(data.ShopsInventory)) {
+          // Take 6 random items from the inventory
+          const randomItems = data.ShopsInventory
+            .map(normalize)
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 6);
+          setInventory(randomItems);
+        } else if (data.ShopsInventory && typeof data.ShopsInventory === 'object') {
+          setInventory([normalize(data.ShopsInventory)]);
+        } else {
+          setInventory([]);
+        }
       } catch (error) {
-        console.error('Error fetching inventory:', error)
+        console.error('Error fetching inventory for checkout:', error);
+        setInventory([]);
       }
     }
 
     if (shopId) {
-      fetchInventory()
+      fetchInventory();
     }
   }, [shopId])
 
@@ -136,4 +165,4 @@ export default function GroceryCheckoutPage() {
       storeType="grocery"
     />
   )
-} 
+}

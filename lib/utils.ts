@@ -397,3 +397,22 @@ export const logLCPImageWarning = (src: string, componentName: string): void => 
     `Add priority={true} to optimize Largest Contentful Paint.`
   );
 };
+
+/**
+ * Format a date string to a localized date string
+ */
+export const formatDate = (dateString: string): string => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return dateString;
+  }
+};

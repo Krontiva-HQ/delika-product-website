@@ -2,7 +2,9 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { Menu, X, ChevronDown, User, LogOut } from "lucide-react"
+import { Menu, X, ChevronDown, User, LogOut, ClipboardList, Heart } from "lucide-react"
+import { OrdersModal } from "@/components/orders-modal"
+import { FavoritesModal } from "@/components/favorites-modal"
 import { cn } from "@/lib/utils"
 import { usePathname } from "next/navigation"
 import {
@@ -20,6 +22,8 @@ export function SiteHeader() {
   const [isSignInDropdownOpen, setIsSignInDropdownOpen] = useState(false)
   const [userData, setUserData] = useState<UserData | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false)
+  const [isFavoritesModalOpen, setIsFavoritesModalOpen] = useState(false)
   const pathname = usePathname()
 
   // Check authentication status on mount and when localStorage changes
@@ -161,6 +165,15 @@ export function SiteHeader() {
                 <DropdownMenuItem asChild>
                   <Link href="/cart">Cart</Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsOrdersModalOpen(true)}>
+                  <ClipboardList className="w-4 h-4 mr-2" />
+                  Orders
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsFavoritesModalOpen(true)}>
+                  <Heart className="w-4 h-4 mr-2" />
+                  Favorites
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
@@ -286,6 +299,24 @@ export function SiteHeader() {
                   </Link>
                   <button
                     onClick={() => {
+                      setIsOrdersModalOpen(true)
+                      setIsMobileMenuOpen(false)
+                    }}
+                    className="block text-base text-gray-600 hover:text-orange-500 transition-colors"
+                  >
+                    Orders
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsFavoritesModalOpen(true)
+                      setIsMobileMenuOpen(false)
+                    }}
+                    className="block text-base text-gray-600 hover:text-orange-500 transition-colors"
+                  >
+                    Favorites
+                  </button>
+                  <button
+                    onClick={() => {
                       handleLogout()
                       setIsMobileMenuOpen(false)
                     }}
@@ -323,6 +354,16 @@ export function SiteHeader() {
           </nav>
         </div>
       </div>
+
+      {/* Modals */}
+      <OrdersModal 
+        isOpen={isOrdersModalOpen}
+        onClose={() => setIsOrdersModalOpen(false)}
+      />
+      <FavoritesModal
+        isOpen={isFavoritesModalOpen}
+        onClose={() => setIsFavoritesModalOpen(false)}
+      />
     </header>
   )
 }

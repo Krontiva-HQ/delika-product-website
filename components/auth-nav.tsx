@@ -1,7 +1,8 @@
 "use client"
 
-import { ChevronDown } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
+import { ChevronDown, User, LogOut, ClipboardList, Heart } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,63 +11,52 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect, useCallback } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-
-interface UserLocation {
-  lat: string;
-  long: string;
-}
-
-export interface DeliveryAddress {
-  fromAddress: string;
-  fromLatitude: string;
-  fromLongitude: string;
-}
-
-interface FavoriteRestaurant {
-  branchName: string;
-}
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { OrdersModal } from "@/components/orders-modal"
+import { FavoritesModal } from "@/components/favorites-modal"
 
 interface CustomerTable {
   id: string;
   userId: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  role: string;
+  activeTill: string;
+  profilePicture?: {
+    url: string;
+  };
   created_at: number;
-  privacyPolicyAccepted?: boolean;
-  deliveryAddress: DeliveryAddress;
-  favoriteRestaurants: FavoriteRestaurant[];
+  deliveryAddress?: {
+    fromAddress: string;
+    fromLatitude: string;
+    fromLongitude: string;
+  };
+  favoriteRestaurants?: Array<{
+    branchName: string;
+  }>;
 }
 
-export interface UserData {
+interface UserData {
   id: string;
-  OTP: string;
-  city: string;
-  role: string;
-  email: string;
-  image: string | null;
-  Status: boolean;
-  onTrip: boolean;
-  address: string;
-  country: string;
-  Location: UserLocation;
-  branchId: string | null;
-  deviceId: string;
   fullName: string;
-  userName: string;
-  tripCount: number;
-  created_at: number;
-  postalCode: string;
-  addressFrom: string[];
-  dateOfBirth: string | null;
+  email: string;
   phoneNumber: string;
-  restaurantId: string | null;
+  role: string;
+  activeTill: string;
+  profilePicture?: {
+    url: string;
+  };
+  created_at: number;
+  deliveryAddress?: {
+    fromAddress: string;
+    fromLatitude: string;
+    fromLongitude: string;
+  };
+  favoriteRestaurants?: Array<{
+    branchName: string;
+  }>;
+
   customerTable: CustomerTable[];
 }
 
@@ -87,38 +77,33 @@ interface OrderProduct {
 }
 
 interface OrderPickup {
-  fromLatitude: number;
-  fromLongitude: number;
   fromAddress: string;
+  fromLatitude: string;
+  fromLongitude: string;
 }
 
 interface OrderDropOff {
+  toAddress: string;
   toLatitude: string;
   toLongitude: string;
-  toAddress: string;
 }
 
 interface OrderHistory {
   id: string;
-  created_at: number;
-  restaurantId: string;
-  branchId: string;
   customerName: string;
   customerPhoneNumber: string;
-  courierName: string;
-  courierId: string;
-  courierPhoneNumber: string;
-  deliveryPrice: number;
-  totalPrice: number;
-  orderNumber: number;
-  orderStatus: string;
-  orderDate: string;
-  orderPrice: number;
   pickupName: string;
   dropoffName: string;
-  paymentStatus: string;
-  dropOffCity: string;
+  orderPrice: string;
+  deliveryPrice: string;
+  totalPrice: string;
   orderComment: string;
+  orderStatus: string;
+  orderDate: string;
+  orderReceivedTime: number;
+  completed: boolean;
+  paymentStatus: string;
+
   products: OrderProduct[];
   pickup: OrderPickup[];
   dropOff: OrderDropOff[];
@@ -133,9 +118,11 @@ export function AuthNav({
   onLogout,
   onHomeClick
 }: AuthNavProps) {
-  const userName = userData?.fullName || null;
+  
   const [filteredFavoritesCount, setFilteredFavoritesCount] = useState(0);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
+  const [isFavoritesModalOpen, setIsFavoritesModalOpen] = useState(false);
   const [orders, setOrders] = useState<OrderHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -172,6 +159,14 @@ export function AuthNav({
     window.location.href = '/';
   };
 
+  const handleOrdersClick = () => {
+    setIsOrdersModalOpen(true);
+  };
+
+  const handleFavoritesClick = () => {
+    setIsFavoritesModalOpen(true);
+  };
+
   const fetchOrderHistory = useCallback(async () => {
     if (!userData?.id) return;
 
@@ -206,113 +201,109 @@ export function AuthNav({
     return new Date(dateString).toLocaleDateString();
   };
 
-  return (
-    <div className="bg-white">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col">
-          <div className="flex items-center justify-between h-16 border-b">
-            <div className="flex items-center gap-8">
-              <Link 
-                href="/"
-                className={`font-semibold ${currentView === 'stores' ? 'text-orange-500' : 'text-gray-600 hover:text-gray-900'}`}
-              >
-                Delika
-              </Link>
-              {userName && (
-                <>
-                  <button 
-                    onClick={fetchOrderHistory}
-                    className={`${currentView === 'orders' ? 'text-orange-500' : 'text-gray-600 hover:text-gray-900'}`}
-                  >
-                    Orders
-                  </button>
-                  <button 
-                    onClick={() => onViewChange('favorites')}
-                    className={`${currentView === 'favorites' ? 'text-orange-500' : 'text-gray-600 hover:text-gray-900'}`}
-                  >
-                    Favorites ({filteredFavoritesCount})
-                  </button>
-                </>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-4">
-              {userName ? (
-                <>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-orange-100 items-center justify-center flex">
-                        <span className="text-sm font-medium text-orange-600">
-                          {userName[0].toUpperCase()}
-                        </span>
-                      </div>
-                      <span className="hidden md:block text-sm font-medium">
-                        {userName}
-                      </span>
-                      <ChevronDown className="w-4 h-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-72">
-                      <div className="px-2 py-1.5">
-                        <div className="text-sm font-medium">{userData?.email}</div>
-                        <div className="text-xs text-gray-500">{userData?.phoneNumber}</div>
-                      </div>
-                      <DropdownMenuSeparator />
-                      <Link href="/settings" passHref>
-                        <DropdownMenuItem>
-                          Settings
-                        </DropdownMenuItem>
-                      </Link>
-                      <DropdownMenuItem className="text-red-600" onSelect={handleLogoutClick}>
-                        Logout
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+  const userName = userData?.fullName || userData?.customerTable?.[0]?.fullName;
 
-                  <Dialog open={isLogoutModalOpen} onOpenChange={setIsLogoutModalOpen}>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>Confirm Logout</DialogTitle>
-                        <DialogDescription>
-                          Are you sure you want to log out? You will need to log in again to access your account.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter className="flex gap-2 sm:gap-0">
-                        <Button
-                          variant="outline"
-                          onClick={() => setIsLogoutModalOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={handleConfirmLogout}
-                        >
+  return (
+    <>
+      <div className="bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between h-16 border-b">
+              <div className="flex items-center gap-8">
+                <Link 
+                  href="/"
+                  className={`font-semibold ${currentView === 'stores' ? 'text-orange-500' : 'text-gray-600 hover:text-gray-900'}`}
+                >
+                  Delika
+                </Link>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                {userName ? (
+                  <>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-orange-100 items-center justify-center flex">
+                          <span className="text-sm font-medium text-orange-600">
+                            {userName[0].toUpperCase()}
+                          </span>
+                        </div>
+                        <span className="hidden md:block text-sm font-medium">
+                          {userName}
+                        </span>
+                        <ChevronDown className="w-4 h-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-72">
+                        <div className="px-2 py-1.5">
+                          <div className="text-sm font-medium">{userData?.email}</div>
+                          <div className="text-xs text-gray-500">{userData?.phoneNumber}</div>
+                        </div>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleOrdersClick}>
+                          <ClipboardList className="w-4 h-4 mr-2" />
+                          Orders
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleFavoritesClick}>
+                          <Heart className="w-4 h-4 mr-2" />
+                          Favorites ({filteredFavoritesCount})
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <Link href="/settings" passHref>
+                          <DropdownMenuItem>
+                            Settings
+                          </DropdownMenuItem>
+                        </Link>
+                        <DropdownMenuItem className="text-red-600" onSelect={handleLogoutClick}>
+                          <LogOut className="w-4 h-4 mr-2" />
                           Logout
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={onLoginClick}
-                    className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded transition font-medium"
-                  >
-                    Login
-                  </button>
-                  <button
-                    onClick={onSignupClick}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded transition font-medium"
-                  >
-                    Sign up
-                  </button>
-                </div>
-              )}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Dialog open={isLogoutModalOpen} onOpenChange={setIsLogoutModalOpen}>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Confirm Logout</DialogTitle>
+                          <DialogDescription>
+                            Are you sure you want to log out?
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex justify-end gap-2 mt-4">
+                          <Button variant="outline" onClick={() => setIsLogoutModalOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button variant="destructive" onClick={handleConfirmLogout}>
+                            Logout
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" size="sm" onClick={onLoginClick}>
+                      Login
+                    </Button>
+                    <Button size="sm" onClick={onSignupClick}>
+                      Sign Up
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  )
-} 
+
+      {/* Modals */}
+      <OrdersModal 
+        isOpen={isOrdersModalOpen}
+        onClose={() => setIsOrdersModalOpen(false)}
+      />
+      <FavoritesModal
+        isOpen={isFavoritesModalOpen}
+        onClose={() => setIsFavoritesModalOpen(false)}
+      />
+    </>
+  );
+}
