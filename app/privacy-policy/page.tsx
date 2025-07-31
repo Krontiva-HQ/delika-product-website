@@ -257,12 +257,12 @@ export default function PrivacyPolicyPage() {
                     </div>
                   ) : item.id === "dataprocess" ? (
                     <div className="space-y-8">
-                      <div className="space-y-4">
+                    <div className="space-y-4">
                         <h3 className="text-lg font-semibold text-gray-900">4.1. Where does Krontiva Africa collect my Personal Data from?</h3>
-                        <p className="text-gray-600">
+                      <p className="text-gray-600">
                           In most circumstances we collect Personal Data directly from you when you:
-                        </p>
-                        <ul className="list-disc pl-6 space-y-2 text-gray-600">
+                      </p>
+                      <ul className="list-disc pl-6 space-y-2 text-gray-600">
                           <li>Buy from any businesses signed onto the Delika platform</li>
                           <li>Use our platforms</li>
                           <li>Subscribe to newsletters, alerts or other services from us</li>
@@ -283,7 +283,7 @@ export default function PrivacyPolicyPage() {
                           <li>Marketing agencies</li>
                           <li>Resellers in respect of the Personal Data of customers, users and suppliers</li>
                           <li>Third parties providing supplier and reseller references</li>
-                        </ul>
+                      </ul>
                       </div>
 
                       <div className="space-y-4">
@@ -1080,23 +1080,92 @@ export default function PrivacyPolicyPage() {
                   ) : item.id === "sharing" ? (
                     <>
                       <p className="text-gray-600 mb-4">
-                        We may share your personal data with:
+                        We may share your personal data with the following categories of recipients.
                       </p>
-                      <ul className="list-disc pl-6 space-y-2 text-gray-600">
-                        <li>Delivery Partners, who are independent contractors or employees of Krontiva Africa, who are responsible for delivering your orders.</li>
-                        <li>Restaurant Partners, who are responsible for preparing and delivering your orders.</li>
-                        <li>Third-party service providers and contractors, who assist us in providing the Delika services, including payment processing, fraud prevention, customer support, marketing, analytics, and infrastructure providers.</li>
-                        <li>Businesses or individuals with whom you choose to share your personal data, such as when you make a purchase or request a service directly from them.</li>
-                        <li>Law enforcement authorities, regulatory bodies, or other third parties where required by law or regulation, or where we believe it is necessary to protect our rights, property, or safety, or the rights, property, or safety of others.</li>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full border border-gray-300 rounded-lg bg-white mb-6">
+                          <thead>
+                            <tr className="bg-gray-100">
+                              <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Category of Recipients</th>
+                              <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">Description</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Restaurants and stores</td>
+                              <td className="px-4 py-3 border-b border-gray-200">
+                                <p className="mb-2">Your personal data is only disclosed to the restaurants and stores when you place an order on the Delika Platform.</p>
+                                <p className="mb-2">In such a case, the restaurant or store will see:</p>
+                                <ul className="list-disc pl-6 mb-2">
+                                  <li>Your first name and last name</li>
+                                  <li>Contact phone number</li>
+                                  <li>Your delivery address (in case the restaurant or store uses their own delivery method and do not leverage Delivery Partners partnering with Delika)</li>
+                                  <li>Order Data, together with any information submitted by you together with Order Data (for example information about food preference, cooking preferences, information about any allergies if such information is disclosed by you in the course of submitting the order)</li>
                       </ul>
+                                <p className="mb-2">Once the order is completed and to the extent you leave feedback on the restaurant or store, we share it with the restaurant or store.</p>
+                                <p className="mb-2">After fulfilling the order, your first name and the telephone number will remain visible to the Partner such as restaurants or stores for 24-48 hours. This is necessary to resolve any issues with you regarding your order, such as issuing an electronic receipt for your order, or contacting you about availability of items you ordered.</p>
+                                <p className="mb-2">Clients may also opt-in to share their contact and order details with a specific restaurant or store to receive marketing communications from such restaurant or store.</p>
+                                <p>To the extent you use Dine-in service as the registered user, your personal data will be shared with the restaurant such as your table number and ID, your order details, your status of payment and any feedback you submit to rate the food and service.</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Delivery Partners</td>
+                              <td className="px-4 py-3 border-b border-gray-200">
+                                <p className="mb-2">Your delivery address, first name and the letter of the last name and contact phone number (to the extent the Delivery Partner reaches out to you using the Delika button "Call" during the active order) will be shared for the order delivery with the Delivery Partner.</p>
+                                <p>After fulfilling the order, your first name and the telephone number is not visible to the Delivery Partner.</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Promotional, marketing and strategic partners</td>
+                              <td className="px-4 py-3 border-b border-gray-200">
+                                <p className="mb-2">We may share limited data like your email address with our promotional, marketing and strategic partners so that they can inform you about promotional events and provide you with information and marketing messages about products or services that may interest you.</p>
+                                <p>In addition, we may share your personal data with marketing platform providers, including social media advertising services, advertising networks, third-party data providers, to reach or better understand our users and measure the effectiveness of our ads on other platforms and with social media platforms, including Facebook and Google, for sign-in purposes.</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Third-party service providers</td>
+                              <td className="px-4 py-3 border-b border-gray-200">
+                                <p>Our third-party vendors and other service providers and contractors have access to your personal data to help carry out the services they are performing for us or on behalf of us. This may include vendors and providers who provide email or moreover electronic communication services, tax, legal and accounting services, product fulfilment, identity/verification processes, payment processing, customer support, fraud prevention and detection, data enhancement, web hosting and cloud storage, research, including surveys, analytics, crash reporting, performance monitoring and artificial intelligence, machine learning and statistical services. In addition, we will share data like your geolocation with Google in connection with the use of Google maps in our apps.</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Other third parties</td>
+                              <td className="px-4 py-3 border-b border-gray-200">
+                                <p>In the event of a likely change of control of the business (or a part of the business) such as negotiations for a sale, an actual sell, a merger, and acquisition, or any transaction, or reorganization, we may share your personal data with interested parties, including as part of any due diligence process with new or prospective business owners and their respective professional advisers. We may also need to transfer your personal data to that third party or re-organized entity after the sale or reorganization for them to use for the same purposes as set out in this Notice.</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-3 border-b border-gray-200 align-top font-medium">Law Enforcement</td>
+                              <td className="px-4 py-3 border-b border-gray-200">
+                                <p>We may disclose information under a court order or where we cooperate with a data protection supervisory authority in handling complaints or investigations. For example, we may also share your personal data with law enforcement or other public authorities, including responding to requests when the information is required by law or furthers a public interest task. In any scenario, we will take steps to ensure that we have a lawful basis on which to share the information, and we'll make sure that we document our decision.</p>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className="text-gray-600">
+                        Please note, that our websites and apps may contain links to other third-party websites. If you follow a link to any of those third-party websites, please be aware that those websites may have their own privacy notices and that we do not accept any responsibility or liability for their notices or their processing of your personal data. Please check these notices before you submit any personal data to such third-party websites.
+                      </p>
                     </>
                   ) : item.id === "safety" ? (
                     <>
                       <p className="text-gray-600 mb-4">
                         We take appropriate technical and organizational measures to protect your personal data against unauthorized or unlawful processing, accidental loss, destruction, or damage, using appropriate security measures such as encryption, pseudonymization, and hashing.
                       </p>
-                      <p className="text-gray-600">
+                      <p className="text-gray-600 mb-4">
                         We regularly review and update our security measures to ensure they remain effective and appropriate.
+                      </p>
+                      <p className="text-gray-600 mb-4">
+                        The security of your personal data is very important to us, and we have implemented appropriate technical and organizational controls to protect your personal data against unauthorized processing and against accidental loss, damage or destruction. We have implemented data encryption in transit and at rest, data privacy and security training, information security policies and controls around the confidentiality, integrity and availability of our data/systems.
+                      </p>
+                      <p className="text-gray-600 mb-4">
+                        Any personal data collected in the course of providing Delika's services is transferred to and stored in our data centers which are in the cloud. Only authorized employees of Krontiva Africa LTD and partners have access to the personal data and they may access the data only for the purpose of resolving issues associated with the use of the services (including disputes regarding delivery services and customer support services).
+                      </p>
+                      <p className="text-gray-600 mb-4">
+                        For our research and scientific purposes, all data, like bulk Geolocation Data, is anonymized so you can never be identified from it. Regarding anonymized data, we will not attempt to re-identify your personal data that has been de-identified, in the course of sharing your data with other organizations.
+                      </p>
+                      <p className="text-gray-600">
+                        You are responsible though for choosing a secure password when we ask you to set up a password to access parts of our sites or apps. You should keep this password confidential and you should choose a password that you do not use on any other site.
                       </p>
                     </>
                   ) : item.id === "breaches" ? (
@@ -1218,18 +1287,57 @@ export default function PrivacyPolicyPage() {
                     </>
                   ) : item.id === "rights" ? (
                     <>
-                      <p className="text-gray-600 mb-4">
-                        You have the following rights regarding your personal data:
-                      </p>
-                      <ul className="list-disc pl-6 space-y-2 text-gray-600">
-                        <li>Access: You have the right to request access to your personal data.</li>
-                        <li>Rectification: You have the right to request that we correct any inaccurate personal data we hold about you.</li>
-                        <li>Erasure: You have the right to request that we delete your personal data, subject to certain exceptions.</li>
-                        <li>Restriction of Processing: You have the right to request that we restrict the processing of your personal data.</li>
-                        <li>Object to Processing: You have the right to object to the processing of your personal data.</li>
-                        <li>Data Portability: You have the right to request that we transfer your personal data to another data controller.</li>
-                        <li>Withdraw Consent: Where we rely on your consent to process your personal data, you have the right to withdraw your consent at any time.</li>
-                      </ul>
+                      <p className="text-gray-600 mb-6">As a data subject you have following rights:</p>
+                      <div className="space-y-6">
+                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                          <h3 className="font-semibold text-gray-900 mb-2">Access your personal data (known as "Right of Access")</h3>
+                          <p className="text-gray-600">You have the right to access and to request copies of your personal data by contacting our Customer Support Team.</p>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                          <h3 className="font-semibold text-gray-900 mb-2">Update/correct your personal data (known as "Right of Rectification")</h3>
+                          <p className="text-gray-600">You have the right to request us to correct personal data that is inaccurate or incomplete. You can change and correct certain personal data yourself within the Delika Platform or by contacting our Customer Support Team.</p>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                          <h3 className="font-semibold text-gray-900 mb-2">Delete your personal data (known as "Right of Erasure")</h3>
+                          <p className="text-gray-600">You have the right to request that we erase your personal data, under certain conditions (e.g., we are processing your personal data under your consent). Personal data that is processed pursuant to a legal obligation or where we have an overriding legitimate interest may not be deleted upon request. You can request erasure of your personal data by contacting our Customer Support Team.</p>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                          <h3 className="font-semibold text-gray-900 mb-2">Restrict use of your personal data (known as "Right to Restrict Processing")</h3>
+                          <p className="text-gray-600">You have the right to request that we restrict the processing of your personal data, under certain conditions (e.g., we are processing your personal data under consent). You can request restriction of the use of your personal data by contacting our Customer Support Team.</p>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                          <h3 className="font-semibold text-gray-900 mb-2">Object to use of your personal data (known as "Right to Object")</h3>
+                          <p className="text-gray-600">You have the right to object to our processing of your personal data, under certain conditions (e.g., if we are Processing your Personal Data on the basis that is necessary for purposes of our or a third party's legitimate interest or in the public interest. You may also object if you believe there is no legal basis for us to Process your Personal Data anymore). You may submit an objection to the use of your personal data by contacting our Customer Support Team.</p>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                          <h3 className="font-semibold text-gray-900 mb-2">Object to solely automated decisions (known as "Right to object to automated decision making")</h3>
+                          <p className="text-gray-600">You have the right, under certain circumstances, to object to any solely automated decisions we have made which have a legal effect or similarly significant effect which does not involve human review. You can ask that a person review the decision, obtain an explanation of the decision reached after such assessment and challenge the decision by contacting our Customer Support Team. Please note that certain exceptions and limitations may apply to your right to object to automated decision-making, as permitted by applicable laws and regulations. We will provide you with clear information regarding the implications of exercising your rights and the processes involved in objecting to solely automated decision-making.</p>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                          <h3 className="font-semibold text-gray-900 mb-2">Port your personal data (known as "Right to Data Portability")</h3>
+                          <p className="text-gray-600">You have the right to request that we transfer the personal data that you have given us to another organisation, or directly to you, under certain conditions. This only applies to information you have given us. You can request for your personal data to be ported by contacting our Customer Support Team.</p>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                          <h3 className="font-semibold text-gray-900 mb-2">Withdraw your consent</h3>
+                          <p className="text-gray-600">If we process your personal data using consent as legal basis, then you have the right to withdraw your consent at any time (e.g., by unsubscribing from marketing communications or by updating your communication preferences on the Delika Platform). Withdrawing your consent won't change the legality of processing undertaken by Krontiva Africa before you withdraw your consent.</p>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                          <h3 className="font-semibold text-gray-900 mb-2">File a complaint</h3>
+                          <p className="text-gray-600">If you have any concerns regarding the processing of your personal data, you have the right to lodge a complaint with the Ghana Data Protection Commission who is the lead supervisory authority. You may also have a right to seek a judicial remedy.</p>
+                        </div>
+
+                        <div className="bg-orange-50 rounded-lg p-4 mt-6">
+                          <p className="text-gray-700">To exercise any of the above rights, you can contact us via the Privacy Web Form available at <a href="https://delika.app/settings" className="text-orange-600 hover:text-orange-700">https://delika.app/settings</a>. The Customer Support Team will then forward the issue internally to Krontiva's Privacy Legal Team.</p>
+                        </div>
+                      </div>
                       <p className="text-gray-600 mt-4">
                         To exercise any of these rights, please contact us using the methods set out in Section 12 "How do you contact us?" below.
                       </p>
@@ -1237,14 +1345,13 @@ export default function PrivacyPolicyPage() {
                   ) : item.id === "directmarketing" ? (
                     <>
                       <p className="text-gray-600 mb-4">
-                        We may use your personal data for direct marketing purposes, including sending you promotional communications about our services, provided that:
+                        Please be aware that you may from time to time receive updates about special offers and promotions related to our services. We send these communications based on our legitimate interests (soft opt-in) in providing you with information about opportunities that could be beneficial to you.
                       </p>
-                      <ul className="list-disc pl-6 space-y-2 text-gray-600">
-                        <li>You have given your explicit consent to receive such communications.</li>
-                        <li>We have a legitimate interest in sending you such communications, such as to inform you about new features, promotions, or other news about the Delika services.</li>
-                      </ul>
-                      <p className="text-gray-600 mt-4">
-                        You can opt out of receiving direct marketing communications at any time by clicking the unsubscribe link in any promotional email we send to you, or by contacting us using the methods set out in Section 12 "How do you contact us?" below.
+                      <p className="text-gray-600 mb-4">
+                        You have complete control over these communications, and if you decide at any time that you do not wish to receive them, you can stop them by clicking the "unsubscribe" link at the bottom of our emails, typing "STOP" for messages and SMS.
+                      </p>
+                      <p className="text-gray-600">
+                        Additionally, we may seek your opt-in consent for specific direct marketing activities where this is required by law. For example, we might request your consent to send you information regarding third-party promotions and offers that we think might be of interest to you. We also personalize direct marketing messages using information about how you use the Delika services (for example, how often you use the Delika App).
                       </p>
                     </>
                   ) : item.id === "changes" ? (

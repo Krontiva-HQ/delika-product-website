@@ -3151,6 +3151,139 @@ The application now provides a modern, professional user experience with correct
 
 ---
 
+## Privacy Policy Direct Marketing Update
+
+### **Date**: Recent
+### **Files Modified**: 
+- `app/privacy-policy/page.tsx`
+
+### **Changes Made**:
+- **Updated Direct Marketing Section**: Revised section 10 with clearer explanation of marketing communications
+- **Soft Opt-in Clarification**: Added explanation of legitimate interests basis for marketing
+- **Control Mechanisms**: Added clear instructions for opting out via unsubscribe links and "STOP" commands
+- **Consent Requirements**: Added details about opt-in consent for specific marketing activities
+- **Personalization Information**: Added transparency about how marketing messages are personalized
+
+### **Technical Implementation**:
+```typescript
+// Updated section 10 content with new structure and clearer explanations
+<p className="text-gray-600 mb-4">
+  Please be aware that you may from time to time receive updates about special offers and promotions related to our services. We send these communications based on our legitimate interests (soft opt-in) in providing you with information about opportunities that could be beneficial to you.
+</p>
+<p className="text-gray-600 mb-4">
+  You have complete control over these communications, and if you decide at any time that you do not wish to receive them, you can stop them by clicking the "unsubscribe" link at the bottom of our emails, typing "STOP" for messages and SMS.
+</p>
+<p className="text-gray-600">
+  Additionally, we may seek your opt-in consent for specific direct marketing activities where this is required by law. For example, we might request your consent to send you information regarding third-party promotions and offers that we think might be of interest to you. We also personalize direct marketing messages using information about how you use the Delika services (for example, how often you use the Delika App).
+</p>
+```
+
+### **Benefits**:
+- **Clearer Communication**: Better explanation of marketing communication practices
+- **User Control**: Clear instructions for opting out of communications
+- **Legal Compliance**: Proper explanation of legitimate interests and consent requirements
+- **Transparency**: Clear information about personalization practices
+- **Professional Appearance**: Well-structured and easy-to-read content
+
+---
+
+## Branch Page Delivery Fee Calculation Fix
+
+### **Date**: Recent
+### **Files Modified**: 
+- `components/branch-page.tsx`
+
+### **Changes Made**:
+- **Added Active Delivery Fee Calculation**: Implemented proper delivery fee calculation in the branch page
+- **Vendor-Specific Storage**: Added vendor-specific localStorage key format: `deliveryCalculationData_restaurant_${params.id}`
+- **Comprehensive Calculation Logic**: Added full delivery fee calculation including:
+  - Distance calculation between user and branch
+  - API calls to get delivery prices
+  - Proper storage of results with vendor type and ID
+- **Enhanced Validation**: Added checks for:
+  - Vendor type matching
+  - Branch ID/slug matching
+  - Data freshness (5-minute cache)
+
+### **Technical Implementation**:
+```typescript
+// Calculate delivery fees when cart changes or location updates
+useEffect(() => {
+  const calculateFee = async () => {
+    try {
+      setIsLoadingDelivery(true)
+      const locationData = localStorage.getItem('userLocationData')
+      
+      if (!locationData || !branch) {
+        console.log('[BranchPage] Missing data - locationData:', !!locationData, 'branch:', !!branch);
+        setIsLoadingDelivery(false)
+        return
+      }
+
+      const { lat, lng } = JSON.parse(locationData)
+      const branchLat = parseFloat(branch.branchLatitude)
+      const branchLng = parseFloat(branch.branchLongitude)
+      
+      const distance = await calculateDistance(
+        { latitude: lat, longitude: lng },
+        { latitude: branchLat, longitude: branchLng }
+      )
+      
+      setDistance(toNumber(distance))
+
+      // Calculate delivery prices via API
+      const deliveryResponse = await calculateDeliveryPrices({
+        pickup: {
+          fromLatitude: branchLat.toString(),
+          fromLongitude: branchLng.toString(),
+        },
+        dropOff: {
+          toLatitude: lat.toString(),
+          toLongitude: lng.toString(),
+        },
+        rider: true,
+        pedestrian: true,
+        total: currentCartTotal,
+        subTotal: currentCartTotal,
+        userId: userId
+      });
+
+      // Store results with vendor-specific key
+      const deliveryCalculationData = {
+        riderFee: toNumber(newRiderFee),
+        pedestrianFee: toNumber(newPedestrianFee),
+        platformFee: toNumber(newPlatformFee),
+        distance: toNumber(distance),
+        cartTotal: currentCartTotal,
+        branchId: params.id,
+        timestamp: Date.now(),
+        vendorType: 'restaurant'
+      };
+      
+      localStorage.setItem(
+        `deliveryCalculationData_restaurant_${params.id}`, 
+        JSON.stringify(deliveryCalculationData)
+      );
+    } catch (error) {
+      console.error('[BranchPage] Error calculating delivery fee:', error);
+    } finally {
+      setIsLoadingDelivery(false)
+    }
+  }
+
+  if (branch && cart.length > 0) {
+    calculateFee();
+  }
+}, [cart, branch, params.id]);
+```
+
+### **Benefits**:
+- **Accurate Delivery Fees**: Branch page now properly calculates and displays delivery fees
+- **Consistent Experience**: Same delivery fee calculation as grocery and pharmacy pages
+- **Better Performance**: Proper caching with vendor-specific keys
+- **Reliable Updates**: Fees recalculate when cart or location changes
+- **Clean Architecture**: Organized code with proper error handling and logging
+
 ## Site Header Updates
 
 ### **Date**: Recent

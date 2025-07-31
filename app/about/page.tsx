@@ -6,32 +6,32 @@ import { Building2, Users, Target, Sparkles } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 
 const stats = [
-  { number: "1M+", label: "Happy Customers" },
-  { number: "500+", label: "Restaurant Partners" },
-  { number: "1000+", label: "Delivery Partners" },
-  { number: "50+", label: "Cities Covered" },
+  { number: "1000+", label: "Happy Customers" },
+  { number: "150+", label: "Partner Vendors" },
+  { number: "20+", label: "Delivery Partners" },
+  { number: "100+", label: "Cities & Towns" },
 ]
 
 const values = [
   {
     icon: Building2,
     title: "Innovation First",
-    description: "We leverage cutting-edge technology to revolutionize food delivery in Ghana."
+    description: "Leveraging cutting-edge technology to revolutionize delivery services across Ghana with a seamless ordering experience."
   },
   {
     icon: Users,
     title: "Community Driven",
-    description: "Supporting local businesses and creating opportunities for delivery partners."
+    description: "Empowering local businesses, from restaurants to pharmacies, while creating opportunities for delivery partners."
   },
   {
     icon: Target,
     title: "Customer Focused",
-    description: "Every decision we make starts with our customers' needs and satisfaction."
+    description: "Prioritizing convenience, reliability, and satisfaction in every delivery, from food to medicine."
   },
   {
     icon: Sparkles,
     title: "Quality Service",
-    description: "Maintaining high standards in food quality, delivery speed, and customer support."
+    description: "Maintaining high standards across our entire platform - restaurants, groceries, pharmacies, and delivery services."
   }
 ]
 
@@ -60,10 +60,10 @@ export default function About() {
           >
             <div className="max-w-3xl">
               <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">
-                Transforming Food Delivery in Ghana
+                Your Premier Delivery Platform
               </h1>
               <p className="text-xl text-white/90 mb-8">
-                We are building the future of food delivery, one order at a time.
+                Connecting you with the best restaurants, groceries, and pharmacies across Ghana, delivered to your doorstep.
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                 {stats.map((stat, index) => (
@@ -95,10 +95,10 @@ export default function About() {
               >
                 <h2 className="text-4xl font-bold mb-6">Our Mission</h2>
                 <p className="text-xl text-gray-600 mb-8">
-                  At Delika, we are on a mission to transform the food delivery industry in Ghana. We believe everyone deserves access to their favorite restaurants, delivered quickly and reliably.
+                  At Delika, we're revolutionizing convenience in Ghana by bringing the best of local businesses to your doorstep. From your favorite restaurants to essential groceries and medicines, we're making everyday life easier through our comprehensive delivery platform.
                 </p>
                 <p className="text-xl text-gray-600">
-                  We are building technology that connects restaurants, delivery partners, and customers in ways that create opportunities and enhance lives.
+                  We're building an ecosystem that connects customers with restaurants, grocery stores, pharmacies, and dedicated delivery partners, creating opportunities and enhancing lives through technology and reliable service.
                 </p>
               </motion.div>
               <motion.div

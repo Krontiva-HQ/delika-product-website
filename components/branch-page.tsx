@@ -482,33 +482,40 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
     return isNaN(parsed) ? 0 : parsed;
   }
 
-  // Function to load delivery fees from localStorage (now uses generic key)
+  // Function to load delivery fees from localStorage (uses vendor-specific key)
   const loadDeliveryFeesFromStorage = () => {
     try {
-      const deliveryData = localStorage.getItem('deliveryCalculationData');
+      const deliveryDataKey = `deliveryCalculationData_restaurant_${params.id}`;
+      const deliveryData = localStorage.getItem(deliveryDataKey);
       if (deliveryData) {
         const parsed = JSON.parse(deliveryData);
-        console.log('[BranchPage] Loading delivery fees from localStorage with key: deliveryCalculationData', parsed);
-        // Only check if data is not too old (5 min)
-        const now = Date.now();
-        const dataAge = now - parsed.timestamp;
-        const maxAge = 30 * 60 * 1000; // 30 minutes
-        if (dataAge < maxAge) {
+        console.log('[BranchPage] Loading delivery fees from localStorage with key:', deliveryDataKey, parsed);
+        console.log('[BranchPage] Current restaurant params:', { id: params.id });
+        
+        // Check if cached data is for this restaurant (by ID)
+        const isForThisRestaurant = parsed.branchId === params.id;
+        
+        // Also check if the vendor type matches
+        const isCorrectVendorType = !parsed.vendorType || parsed.vendorType === 'restaurant';
+        
+        if (isForThisRestaurant && isCorrectVendorType) {
           setRiderFee(toNumber(parsed.riderFee));
           setPedestrianFee(toNumber(parsed.pedestrianFee));
           setPlatformFee(toNumber(parsed.platformFee));
           setDistance(toNumber(parsed.distance));
-          console.log('[BranchPage] ✅ Loaded delivery fees from localStorage');
+          console.log('[BranchPage] ✅ Loaded delivery fees from localStorage for restaurant:', params.id);
         } else {
-          console.log('[BranchPage] Cached delivery data is too old, clearing');
+          console.log('[BranchPage] Cached delivery data is for different restaurant or vendor type, clearing');
+          console.log('[BranchPage] Cached branchId:', parsed.branchId, 'vs current params.id:', params.id);
+          console.log('[BranchPage] Cached vendorType:', parsed.vendorType, 'vs expected: restaurant');
           setRiderFee(0);
           setPedestrianFee(0);
           setPlatformFee(0);
           setDistance(0);
-          localStorage.removeItem('deliveryCalculationData');
+          localStorage.removeItem(deliveryDataKey);
         }
       } else {
-        console.log('[BranchPage] No delivery calculation data found in localStorage for key: deliveryCalculationData');
+        console.log('[BranchPage] No delivery calculation data found in localStorage for key:', deliveryDataKey);
         setRiderFee(0);
         setPedestrianFee(0);
         setPlatformFee(0);
@@ -520,7 +527,7 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
       setPedestrianFee(0);
       setPlatformFee(0);
       setDistance(0);
-      localStorage.removeItem('deliveryCalculationData');
+      localStorage.removeItem(`deliveryCalculationData_restaurant_${params.id}`);
     }
   }
 
@@ -664,13 +671,135 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
   // Add this effect to check restaurant status
   const isRestaurantOpen = useRestaurantOpen(branch?.activeHours);
 
-  // Reload delivery fees when cart changes (but don't recalculate)
+  // Calculate delivery fees when cart changes or location updates
   useEffect(() => {
-    if (branch && cart.length > 0) {
-      console.log('[BranchPage] Cart changed, reloading delivery fees from localStorage');
-      loadDeliveryFeesFromStorage();
+    const calculateFee = async () => {
+      try {
+        setIsLoadingDelivery(true)
+        const locationData = localStorage.getItem('userLocationData')
+        
+        console.log('[BranchPage] Starting delivery fee calculation');
+        console.log('[BranchPage] Cart items:', cart.length, 'Cart total:', cartTotal);
+        
+        if (!locationData || !branch) {
+          console.log('[BranchPage] Missing data - locationData:', !!locationData, 'branch:', !!branch);
+          setIsLoadingDelivery(false)
+          return
+        }
+
+        const { lat, lng } = JSON.parse(locationData)
+        const branchLat = parseFloat(branch.branchLatitude)
+        const branchLng = parseFloat(branch.branchLongitude)
+        
+        console.log('[BranchPage] User coordinates:', { lat, lng });
+        console.log('[BranchPage] Branch coordinates:', { branchLat, branchLng });
+        
+        const distance = await calculateDistance(
+          { latitude: lat, longitude: lng },
+          { latitude: branchLat, longitude: branchLng }
+        )
+        
+        console.log('[BranchPage] Calculated distance:', distance, 'km');
+        setDistance(toNumber(distance))
+
+        // Get userId from localStorage userData
+        let userId = '';
+        try {
+          const userData = localStorage.getItem('userData');
+          if (userData) {
+            const parsedUserData = JSON.parse(userData);
+            userId = parsedUserData.id || '';
+          }
+        } catch (error) {
+          console.log('[BranchPage] Could not retrieve userId from userData:', error);
+        }
+
+        // Calculate total including extras for all cart items
+        const currentCartTotal = cart.reduce((total, item) => {
+          const base = parseFloat(item.price) * item.quantity;
+          const extrasTotal = (item.selectedExtras?.reduce((sum, extra) => sum + parseFloat(extra.price), 0) || 0) * item.quantity;
+          return total + base + extrasTotal;
+        }, 0);
+
+        console.log('[BranchPage] Calculated currentCartTotal:', currentCartTotal);
+
+        // Prepare the payload for delivery price calculation
+        const deliveryPayload = {
+          pickup: {
+            fromLatitude: branchLat.toString(),
+            fromLongitude: branchLng.toString(),
+          },
+          dropOff: {
+            toLatitude: lat.toString(),
+            toLongitude: lng.toString(),
+          },
+          rider: true,
+          pedestrian: true,
+          total: currentCartTotal,
+          subTotal: currentCartTotal,
+          userId: userId
+        };
+
+        console.log('[BranchPage] Sending payload to API:', deliveryPayload);
+
+        // Get delivery prices from API
+        const deliveryResponse = await calculateDeliveryPrices(deliveryPayload);
+        const { 
+          riderFee: newRiderFee, 
+          pedestrianFee: newPedestrianFee,
+          platformFee: newPlatformFee
+        } = deliveryResponse;
+
+        console.log('[BranchPage] Updated fees - Rider:', newRiderFee, 'Pedestrian:', newPedestrianFee, 'Platform:', newPlatformFee);
+        
+        setRiderFee(toNumber(newRiderFee))
+        setPedestrianFee(toNumber(newPedestrianFee))
+        setPlatformFee(toNumber(newPlatformFee))
+        
+        // Store delivery calculation results in localStorage
+        const deliveryCalculationData = {
+          riderFee: toNumber(newRiderFee),
+          pedestrianFee: toNumber(newPedestrianFee),
+          platformFee: toNumber(newPlatformFee),
+          distance: toNumber(distance),
+          cartTotal: currentCartTotal,
+          branchId: params.id,
+          timestamp: Date.now(),
+          vendorType: 'restaurant'
+        };
+        
+        // Create unique identifier for this branch's delivery data
+        const deliveryDataKey = `deliveryCalculationData_restaurant_${params.id}`;
+        
+        localStorage.setItem(deliveryDataKey, JSON.stringify(deliveryCalculationData));
+        console.log('[BranchPage] ✅ Stored delivery calculation data in localStorage with key:', deliveryDataKey);
+        
+      } catch (error) {
+        console.error('[BranchPage] Error calculating delivery fee:', error);
+        // Handle error silently
+      } finally {
+        setIsLoadingDelivery(false)
+      }
     }
-  }, [cart, branch]);
+
+    if (branch && cart.length > 0) {
+      console.log('[BranchPage] Cart or location changed, calculating delivery fees');
+      calculateFee();
+    }
+
+    // Listen for location updates
+    const handleLocationUpdate = () => {
+      if (branch && cart.length > 0) {
+        console.log('[BranchPage] Location updated, recalculating fees');
+        calculateFee();
+      }
+    }
+
+    window.addEventListener('locationUpdated', handleLocationUpdate);
+    return () => {
+      window.removeEventListener('locationUpdated', handleLocationUpdate);
+    }
+  }, [cart, branch, params.id]);
 
   // Helper to generate a unique key for a cart item based on id and selectedExtras
   function getCartItemKey(item: CartItem) {
@@ -1080,16 +1209,17 @@ export function BranchPage({ params, urlParams }: BranchPageProps) {
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                {currentCategory?.foods
-                  ?.filter(item => {
-                    if (!searchQuery) return true;
-                    const searchLower = searchQuery.toLowerCase();
-                    return (
-                      item.name.toLowerCase().includes(searchLower) ||
-                      item.description?.toLowerCase().includes(searchLower)
-                    );
-                  })
-                  .map((item, index) => {
+                {(searchQuery
+                  ? branch._menutable?.flatMap(category => category.foods || [])
+                      .filter(item => {
+                        const searchLower = searchQuery.toLowerCase();
+                        return (
+                          item.name.toLowerCase().includes(searchLower) ||
+                          item.description?.toLowerCase().includes(searchLower)
+                        );
+                      })
+                  : currentCategory?.foods)
+                  ?.map((item, index) => {
                   const itemInCart = cart.find(cartItem => getCartItemKey(cartItem) === getCartItemKey({ id: item.name, name: item.name, price: item.price, quantity: 0 }));
                   const quantity = itemInCart?.quantity || 0;
                   

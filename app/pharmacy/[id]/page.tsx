@@ -158,18 +158,16 @@ export default function PharmacyDetailsPage() {
     }
   }, [categories, selectedCategory, isLoading]);
   
-  const filteredInventory = inventory.filter(item => {
-    const matchesCategory = (item.category || "Uncategorized") === selectedCategory;
-    if (!searchQuery) return matchesCategory;
-    
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = 
-      item.productName.toLowerCase().includes(searchLower) ||
-      item.description?.toLowerCase().includes(searchLower) ||
-      item.category?.toLowerCase().includes(searchLower);
-    
-    return matchesCategory && matchesSearch;
-  });
+  const filteredInventory = searchQuery
+    ? inventory.filter(item => {
+        const searchLower = searchQuery.toLowerCase();
+        return (
+          item.productName.toLowerCase().includes(searchLower) ||
+          item.description?.toLowerCase().includes(searchLower) ||
+          item.category?.toLowerCase().includes(searchLower)
+        );
+      })
+    : inventory.filter(item => (item.category || "Uncategorized") === selectedCategory);
 
   // Get shop info from API response
   const [shopLogo, setShopLogo] = useState<string | null>(null);
