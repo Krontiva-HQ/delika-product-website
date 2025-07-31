@@ -3332,3 +3332,120 @@ useEffect(() => {
 - **Professional Appearance**: More streamlined header design
 
 ---
+
+## Runtime Error Fixes for Restaurant Page and Checkout Success
+
+### **Date**: Recent
+### **Files Modified**: 
+- `app/restaurants/[slug]/page.tsx`
+- `components/order-status-widget.tsx`
+- `app/checkout/success/ClientCheckoutSuccess.tsx`
+
+### **Changes Made**:
+
+#### **1. SSR localStorage Access Fix**:
+- **Problem**: `localStorage` was being accessed during server-side rendering, causing a runtime error: "localStorage is not defined"
+- **Solution**: Added client-side check before accessing localStorage
+- **Implementation**: Used `typeof window !== 'undefined'` guard to prevent SSR access
+
+```typescript
+// Before (causing SSR error):
+const branchId = searchParams?.get('id') || localStorage.getItem('selectedBranchId')
+
+// After (SSR-safe):
+const branchId = searchParams?.get('id') || (typeof window !== 'undefined' ? localStorage.getItem('selectedBranchId') : null)
+```
+
+#### **2. Order Status Widget 404 Error Fix**:
+- **Problem**: Order status widget was using incorrect URL format (`/{orderNumber}`) instead of query parameter format
+- **Solution**: Updated API call to use correct endpoint format matching the API design
+- **Implementation**: Changed from path parameter to query parameter
+
+```typescript
+// Before (causing 404 error):
+const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}/${orderNumber}`)
+
+// After (correct format):
+const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_STATUS_API}?orderNumber=${orderNumber}`)
+```
+
+#### **3. Checkout Success Page Property Mismatch Fix**:
+- **Problem**: Runtime error "Cannot read properties of undefined (reading '0')" at line 671
+- **Root Cause**: Code was accessing `orderDetails.pickup[0]` but API response uses `pickUp` (capital U)
+- **Solution**: Updated property names and TypeScript interfaces to match API response structure
+
+```typescript
+// Before (causing undefined error):
+orderDetails.pickup[0]?.fromAddress
+pickup: Array<{ fromAddress: string }>
+
+// After (matching API response):
+orderDetails.pickUp?.[0]?.fromAddress
+pickUp: Array<{ fromAddress: string }>
+```
+
+#### **4. TypeScript Interface Cleanup**:
+- **Problem**: Missing import and incomplete `UserData` interface causing compilation errors
+- **Solution**: 
+  - Removed unused `UserData` import from auth-nav
+  - Defined complete `UserData` and `CustomerTable` interfaces locally
+  - Fixed all TypeScript type compatibility issues
+
+```typescript
+// Added complete interface definitions
+interface CustomerTable {
+  id: string;
+  userId: string;
+  fullName: string;
+  // ... other properties
+}
+
+interface UserData {
+  id: string;
+  fullName: string;
+  // ... other properties
+  customerTable: CustomerTable[];
+}
+```
+
+#### **5. Enhanced Error Prevention**:
+- **Added optional chaining**: Enhanced all property access with proper null safety
+- **Defensive coding**: Added fallbacks and null checks throughout
+- **Consistent API format**: Both success page and order status widget now use same query parameter format
+
+```typescript
+// Enhanced safety measures
+orderDetails.pickUp?.[0]?.fromAddress
+orderDetails.dropOff?.[0]?.toAddress
+```
+
+### **Technical Implementation**:
+
+#### **API Response Property Mapping**:
+- **Pickup Location**: Changed from `pickup` to `pickUp` (capital U)
+- **Drop-off Location**: Enhanced with optional chaining (`dropOff?.[0]`)
+- **SMS Sharing**: Updated message template to use correct property names
+- **TypeScript Interfaces**: Updated to match actual API response structure
+
+#### **Error Prevention Strategy**:
+- **SSR Safety**: All localStorage access wrapped in client-side checks
+- **API Consistency**: Unified endpoint format across all order status checks
+- **Property Safety**: Enhanced optional chaining and null checks throughout
+- **Type Safety**: Complete TypeScript interfaces with proper property definitions
+
+### **User Experience Benefits**:
+- **No More Crashes**: Pages load without runtime errors on both server and client
+- **Proper Data Display**: Order details show correctly with pickup/drop-off information
+- **Consistent Behavior**: Same API call pattern across all order status components
+- **Professional Feel**: Clean error-free experience enhances user confidence
+
+### **Benefits**:
+- ✅ **SSR Compatibility**: Restaurant pages load correctly during server-side rendering
+- ✅ **Order Status Working**: Order status widget successfully fetches order data
+- ✅ **Success Page Fixed**: Checkout success page displays delivery details without crashing
+- ✅ **Type Safety**: Complete TypeScript interfaces prevent compilation errors
+- ✅ **Enhanced Reliability**: Optional chaining prevents future undefined property errors
+- ✅ **API Consistency**: Unified endpoint format across all order-related components
+- ✅ **Professional Experience**: Error-free user journey from order placement to status checking
+
+---

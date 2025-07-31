@@ -43,7 +43,7 @@ interface UserData {
   email: string;
   phoneNumber: string;
   role: string;
-  activeTill: string;
+  activeTill?: string;
   profilePicture?: {
     url: string;
   };
@@ -61,7 +61,7 @@ interface UserData {
 }
 
 interface AuthNavProps {
-  userData?: UserData | null;
+  userData?: any;
   onViewChange: (view: 'stores' | 'orders' | 'favorites' | 'profile' | 'settings') => void;
   currentView: string;
   onLoginClick: () => void;

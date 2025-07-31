@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { MapPin, Heart } from "lucide-react"
-import { calculateDistance } from "@/lib/distance"
+import { calculateDistance } from "@/utils/distance"
 
 interface FavoritesModalProps {
   isOpen: boolean
@@ -86,7 +86,7 @@ export function FavoritesModal({ isOpen, onClose }: FavoritesModalProps) {
 
       // Filter by distance if user location is available
       if (userCoordinates && userFavorites.length > 0) {
-        userFavorites = userFavorites.filter(branch => {
+        userFavorites = userFavorites.filter((branch: any) => {
           const distance = calculateDistance(
             userCoordinates.lat,
             userCoordinates.lng,

@@ -3,8 +3,52 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SettingsSection } from "@/components/settings-section";
-import { UserData } from "@/components/auth-nav";
 import { StoreHeader } from "@/components/store-header";
+
+// Define UserData interface locally to avoid import issues
+interface CustomerTable {
+  id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  role: string;
+  activeTill: string;
+  profilePicture?: {
+    url: string;
+  };
+  created_at: number;
+  deliveryAddress?: {
+    fromAddress: string;
+    fromLatitude: string;
+    fromLongitude: string;
+  };
+  favoriteRestaurants?: Array<{
+    branchName: string;
+  }>;
+}
+
+interface UserData {
+  id: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  role: string;
+  activeTill: string;
+  profilePicture?: {
+    url: string;
+  };
+  created_at: number;
+  deliveryAddress?: {
+    fromAddress: string;
+    fromLatitude: string;
+    fromLongitude: string;
+  };
+  favoriteRestaurants?: Array<{
+    branchName: string;
+  }>;
+  customerTable: CustomerTable[];
+}
 
 export default function SettingsPage() {
   const router = useRouter();

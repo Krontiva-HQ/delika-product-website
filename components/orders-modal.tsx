@@ -4,13 +4,31 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useState, useEffect, useCallback } from "react"
 import { formatDate } from "@/lib/utils"
 
+interface Order {
+  id: string
+  orderNumber: string
+  orderDate: string
+  totalPrice: string
+  paymentStatus: string
+  orderStatus: string
+  orderComment?: string
+  products: Array<{
+    name: string
+    quantity: string
+    price: string
+  }>
+  dropOff: Array<{
+    toAddress: string
+  }>
+}
+
 interface OrdersModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
 export function OrdersModal({ isOpen, onClose }: OrdersModalProps) {
-  const [orders, setOrders] = useState([])
+  const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const ORDERS_PER_PAGE = 6

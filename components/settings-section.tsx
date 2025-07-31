@@ -29,7 +29,53 @@ import {
     AlertTriangle,
     CheckCircle
 } from "lucide-react"
-import { UserData } from "@/components/auth-nav"
+
+// Define UserData interface locally to avoid import issues
+interface CustomerTable {
+  id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  role: string;
+  activeTill: string;
+  profilePicture?: {
+    url: string;
+  };
+  created_at: number;
+  deliveryAddress?: {
+    fromAddress: string;
+    fromLatitude: string;
+    fromLongitude: string;
+  };
+  favoriteRestaurants?: Array<{
+    branchName: string;
+  }>;
+}
+
+interface UserData {
+  id: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  role: string;
+  activeTill: string;
+  address?: string;
+  dateOfBirth?: string;
+  profilePicture?: {
+    url: string;
+  };
+  created_at: number;
+  deliveryAddress?: {
+    fromAddress: string;
+    fromLatitude: string;
+    fromLongitude: string;
+  };
+  favoriteRestaurants?: Array<{
+    branchName: string;
+  }>;
+  customerTable: CustomerTable[];
+}
 
 interface SettingsSectionProps {
     userData?: UserData | null;
