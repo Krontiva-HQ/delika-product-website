@@ -10,6 +10,8 @@ import { Eye, EyeOff } from "lucide-react"
 import { authRequest, UserData } from "@/lib/api"
 import { DeliveryLocationData } from "@/components/location"
 import { useRouter, usePathname } from "next/navigation"
+import { SiteHeader } from "@/components/site-header"
+import { Footer } from "@/components/footer"
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("")
@@ -188,161 +190,167 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto p-4 w-full min-h-screen flex flex-col justify-center">
-      <h1 className="text-2xl font-bold mb-6 text-center">Create an account</h1>
-      <Tabs defaultValue="email" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="email">Email</TabsTrigger>
-          <TabsTrigger value="phone">Phone</TabsTrigger>
-        </TabsList>
-        <TabsContent value="email">
-          <form onSubmit={handleSubmit} data-mode="email" className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Full Name</label>
-              <Input
-                type="text"
-                placeholder="Enter your full name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Password</label>
-              <div className="relative">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+    <div className="min-h-screen flex flex-col">
+      <SiteHeader />
+      <main className="flex-1 flex items-center justify-center py-8">
+        <div className="max-w-md mx-auto p-4 w-full">
+          <h1 className="text-2xl font-bold mb-6 text-center">Create an account</h1>
+          <Tabs defaultValue="email" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="email">Email</TabsTrigger>
+              <TabsTrigger value="phone">Phone</TabsTrigger>
+            </TabsList>
+            <TabsContent value="email">
+              <form onSubmit={handleSubmit} data-mode="email" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Full Name</label>
+                  <Input
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Email</label>
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Password</label>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Create a password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Confirm Password</label>
+                  <div className="relative">
+                    <Input
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm your password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Location</label>
+                  <LocationInput
+                    label="Delivery"
+                    onLocationSelect={handleLocationSelect}
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-orange-500 hover:bg-orange-600"
+                  disabled={isLoading}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                  {isLoading ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      Creating account...
+                    </>
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    'Sign up with Email'
                   )}
-                </button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Confirm Password</label>
-              <div className="relative">
-                <Input
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                </Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="phone">
+              <form onSubmit={handleSubmit} data-mode="phone" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Full Name</label>
+                  <Input
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Phone Number</label>
+                  <Input
+                    type="tel"
+                    placeholder="Enter your phone number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Location</label>
+                  <LocationInput
+                    label="Delivery"
+                    onLocationSelect={handleLocationSelect}
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-orange-500 hover:bg-orange-600"
+                  disabled={isLoading}
                 >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                  {isLoading ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      Creating account...
+                    </>
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    'Sign up with Phone'
                   )}
-                </button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Location</label>
-              <LocationInput
-                label="Delivery"
-                onLocationSelect={handleLocationSelect}
-              />
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full bg-orange-500 hover:bg-orange-600"
-              disabled={isLoading}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+          <div className="mt-4 text-center">
+            <span className="text-sm text-gray-600">Already have an account? </span>
+            <a
+              href="/login"
+              className="text-sm font-medium text-orange-500 hover:text-orange-600"
             >
-              {isLoading ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  Creating account...
-                </>
-              ) : (
-                'Sign up with Email'
-              )}
-            </Button>
-          </form>
-        </TabsContent>
-        <TabsContent value="phone">
-          <form onSubmit={handleSubmit} data-mode="phone" className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Full Name</label>
-              <Input
-                type="text"
-                placeholder="Enter your full name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Phone Number</label>
-              <Input
-                type="tel"
-                placeholder="Enter your phone number"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Location</label>
-              <LocationInput
-                label="Delivery"
-                onLocationSelect={handleLocationSelect}
-              />
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full bg-orange-500 hover:bg-orange-600"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  Creating account...
-                </>
-              ) : (
-                'Sign up with Phone'
-              )}
-            </Button>
-          </form>
-        </TabsContent>
-      </Tabs>
-      <div className="mt-4 text-center">
-        <span className="text-sm text-gray-600">Already have an account? </span>
-        <a
-          href="/login"
-          className="text-sm font-medium text-orange-500 hover:text-orange-600"
-        >
-          Log in
-        </a>
-      </div>
+              Log in
+            </a>
+          </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   )
 } 

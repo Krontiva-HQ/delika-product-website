@@ -13,62 +13,69 @@ interface Restaurant {
   reviews: string
   price: string
   deliveryTime: string
+  vendorType?: string
 }
 
 const restaurants: Restaurant[] = [
   {
     id: "1",
-    name: "Ilona",
-    image: "/main.jpg",
+    name: "Asaabea's Kitchen",
+    image: "/asaabea.png",
     rating: 4.8,
-    reviews: "27",
-    price: "GH₵6.00",
-    deliveryTime: "25-30 min",
-  },
-  {
-    id: "2",
-    name: "Capitol Cafe and Restaurant",
-    image: "/main.jpg",
-    rating: 4.8,
-    reviews: "500+",
-    price: "GH₵16.00",
-    deliveryTime: "40-45 min",
-  },
-  {
-    id: "3",
-    name: "Executivez Coconut",
-    image: "/main.jpg",
-    rating: 4.8,
-    reviews: "81",
-    price: "GH₵17.00",
-    deliveryTime: "40-45 min",
-  },
-  {
-    id: "4",
-    name: "Baffy's Eatery",
-    image: "/main.jpg",
-    rating: 4.8,
-    reviews: "500+",
-    price: "GH₵19.00",
-    deliveryTime: "35-40 min",
-  },
-  {
-    id: "5",
-    name: "Pinocchio - Airport",
-    image: "/main.jpg",
-    rating: 4.7,
-    reviews: "145",
-    price: "GH₵6.00",
-    deliveryTime: "15-20 min",
-  },
-  {
-    id: "6",
-    name: "Yoofin",
-    image: "/main.jpg",
-    rating: 4.7,
     reviews: "500+",
     price: "GH₵8.00",
     deliveryTime: "35-40 min",
+    vendorType: "restaurant"
+  },
+  {
+    id: "2",
+    name: "The Good Baker",
+    image: "/thegoodbaker.png",
+    rating: 4.9,
+    reviews: "300+",
+    price: "GH₵12.00",
+    deliveryTime: "20-30 min",
+    vendorType: "restaurant"
+  },
+  {
+    id: "3",
+    name: "UFO Burger",
+    image: "/ufoburger.png",
+    rating: 4.7,
+    reviews: "200+",
+    price: "GH₵15.00",
+    deliveryTime: "15-25 min",
+    vendorType: "restaurant"
+  },
+  {
+    id: "4",
+    name: "Liv Resto",
+    image: "/livresto.png",
+    rating: 4.6,
+    reviews: "150+",
+    price: "GH₵10.00",
+    deliveryTime: "30-40 min",
+    vendorType: "restaurant"
+  },
+  {
+    id: "5",
+    name: "Mari Nate",
+    image: "/marinate.jpg",
+    rating: 4.5,
+    reviews: "100+",
+    price: "GH₵9.00",
+    deliveryTime: "25-35 min",
+    vendorType: "restaurant"
+  },
+  {
+    id: "6",
+    name: "Snack Shack",
+    image: "/snackshack.png",
+    rating: 4.4,
+    reviews: "80+",
+    price: "GH₵6.00",
+    deliveryTime: "10-20 min",
+    vendorType: "restaurant"
   },
 ]
 
@@ -84,6 +91,20 @@ export function TopRatedSection() {
       .replace(/\-\-+/g, '-')
       .replace(/^-+/, '')
       .replace(/-+$/, '')
+  }
+
+  // Function to determine the correct URL based on vendor type
+  const getVendorUrl = (restaurant: Restaurant) => {
+    const slug = slugify(restaurant.name)
+    switch (restaurant.vendorType) {
+      case 'grocery':
+        return `/groceries/${slug}`
+      case 'pharmacy':
+        return `/pharmacy/${slug}`
+      case 'restaurant':
+      default:
+        return `/restaurants/${slug}`
+    }
   }
 
   const scroll = (direction: 'left' | 'right') => {
@@ -133,7 +154,7 @@ export function TopRatedSection() {
           >
             {restaurants.map((restaurant) => (
               <div key={restaurant.id} className="flex-none w-[280px]">
-                <Link href={`/restaurant/${slugify(restaurant.name)}`}>
+                <Link href={getVendorUrl(restaurant)}>
                   <div className="relative aspect-[4/3] rounded-lg overflow-hidden mb-2">
                     <Image
                       src={restaurant.image || "/main.jpg"}

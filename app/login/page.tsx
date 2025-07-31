@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Eye, EyeOff } from "lucide-react"
 import { authRequest, UserData } from "@/lib/api"
 import { useRouter, usePathname } from "next/navigation"
+import { SiteHeader } from "@/components/site-header"
+import { Footer } from "@/components/footer"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -226,7 +228,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto p-4 w-full min-h-screen flex flex-col justify-center">
+    <div className="min-h-screen flex flex-col">
+      <SiteHeader />
+      <main className="flex-1 flex items-center justify-center py-8">
+        <div className="max-w-md mx-auto p-4 w-full">
       <h1 className="text-2xl font-bold mb-6 text-center">Welcome back</h1>
       <Tabs defaultValue="email" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -333,6 +338,9 @@ export default function LoginPage() {
           Sign up
         </a>
       </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   )
 } 

@@ -38,6 +38,7 @@ interface CustomerTable {
   id: string;
   userId: string;
   created_at: number;
+  privacyPolicyAccepted?: boolean;
   deliveryAddress: DeliveryAddress;
   favoriteRestaurants: FavoriteRestaurant[];
 }

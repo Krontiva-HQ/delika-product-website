@@ -12,7 +12,8 @@ const allVendors = [
     type: "Restaurant",
     rating: 4.8,
     deliveryTime: "25-35 min",
-    slug: "asaabeas-kitchen"
+    slug: "asaabeas-kitchen",
+    vendorType: "restaurant"
   },
   {
     name: "The Good Baker",
@@ -20,7 +21,8 @@ const allVendors = [
     type: "Bakery",
     rating: 4.9,
     deliveryTime: "20-30 min",
-    slug: "the-good-baker"
+    slug: "the-good-baker",
+    vendorType: "restaurant"
   },
   {
     name: "UFO Burger",
@@ -28,7 +30,8 @@ const allVendors = [
     type: "Fast Food",
     rating: 4.7,
     deliveryTime: "15-25 min",
-    slug: "ufo-burger"
+    slug: "ufo-burger",
+    vendorType: "restaurant"
   },
   {
     name: "Liv Resto",
@@ -36,7 +39,8 @@ const allVendors = [
     type: "Restaurant",
     rating: 4.6,
     deliveryTime: "30-40 min",
-    slug: "liv-resto"
+    slug: "liv-resto",
+    vendorType: "restaurant"
   },
   {
     name: "Mari Nate",
@@ -44,7 +48,8 @@ const allVendors = [
     type: "Restaurant",
     rating: 4.5,
     deliveryTime: "25-35 min",
-    slug: "mari-nate"
+    slug: "mari-nate",
+    vendorType: "restaurant"
   },
   {
     name: "Snack Shack",
@@ -52,7 +57,8 @@ const allVendors = [
     type: "Fast Food",
     rating: 4.4,
     deliveryTime: "10-20 min",
-    slug: "snack-shack"
+    slug: "snack-shack",
+    vendorType: "restaurant"
   }
 ]
 
@@ -90,39 +96,37 @@ export function YourFavorites() {
               initial={{ y: 30, opacity: 0 }}
               whileInView={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow p-4"
+              className="bg-white rounded-xl shadow-lg p-4"
             >
-              <Link href={`/restaurants/${vendor.slug}`} className="block">
-                <div className="relative h-32 mb-3 rounded-lg overflow-hidden">
-                  <Image
-                    src={vendor.image}
-                    alt={vendor.name}
-                    fill
-                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
-                    className="object-cover"
-                  />
-                  <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded-full text-xs font-medium text-gray-700">
-                    {vendor.type}
-                  </div>
+              <div className="relative h-32 mb-3 rounded-lg overflow-hidden">
+                <Image
+                  src={vendor.image}
+                  alt={vendor.name}
+                  fill
+                  sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
+                  className="object-cover"
+                />
+                <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded-full text-xs font-medium text-gray-700">
+                  {vendor.type}
                 </div>
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">
+                  {vendor.name}
+                </h3>
                 
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">
-                    {vendor.name}
-                  </h3>
-                  
-                  <div className="flex items-center justify-between text-xs text-gray-600">
-                    <div className="flex items-center">
-                      <span className="text-yellow-500 mr-1">★</span>
-                      <span>{vendor.rating}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-gray-400 mr-1">🕒</span>
-                      <span>{vendor.deliveryTime}</span>
-                    </div>
+                <div className="flex items-center justify-between text-xs text-gray-600">
+                  <div className="flex items-center">
+                    <span className="text-yellow-500 mr-1">★</span>
+                    <span>{vendor.rating}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-gray-400 mr-1">🕒</span>
+                    <span>{vendor.deliveryTime}</span>
                   </div>
                 </div>
-              </Link>
+              </div>
             </motion.div>
           ))}
         </div>

@@ -8,7 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OTPInputModal } from "@/components/otp-input-modal"
 import { Eye, EyeOff } from "lucide-react"
 import { ForgotPasswordModal } from "@/components/forgot-password-modal"
-import { login, authRequest, AuthResponse, UserData } from "@/lib/api" // Remove OTPResponse from imports
+import { PolicyAcceptanceModal } from "@/components/policy-acceptance-modal"
+import { login, authRequest, AuthResponse } from "@/lib/api" // Remove OTPResponse from imports
+import { UserData } from "@/types/user"
 import { toast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 
@@ -26,12 +28,135 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
   const [showPassword, setShowPassword] = useState(false)
   const [showOTP, setShowOTP] = useState(false)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [showPolicyModal, setShowPolicyModal] = useState(false)
   const [authToken, setAuthToken] = useState("")
   const [userData, setUserData] = useState<UserData | null>(null)
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string>("")
   const [otpError, setOtpError] = useState<string>("")
+
+  // Function to check if user has accepted policy
+  const checkPolicyAcceptance = (userData: UserData) => {
+    const customerTable = userData.customerTable;
+    const policyAccepted = customerTable && customerTable.length > 0 && 
+      customerTable.some(customer => customer.privacyPolicyAccepted === true);
+    
+    return policyAccepted;
+  };
+
+  // Function to handle policy acceptance
+  const handlePolicyAccept = async () => {
+    if (!userData) return;
+
+    try {
+      // Get auth token from localStorage
+      const authToken = localStorage.getItem('authToken');
+      
+      if (!authToken) {
+        console.error('No auth token found');
+        return;
+      }
+
+      // Call API to update policy acceptance
+      const response = await fetch('/api/auth/update-policy-acceptance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          authToken,
+          userId: userData.id 
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update policy acceptance');
+      }
+
+      // Update user data in localStorage
+      const updatedUserData = {
+        ...userData,
+        customerTable: userData.customerTable.map(customer => ({
+          ...customer,
+          privacyPolicyAccepted: true
+        }))
+      };
+      localStorage.setItem('userData', JSON.stringify(updatedUserData));
+      
+      setShowPolicyModal(false);
+      onLoginSuccess(updatedUserData);
+      
+      // Check for cart context and trigger cart modal if needed
+      const cartContext = localStorage.getItem('cartContext');
+      if (cartContext) {
+        try {
+          const context = JSON.parse(cartContext);
+          localStorage.removeItem('cartContext');
+          
+          // Dispatch a custom event to notify that login was successful and cart should be shown
+          window.dispatchEvent(new CustomEvent('loginSuccessWithCart', { 
+            detail: context 
+          }));
+        } catch (error) {
+          console.error('Error parsing cart context:', error);
+        }
+      }
+
+      // Check for redirect URL
+      const redirectUrl = localStorage.getItem('loginRedirectUrl');
+      if (redirectUrl) {
+        localStorage.removeItem('loginRedirectUrl');
+        window.location.href = redirectUrl;
+      }
+    } catch (error) {
+      console.error('Failed to update policy acceptance:', error);
+      // Still update localStorage even if API call fails
+      const updatedUserData = {
+        ...userData,
+        customerTable: userData.customerTable.map(customer => ({
+          ...customer,
+          privacyPolicyAccepted: true
+        }))
+      };
+      localStorage.setItem('userData', JSON.stringify(updatedUserData));
+      setShowPolicyModal(false);
+      onLoginSuccess(updatedUserData);
+      
+      // Check for cart context and trigger cart modal if needed
+      const cartContext = localStorage.getItem('cartContext');
+      if (cartContext) {
+        try {
+          const context = JSON.parse(cartContext);
+          localStorage.removeItem('cartContext');
+          
+          // Dispatch a custom event to notify that login was successful and cart should be shown
+          window.dispatchEvent(new CustomEvent('loginSuccessWithCart', { 
+            detail: context 
+          }));
+        } catch (error) {
+          console.error('Error parsing cart context:', error);
+        }
+      }
+
+      // Check for redirect URL
+      const redirectUrl = localStorage.getItem('loginRedirectUrl');
+      if (redirectUrl) {
+        localStorage.removeItem('loginRedirectUrl');
+        window.location.href = redirectUrl;
+      }
+    }
+  };
+
+  // Function to handle policy decline
+  const handlePolicyDecline = () => {
+    // Log out the user if they decline
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
+    setShowPolicyModal(false);
+    onClose();
+    window.location.reload();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -228,33 +353,42 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         
         if (finalUserData) {
           localStorage.setItem('userData', JSON.stringify(finalUserData));
-          onLoginSuccess(finalUserData);
-        }
-        
-        setShowOTP(false);
-        onClose();
+          
+          // Check if user has accepted the policy
+          if (!checkPolicyAcceptance(finalUserData)) {
+            // Show policy acceptance modal
+            setUserData(finalUserData);
+            setShowPolicyModal(true);
+            setShowOTP(false);
+          } else {
+            // User has already accepted policy, proceed with normal login
+            onLoginSuccess(finalUserData);
+            setShowOTP(false);
+            onClose();
 
-        // Check for cart context and trigger cart modal if needed
-        const cartContext = localStorage.getItem('cartContext');
-        if (cartContext) {
-          try {
-            const context = JSON.parse(cartContext);
-            localStorage.removeItem('cartContext');
-            
-            // Dispatch a custom event to notify that login was successful and cart should be shown
-            window.dispatchEvent(new CustomEvent('loginSuccessWithCart', { 
-              detail: context 
-            }));
-          } catch (error) {
-            console.error('Error parsing cart context:', error);
+            // Check for cart context and trigger cart modal if needed
+            const cartContext = localStorage.getItem('cartContext');
+            if (cartContext) {
+              try {
+                const context = JSON.parse(cartContext);
+                localStorage.removeItem('cartContext');
+                
+                // Dispatch a custom event to notify that login was successful and cart should be shown
+                window.dispatchEvent(new CustomEvent('loginSuccessWithCart', { 
+                  detail: context 
+                }));
+              } catch (error) {
+                console.error('Error parsing cart context:', error);
+              }
+            }
+
+            // Check for redirect URL
+            const redirectUrl = localStorage.getItem('loginRedirectUrl');
+            if (redirectUrl) {
+              localStorage.removeItem('loginRedirectUrl');
+              window.location.href = redirectUrl;
+            }
           }
-        }
-
-        // Check for redirect URL
-        const redirectUrl = localStorage.getItem('loginRedirectUrl');
-        if (redirectUrl) {
-          localStorage.removeItem('loginRedirectUrl');
-          window.location.href = redirectUrl;
         }
       } else {
         setOtpError('Invalid verification code. Please try again.');
@@ -285,6 +419,16 @@ export function LoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }
         isOpen={true}
         onClose={() => setShowForgotPassword(false)}
         onBackToLogin={() => setShowForgotPassword(false)}
+      />
+    )
+  }
+
+  if (showPolicyModal) {
+    return (
+      <PolicyAcceptanceModal
+        isOpen={showPolicyModal}
+        onAccept={handlePolicyAccept}
+        onDecline={handlePolicyDecline}
       />
     )
   }

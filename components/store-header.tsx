@@ -34,7 +34,7 @@ import { FloatingCart } from "@/components/floating-cart"
 import { CartModal } from "@/components/cart-modal"
 import { isVendorOpen } from "@/lib/utils"
 import { PolicyAcceptanceModal } from "@/components/policy-acceptance-modal"
-import { usePolicyAcceptance } from "@/hooks/use-policy-acceptance"
+// import { usePolicyAcceptance } from "@/hooks/use-policy-acceptance"
 
 
 interface Restaurant {
@@ -136,6 +136,7 @@ interface CustomerTable {
   id: string;
   userId: string;
   created_at: number;
+  privacyPolicyAccepted?: boolean;
   deliveryAddress: DeliveryAddress;
   favoriteRestaurants: FavoriteRestaurant[];
 }
@@ -516,9 +517,6 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
     setShowMoreGroceries(false);
     setShowMorePharmacies(false);
   }, [searchQuery, activeTab]);
-
-  // Policy acceptance check
-  const { showPolicyModal, handlePolicyAccept, handlePolicyDecline } = usePolicyAcceptance(user)
 
   // Store and load activeTab from localStorage
   useEffect(() => {
@@ -2956,13 +2954,13 @@ export function StoreHeader({ vendorData, onTabChange, activeTab: externalActive
       />
       
       {/* Policy Acceptance Modal */}
-      {showPolicyModal && (
+      {/* {showPolicyModal && (
         <PolicyAcceptanceModal
           isOpen={showPolicyModal}
           onAccept={handlePolicyAccept}
           onDecline={handlePolicyDecline}
         />
-      )}
+      )} */}
     </div>
   )
 }

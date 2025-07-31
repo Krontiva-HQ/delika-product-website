@@ -7,7 +7,9 @@ import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OTPInputModal } from "@/components/otp-input-modal"
 import { Eye, EyeOff } from "lucide-react"
-import { authRequest, AuthResponse, OTPResponse, UserData } from "@/lib/api"
+import { PolicyAcceptanceModal } from "@/components/policy-acceptance-modal"
+import { authRequest, AuthResponse, OTPResponse } from "@/lib/api"
+import { UserData } from "@/types/user"
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -25,11 +27,92 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [showOTP, setShowOTP] = useState(false)
+  const [showPolicyModal, setShowPolicyModal] = useState(false)
   const [authToken, setAuthToken] = useState("")
   const [userData, setUserData] = useState<UserData | null>(null)
   const [signupMethod, setSignupMethod] = useState<'email' | 'phone'>('email')
   const [isLoading, setIsLoading] = useState(false)
   const [otpError, setOtpError] = useState<string>("")
+
+  // Function to check if user has accepted policy
+  const checkPolicyAcceptance = (userData: UserData) => {
+    const customerTable = userData.customerTable;
+    const policyAccepted = customerTable && customerTable.length > 0 && 
+      customerTable.some(customer => customer.privacyPolicyAccepted === true);
+    
+    return policyAccepted;
+  };
+
+  // Function to handle policy acceptance
+  const handlePolicyAccept = async () => {
+    if (!userData) return;
+
+    try {
+      // Get auth token from localStorage
+      const authToken = localStorage.getItem('authToken');
+      
+      if (!authToken) {
+        console.error('No auth token found');
+        return;
+      }
+
+      // Call API to update policy acceptance
+      const response = await fetch('/api/auth/update-policy-acceptance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          authToken,
+          userId: userData.id 
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update policy acceptance');
+      }
+
+      // Update user data in localStorage
+      const updatedUserData = {
+        ...userData,
+        customerTable: userData.customerTable.map(customer => ({
+          ...customer,
+          privacyPolicyAccepted: true
+        }))
+      };
+      localStorage.setItem('userData', JSON.stringify(updatedUserData));
+      
+      setShowPolicyModal(false);
+      if (onSignupSuccess) {
+        onSignupSuccess(updatedUserData);
+      }
+    } catch (error) {
+      console.error('Failed to update policy acceptance:', error);
+      // Still update localStorage even if API call fails
+      const updatedUserData = {
+        ...userData,
+        customerTable: userData.customerTable.map(customer => ({
+          ...customer,
+          privacyPolicyAccepted: true
+        }))
+      };
+      localStorage.setItem('userData', JSON.stringify(updatedUserData));
+      setShowPolicyModal(false);
+      if (onSignupSuccess) {
+        onSignupSuccess(updatedUserData);
+      }
+    }
+  };
+
+  // Function to handle policy decline
+  const handlePolicyDecline = () => {
+    // Log out the user if they decline
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
+    setShowPolicyModal(false);
+    onClose();
+    window.location.reload();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -138,12 +221,19 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
         localStorage.setItem('authToken', authToken);
         localStorage.setItem('userData', JSON.stringify(userData));
         
-        if (onSignupSuccess) {
-          onSignupSuccess(userData);
+        // Check if user has accepted the policy
+        if (!checkPolicyAcceptance(userData)) {
+          // Show policy acceptance modal
+          setShowPolicyModal(true);
+          setShowOTP(false);
+        } else {
+          // User has already accepted policy, proceed with normal signup
+          if (onSignupSuccess) {
+            onSignupSuccess(userData);
+          }
+          setShowOTP(false);
+          onClose();
         }
-        
-        setShowOTP(false);
-        onClose();
       } else {
         setOtpError('Invalid verification code. Please try again.');
       }
@@ -152,6 +242,16 @@ export function SignupModal({ isOpen, onClose, onLoginClick, onSignupSuccess }: 
       setOtpError('Failed to verify code. Please try again.');
     }
   };
+
+  if (showPolicyModal) {
+    return (
+      <PolicyAcceptanceModal
+        isOpen={showPolicyModal}
+        onAccept={handlePolicyAccept}
+        onDecline={handlePolicyDecline}
+      />
+    )
+  }
 
   if (showOTP) {
     return (
