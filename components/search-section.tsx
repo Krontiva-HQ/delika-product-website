@@ -196,18 +196,23 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
         <div className="py-4">
           {/* Mobile Layout */}
           <div className="md:hidden">
-            {/* Search and Location Row */}
-            <div className="flex gap-4 mb-4">
+            {/* Location Row */}
+            <div className="mb-3">
               <button
                 type="button"
                 onClick={handleLocationClick}
-                className="flex items-center justify-center p-3 rounded-full border border-gray-200 bg-white flex-shrink-0"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white w-full justify-start"
                 aria-label="Select delivery location"
               >
-                <MapPin className="w-5 h-5" />
+                <MapPin className="w-4 h-4 flex-shrink-0 text-gray-500" />
+                <span className="font-medium text-sm text-gray-700 truncate">{userLocation}</span>
               </button>
+            </div>
+            
+            {/* Search Row */}
+            <div className="mb-4">
               {/* Mobile search input: */}
-              <div className="flex-1 relative">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
                   type="text"
@@ -233,7 +238,7 @@ export function SearchSection({ onSearch, userLocation, onLocationClick, activeT
             </div>
 
             {/* Tabs Row */}
-            <div className="w-full flex justify-center mb-4">
+            <div className="w-full mb-4">
               <Tabs value={activeTab} onValueChange={onTabChange}>
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="restaurants">Restaurants</TabsTrigger>

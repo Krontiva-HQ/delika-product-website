@@ -85,6 +85,16 @@ function getFilteredResults(
 ) {
   if (!vendorData) return [];
 
+  console.log('🔍 [FilterModal] Input vendorData:', {
+    hasRestaurants: !!vendorData.Restaurants,
+    restaurantsCount: vendorData.Restaurants?.length || 0,
+    hasGroceries: !!vendorData.Groceries,
+    groceriesCount: vendorData.Groceries?.length || 0,
+    hasPharmacies: !!vendorData.Pharmacies,
+    pharmaciesCount: vendorData.Pharmacies?.length || 0,
+    sampleRestaurantItems: vendorData.Restaurants?.[0]?.RestaurantItem?.length || 0
+  });
+
   // Combine all vendor types into a single array
   const allVendors: any[] = [];
 
@@ -126,6 +136,8 @@ function getFilteredResults(
         deliveryTime: getDeliveryTimeForVendor(restaurant.id, ratings),
         pickup: getPickupForVendor(restaurant.id, ratings),
         distance,
+        // Preserve menu items for category filtering
+        RestaurantItem: restaurant.RestaurantItem || [],
       });
     });
   }
@@ -168,6 +180,8 @@ function getFilteredResults(
         deliveryTime: getDeliveryTimeForVendor(grocery.id, ratings),
         pickup: getPickupForVendor(grocery.id, ratings),
         distance,
+        // Preserve grocery items for category filtering
+        GroceryItem: grocery.GroceryItem || [],
       });
     });
   }
@@ -210,6 +224,8 @@ function getFilteredResults(
         deliveryTime: getDeliveryTimeForVendor(pharmacy.id, ratings),
         pickup: getPickupForVendor(pharmacy.id, ratings),
         distance,
+        // Preserve pharmacy items for category filtering
+        PharmacyItem: pharmacy.PharmacyItem || [],
       });
     });
   }
@@ -248,15 +264,33 @@ function getFilteredResults(
 
   // Category filter
   if (filterCategories.length > 0) {
+    console.log('🔍 [FilterModal] Applying category filter for:', filterCategories);
+    console.log('🔍 [FilterModal] Total vendors before category filter:', filteredVendors.length);
+    
     filteredVendors = filteredVendors.filter(vendor => {
       // Check if vendor has items that match any of the selected categories
       const vendorItems = (vendor.RestaurantItem || vendor.GroceryItem || vendor.PharmacyItem || []) as any[];
       
-      return vendorItems.some((item: any) => {
+      console.log(`🔍 [FilterModal] Vendor ${vendor.displayName} has ${vendorItems.length} items`);
+      
+      if (vendorItems.length > 0) {
+        const categories = vendorItems.map(item => item.foodType || item.itemType || item.category || '');
+        console.log(`🔍 [FilterModal] Vendor ${vendor.displayName} categories:`, categories);
+      }
+      
+      const hasMatchingCategory = vendorItems.some((item: any) => {
         const itemCategory = item.foodType || item.itemType || item.category || '';
         return filterCategories.includes(itemCategory);
       });
+      
+      if (hasMatchingCategory) {
+        console.log(`✅ [FilterModal] Vendor ${vendor.displayName} matches category filter`);
+      }
+      
+      return hasMatchingCategory;
     });
+    
+    console.log('🔍 [FilterModal] Total vendors after category filter:', filteredVendors.length);
   }
 
   // Distance filter - only show vendors within search radius
